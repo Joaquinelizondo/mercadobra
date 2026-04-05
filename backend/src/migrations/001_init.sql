@@ -1,0 +1,51 @@
+CREATE TABLE IF NOT EXISTS providers (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  zone TEXT NOT NULL,
+  phone TEXT,
+  rating NUMERIC(3, 2) DEFAULT 0,
+  reviews INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  password TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'provider',
+  provider_id INTEGER REFERENCES providers(id) ON DELETE SET NULL,
+  company TEXT
+);
+
+CREATE TABLE IF NOT EXISTS products (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  category TEXT NOT NULL,
+  company TEXT NOT NULL,
+  provider_id INTEGER NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+  price NUMERIC(12, 2) NOT NULL,
+  unit TEXT NOT NULL,
+  stock INTEGER NOT NULL DEFAULT 0,
+  color TEXT DEFAULT '#ea580c'
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id SERIAL PRIMARY KEY,
+  buyer_name TEXT,
+  buyer_phone TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id SERIAL PRIMARY KEY,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+  quantity INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS migrations (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

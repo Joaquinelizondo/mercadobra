@@ -1,0 +1,78 @@
+{
+  "providers": [
+    {
+      "id": 1,
+      "name": "Corralón La Obra",
+      "zone": "CABA",
+      "phone": "+54 9 11 4123 4567",
+      "rating": 4.8,
+      "reviews": 156
+    },
+    {
+      "id": 2,
+      "name": "Áridos del Sur",
+      "zone": "Zona Sur",
+      "phone": "+54 9 11 4234 5678",
+      "rating": 4.6,
+      "reviews": 89
+    },
+    {
+      "id": 3,
+      "name": "Estructura Total",
+      "zone": "Zona Norte",
+      "phone": "+54 9 11 4345 6789",
+      "rating": 4.9,
+      "reviews": 203
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "name": "Cemento Portland x 50kg",
+      "description": "Bolsa de cemento para obra gruesa",
+      "category": "Materiales",
+      "company": "Corralón La Obra",
+      "providerId": 1,
+      "price": 10900,
+      "unit": "bolsa",
+      "stock": 120,
+      "color": "#ea580c"
+    },
+    {
+      "id": 2,
+      "name": "Arena fina x m³",
+      "description": "Arena lavada para mezcla y revoque",
+      "category": "Materiales",
+      "company": "Áridos del Sur",
+      "providerId": 2,
+      "price": 28500,
+      "unit": "m³",
+      "stock": 50,
+      "color": "#f59e0b"
+    },
+    {
+      "id": 3,
+      "name": "Hierro ADN 12mm",
+      "description": "Barra de hierro de alta resistencia",
+      "category": "Estructura",
+      "company": "Estructura Total",
+      "providerId": 3,
+      "price": 17800,
+      "unit": "barra",
+      "stock": 0,
+      "color": "#0284c7"
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "email": "proveedor@mercadobra.com",
+      "password": "123456",
+      "role": "provider",
+      "providerId": 1,
+      "company": "Corralón La Obra"
+    }
+  ],
+  "orders": [],
+  "leads": []
+}

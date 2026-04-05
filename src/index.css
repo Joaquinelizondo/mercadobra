@@ -1,0 +1,94 @@
+:root {
+  --text: #5a6472;
+  --text-h: #13212f;
+  --bg: linear-gradient(180deg, #f97316 0%, #ea580c 42%, #c2410c 100%);
+  --border: rgba(255, 255, 255, 0.18);
+  --code-bg: #f4f3ec;
+  --accent: #f97316;
+  --accent-strong: #ea580c;
+  --accent-bg: rgba(249, 115, 22, 0.12);
+  --accent-border: rgba(249, 115, 22, 0.4);
+  --social-bg: rgba(244, 243, 236, 0.5);
+  --panel: rgba(255, 255, 255, 0.94);
+  --panel-soft: rgba(255, 245, 238, 0.72);
+  --text-on-dark: #ffffff;
+  --text-on-dark-soft: rgba(255, 255, 255, 0.82);
+  --shadow:
+    rgba(15, 23, 42, 0.08) 0 16px 40px -24px, rgba(15, 23, 42, 0.08) 0 8px 24px -18px;
+
+  --sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --heading: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  font: 18px/145% var(--sans);
+  letter-spacing: 0.18px;
+  color-scheme: light;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--bg);
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+h3 {
+  font-family: var(--heading);
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 800;
+  color: var(--text-h);
+}
+
+h1 {
+  font-size: clamp(2.6rem, 5vw, 4.6rem);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+  margin: 16px 0 18px;
+  @media (max-width: 1024px) {
+    font-size: 36px;
+    margin: 20px 0;
+  }
+}
+h2 {
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+  line-height: 118%;
+  letter-spacing: -0.04em;
+  margin: 0 0 8px;
+  @media (max-width: 1024px) {
+    font-size: 20px;
+  }
+}
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+* {
+  box-sizing: border-box;
+}
