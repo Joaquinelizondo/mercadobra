@@ -7,42 +7,42 @@ import ProductCard from '../components/ProductCard'
 import { createLead } from '../lib/api'
 
 const categories = [
-  { title: 'Hormigón y áridos', description: 'Publicá cemento, arena, piedra, bloques y soluciones para obra gruesa.' },
-  { title: 'Hierro y estructuras', description: 'Conectá con constructoras que buscan perfiles, mallas, chapas y caños.' },
-  { title: 'Terminaciones', description: 'Mostrá pisos, revestimientos, pinturas, sanitarios y grifería.' },
-  { title: 'Herramientas y seguridad', description: 'Ofrecé maquinaria, elementos de protección y equipamiento profesional.' },
+  { title: 'Hormigón y áridos', description: 'Encontrá cemento, arena, piedra, bloques y soluciones para obra gruesa en un solo lugar.' },
+  { title: 'Hierro y estructuras', description: 'Compará perfiles, mallas, chapas y caños para avanzar tu proyecto con el mejor precio.' },
+  { title: 'Terminaciones', description: 'Elegí pisos, revestimientos, pinturas, sanitarios y grifería para cada ambiente.' },
+  { title: 'Herramientas y seguridad', description: 'Comprá herramientas, protección personal y equipamiento confiable para tu obra.' },
 ]
 
 const benefits = [
-  'Perfil profesional para empresas, barracas y distribuidores.',
-  'Catálogo digital para exhibir productos con fotos, precios y stock.',
-  'Consultas directas para generar ventas y relaciones comerciales.',
-  'Mayor visibilidad en un portal pensado para el mundo de la construcción.',
+  'Compará precios y productos por categoría en minutos.',
+  'Contactá proveedores verificados sin salir de la plataforma.',
+  'Guardá favoritos para decidir con calma antes de comprar.',
+  'Seguimiento del pedido para tener control de cada etapa de tu compra.',
 ]
 
 const metrics = [
-  { value: '+500', label: 'productos destacados' },
-  { value: '24/7', label: 'vidriera online activa' },
-  { value: 'B2B', label: 'enfoque comercial para obra y barraca' },
+  { value: '+500', label: 'productos para hogar y obra' },
+  { value: '24/7', label: 'catálogo disponible para comprar' },
+  { value: '1 clic', label: 'para contactar al proveedor' },
 ]
 
 const testimonios = [
   {
-    name: 'Juan García',
-    company: 'Corralón La Obra',
-    text: 'Con MercadObra triplicamos nuestras consultas en los primeros 3 meses. Nuestros clientes habituales ahora nos encuentran fácilmente online.',
+    name: 'Lucía Martínez',
+    company: 'Remodelación de cocina',
+    text: 'Pude comparar materiales y resolver la compra completa para mi cocina desde casa. El contacto con proveedores fue rápido y claro.',
     rating: 5
   },
   {
-    name: 'María López',
-    company: 'Revestimientos Pro',
-    text: 'Excelente plataforma para mostrar nuestro catálogo. El sistema de filtros por zona es muy útil para llegar a constructoras locales.',
+    name: 'Nicolás Rojas',
+    company: 'Ampliación familiar',
+    text: 'Usé MercadObra para conseguir hierro, cemento y herramientas. Ahorré tiempo y pude elegir por precio y disponibilidad.',
     rating: 5
   },
   {
-    name: 'Carlos Mendez',
-    company: 'HerramientasXL',
-    text: 'La integración con nuestro sistema es simple. Recibimos consultas de calidad y hemos cerrado varias ventas importantes.',
+    name: 'Agustina Pérez',
+    company: 'Refacción de baño',
+    text: 'Me ayudó mucho tener seguimiento del pedido. Sentí más seguridad comprando materiales para una obra chica.',
     rating: 4
   }
 ]
@@ -339,7 +339,7 @@ export default function Landing() {
         <div className="catalog-section-heading">
           <div className="section-heading" style={{ flex: 1 }}>
             <span className="eyebrow">Productos destacados</span>
-            <h2>Empezá tu sueño hoy: comprá materiales para tu obra.</h2>
+            <h2>Elegí materiales y herramientas para avanzar tu obra hoy mismo.</h2>
           </div>
           <Link to="/explorar" className="ghost-link">
             Ver catálogo completo →
@@ -361,19 +361,15 @@ export default function Landing() {
 
       <section className="hero-section">
         <div className="hero-copy">
-          <span className="eyebrow">Tu empresa, visible para toda la obra</span>
-          <h1>La vitrina digital donde barracas y empresas venden materiales de construcción.</h1>
+          <span className="eyebrow">Comprá simple, rápido y con respaldo</span>
+          <h1>Todo para tu obra y tu hogar en un solo catálogo.</h1>
           <p className="hero-text">
-            MercadObra conecta proveedores con clientes del rubro para que puedan
-            descubrir, comparar y consultar productos de forma simple, rápida y profesional.
+            MercadObra te ayuda a encontrar materiales, comparar opciones y contactar
+            proveedores confiables sin perder tiempo entre sitios y cotizaciones.
           </p>
           <div className="hero-actions">
-            <a href="/#contacto" className="primary-link large-link">
-              Quiero publicar mi catálogo
-            </a>
-            <a href="/#como-funciona" className="ghost-link large-link">
-              Cómo funciona
-            </a>
+            <Link to="/explorar" className="primary-link large-link">Explorar productos</Link>
+            <Link to="/proveedor/login" className="ghost-link large-link">Ingreso proveedores</Link>
           </div>
           <ul className="metrics" aria-label="Indicadores principales">
             {metrics.map((item) => (
@@ -390,21 +386,21 @@ export default function Landing() {
           <img src={logoImg} className="hero-logo" alt="Logo MercadObra" />
           <img src={heroImg} alt="Ilustración de materiales y herramientas de obra" />
           <div className="hero-card-content">
-            <p className="card-kicker">Pensado para el sector</p>
-            <h2>Mostrá tus productos, generá contactos y hacé crecer tu presencia online.</h2>
-            <p>Desde hierro y áridos hasta terminaciones y herramientas, todo en un solo lugar.</p>
+            <p className="card-kicker">Pensado para particulares</p>
+            <h2>Buscá, compará y comprá con tranquilidad para cada etapa de tu proyecto.</h2>
+            <p>Desde obra gruesa hasta terminaciones, encontrá todo en un solo lugar con proveedores reales.</p>
           </div>
         </div>
       </section>
 
       <section className="info-strip">
-        <p>MercadObra nace para impulsar la venta digital de materiales, herramientas y soluciones para la construcción.</p>
+        <p>MercadObra está diseñado para que clientes particulares compren materiales de construcción con más claridad, confianza y velocidad.</p>
       </section>
 
       <section className="section" id="categorias">
         <div className="section-heading">
           <span className="eyebrow">Categorías destacadas</span>
-          <h2>Todo lo que una obra necesita, organizado para vender mejor.</h2>
+          <h2>Todo lo que tu obra necesita, organizado para decidir mejor.</h2>
         </div>
         <div className="categories-grid">
           {categories.map((cat) => (
@@ -419,31 +415,31 @@ export default function Landing() {
       <section className="section section-alt" id="como-funciona">
         <div className="section-heading narrow">
           <span className="eyebrow">Cómo funciona</span>
-          <h2>Una presencia digital simple para empresas y barracas.</h2>
+          <h2>Comprar materiales online nunca fue tan simple.</h2>
         </div>
         <div className="steps-grid">
           <article className="step-card">
             <span>01</span>
-            <h3>Creá tu perfil</h3>
-            <p>Presentá tu empresa, ubicación, rubro y datos de contacto profesionales.</p>
+            <h3>Buscá lo que necesitás</h3>
+            <p>Filtrá por producto, categoría o proveedor y encontrá opciones rápido.</p>
           </article>
           <article className="step-card">
             <span>02</span>
-            <h3>Publicá productos</h3>
-            <p>Subí fotos, precios, descripciones y destacá el stock o condiciones comerciales.</p>
+            <h3>Compará y consultá</h3>
+            <p>Revisá precios, disponibilidad y resolvé dudas antes de concretar la compra.</p>
           </article>
           <article className="step-card">
             <span>03</span>
-            <h3>Recibí consultas</h3>
-            <p>Conectá con clientes interesados en materiales para obra, reforma o mantenimiento.</p>
+            <h3>Comprá y hacé seguimiento</h3>
+            <p>Elegí tu proveedor y seguí el estado del pedido hasta la entrega.</p>
           </article>
         </div>
       </section>
 
       <section className="section benefits-section">
-        <div className="section-heading narrow-left">
+        <div className="section-heading narrow">
           <span className="eyebrow">Por qué MercadObra</span>
-          <h2>Una plataforma creada para tu empresa y para el ritmo del rubro.</h2>
+          <h2>Una experiencia de compra pensada para clientes particulares.</h2>
         </div>
         <div className="benefits-panel">
           <ul className="benefits-list">
@@ -451,16 +447,16 @@ export default function Landing() {
           </ul>
           <aside className="highlight-box">
             <p className="card-kicker">Ideal para</p>
-            <h3>Barracas, corralones, importadores, fabricantes y distribuidores.</h3>
-            <p>Si vendés productos para la construcción, MercadObra te ayuda a mostrar tu oferta de manera clara y profesional.</p>
+            <h3>Quienes construyen, reforman o equipan su hogar por primera vez.</h3>
+            <p>MercadObra te da contexto para comprar con confianza, sin tecnicismos innecesarios y con acceso directo a proveedores.</p>
           </aside>
         </div>
       </section>
 
       <section className="section testimonios-section" id="testimonios">
         <div className="section-heading">
-          <span className="eyebrow">Lo que dicen nuestros proveedores</span>
-          <h2>Historias de éxito en MercadObra</h2>
+          <span className="eyebrow">Lo que dicen nuestros clientes</span>
+          <h2>Experiencias reales de compra en MercadObra</h2>
         </div>
 
         <div className="testimonios-grid">
@@ -484,9 +480,18 @@ export default function Landing() {
       </section>
 
       <section className="section cta-section" id="contacto">
-        <span className="eyebrow">Sumate desde el inicio</span>
-        <h2>Activá tu plan Pro o Premium para publicar tu catálogo.</h2>
-        <p>Completá este formulario y el equipo comercial te contacta para iniciar tu alta en MercadObra.</p>
+        <span className="eyebrow">Espacio para proveedores</span>
+        <h2>¿Sos proveedor? Mantené tu acceso y gestioná tu cuenta.</h2>
+        <p>Ingresá a tu panel o dejanos tus datos para activar tu plan Pro o Premium.</p>
+
+        <div className="supplier-access-row" aria-label="Acceso para proveedores">
+          <Link to="/proveedor/login" className="ghost-link large-link supplier-access-link">
+            Iniciar sesión de proveedor
+          </Link>
+          <Link to="/proveedor" className="primary-link large-link supplier-access-link">
+            Ir al panel proveedor
+          </Link>
+        </div>
 
         <form className="lead-form" onSubmit={handleLeadSubmit}>
           <div className="lead-form-grid">
