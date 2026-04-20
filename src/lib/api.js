@@ -5,6 +5,9 @@ async function request(path, options = {}) {
   const requestUrl = `${API_BASE_URL}${path}`
   let response
 
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 25000)
+
   try {
     response = await fetch(requestUrl, {
       headers: {
@@ -12,10 +15,16 @@ async function request(path, options = {}) {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(options.headers || {}),
       },
+      signal: controller.signal,
       ...options,
     })
-  } catch {
+  } catch (fetchError) {
+    if (fetchError?.name === 'AbortError') {
+      throw new Error('El servidor tardó demasiado en responder. Intentá de nuevo en unos segundos.')
+    }
     throw new Error(`No se pudo conectar con el servidor (${API_BASE_URL}). Verificá backend y VITE_API_BASE_URL.`)
+  } finally {
+    clearTimeout(timeoutId)
   }
 
   if (!response.ok) {
@@ -103,6 +112,10 @@ export function updateOrderStatus(orderId, status, token) {
     token,
     body: JSON.stringify({ status }),
   })
+}
+
+export function pingBackend() {
+  return fetch(`${API_BASE_URL}/health`, { method: 'GET' }).catch(() => null)
 }
 
 export { API_BASE_URL }

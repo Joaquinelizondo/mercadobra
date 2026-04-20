@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { sendChatMessage } from '../lib/api'
+import { useEffect, useMemo, useState } from 'react'
+import { pingBackend, sendChatMessage } from '../lib/api'
 
 const WELCOME_MESSAGE = {
   role: 'assistant',
@@ -13,6 +13,13 @@ export default function ChatWidget() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // keep-alive: pingea el backend cada 9 minutos para que Render no duerma
+  useEffect(() => {
+    pingBackend()
+    const interval = setInterval(pingBackend, 9 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   const history = useMemo(
     () =>
@@ -44,7 +51,12 @@ export default function ChatWidget() {
         },
       ])
     } catch (requestError) {
-      setError(requestError.message || 'No se pudo conectar con el chat')
+      const msg = requestError.message || ''
+      setError(
+        msg.includes('tard') || msg.includes('AbortError')
+          ? 'El servidor está despertando, intentá de nuevo en 20 segundos.'
+          : 'No se pudo conectar con el chat. Intentá de nuevo.'
+      )
     } finally {
       setLoading(false)
     }
