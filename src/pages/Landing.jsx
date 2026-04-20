@@ -47,7 +47,59 @@ const testimonios = [
   }
 ]
 
+const journeyTracks = [
+  {
+    id: 'express',
+    title: 'Ruta Express 72h',
+    subtitle: 'Para resolver compras urgentes sin perder control de precio.',
+    audience: 'Ideal para arreglos rápidos y entregas inmediatas',
+    plan: 'premium',
+    checklist: [
+      'Filtrado por stock disponible en el momento.',
+      'Prioridad en proveedores con respuesta más rápida.',
+      'Seguimiento activo desde compra hasta entrega.',
+    ],
+  },
+  {
+    id: 'smart',
+    title: 'Ruta Ahorro Inteligente',
+    subtitle: 'Para comparar opciones y optimizar cada peso de tu obra.',
+    audience: 'Ideal para remodelaciones planificadas',
+    plan: 'pro',
+    checklist: [
+      'Comparación por categoría y rango de precio.',
+      'Selección de favoritos para decidir sin presión.',
+      'Contacto directo con proveedores verificados.',
+    ],
+  },
+  {
+    id: 'proyecto',
+    title: 'Ruta Proyecto Completo',
+    subtitle: 'Para obras por etapas con compras ordenadas.',
+    audience: 'Ideal para ampliaciones, obra nueva o cambios grandes',
+    plan: 'premium',
+    checklist: [
+      'Planificación por etapa: obra gruesa, instalaciones y terminaciones.',
+      'Recomendaciones de categorías según avance de obra.',
+      'Soporte para seguimiento de pedidos en paralelo.',
+    ],
+  },
+]
+
+const projectTypeOptions = [
+  'Remodelación de cocina/baño',
+  'Ampliación de ambientes',
+  'Construcción desde cero',
+  'Mantenimiento y arreglos',
+  'Equipamiento y terminaciones',
+]
+
+const timelineOptions = ['Lo necesito esta semana', 'Durante este mes', 'En 1 a 3 meses']
+
+const budgetOptions = ['Hasta ARS 500.000', 'ARS 500.000 a 2.000.000', 'Más de ARS 2.000.000']
+
 const RECENT_SEARCHES_KEY = 'mercadobra-recent-searches'
+const WHATSAPP_NUMBER = String(import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(/\D/g, '')
 
 export default function Landing() {
   const navigate = useNavigate()
@@ -63,14 +115,23 @@ export default function Landing() {
     phone: '',
     zone: '',
     plan: 'pro',
+    projectType: projectTypeOptions[0],
+    timeline: timelineOptions[1],
+    budgetRange: budgetOptions[0],
     message: '',
   })
+  const [activeTrackId, setActiveTrackId] = useState('smart')
   const [leadSubmitting, setLeadSubmitting] = useState(false)
   const [leadError, setLeadError] = useState('')
   const [leadSuccess, setLeadSuccess] = useState('')
   const searchTimerRef = useRef(null)
+  const leadSectionRef = useRef(null)
   const featured = productList.slice(0, 6)
   const normalizedFeaturedInput = featuredSearchInput.trim().toLowerCase()
+  const activeTrack = useMemo(
+    () => journeyTracks.find((track) => track.id === activeTrackId) || journeyTracks[1],
+    [activeTrackId]
+  )
 
   const featuredSuggestionItems = useMemo(() => {
     const productNames = [...new Set(productList.map((product) => product.name))].map((value) => ({
@@ -205,6 +266,58 @@ export default function Landing() {
     }))
   }
 
+  function activateTrack(track) {
+    setActiveTrackId(track.id)
+    setLeadForm((previous) => ({
+      ...previous,
+      plan: track.plan,
+      message: previous.message || `Quiero activar la ${track.title} para mi proyecto.`,
+    }))
+  }
+
+  function startGuidedLeadCapture() {
+    setLeadForm((previous) => ({
+      ...previous,
+      plan: activeTrack.plan,
+      message: previous.message || `Necesito asesoría para ${previous.projectType.toLowerCase()} con foco en ${activeTrack.title}.`,
+    }))
+    leadSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function buildLeadBrief(formValues) {
+    return [
+      `Ruta seleccionada: ${activeTrack.title}`,
+      `Tipo de proyecto: ${formValues.projectType}`,
+      `Plazo estimado: ${formValues.timeline}`,
+      `Presupuesto estimado: ${formValues.budgetRange}`,
+    ].join('\n')
+  }
+
+  function openLeadWhatsapp() {
+    const fallbackCompany = leadForm.company.trim() || 'Cliente particular'
+    const lines = [
+      'Hola MercadObra, quiero asesoria comercial para mi obra.',
+      '',
+      `Ruta: ${activeTrack.title}`,
+      `Nombre: ${leadForm.name.trim() || 'No informado'}`,
+      `Empresa/Particular: ${fallbackCompany}`,
+      `Telefono: ${leadForm.phone.trim() || 'No informado'}`,
+      `Email: ${leadForm.email.trim() || 'No informado'}`,
+      `Zona: ${leadForm.zone.trim() || 'No informada'}`,
+      `Proyecto: ${leadForm.projectType}`,
+      `Plazo: ${leadForm.timeline}`,
+      `Presupuesto: ${leadForm.budgetRange}`,
+    ]
+
+    if (leadForm.message.trim()) {
+      lines.push('', `Detalle: ${leadForm.message.trim()}`)
+    }
+
+    const message = encodeURIComponent(lines.join('\n'))
+    const endpoint = WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}` : 'https://wa.me/'
+    window.open(`${endpoint}?text=${message}`, '_blank', 'noopener,noreferrer')
+  }
+
   async function handleLeadSubmit(event) {
     event.preventDefault()
     if (leadSubmitting) {
@@ -216,7 +329,14 @@ export default function Landing() {
     setLeadSuccess('')
 
     try {
-      await createLead(leadForm)
+      const fallbackCompany = leadForm.company.trim() || 'Cliente particular'
+      const brief = buildLeadBrief(leadForm)
+
+      await createLead({
+        ...leadForm,
+        company: fallbackCompany,
+        message: [leadForm.message.trim(), brief].filter(Boolean).join('\n\n'),
+      })
       setLeadSuccess('¡Gracias! Recibimos tu solicitud y te contactamos a la brevedad.')
       setLeadForm({
         name: '',
@@ -225,6 +345,9 @@ export default function Landing() {
         phone: '',
         zone: '',
         plan: 'pro',
+        projectType: projectTypeOptions[0],
+        timeline: timelineOptions[1],
+        budgetRange: budgetOptions[0],
         message: '',
       })
     } catch (error) {
@@ -238,8 +361,8 @@ export default function Landing() {
     <>
       <section className="section featured-search-section" id="inicio">
         <div className="section-heading narrow">
-          <h2>Comprá los mejores materiales para tu construcción ahora.</h2>
-          <p>Buscá productos para compra directa o consultá al proveedor en segundos.</p>
+          <h2>Diseñá tu compra ideal para la obra, no solo una búsqueda más.</h2>
+          <p>Buscá productos para compra directa o creá una ruta personalizada para comprar con más claridad.</p>
         </div>
         <div className="catalog-search-wrap">
           <label htmlFor="featured-search" className="catalog-search-label">
@@ -335,6 +458,46 @@ export default function Landing() {
         </div>
       </section>
 
+      <section className="section journey-studio-section" id="journey-studio">
+        <div className="section-heading narrow-left">
+          <span className="eyebrow">Journey Studio</span>
+          <h2>Una experiencia de compra que se adapta al momento real de tu obra.</h2>
+          <p>Elegí una ruta y activá una guía personalizada para convertir visitas en decisiones de compra.</p>
+        </div>
+
+        <div className="journey-track-grid" role="tablist" aria-label="Rutas de compra">
+          {journeyTracks.map((track) => (
+            <button
+              key={track.id}
+              type="button"
+              className={`journey-track-card${activeTrackId === track.id ? ' journey-track-card--active' : ''}`}
+              onClick={() => activateTrack(track)}
+            >
+              <span className="journey-track-pill">{track.plan === 'premium' ? 'Atención Premium' : 'Atención Pro'}</span>
+              <h3>{track.title}</h3>
+              <p>{track.subtitle}</p>
+              <small>{track.audience}</small>
+            </button>
+          ))}
+        </div>
+
+        <div className="journey-playbook" aria-live="polite">
+          <div>
+            <p className="card-kicker">Playbook activo</p>
+            <h3>{activeTrack.title}</h3>
+            <p>{activeTrack.subtitle}</p>
+          </div>
+          <ul>
+            {activeTrack.checklist.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          <button type="button" className="primary-link large-link lead-submit-btn" onClick={startGuidedLeadCapture}>
+            Activar esta ruta para mi proyecto
+          </button>
+        </div>
+      </section>
+
       <section className="section featured-section" id="featured-results">
         <div className="catalog-section-heading">
           <div className="section-heading" style={{ flex: 1 }}>
@@ -362,10 +525,10 @@ export default function Landing() {
       <section className="hero-section">
         <div className="hero-copy">
           <span className="eyebrow">Comprá simple, rápido y con respaldo</span>
-          <h1>Todo para tu obra y tu hogar en un solo catálogo.</h1>
+          <h1>Tu obra, tu ritmo: una experiencia pensada para decidir mejor.</h1>
           <p className="hero-text">
-            MercadObra te ayuda a encontrar materiales, comparar opciones y contactar
-            proveedores confiables sin perder tiempo entre sitios y cotizaciones.
+            MercadObra combina catálogo, comparación y asesoría en un mismo flujo para que cada visita
+            avance hacia una compra real, sin fricción y con contexto.
           </p>
           <div className="hero-actions">
             <Link to="/explorar" className="primary-link large-link">Explorar productos</Link>
@@ -479,10 +642,10 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="section cta-section" id="contacto">
-        <span className="eyebrow">Espacio para proveedores</span>
-        <h2>¿Sos proveedor? Mantené tu acceso y gestioná tu cuenta.</h2>
-        <p>Ingresá a tu panel o dejanos tus datos para activar tu plan Pro o Premium.</p>
+      <section className="section cta-section" id="contacto" ref={leadSectionRef}>
+        <span className="eyebrow">Lead Concierge</span>
+        <h2>Convertí tu interés en un plan de compra accionable.</h2>
+        <p>Dejanos tus datos y recibí una guía inicial según etapa, plazo y presupuesto de tu proyecto.</p>
 
         <div className="supplier-access-row" aria-label="Acceso para proveedores">
           <Link to="/proveedor/login" className="ghost-link large-link supplier-access-link">
@@ -508,14 +671,14 @@ export default function Landing() {
             </label>
 
             <label className="form-field" htmlFor="lead-company">
-              <span className="form-label">Empresa</span>
+              <span className="form-label">Empresa o particular</span>
               <input
                 id="lead-company"
                 name="company"
                 className="form-input"
                 value={leadForm.company}
                 onChange={handleLeadInputChange}
-                required
+                placeholder="Ej: Cliente particular"
               />
             </label>
 
@@ -557,7 +720,7 @@ export default function Landing() {
             </label>
 
             <label className="form-field" htmlFor="lead-plan">
-              <span className="form-label">Plan</span>
+              <span className="form-label">Nivel de acompañamiento</span>
               <select
                 id="lead-plan"
                 name="plan"
@@ -566,8 +729,53 @@ export default function Landing() {
                 onChange={handleLeadInputChange}
                 required
               >
-                <option value="pro">Pro</option>
-                <option value="premium">Premium</option>
+                <option value="pro">Pro · guía y comparación</option>
+                <option value="premium">Premium · respuesta prioritaria</option>
+              </select>
+            </label>
+
+            <label className="form-field" htmlFor="lead-project-type">
+              <span className="form-label">Tipo de proyecto</span>
+              <select
+                id="lead-project-type"
+                name="projectType"
+                className="form-input"
+                value={leadForm.projectType}
+                onChange={handleLeadInputChange}
+              >
+                {projectTypeOptions.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="form-field" htmlFor="lead-timeline">
+              <span className="form-label">Plazo estimado</span>
+              <select
+                id="lead-timeline"
+                name="timeline"
+                className="form-input"
+                value={leadForm.timeline}
+                onChange={handleLeadInputChange}
+              >
+                {timelineOptions.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="form-field" htmlFor="lead-budget-range">
+              <span className="form-label">Presupuesto aproximado</span>
+              <select
+                id="lead-budget-range"
+                name="budgetRange"
+                className="form-input"
+                value={leadForm.budgetRange}
+                onChange={handleLeadInputChange}
+              >
+                {budgetOptions.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
               </select>
             </label>
           </div>
@@ -581,7 +789,7 @@ export default function Landing() {
               value={leadForm.message}
               onChange={handleLeadInputChange}
               rows={4}
-              placeholder="Contanos qué tipo de productos querés publicar"
+              placeholder="Contanos qué querés resolver primero en tu obra"
             />
           </label>
 
@@ -590,9 +798,14 @@ export default function Landing() {
 
           <div className="hero-actions centered-actions">
             <button type="submit" className="primary-link large-link lead-submit-btn" disabled={leadSubmitting}>
-              {leadSubmitting ? 'Enviando...' : 'Solicitar alta Pro/Premium'}
+              {leadSubmitting ? 'Enviando...' : 'Quiero mi plan de compra personalizado'}
+            </button>
+            <button type="button" className="whatsapp-direct-btn" onClick={openLeadWhatsapp}>
+              Hablar por WhatsApp ahora
             </button>
           </div>
+
+          <p className="whatsapp-direct-hint">Canal comercial directo para respuesta rapida por WhatsApp.</p>
         </form>
       </section>
     </>
