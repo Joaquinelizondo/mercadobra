@@ -2,14 +2,21 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000
 
 async function request(path, options = {}) {
   const token = options.token || ''
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
-    ...options,
-  })
+  const requestUrl = `${API_BASE_URL}${path}`
+  let response
+
+  try {
+    response = await fetch(requestUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+      ...options,
+    })
+  } catch {
+    throw new Error(`No se pudo conectar con el servidor (${API_BASE_URL}). Verificá backend y VITE_API_BASE_URL.`)
+  }
 
   if (!response.ok) {
     let message = `HTTP ${response.status}`
