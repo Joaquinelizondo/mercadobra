@@ -30,27 +30,107 @@ function scoreProduct(product, text) {
   return score
 }
 
+function detectCategoryHint(text = '') {
+  const value = text.toLowerCase()
+  if (/cement|arena|hormigon|hormig[oó]n|ladrill|cal/.test(value)) return 'Materiales'
+  if (/hierro|acero|perfil|malla|adn/.test(value)) return 'Estructura'
+  if (/pintura|porcelanato|grifer|sanitari|revest/.test(value)) return 'Terminaciones'
+  if (/amoladora|taladro|herramienta|casco|epp/.test(value)) return 'Herramientas'
+  return null
+}
+
+function extractBudget(text = '') {
+  const lower = text.toLowerCase()
+  const match = lower.match(/(\d[\d\.,]*)\s*(pesos|ars|\$|usd|u\$s|dolares|dólares)?/)
+  if (!match) return null
+
+  const amountRaw = match[1].replace(/\./g, '').replace(',', '.')
+  const amount = Number(amountRaw)
+  if (!Number.isFinite(amount) || amount <= 0) return null
+
+  const currencyRaw = match[2] || ''
+  const currency = /usd|u\$s|dolares|dólares/.test(currencyRaw) ? 'USD' : 'ARS'
+  return { amount, currency }
+}
+
+function needsUnitClarification(text = '') {
+  const lower = text.toLowerCase()
+  const asksKg = /\b(kilo|kilos|kg)\b/.test(lower)
+  const asksCement = /cement/.test(lower)
+  return asksKg && asksCement
+}
+
+function formatProductLine(product) {
+  const stock = Number(product.stock)
+  const stockText = stock > 0 ? `stock: ${stock}` : 'sin stock'
+  return `- ${product.name} (${product.category}) · ${product.company} · $${Number(product.price).toLocaleString('es-AR')} / ${product.unit} · ${stockText}`
+}
+
 function fallbackReply(message, products) {
   const normalizedMessage = String(message || '').trim()
-  const sorted = [...products]
+  const lowerMessage = normalizedMessage.toLowerCase()
+  const sortedByRelevance = [...products]
     .map((product) => ({ product, score: scoreProduct(product, normalizedMessage) }))
     .sort((a, b) => b.score - a.score)
 
-  const bestMatches = sorted.filter((entry) => entry.score > 0).slice(0, 3).map((entry) => entry.product)
-  const featured = (bestMatches.length ? bestMatches : products.slice(0, 3)).slice(0, 3)
+  const categoryHint = detectCategoryHint(normalizedMessage)
+  const budget = extractBudget(normalizedMessage)
+  const categoryFiltered = categoryHint
+    ? products.filter((item) => String(item.category || '').toLowerCase() === categoryHint.toLowerCase())
+    : products
 
-  const lines = featured.map((product) => {
-    const stock = Number(product.stock)
-    const stockText = stock > 0 ? `stock: ${stock}` : 'sin stock'
-    return `- ${product.name} (${product.category}) · ${product.company} · $${Number(product.price).toLocaleString('es-AR')} / ${product.unit} · ${stockText}`
-  })
+  const relevantMatches = sortedByRelevance
+    .filter((entry) => entry.score > 0)
+    .map((entry) => entry.product)
 
-  return [
-    'Puedo ayudarte con materiales, precios orientativos y alternativas por categoría.',
-    'Te recomiendo estos productos de MercadObra:',
-    ...lines,
-    'Si querés, decime presupuesto, rubro (hormigón, hierro, terminaciones o herramientas) y zona para afinar la recomendación.'
-  ].join('\n')
+  let candidates = relevantMatches.length ? relevantMatches : categoryFiltered
+
+  if (budget?.currency === 'ARS') {
+    const affordable = candidates.filter((item) => Number(item.price) <= budget.amount)
+    if (affordable.length) {
+      candidates = affordable
+    }
+  }
+
+  const featured = candidates.slice(0, 3)
+  const lines = (featured.length ? featured : products.slice(0, 3)).map(formatProductLine)
+  const response = []
+
+  if (/^hola\b|buenas|buen d[ií]a|buenas tardes|buenas noches/.test(lowerMessage)) {
+    response.push('Genial, te ayudo a elegir materiales para que compres mejor.')
+  } else {
+    response.push('Perfecto, revisé tu consulta y te paso opciones concretas del catálogo.')
+  }
+
+  if (needsUnitClarification(normalizedMessage)) {
+    response.push('Dato clave: en este momento el cemento se publica por bolsa, no por kilo. Igual te paso opciones para que compares costo final.')
+  }
+
+  if (budget?.currency === 'ARS') {
+    response.push(`Tomé como referencia un presupuesto de $${budget.amount.toLocaleString('es-AR')} ARS.`)
+  } else if (budget?.currency === 'USD') {
+    response.push('Veo que pasaste presupuesto en USD. Si querés, lo convierto a ARS con tu tipo de cambio objetivo y te armo una selección más precisa.')
+  }
+
+  if (categoryHint) {
+    response.push(`Enfoco la búsqueda en ${categoryHint.toLowerCase()} para que sea más útil.`)
+  }
+
+  response.push('Opciones recomendadas:')
+  response.push(...lines)
+
+  if (budget?.currency === 'ARS' && !candidates.length) {
+    const cheapest = [...products].sort((a, b) => Number(a.price) - Number(b.price))[0]
+    if (cheapest) {
+      response.push(
+        `Con ese presupuesto hoy no hay opciones directas cargadas. La alternativa más accesible es ${cheapest.name} a $${Number(cheapest.price).toLocaleString('es-AR')} / ${cheapest.unit}.`
+      )
+    }
+  }
+
+  response.push('Si me pasás zona de entrega y si priorizás precio o rapidez, te devuelvo una recomendación más fina.')
+
+  return response.join('\n')
 }
 
 async function callOpenAI(messages) {
