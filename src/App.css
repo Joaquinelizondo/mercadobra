@@ -3702,6 +3702,29 @@ a:focus-visible {
   color: #b91c1c;
 }
 
+.chat-widget-error-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.chat-widget-retry {
+  border: none;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.chat-widget-retry:hover {
+  background: #fecaca;
+}
+
 .chat-widget-form {
   padding: 10px;
   border-top: 1px solid var(--border);

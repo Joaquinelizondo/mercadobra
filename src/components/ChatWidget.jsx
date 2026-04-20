@@ -52,10 +52,11 @@ export default function ChatWidget() {
       ])
     } catch (requestError) {
       const msg = requestError.message || ''
+      const isTimeout = msg.includes('tard') || msg.toLowerCase().includes('abort') || msg.includes('despertando')
       setError(
-        msg.includes('tard') || msg.includes('AbortError')
-          ? 'El servidor está despertando, intentá de nuevo en 20 segundos.'
-          : 'No se pudo conectar con el chat. Intentá de nuevo.'
+        isTimeout
+          ? '⏳ El servidor está despertando. Tocá "Reintentar" en unos segundos.'
+          : '⚠️ No se pudo conectar. Tocá "Reintentar" o recargá la página.'
       )
     } finally {
       setLoading(false)
@@ -91,7 +92,24 @@ export default function ChatWidget() {
               </article>
             ))}
             {loading && <p className="chat-widget-loading">Escribiendo respuesta…</p>}
-            {error && <p className="chat-widget-error">{error}</p>}
+            {error && (
+              <div className="chat-widget-error-block">
+                <p className="chat-widget-error">{error}</p>
+                <button
+                  type="button"
+                  className="chat-widget-retry"
+                  onClick={() => {
+                    const lastUser = [...messages].reverse().find((m) => m.role === 'user')
+                    if (lastUser) {
+                      setError('')
+                      setInput(lastUser.content)
+                    }
+                  }}
+                >
+                  Reintentar
+                </button>
+              </div>
+            )}
           </div>
 
           <form className="chat-widget-form" onSubmit={handleSend}>
