@@ -3,6 +3,7 @@ import Topbar from './Topbar'
 import Footer from './Footer'
 import Cart from './Cart'
 import ChatWidget from './ChatWidget'
+import WhatsAppButton from './WhatsAppButton'
 
 export default function Layout() {
   return (
@@ -12,6 +13,7 @@ export default function Layout() {
       <Footer />
       <Cart />
       <ChatWidget />
+      <WhatsAppButton />
     </main>
   )
 }
