@@ -14,6 +14,10 @@ const SMTP_PORT = Number(process.env.SMTP_PORT || 587)
 const SMTP_USER = process.env.SMTP_USER || ''
 const SMTP_PASS = process.env.SMTP_PASS || ''
 const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER || ''
+const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
+const RESEND_FROM = process.env.RESEND_FROM || SMTP_FROM || ''
+const EMAIL_SEND_TIMEOUT_MS = Number(process.env.EMAIL_SEND_TIMEOUT_MS || 12000)
+const WHATSAPP_SEND_TIMEOUT_MS = Number(process.env.WHATSAPP_SEND_TIMEOUT_MS || 12000)
 
 const STATUS_LABELS = {
   pending: 'Pendiente',
@@ -24,16 +28,28 @@ const STATUS_LABELS = {
   cancelled: 'Cancelada',
 }
 
+function withTimeout(promise, timeoutMs, label) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timeout`)), timeoutMs)
+    promise
+      .then((value) => {
+        clearTimeout(timer)
+        resolve(value)
+      })
+      .catch((error) => {
+        clearTimeout(timer)
+        reject(error)
+      })
+  })
+}
+
 function formatMessage(order) {
   const statusLabel = STATUS_LABELS[order.status] || order.status || 'Actualizada'
   const trackingUrl = order.trackingToken
     ? `${FRONTEND_PUBLIC_URL}/seguimiento/${order.trackingToken}?phone=${encodeURIComponent(order.buyerPhone || '')}`
     : ''
 
-  const lines = [
-    `MercadObra · Orden #${order.id}`,
-    `Nuevo estado: ${statusLabel}`,
-  ]
+  const lines = [`MercadObra · Orden #${order.id}`, `Nuevo estado: ${statusLabel}`]
 
   if (trackingUrl) {
     lines.push(`Seguimiento: ${trackingUrl}`)
@@ -176,6 +192,9 @@ function getTransporter() {
       host: SMTP_HOST,
       port: SMTP_PORT,
       secure: SMTP_PORT === 465,
+      connectionTimeout: EMAIL_SEND_TIMEOUT_MS,
+      greetingTimeout: EMAIL_SEND_TIMEOUT_MS,
+      socketTimeout: EMAIL_SEND_TIMEOUT_MS,
       auth: {
         user: SMTP_USER,
         pass: SMTP_PASS,
@@ -196,22 +215,45 @@ function formatRecommendationItems(products = []) {
   })
 }
 
+async function sendRecommendationEmailViaResend({ email, subject, text, html }) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), EMAIL_SEND_TIMEOUT_MS)
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: RESEND_FROM,
+        to: [email],
+        subject,
+        text,
+        html,
+      }),
+      signal: controller.signal,
+    })
+
+    if (!response.ok) {
+      const responseText = await response.text()
+      throw new Error(`Resend notification failed (${response.status}): ${responseText.slice(0, 160)}`)
+    }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 async function sendRecommendationEmail(email, searchTerm, products) {
   if (!email) {
     return { sent: false, channel: 'email', reason: 'email missing' }
   }
 
-  const emailTransporter = getTransporter()
   const items = formatRecommendationItems(products)
-
-  if (!emailTransporter) {
-    console.log('[recommendation:email:mock]', { email, searchTerm, items })
-    return { sent: true, channel: 'email-mock' }
-  }
-
   const subject = `MercadObra: opciones para "${searchTerm}"`
   const text = [
-    `Hola,`,
+    'Hola,',
     '',
     `Estas son algunas opciones que encontramos para: ${searchTerm}`,
     '',
@@ -227,13 +269,28 @@ async function sendRecommendationEmail(email, searchTerm, products) {
     <p><a href="${FRONTEND_PUBLIC_URL}/explorar?q=${encodeURIComponent(searchTerm)}">Ver más resultados</a></p>
   `
 
-  await emailTransporter.sendMail({
-    from: SMTP_FROM,
-    to: email,
-    subject,
-    text,
-    html,
-  })
+  if (RESEND_API_KEY && RESEND_FROM) {
+    await sendRecommendationEmailViaResend({ email, subject, text, html })
+    return { sent: true, channel: 'email-resend' }
+  }
+
+  const emailTransporter = getTransporter()
+  if (!emailTransporter) {
+    console.log('[recommendation:email:mock]', { email, searchTerm, items })
+    return { sent: true, channel: 'email-mock' }
+  }
+
+  await withTimeout(
+    emailTransporter.sendMail({
+      from: SMTP_FROM,
+      to: email,
+      subject,
+      text,
+      html,
+    }),
+    EMAIL_SEND_TIMEOUT_MS,
+    'email send'
+  )
 
   return { sent: true, channel: 'email-smtp' }
 }
@@ -259,7 +316,7 @@ async function sendRecommendationWhatsapp(phone, searchTerm, products) {
     searchTerm,
   }
 
-  const channel = await sendViaWhatsappProvider(payload)
+  const channel = await withTimeout(sendViaWhatsappProvider(payload), WHATSAPP_SEND_TIMEOUT_MS, 'whatsapp send')
   return { sent: true, channel }
 }
 
@@ -283,7 +340,7 @@ export async function notifyOrderStatusChanged(order) {
   }
 
   try {
-    const channel = await sendViaWhatsappProvider(payload)
+    const channel = await withTimeout(sendViaWhatsappProvider(payload), WHATSAPP_SEND_TIMEOUT_MS, 'order whatsapp send')
     return {
       sent: true,
       channel,

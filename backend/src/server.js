@@ -519,16 +519,37 @@ app.post('/search-contacts', async (req, res) => {
   const repo = await getRepository()
   const created = await repo.createSearchContact(payload)
   const matchedProducts = await repo.getProducts({ q: payload.searchTerm, stock: 'in' })
-  const notifications = await notifySearchRecommendations({
+
+  // Respond quickly so search UX never waits on external providers (SMTP/WhatsApp).
+  void notifySearchRecommendations({
     email: payload.email,
     phone: payload.phone,
     searchTerm: payload.searchTerm,
     products: matchedProducts,
   })
+    .then((notifications) => {
+      console.log('[search-contacts:notifications]', {
+        searchTerm: payload.searchTerm,
+        emailChannel: notifications?.email?.channel,
+        emailSent: notifications?.email?.sent,
+        whatsappChannel: notifications?.whatsapp?.channel,
+        whatsappSent: notifications?.whatsapp?.sent,
+      })
+    })
+    .catch((error) => {
+      console.error('[search-contacts:notifications:error]', error)
+    })
 
   return res.status(201).json({
     ...created,
-    notifications,
+    notifications: {
+      email: payload.email
+        ? { sent: false, channel: 'email-pending', reason: 'processing' }
+        : { sent: false, channel: 'email', reason: 'email missing' },
+      whatsapp: payload.phone
+        ? { sent: false, channel: 'whatsapp-pending', reason: 'processing' }
+        : { sent: false, channel: 'whatsapp', reason: 'phone missing' },
+    },
     matches: matchedProducts.slice(0, 5).map((product) => ({
       id: product.id,
       name: product.name,
