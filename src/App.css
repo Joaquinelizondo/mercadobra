@@ -25,6 +25,19 @@
   top: 0;
   z-index: 40;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  pointer-events: none;
+}
+
+.topbar a,
+.topbar button,
+.topbar input,
+.topbar select,
+.topbar textarea,
+.topbar nav,
+.topbar .brand-wrap,
+.topbar .topbar-actions,
+.topbar .topbar-menu {
+  pointer-events: auto;
 }
 
 .brand-wrap {

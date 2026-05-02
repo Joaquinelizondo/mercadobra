@@ -144,5 +144,21 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  return useContext(AuthContext)
+  return (
+    useContext(AuthContext) || {
+      supplierUser: null,
+      token: '',
+      login: async () => null,
+      logout: () => {},
+      authError: '',
+      authLoading: false,
+      customerUser: null,
+      customerToken: '',
+      customerAuthError: '',
+      customerAuthLoading: false,
+      loginCustomer: async () => null,
+      registerCustomer: async () => null,
+      logoutCustomer: () => {},
+    }
+  )
 }
