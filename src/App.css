@@ -2491,6 +2491,21 @@
   gap: 8px;
 }
 
+.cart-payment-header {
+  margin: 6px 16px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(234, 88, 12, 0.08);
+  border: 1px solid rgba(234, 88, 12, 0.2);
+}
+
+.cart-payment-header p {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #9a3412;
+}
+
 .cart-order-error {
   margin: 6px 0 0;
   color: #dc2626;
@@ -2642,12 +2657,21 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 .payment-option-label {
   font-size: 0.92rem;
   font-weight: 700;
   color: #1f2937;
+}
+.payment-option-tag {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #9a3412;
+  background: rgba(234, 88, 12, 0.12);
 }
 .payment-option-detail {
   font-size: 0.78rem;

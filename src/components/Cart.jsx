@@ -9,7 +9,8 @@ const PAYMENT_METHODS = [
   {
     id: 'transferencia',
     label: 'Transferencia bancaria',
-    detail: 'Acreditación en 1-2 horas hábiles. Te enviamos el CBU por email.',
+    detail: 'Te enviamos CBU y alias por WhatsApp.',
+    tag: '1-2 hs',
     icon: (
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
@@ -20,7 +21,8 @@ const PAYMENT_METHODS = [
   {
     id: 'mercadopago',
     label: 'MercadoPago',
-    detail: 'Pagá con Visa, Mastercard, cuotas o saldo. Acreditación inmediata.',
+    detail: 'Tarjeta, cuotas o saldo con confirmación instantánea.',
+    tag: 'Inmediato',
     icon: (
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
         <rect x="2" y="5" width="20" height="14" rx="3" stroke="currentColor" strokeWidth="2" fill="none"/>
@@ -140,7 +142,7 @@ export default function Cart() {
     }
   }
 
-  const stepLabel = step === 'payment' ? 'Medio de pago' : step === 'done' ? 'Pedido enviado' : 'Mi pedido'
+  const stepLabel = step === 'payment' ? 'Pago y datos' : step === 'done' ? 'Pedido enviado' : 'Mi pedido'
   const availablePaymentMethods = PAYMENT_METHODS.filter(
     (method) => method.id !== 'mercadopago' || mercadoPagoEnabled
   )
@@ -260,19 +262,23 @@ export default function Cart() {
         {/* ── STEP: PAYMENT ── */}
         {step === 'payment' && (
           <>
+            <div className="cart-payment-header">
+              <p>Completá tus datos y elegí cómo pagar.</p>
+            </div>
+
             <div className="cart-checkout-form">
               <div className="form-row">
-                <label className="form-label" htmlFor="cart-buyer-name">Nombre o empresa</label>
+                <label className="form-label" htmlFor="cart-buyer-name">Nombre</label>
                 <input
                   id="cart-buyer-name"
                   className="form-input"
                   value={checkoutForm.buyerName}
                   onChange={(event) => setCheckoutForm((prev) => ({ ...prev, buyerName: event.target.value }))}
-                  placeholder="Ej: Constructora Norte"
+                  placeholder="Ej: Juan Perez"
                 />
               </div>
               <div className="form-row">
-                <label className="form-label" htmlFor="cart-buyer-phone">Teléfono de contacto</label>
+                <label className="form-label" htmlFor="cart-buyer-phone">WhatsApp</label>
                 <input
                   id="cart-buyer-phone"
                   className="form-input"
@@ -300,7 +306,10 @@ export default function Cart() {
                     <span className="payment-option-icon">{method.icon}</span>
                     <span className="payment-option-info">
                       <span className="payment-option-label">{method.label}</span>
-                      <span className="payment-option-detail">{method.detail}</span>
+                      <span className="payment-option-tag">{method.tag}</span>
+                      {selectedPayment === method.id && (
+                        <span className="payment-option-detail">{method.detail}</span>
+                      )}
                     </span>
                     <span className="payment-option-check" aria-hidden="true">
                       {selectedPayment === method.id && (
@@ -315,7 +324,7 @@ export default function Cart() {
             </ul>
             <div className="cart-footer">
               <div className="cart-total">
-                <span>Total</span>
+                <span>Total final</span>
                 <strong>{formatPrice(cartTotal)}</strong>
               </div>
               {orderError && <p className="cart-order-error">{orderError}</p>}
@@ -324,7 +333,7 @@ export default function Cart() {
                 disabled={!selectedPayment || orderLoading}
                 onClick={handleConfirm}
               >
-                {orderLoading ? 'Enviando pedido…' : 'Confirmar pedido'}
+                {orderLoading ? 'Enviando…' : 'Confirmar y enviar'}
               </button>
             </div>
           </>
