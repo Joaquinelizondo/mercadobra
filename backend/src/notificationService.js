@@ -6,6 +6,9 @@ const WHATSAPP_WEBHOOK_URL = process.env.WHATSAPP_WEBHOOK_URL || ''
 const META_WHATSAPP_PHONE_NUMBER_ID = process.env.META_WHATSAPP_PHONE_NUMBER_ID || ''
 const META_WHATSAPP_ACCESS_TOKEN = process.env.META_WHATSAPP_ACCESS_TOKEN || ''
 const META_WHATSAPP_API_VERSION = process.env.META_WHATSAPP_API_VERSION || 'v22.0'
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || ''
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || ''
+const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM || ''
 const SMTP_HOST = process.env.SMTP_HOST || ''
 const SMTP_PORT = Number(process.env.SMTP_PORT || 587)
 const SMTP_USER = process.env.SMTP_USER || ''
@@ -58,6 +61,20 @@ function normalizePhoneNumber(phone) {
   return String(phone || '').replace(/\D/g, '')
 }
 
+function formatWhatsappAddress(phone) {
+  const input = String(phone || '').trim()
+  if (input.toLowerCase().startsWith('whatsapp:')) {
+    return input
+  }
+
+  const normalizedTo = normalizePhoneNumber(input)
+  if (!normalizedTo) {
+    return ''
+  }
+
+  return `whatsapp:+${normalizedTo}`
+}
+
 async function sendViaMetaCloud(payload) {
   if (!META_WHATSAPP_PHONE_NUMBER_ID || !META_WHATSAPP_ACCESS_TOKEN) {
     throw new Error('Meta WhatsApp provider is not configured')
@@ -95,10 +112,47 @@ async function sendViaMetaCloud(payload) {
   }
 }
 
+async function sendViaTwilio(payload) {
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
+    throw new Error('Twilio WhatsApp provider is not configured')
+  }
+
+  const toAddress = formatWhatsappAddress(payload.to)
+  if (!toAddress) {
+    throw new Error('invalid destination phone')
+  }
+
+  const response = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        From: TWILIO_WHATSAPP_FROM,
+        To: toAddress,
+        Body: payload.message,
+      }).toString(),
+    }
+  )
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`Twilio WhatsApp notification failed (${response.status}): ${text.slice(0, 160)}`)
+  }
+}
+
 async function sendViaWhatsappProvider(payload) {
   if (WHATSAPP_PROVIDER === 'meta') {
     await sendViaMetaCloud(payload)
     return 'whatsapp-meta'
+  }
+
+  if (WHATSAPP_PROVIDER === 'twilio') {
+    await sendViaTwilio(payload)
+    return 'whatsapp-twilio'
   }
 
   if (WHATSAPP_WEBHOOK_URL) {
