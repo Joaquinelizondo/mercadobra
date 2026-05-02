@@ -796,7 +796,30 @@
   border-color: rgba(15, 23, 42, 0.3);
 }
 
-.topbar-user-login-btn,
+.topbar-user-login-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1.5px solid #ea580c;
+  background: #ea580c;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.18s, border-color 0.18s, transform 0.18s;
+  position: relative;
+}
+
+.topbar-user-login-btn:hover {
+  background: #c2410c;
+  border-color: #c2410c;
+  transform: translateY(-1px);
+}
+
 .topbar-cart-btn {
   display: inline-flex;
   align-items: center;
@@ -815,7 +838,6 @@
   position: relative;
 }
 
-.topbar-user-login-btn:hover,
 .topbar-cart-btn:hover {
   background: #ffffff;
   border-color: rgba(15, 23, 42, 0.32);
