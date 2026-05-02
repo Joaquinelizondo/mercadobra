@@ -303,23 +303,27 @@ export default function Landing() {
       const normalizedPhone = searchContactForm.phone.trim()
 
       if (normalizedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-        setSearchCaptureError('Ingresá un email válido o dejalo vacío.')
+        closeSearchCapture()
+        startFeaturedSearch(term)
         return
       }
 
       if (normalizedEmail || normalizedPhone) {
-        await createSearchContact({
-          searchTerm: term,
-          email: normalizedEmail,
-          phone: normalizedPhone,
-          source: 'featured-search',
-        })
+        try {
+          await createSearchContact({
+            searchTerm: term,
+            email: normalizedEmail,
+            phone: normalizedPhone,
+            source: 'featured-search',
+          })
+        } catch (error) {
+          // Optional capture should never block the search flow.
+          console.warn('search contact capture failed:', error?.message || error)
+        }
       }
 
       closeSearchCapture()
       startFeaturedSearch(term)
-    } catch (error) {
-      setSearchCaptureError(error.message || 'No se pudo guardar el contacto')
     } finally {
       setSearchCaptureSending(false)
     }
