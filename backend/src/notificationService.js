@@ -253,32 +253,71 @@ function buildRecommendationEmailContent(searchTerm, items) {
   textLines.push('Equipo MercadObra')
 
   const htmlItems = hasMatches
-    ? items.map((item) => item.html).join('')
+    ? items
+        .map(
+          (item) => `
+            <tr>
+              <td style="padding:0 0 12px 0;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #e5e7eb;">
+                  <tr>
+                    <td style="padding:14px;font-family:Arial,sans-serif;color:#111827;">
+                      <div style="font-size:16px;font-weight:700;line-height:1.3;">${item.name}</div>
+                      <div style="font-size:13px;color:#6b7280;line-height:1.4;padding-top:4px;">Proveedor: ${item.company}</div>
+                      <div style="font-size:15px;font-weight:700;color:#1d4ed8;line-height:1.4;padding-top:6px;">${item.priceLabel}</div>
+                      <div style="padding-top:10px;">
+                        <a href="${item.detailUrl}" style="font-size:13px;font-weight:700;color:#ffffff;background:#111827;text-decoration:none;padding:8px 12px;display:inline-block;">Ver producto</a>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          `
+        )
+        .join('')
     : `
-      <div style="border:1px dashed #cbd5e1;border-radius:14px;padding:16px;background:#f8fafc;color:#334155;">
-        No encontramos coincidencias exactas en este momento. Te recomendamos ver resultados relacionados en el catalogo.
-      </div>
+      <tr>
+        <td style="padding:12px 0 16px 0;font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#334155;">
+          No encontramos coincidencias exactas en este momento. Te recomendamos ver resultados relacionados en el catalogo.
+        </td>
+      </tr>
     `
 
   const html = `
-    <div style="margin:0;padding:20px;background:#f3f4f6;font-family:Arial,sans-serif;color:#111827;">
-      <div style="max-width:620px;margin:0 auto;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e5e7eb;">
-        <div style="padding:22px;background:linear-gradient(135deg,#111827,#1f2937);color:#ffffff;">
-          <div style="font-size:13px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.85;">MercadObra</div>
-          <h2 style="margin:8px 0 6px;font-size:24px;line-height:1.2;">Estas son las mejores opciones para ti</h2>
-          <p style="margin:0;font-size:14px;opacity:0.92;">Busqueda: <strong>${safeSearchTerm}</strong></p>
-        </div>
-
-        <div style="padding:20px;">
-          ${htmlItems}
-
-          <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e5e7eb;">
-            <a href="${exploreUrl}" style="display:inline-block;padding:10px 14px;border-radius:10px;background:#ea580c;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;">Ver mas opciones en MercadObra</a>
-          </div>
-        </div>
-      </div>
-      <p style="max-width:620px;margin:12px auto 0;color:#6b7280;font-size:12px;">Recibiste este mail porque solicitaste recomendaciones desde MercadObra.</p>
-    </div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3f4f6;">
+      <tr>
+        <td align="center" style="padding:20px 8px;">
+          <table role="presentation" width="620" cellspacing="0" cellpadding="0" border="0" style="width:620px;max-width:620px;background:#ffffff;border:1px solid #e5e7eb;">
+            <tr>
+              <td style="background:#111827;padding:20px;font-family:Arial,sans-serif;color:#ffffff;">
+                <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">MercadObra</div>
+                <div style="font-size:26px;font-weight:700;line-height:1.2;padding-top:8px;">Estas son las mejores opciones para ti</div>
+                <div style="font-size:14px;line-height:1.4;padding-top:8px;">Busqueda: <strong>${safeSearchTerm}</strong></div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  ${htmlItems}
+                  <tr>
+                    <td style="padding-top:8px;font-family:Arial,sans-serif;">
+                      <a href="${exploreUrl}" style="font-size:14px;font-weight:700;color:#ffffff;background:#ea580c;text-decoration:none;padding:10px 14px;display:inline-block;">Ver mas opciones en MercadObra</a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+          <table role="presentation" width="620" cellspacing="0" cellpadding="0" border="0" style="width:620px;max-width:620px;">
+            <tr>
+              <td style="padding:10px 0 0 0;font-family:Arial,sans-serif;font-size:12px;line-height:1.4;color:#6b7280;">
+                Recibiste este mail porque solicitaste recomendaciones desde MercadObra.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   `
 
   return {
