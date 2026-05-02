@@ -99,21 +99,6 @@ const timelineOptions = ['Lo necesito esta semana', 'Durante este mes', 'En 1 a 
 const budgetOptions = ['Hasta ARS 500.000', 'ARS 500.000 a 2.000.000', 'Más de ARS 2.000.000']
 const paymentPreferenceOptions = ['A convenir', 'Transferencia bancaria', 'Tarjeta / MercadoPago', 'Efectivo contra entrega']
 
-const paymentHighlights = [
-  {
-    title: 'Transferencia bancaria',
-    detail: 'Confirmación rápida y comprobante digital para tu compra.',
-  },
-  {
-    title: 'Tarjeta / MercadoPago',
-    detail: 'Pagá con tarjeta, cuotas o saldo con validación online.',
-  },
-  {
-    title: 'Efectivo contra entrega',
-    detail: 'Disponible en zonas y proveedores habilitados.',
-  },
-]
-
 const quickSearchTerms = ['Cemento', 'Hierro', 'Arena', 'Pintura', 'Taladro']
 
 const RECENT_SEARCHES_KEY = 'mercadobra-recent-searches'
@@ -505,29 +490,6 @@ export default function Landing() {
           </div>
         )}
 
-        <div style={{ textAlign: 'center' }}>
-          <Link to="/explorar" className="ghost-link" style={{ display: 'inline-flex' }}>
-            Ir al catálogo completo →
-          </Link>
-        </div>
-
-        <div className="search-trust-row" aria-label="Beneficios de compra">
-          <span className="verified-badge">Compra directa</span>
-          <span className="top-rated-badge">Proveedores verificados</span>
-          <span className="fast-shipping-badge">Seguimiento de pedido</span>
-        </div>
-
-        <div className="payment-confidence-panel" aria-label="Opciones de pago disponibles">
-          <p className="payment-confidence-title">Pagá como te quede mejor</p>
-          <div className="payment-confidence-grid">
-            {paymentHighlights.map((payment) => (
-              <article key={payment.title} className="payment-confidence-card">
-                <h3>{payment.title}</h3>
-                <p>{payment.detail}</p>
-              </article>
-            ))}
-          </div>
-        </div>
       </section>
 
       <section className="section journey-studio-section" id="journey-studio">
