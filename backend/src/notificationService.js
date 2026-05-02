@@ -192,6 +192,7 @@ function getTransporter() {
       host: SMTP_HOST,
       port: SMTP_PORT,
       secure: SMTP_PORT === 465,
+      family: 4,
       connectionTimeout: EMAIL_SEND_TIMEOUT_MS,
       greetingTimeout: EMAIL_SEND_TIMEOUT_MS,
       socketTimeout: EMAIL_SEND_TIMEOUT_MS,
