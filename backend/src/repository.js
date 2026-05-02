@@ -29,12 +29,16 @@ function mapProviderRow(row) {
 }
 
 function mapUserRow(row) {
+  const rawProviderId = row.provider_id ?? row.providerId
   return {
     id: Number(row.id),
     email: row.email,
     password: row.password,
     role: row.role,
-    providerId: Number(row.provider_id ?? row.providerId),
+    providerId:
+      rawProviderId === null || rawProviderId === undefined || rawProviderId === ''
+        ? null
+        : Number(rawProviderId),
     company: row.company,
   }
 }
@@ -75,9 +79,27 @@ async function getJsonRepo() {
       const user = db.users.find((u) => u.email === email && u.password === password)
       return user || null
     },
+    async findUserByEmail(email) {
+      const db = readDb()
+      return db.users.find((u) => u.email === email) || null
+    },
     async findUserById(id) {
       const db = readDb()
       return db.users.find((u) => Number(u.id) === Number(id)) || null
+    },
+    async createUser(payload) {
+      const db = readDb()
+      const created = {
+        id: nextId(db.users),
+        email: payload.email,
+        password: payload.password,
+        role: payload.role || 'customer',
+        providerId: payload.providerId ?? null,
+        company: payload.company || '',
+      }
+      db.users.push(created)
+      writeDb(db)
+      return created
     },
     async getProviders() {
       return readDb().providers
@@ -310,9 +332,28 @@ async function getPgRepo() {
       const { rows } = await pool.query('SELECT * FROM users WHERE email = $1 AND password = $2 LIMIT 1', [email, password])
       return rows[0] ? mapUserRow(rows[0]) : null
     },
+    async findUserByEmail(email) {
+      const { rows } = await pool.query('SELECT * FROM users WHERE email = $1 LIMIT 1', [email])
+      return rows[0] ? mapUserRow(rows[0]) : null
+    },
     async findUserById(id) {
       const { rows } = await pool.query('SELECT * FROM users WHERE id = $1 LIMIT 1', [id])
       return rows[0] ? mapUserRow(rows[0]) : null
+    },
+    async createUser(payload) {
+      const { rows } = await pool.query(
+        `INSERT INTO users (email, password, role, provider_id, company)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [
+          payload.email,
+          payload.password,
+          payload.role || 'customer',
+          payload.providerId ?? null,
+          payload.company || '',
+        ]
+      )
+      return mapUserRow(rows[0])
     },
     async getProviders() {
       const { rows } = await pool.query('SELECT * FROM providers ORDER BY name ASC')

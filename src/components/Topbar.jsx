@@ -6,7 +6,7 @@ import { companyInitials } from '../utils/format'
 import logoImg from '../assets/mercadobra.png'
 
 export default function Topbar() {
-  const { supplierUser, logout } = useAuth()
+  const { supplierUser, logout, customerUser, logoutCustomer } = useAuth()
   const { cartCount, setCartOpen } = useCart()
   const { wishlist } = useWishlist()
 
@@ -66,9 +66,21 @@ export default function Topbar() {
               Salir
             </button>
           </div>
+        ) : customerUser ? (
+          <div className="supplier-session">
+            <span className="supplier-session-avatar">
+              {companyInitials(customerUser.company || 'Cliente')}
+            </span>
+            <span className="supplier-session-name">
+              {customerUser.company || customerUser.email}
+            </span>
+            <button className="supplier-logout" onClick={logoutCustomer} aria-label="Cerrar sesión">
+              Salir
+            </button>
+          </div>
         ) : (
           <>
-            <Link to="/proveedor/login" className="topbar-user-login-btn">
+            <Link to="/cliente/login" className="topbar-user-login-btn">
               Iniciar sesión
             </Link>
             <Link to="/proveedor/login" className="topbar-login-btn">

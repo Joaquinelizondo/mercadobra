@@ -7,6 +7,8 @@ import Wishlist from './pages/Wishlist'
 import SupplierProfile from './pages/SupplierProfile'
 import SupplierLogin from './pages/SupplierLogin'
 import SupplierDashboard from './pages/SupplierDashboard'
+import CustomerLogin from './pages/CustomerLogin'
+import CustomerRegister from './pages/CustomerRegister'
 import OrderTracking from './pages/OrderTracking'
 import NotFound from './pages/NotFound'
 import { useState } from 'react'
@@ -851,6 +853,8 @@ export default function App() {
         <Route path="/producto/:id" element={<ProductDetail />} />
         <Route path="/favoritos" element={<Wishlist />} />
         <Route path="/proveedor/:company" element={<SupplierProfile />} />
+        <Route path="/cliente/login" element={<CustomerLogin />} />
+        <Route path="/cliente/registro" element={<CustomerRegister />} />
         <Route path="/proveedor/login" element={<SupplierLogin />} />
         <Route path="/proveedor" element={<SupplierDashboard />} />
         <Route path="/seguimiento/:trackingToken" element={<OrderTracking />} />

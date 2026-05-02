@@ -64,6 +64,13 @@ async function authMiddleware(req, res, next) {
   next()
 }
 
+function providerOnly(req, res, next) {
+  if (req.authUser?.role !== 'provider') {
+    return res.status(403).json({ message: 'Acceso solo para proveedores' })
+  }
+  next()
+}
+
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'mercadobra-backend' })
 })
@@ -81,6 +88,10 @@ app.post('/auth/login', async (req, res) => {
     return res.status(401).json({ message: 'Credenciales inválidas' })
   }
 
+  if (user.role !== 'provider') {
+    return res.status(403).json({ message: 'Esta cuenta no pertenece a un proveedor' })
+  }
+
   const token = `mock-token-${user.id}`
 
   return res.json({
@@ -92,6 +103,77 @@ app.post('/auth/login', async (req, res) => {
       providerId: user.providerId,
       company: user.company
     }
+  })
+})
+
+app.post('/auth/customer/register', async (req, res) => {
+  const { fullName, email, password } = req.body || {}
+
+  const normalizedEmail = String(email || '').trim().toLowerCase()
+  const normalizedName = String(fullName || '').trim()
+  const normalizedPassword = String(password || '')
+
+  if (!normalizedName) {
+    return res.status(400).json({ message: 'Ingresá tu nombre completo' })
+  }
+
+  if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
+    return res.status(400).json({ message: 'Ingresá un correo válido' })
+  }
+
+  if (normalizedPassword.length < 6) {
+    return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' })
+  }
+
+  const repo = await getRepository()
+  const existing = await repo.findUserByEmail(normalizedEmail)
+
+  if (existing) {
+    return res.status(409).json({ message: 'Ya existe una cuenta con ese correo' })
+  }
+
+  const created = await repo.createUser({
+    email: normalizedEmail,
+    password: normalizedPassword,
+    role: 'customer',
+    providerId: null,
+    company: normalizedName,
+  })
+
+  const token = `mock-token-${created.id}`
+
+  return res.status(201).json({
+    token,
+    user: {
+      id: created.id,
+      email: created.email,
+      role: created.role,
+      providerId: created.providerId,
+      company: created.company,
+    },
+  })
+})
+
+app.post('/auth/customer/login', async (req, res) => {
+  const { email, password } = req.body || {}
+  const repo = await getRepository()
+  const user = await repo.findUserByCredentials(String(email || '').trim().toLowerCase(), password)
+
+  if (!user || user.role !== 'customer') {
+    return res.status(401).json({ message: 'Credenciales inválidas' })
+  }
+
+  const token = `mock-token-${user.id}`
+
+  return res.json({
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      providerId: user.providerId,
+      company: user.company,
+    },
   })
 })
 
@@ -124,7 +206,7 @@ app.get('/products/:id', async (req, res) => {
   return res.json(product)
 })
 
-app.post('/products', authMiddleware, async (req, res) => {
+app.post('/products', authMiddleware, providerOnly, async (req, res) => {
   const body = req.body || {}
   const required = ['name', 'description', 'category', 'company', 'providerId', 'price', 'unit']
   const missing = required.filter((field) => body[field] === undefined || body[field] === '')
@@ -153,7 +235,7 @@ app.post('/products', authMiddleware, async (req, res) => {
   return res.status(201).json(created)
 })
 
-app.patch('/products/:id', authMiddleware, async (req, res) => {
+app.patch('/products/:id', authMiddleware, providerOnly, async (req, res) => {
   const id = Number(req.params.id)
   const updates = req.body || {}
   const repo = await getRepository()
@@ -171,7 +253,7 @@ app.patch('/products/:id', authMiddleware, async (req, res) => {
   return res.json(updated)
 })
 
-app.delete('/products/:id', authMiddleware, async (req, res) => {
+app.delete('/products/:id', authMiddleware, providerOnly, async (req, res) => {
   const id = Number(req.params.id)
   const repo = await getRepository()
   const existing = await repo.getProductById(id)
@@ -436,7 +518,7 @@ app.get('/orders/track/:trackingToken', async (req, res) => {
   return res.json(order)
 })
 
-app.patch('/orders/:id/status', authMiddleware, async (req, res) => {
+app.patch('/orders/:id/status', authMiddleware, providerOnly, async (req, res) => {
   const orderId = Number(req.params.id)
   const nextStatus = String(req.body?.status || '').trim().toLowerCase()
   const validStatuses = new Set(['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'])
@@ -478,7 +560,7 @@ app.patch('/orders/:id/status', authMiddleware, async (req, res) => {
   })
 })
 
-app.get('/orders/:id/notifications', authMiddleware, async (req, res) => {
+app.get('/orders/:id/notifications', authMiddleware, providerOnly, async (req, res) => {
   const orderId = Number(req.params.id)
   const repo = await getRepository()
 
@@ -503,7 +585,7 @@ app.get('/orders/:id/notifications', authMiddleware, async (req, res) => {
   return res.json(logs)
 })
 
-app.get('/orders', authMiddleware, async (req, res) => {
+app.get('/orders', authMiddleware, providerOnly, async (req, res) => {
   const repo = await getRepository()
   const orders = await repo.getOrders()
   res.json(orders)

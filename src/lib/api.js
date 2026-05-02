@@ -73,6 +73,20 @@ export function loginSupplier(email, password) {
   })
 }
 
+export function loginCustomer(email, password) {
+  return request('/auth/customer/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  })
+}
+
+export function registerCustomer(payload) {
+  return request('/auth/customer/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function sendChatMessage(message, history = []) {
   return request('/chat', {
     method: 'POST',
