@@ -216,6 +216,53 @@ function formatRecommendationItems(products = []) {
   })
 }
 
+function buildRecommendationEmailContent(searchTerm, items) {
+  const exploreUrl = `${FRONTEND_PUBLIC_URL}/explorar?q=${encodeURIComponent(searchTerm)}`
+  const safeSearchTerm = searchTerm || 'tu búsqueda'
+  const hasMatches = items.length > 0
+
+  const textLines = [
+    'Hola,',
+    '',
+    `Buscaste: ${safeSearchTerm}`,
+    '',
+  ]
+
+  if (hasMatches) {
+    textLines.push('Estas son algunas opciones recomendadas:')
+    textLines.push('')
+    textLines.push(...items.map((item) => item.text))
+  } else {
+    textLines.push('No encontramos coincidencias exactas en este momento.')
+    textLines.push('Te recomendamos ver resultados relacionados en el catalogo.')
+  }
+
+  textLines.push('')
+  textLines.push(`Ver resultados: ${exploreUrl}`)
+  textLines.push('Equipo MercadObra')
+
+  const htmlItems = hasMatches
+    ? `<ul>${items.map((item) => item.html).join('')}</ul>`
+    : '<p>No encontramos coincidencias exactas en este momento. Te recomendamos ver resultados relacionados en el catalogo.</p>'
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
+      <h2 style="margin: 0 0 12px;">MercadObra</h2>
+      <p style="margin: 0 0 12px;">Buscaste: <strong>${safeSearchTerm}</strong></p>
+      ${htmlItems}
+      <p style="margin: 16px 0 0;">
+        <a href="${exploreUrl}">Ver resultados en MercadObra</a>
+      </p>
+      <p style="margin: 16px 0 0;">Equipo MercadObra</p>
+    </div>
+  `
+
+  return {
+    text: textLines.join('\n'),
+    html,
+  }
+}
+
 async function sendRecommendationEmailViaResend({ email, subject, text, html }) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), EMAIL_SEND_TIMEOUT_MS)
@@ -253,22 +300,7 @@ async function sendRecommendationEmail(email, searchTerm, products) {
 
   const items = formatRecommendationItems(products)
   const subject = `MercadObra: opciones para "${searchTerm}"`
-  const text = [
-    'Hola,',
-    '',
-    `Estas son algunas opciones que encontramos para: ${searchTerm}`,
-    '',
-    ...items.map((item) => item.text),
-    '',
-    `Ver más: ${FRONTEND_PUBLIC_URL}/explorar?q=${encodeURIComponent(searchTerm)}`,
-  ].join('\n')
-
-  const html = `
-    <p>Hola,</p>
-    <p>Estas son algunas opciones que encontramos para: <strong>${searchTerm}</strong></p>
-    <ul>${items.map((item) => item.html).join('')}</ul>
-    <p><a href="${FRONTEND_PUBLIC_URL}/explorar?q=${encodeURIComponent(searchTerm)}">Ver más resultados</a></p>
-  `
+  const { text, html } = buildRecommendationEmailContent(searchTerm, items)
 
   if (RESEND_API_KEY && RESEND_FROM) {
     await sendRecommendationEmailViaResend({ email, subject, text, html })
