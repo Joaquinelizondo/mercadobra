@@ -263,7 +263,7 @@ function buildRecommendationEmailContent(searchTerm, items) {
                     <td style="padding:14px;font-family:Arial,sans-serif;color:#111827;">
                       <div style="font-size:16px;font-weight:700;line-height:1.3;">${item.name}</div>
                       <div style="font-size:13px;color:#6b7280;line-height:1.4;padding-top:4px;">Proveedor: ${item.company}</div>
-                      <div style="font-size:15px;font-weight:700;color:#1d4ed8;line-height:1.4;padding-top:6px;">${item.priceLabel}</div>
+                      <div style="font-size:15px;font-weight:700;color:#ea580c;line-height:1.4;padding-top:6px;">${item.priceLabel}</div>
                       <div style="padding-top:10px;">
                         <a href="${item.detailUrl}" style="font-size:13px;font-weight:700;color:#ffffff;background:#111827;text-decoration:none;padding:8px 12px;display:inline-block;">Ver producto</a>
                       </div>
@@ -284,10 +284,13 @@ function buildRecommendationEmailContent(searchTerm, items) {
     `
 
   const html = `
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3f4f6;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#ffffff;">
       <tr>
         <td align="center" style="padding:20px 8px;">
-          <table role="presentation" width="620" cellspacing="0" cellpadding="0" border="0" style="width:620px;max-width:620px;background:#ffffff;border:1px solid #e5e7eb;">
+          <table role="presentation" width="620" cellspacing="0" cellpadding="0" border="0" style="width:620px;max-width:620px;background:#ffffff;border:1px solid #111827;">
+            <tr>
+              <td style="background:#ea580c;height:6px;line-height:6px;font-size:0;">&nbsp;</td>
+            </tr>
             <tr>
               <td style="background:#111827;padding:20px;font-family:Arial,sans-serif;color:#ffffff;">
                 <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">MercadObra</div>
