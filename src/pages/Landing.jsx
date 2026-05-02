@@ -469,11 +469,11 @@ export default function Landing() {
                   placeholder="Ej: Cemento, Taladro, Pintura..."
                   value={featuredSearchInput}
                   autoComplete="off"
-                  onFocus={() => setShowFeaturedSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowFeaturedSuggestions(false), 120)}
+                  onFocus={() => setShowFeaturedSuggestions(false)}
+                  onBlur={() => setShowFeaturedSuggestions(false)}
                   onChange={(event) => {
                     setFeaturedSearchInput(event.target.value)
-                    setShowFeaturedSuggestions(true)
+                    setShowFeaturedSuggestions(false)
                   }}
                   disabled={isSearching}
                 />
