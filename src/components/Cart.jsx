@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useProducts } from '../context/ProductContext'
-import { createOrder } from '../lib/api'
+import { createOrder, getMercadoPagoConfig, startMercadoPagoCheckout } from '../lib/api'
 import { formatPrice } from '../utils/format'
 
 const PAYMENT_METHODS = [
@@ -20,33 +20,11 @@ const PAYMENT_METHODS = [
   {
     id: 'mercadopago',
     label: 'MercadoPago',
-    detail: 'Pagá con tarjeta, cuotas o saldo. Acreditación inmediata.',
+    detail: 'Pagá con Visa, Mastercard, cuotas o saldo. Acreditación inmediata.',
     icon: (
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
         <rect x="2" y="5" width="20" height="14" rx="3" stroke="currentColor" strokeWidth="2" fill="none"/>
         <path d="M2 10h20" stroke="currentColor" strokeWidth="2"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'efectivo',
-    label: 'Efectivo',
-    detail: 'Pago al recibir la mercadería. Solo para entregas con logística propia.',
-    icon: (
-      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="none"/>
-        <path d="M12 7v1m0 8v1m-3-5h6m-5 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'cheque',
-    label: 'Cheque diferido',
-    detail: 'Plazo negociable con el proveedor. Solo para cuentas con historial.',
-    icon: (
-      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-        <rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
-        <path d="M6 10h4m-4 4h8m2 0h2M6 4v2m12-2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
       </svg>
     ),
   },
@@ -63,6 +41,25 @@ export default function Cart() {
   const [orderError, setOrderError] = useState('')
   const [createdOrder, setCreatedOrder] = useState(null)
   const [copyMessage, setCopyMessage] = useState('')
+  const [mercadoPagoEnabled, setMercadoPagoEnabled] = useState(true)
+
+  useEffect(() => {
+    let mounted = true
+
+    getMercadoPagoConfig()
+      .then((config) => {
+        if (!mounted) return
+        setMercadoPagoEnabled(Boolean(config?.enabled))
+      })
+      .catch(() => {
+        if (!mounted) return
+        setMercadoPagoEnabled(false)
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   function handleClose() {
     setCartOpen(false)
@@ -98,6 +95,30 @@ export default function Cart() {
     setOrderError('')
 
     try {
+      if (selectedPayment === 'mercadopago' && !mercadoPagoEnabled) {
+        throw new Error('Mercado Pago no está disponible en este entorno. Usá Transferencia bancaria.')
+      }
+
+      if (selectedPayment === 'mercadopago') {
+        const checkout = await startMercadoPagoCheckout({
+          buyerName: checkoutForm.buyerName.trim(),
+          buyerPhone: checkoutForm.buyerPhone.trim(),
+          paymentMethod: selectedPayment,
+          items: cartItems.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+          })),
+        })
+
+        const targetUrl = checkout.initPoint || checkout.sandboxInitPoint
+        if (!targetUrl) {
+          throw new Error('No se recibió un enlace de pago válido para Mercado Pago')
+        }
+
+        window.location.assign(targetUrl)
+        return
+      }
+
       const order = await createOrder({
         buyerName: checkoutForm.buyerName.trim(),
         buyerPhone: checkoutForm.buyerPhone.trim(),
@@ -120,6 +141,9 @@ export default function Cart() {
   }
 
   const stepLabel = step === 'payment' ? 'Medio de pago' : step === 'done' ? 'Pedido enviado' : 'Mi pedido'
+  const availablePaymentMethods = PAYMENT_METHODS.filter(
+    (method) => method.id !== 'mercadopago' || mercadoPagoEnabled
+  )
 
   return (
     <>
@@ -259,8 +283,14 @@ export default function Cart() {
               </div>
             </div>
 
+            {!mercadoPagoEnabled && (
+              <p className="cart-order-error">
+                Mercado Pago no está disponible por el momento. Podés continuar con Transferencia bancaria.
+              </p>
+            )}
+
             <ul className="payment-list">
-              {PAYMENT_METHODS.map((method) => (
+              {availablePaymentMethods.map((method) => (
                 <li key={method.id}>
                   <button
                     className={`payment-option${selectedPayment === method.id ? ' payment-option--selected' : ''}`}

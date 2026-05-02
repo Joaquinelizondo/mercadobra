@@ -35,6 +35,8 @@ Variables de entorno:
 - `OPENAI_BASE_URL` (default `https://api.openai.com/v1`)
 - `FRONTEND_PUBLIC_URL` para construir links de seguimiento en notificaciones
 - `WHATSAPP_WEBHOOK_URL` opcional para enviar cambios de estado (si no está, se loguea en consola)
+- `MERCADOPAGO_ACCESS_TOKEN` para habilitar checkout con Mercado Pago
+- `BACKEND_PUBLIC_URL` URL pública del backend para webhooks (ej. `https://api.tudominio.com`)
 
 Si no configurás `OPENAI_API_KEY`, el chat funciona igual con un modo local basado en catálogo.
 
@@ -60,6 +62,8 @@ Mientras no exista `DATABASE_URL`, sigue funcionando con JSON local para desarro
 - `PATCH /products/:id`
 - `DELETE /products/:id`
 - `POST /orders`
+- `POST /payments/mercadopago/checkout`
+- `POST /payments/mercadopago/webhook`
 - `GET /orders`
 - `GET /orders/track/:trackingToken?phone=...`
 - `PATCH /orders/:id/status`

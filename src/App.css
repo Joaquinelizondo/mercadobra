@@ -569,6 +569,7 @@
   border: 1px solid var(--border);
   border-radius: 26px;
   padding: 28px;
+  padding-bottom: 78px;
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(8px);
 }
@@ -651,16 +652,109 @@
   color: var(--text-on-dark);
 }
 
+.footer-payment-methods {
+  margin-top: 24px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-payment-methods--grid {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  align-items: flex-start;
+}
+
+.footer-payment-methods p {
+  margin: 0;
+  color: var(--text-on-dark);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.payment-methods-logos {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.payment-logo {
+  font-size: 1.8rem;
+  line-height: 1;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.14);
+  cursor: default;
+  transition: transform 0.2s ease;
+}
+
+.payment-logo:hover {
+  transform: scale(1.15);
+}
+
+.payment-logo--brand {
+  width: 44px;
+  height: 44px;
+}
+
+.payment-logo--brand svg {
+  width: 100%;
+  height: 100%;
+}
+
+.payment-logo--mastercard {
+  width: 52px;
+  height: 36px;
+  background: transparent;
+  box-shadow: none;
+}
+
 .footer-bottom {
   margin-top: 24px;
   padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
   text-align: center;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+.footer-bottom-payment-title {
+  margin: 0;
+  color: var(--text-on-dark);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.payment-methods-logos--bottom {
+  justify-content: center;
+  margin-bottom: 82px;
 }
 
 .footer-bottom p {
   color: var(--text-on-dark);
   margin: 0;
+}
+
+@media (min-width: 901px) {
+  .payment-methods-logos--bottom {
+    margin-bottom: 0;
+  }
 }
 
 /* ── SUPPLIER SESSION (topbar) ─────────────────────── */
@@ -1257,19 +1351,121 @@
   font-size: clamp(1.35rem, 3vw, 1.95rem);
 }
 
-.featured-search-section .catalog-search-wrap {
-  width: min(840px, 100%);
+.featured-search-panel {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255, 255, 255, 0.26) 0%, transparent 42%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.28), rgba(255, 255, 255, 0.12));
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 16px 34px rgba(15, 23, 42, 0.2);
+}
+
+.featured-search-panel-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
   gap: 10px;
 }
 
+.featured-search-panel-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--accent-strong);
+}
+
+.featured-search-panel-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.featured-search-panel-head small {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.8rem;
+}
+
+.featured-search-section .catalog-search-wrap {
+  width: min(860px, 100%);
+  gap: 12px;
+}
+
 .featured-search-section .catalog-search-input {
-  min-height: 56px;
-  font-size: 1rem;
+  min-height: 60px;
+  font-size: 1.03rem;
+  padding-left: 48px;
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(8, 15, 30, 0.32);
+}
+
+.featured-search-section .catalog-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.featured-search-section .catalog-search-input:focus {
+  background: rgba(8, 15, 30, 0.44);
+  border-color: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.18), 0 14px 22px rgba(15, 23, 42, 0.22);
+}
+
+.featured-search-section .catalog-search-leading-icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.92);
+  pointer-events: none;
 }
 
 .featured-search-section .catalog-search-submit {
-  min-height: 56px;
-  padding-inline: 18px;
+  min-height: 60px;
+  padding-inline: 20px;
+  background: linear-gradient(135deg, #fff8e8 0%, #ffffff 100%);
+  color: #9a3412;
+  border-color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+}
+
+.featured-search-section .catalog-search-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.2);
+}
+
+.featured-search-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.featured-search-chip {
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+
+.featured-search-chip:hover {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.56);
+  transform: translateY(-1px);
+}
+
+.featured-search-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .journey-studio-section {
@@ -1393,6 +1589,65 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+}
+
+.payment-confidence-panel {
+  margin-top: 10px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(8px);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.payment-confidence-title {
+  margin: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.96);
+  font-weight: 700;
+}
+
+.payment-confidence-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.payment-confidence-card {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.payment-confidence-card h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 0.94rem;
+}
+
+.payment-confidence-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.hero-secondary-link {
+  margin: 10px 0 0;
+  color: var(--text-on-dark-soft);
+  font-size: 0.86rem;
+}
+
+.hero-secondary-link a {
+  color: #fff;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .filter-tab {
@@ -2455,6 +2710,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .payment-confidence-grid {
+    grid-template-columns: 1fr;
+  }
+
 }
 
 @media (max-width: 640px) {
@@ -2492,11 +2751,16 @@
 
   .footer {
     padding: 20px;
+    padding-bottom: 92px;
   }
 
   .footer-grid {
     grid-template-columns: 1fr;
     gap: 18px;
+  }
+
+  .payment-methods-logos {
+    gap: 12px;
   }
 
   .products-grid {
@@ -2517,6 +2781,29 @@
     border-radius: 18px;
   }
 
+  .featured-search-panel {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .featured-search-panel-head {
+    align-items: flex-start;
+  }
+
+  .featured-search-section .catalog-search-input,
+  .featured-search-section .catalog-search-submit {
+    min-height: 54px;
+  }
+
+  .featured-search-chips {
+    gap: 6px;
+  }
+
+  .featured-search-chip {
+    font-size: 0.76rem;
+    padding: 6px 10px;
+  }
+
   .featured-search-section .section-heading h2 {
     font-size: 1.22rem;
   }
@@ -2525,6 +2812,7 @@
     bottom: 20px;
     right: 20px;
   }
+
 }
 
 /* ── TOPBAR LINK FIXES ─────────────────────────────── */

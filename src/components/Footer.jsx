@@ -1,4 +1,39 @@
 import logoImg from '../assets/mercadobra.png'
+import { siMercadopago, siVisa } from 'simple-icons'
+
+function PaymentBrandLogo({ icon, label }) {
+  return (
+    <span className="payment-logo payment-logo--brand" title={label} aria-label={label}>
+      <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+        <path d={icon.path} fill={`#${icon.hex}`} />
+      </svg>
+    </span>
+  )
+}
+
+function MastercardLogo() {
+  return (
+    <span className="payment-logo payment-logo--brand payment-logo--mastercard" title="Mastercard" aria-label="Mastercard">
+      <svg viewBox="0 0 48 32" role="img" aria-hidden="true">
+        <rect x="0.5" y="0.5" width="47" height="31" rx="6" fill="#ffffff" stroke="#e5e7eb" />
+        <circle cx="21" cy="16" r="8" fill="#EB001B" />
+        <circle cx="27" cy="16" r="8" fill="#F79E1B" />
+        <path d="M24.8 8.4a8 8 0 0 0 0 15.2 8 8 0 0 0 0-15.2Z" fill="#FF5F00" />
+      </svg>
+    </span>
+  )
+}
+
+function PaymentLogosRow() {
+  return (
+    <div className="payment-methods-logos payment-methods-logos--bottom" aria-label="Medios de pago aceptados">
+      <span className="payment-logo" title="Transferencia Bancaria">🏦</span>
+      <PaymentBrandLogo icon={siVisa} label="Visa" />
+      <MastercardLogo />
+      <PaymentBrandLogo icon={siMercadopago} label="Mercado Pago" />
+    </div>
+  )
+}
 
 export default function Footer() {
   const year = new Date().getFullYear()
@@ -71,9 +106,12 @@ export default function Footer() {
             <li>Buenos Aires, Argentina</li>
           </ul>
         </section>
+
       </div>
 
       <div className="footer-bottom">
+        <p className="footer-bottom-payment-title">Medios de pago</p>
+        <PaymentLogosRow />
         <p>© {year} MercadObra. Todos los derechos reservados.</p>
       </div>
     </footer>

@@ -4,10 +4,20 @@ import cors from 'cors'
 import { getRepository } from './repository.js'
 import { generateChatReply } from './chatService.js'
 import { notifyOrderStatusChanged } from './notificationService.js'
+import {
+  createMercadoPagoPreference,
+  getMercadoPagoPayment,
+  isMercadoPagoConfigured,
+  mapMercadoPagoStatus,
+} from './paymentService.js'
 
 const app = express()
 const PORT = Number(process.env.PORT || 4000)
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173,http://localhost:4173'
+const FRONTEND_PUBLIC_URL = process.env.FRONTEND_PUBLIC_URL || 'http://localhost:5173'
+const BACKEND_PUBLIC_URL = process.env.BACKEND_PUBLIC_URL || `http://localhost:${PORT}`
+const ALLOWED_PAYMENT_METHODS = new Set(['transferencia', 'mercadopago'])
+const HAS_PUBLIC_HTTPS_FRONTEND = /^https:\/\//.test(FRONTEND_PUBLIC_URL)
 
 const allowedOrigins = FRONTEND_ORIGIN
   .split(',')
@@ -56,6 +66,10 @@ async function authMiddleware(req, res, next) {
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'mercadobra-backend' })
+})
+
+app.get('/payments/mercadopago/config', (_req, res) => {
+  res.json({ enabled: isMercadoPagoConfigured() })
 })
 
 app.post('/auth/login', async (req, res) => {
@@ -177,6 +191,58 @@ app.delete('/products/:id', authMiddleware, async (req, res) => {
 
 app.post('/orders', async (req, res) => {
   const { items = [], buyerName = '', buyerPhone = '', paymentMethod = '' } = req.body || {}
+  const normalizedPaymentMethod = String(paymentMethod || '').trim().toLowerCase()
+
+  if (!items.length) {
+    return res.status(400).json({ message: 'La orden requiere al menos un producto' })
+  }
+
+  if (!normalizedPaymentMethod) {
+    return res.status(400).json({ message: 'Seleccioná un medio de pago válido' })
+  }
+
+  if (!ALLOWED_PAYMENT_METHODS.has(normalizedPaymentMethod)) {
+    return res.status(400).json({
+      message: `Medio de pago inválido. Opciones: ${Array.from(ALLOWED_PAYMENT_METHODS).join(', ')}`,
+    })
+  }
+
+  const normalizedItems = items.map((item) => ({
+    productId: Number(item.productId || item.id),
+    quantity: Number(item.quantity || 1),
+  }))
+
+  if (normalizedItems.some((item) => item.quantity <= 0)) {
+    return res.status(400).json({ message: 'Hay cantidades inválidas en la orden' })
+  }
+
+  try {
+    const repo = await getRepository()
+    const order = await repo.createOrder({
+      items: normalizedItems,
+      buyerName,
+      buyerPhone,
+      paymentMethod: normalizedPaymentMethod,
+    })
+    return res.status(201).json(order)
+  } catch (error) {
+    return res.status(400).json({ message: error.message || 'No se pudo crear la orden' })
+  }
+})
+
+app.post('/payments/mercadopago/checkout', async (req, res) => {
+  const { items = [], buyerName = '', buyerPhone = '', paymentMethod = '' } = req.body || {}
+  const normalizedPaymentMethod = String(paymentMethod || '').trim().toLowerCase()
+
+  if (normalizedPaymentMethod !== 'mercadopago') {
+    return res.status(400).json({ message: 'Este endpoint solo permite checkout con Mercado Pago' })
+  }
+
+  if (!isMercadoPagoConfigured()) {
+    return res.status(503).json({
+      message: 'Mercado Pago no está configurado en el backend (falta MERCADOPAGO_ACCESS_TOKEN).',
+    })
+  }
 
   if (!items.length) {
     return res.status(400).json({ message: 'La orden requiere al menos un producto' })
@@ -191,12 +257,127 @@ app.post('/orders', async (req, res) => {
     return res.status(400).json({ message: 'Hay cantidades inválidas en la orden' })
   }
 
+  const repo = await getRepository()
+  let createdOrder = null
+
   try {
-    const repo = await getRepository()
-    const order = await repo.createOrder({ items: normalizedItems, buyerName, buyerPhone, paymentMethod })
-    return res.status(201).json(order)
+    const productSnapshots = await Promise.all(
+      normalizedItems.map(async (item) => {
+        const product = await repo.getProductById(item.productId)
+        if (!product) {
+          throw new Error(`Producto inexistente: ${item.productId}`)
+        }
+
+        return {
+          productId: product.id,
+          name: product.name,
+          price: Number(product.price),
+          quantity: Number(item.quantity),
+        }
+      })
+    )
+
+    createdOrder = await repo.createOrder({
+      items: normalizedItems,
+      buyerName,
+      buyerPhone,
+      paymentMethod: 'mercadopago',
+    })
+
+    const preference = await createMercadoPagoPreference({
+      external_reference: String(createdOrder.id),
+      items: productSnapshots.map((item) => ({
+        id: String(item.productId),
+        title: item.name,
+        quantity: item.quantity,
+        currency_id: 'ARS',
+        unit_price: item.price,
+      })),
+      payer: {
+        name: String(buyerName || '').trim() || 'Cliente MercadObra',
+      },
+      metadata: {
+        order_id: createdOrder.id,
+        buyer_phone: String(buyerPhone || '').trim(),
+      },
+      notification_url: `${BACKEND_PUBLIC_URL}/payments/mercadopago/webhook`,
+      back_urls: {
+        success: `${FRONTEND_PUBLIC_URL}/explorar?payment=success&orderId=${createdOrder.id}`,
+        failure: `${FRONTEND_PUBLIC_URL}/explorar?payment=failure&orderId=${createdOrder.id}`,
+        pending: `${FRONTEND_PUBLIC_URL}/explorar?payment=pending&orderId=${createdOrder.id}`,
+      },
+      ...(HAS_PUBLIC_HTTPS_FRONTEND ? { auto_return: 'approved' } : {}),
+      statement_descriptor: 'MERCADOBRA',
+    })
+
+    await repo.updateOrderPayment(createdOrder.id, {
+      paymentStatus: 'pending',
+      paymentProvider: 'mercadopago',
+      paymentPreferenceId: String(preference.id || ''),
+    })
+
+    return res.status(201).json({
+      orderId: createdOrder.id,
+      trackingToken: createdOrder.trackingToken,
+      preferenceId: String(preference.id || ''),
+      initPoint: preference.init_point,
+      sandboxInitPoint: preference.sandbox_init_point,
+    })
   } catch (error) {
-    return res.status(400).json({ message: error.message || 'No se pudo crear la orden' })
+    if (createdOrder?.id) {
+      await repo.updateOrderPayment(createdOrder.id, {
+        paymentStatus: 'checkout_error',
+        paymentProvider: 'mercadopago',
+      })
+    }
+
+    return res.status(400).json({ message: error.message || 'No se pudo iniciar el checkout de Mercado Pago' })
+  }
+})
+
+app.post('/payments/mercadopago/webhook', async (req, res) => {
+  const queryType = String(req.query.type || req.query.topic || '').trim().toLowerCase()
+  const bodyType = String(req.body?.type || req.body?.topic || '').trim().toLowerCase()
+  const eventType = queryType || bodyType
+
+  if (eventType && eventType !== 'payment') {
+    return res.status(200).json({ ok: true, ignored: true })
+  }
+
+  const paymentId = req.body?.data?.id || req.query['data.id'] || req.query.id
+  if (!paymentId) {
+    return res.status(200).json({ ok: true, ignored: true })
+  }
+
+  try {
+    const payment = await getMercadoPagoPayment(paymentId)
+    const externalReference = String(payment.external_reference || payment.metadata?.order_id || '').trim()
+    const orderId = Number(externalReference)
+
+    if (!orderId) {
+      return res.status(200).json({ ok: true, ignored: true })
+    }
+
+    const paymentStatus = mapMercadoPagoStatus(payment.status)
+    const repo = await getRepository()
+
+    await repo.updateOrderPayment(orderId, {
+      paymentStatus,
+      paymentProvider: 'mercadopago',
+      paymentExternalId: String(payment.id || ''),
+    })
+
+    if (paymentStatus === 'approved' || paymentStatus === 'authorized') {
+      const currentOrder = await repo.getOrderById(orderId)
+      if (currentOrder?.status === 'pending') {
+        await repo.updateOrderStatus(orderId, 'confirmed')
+      }
+    }
+
+    return res.status(200).json({ ok: true })
+  } catch (error) {
+    console.error('Webhook Mercado Pago error:', error)
+    return res.status(500).json({ message: 'No se pudo procesar webhook de Mercado Pago' })
   }
 })
 

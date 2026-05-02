@@ -87,6 +87,19 @@ export function createOrder(payload) {
   })
 }
 
+export function startMercadoPagoCheckout(payload) {
+  return request('/payments/mercadopago/checkout', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getMercadoPagoConfig() {
+  return request('/payments/mercadopago/config', {
+    method: 'GET',
+  })
+}
+
 export function createLead(payload) {
   return request('/leads', {
     method: 'POST',

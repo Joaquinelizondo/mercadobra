@@ -97,6 +97,24 @@ const projectTypeOptions = [
 const timelineOptions = ['Lo necesito esta semana', 'Durante este mes', 'En 1 a 3 meses']
 
 const budgetOptions = ['Hasta ARS 500.000', 'ARS 500.000 a 2.000.000', 'Más de ARS 2.000.000']
+const paymentPreferenceOptions = ['A convenir', 'Transferencia bancaria', 'Tarjeta / MercadoPago', 'Efectivo contra entrega']
+
+const paymentHighlights = [
+  {
+    title: 'Transferencia bancaria',
+    detail: 'Confirmación rápida y comprobante digital para tu compra.',
+  },
+  {
+    title: 'Tarjeta / MercadoPago',
+    detail: 'Pagá con tarjeta, cuotas o saldo con validación online.',
+  },
+  {
+    title: 'Efectivo contra entrega',
+    detail: 'Disponible en zonas y proveedores habilitados.',
+  },
+]
+
+const quickSearchTerms = ['Cemento', 'Hierro', 'Arena', 'Pintura', 'Taladro']
 
 const RECENT_SEARCHES_KEY = 'mercadobra-recent-searches'
 const WHATSAPP_NUMBER = String(import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(/\D/g, '')
@@ -118,6 +136,7 @@ export default function Landing() {
     projectType: projectTypeOptions[0],
     timeline: timelineOptions[1],
     budgetRange: budgetOptions[0],
+    paymentPreference: paymentPreferenceOptions[0],
     message: '',
   })
   const [activeTrackId, setActiveTrackId] = useState('smart')
@@ -240,7 +259,7 @@ export default function Landing() {
     searchTimerRef.current = setTimeout(() => {
       setIsSearching(false)
       navigate(nextTerm ? `/explorar?q=${encodeURIComponent(nextTerm)}` : '/explorar')
-    }, 3000)
+    }, 700)
   }
 
   function handleFeaturedSearchSubmit(event) {
@@ -256,6 +275,11 @@ export default function Landing() {
   function clearFeaturedSearch() {
     setFeaturedSearchInput('')
     setShowFeaturedSuggestions(false)
+  }
+
+  function handleQuickSearch(term) {
+    setFeaturedSearchInput(term)
+    startFeaturedSearch(term)
   }
 
   function handleLeadInputChange(event) {
@@ -290,13 +314,14 @@ export default function Landing() {
       `Tipo de proyecto: ${formValues.projectType}`,
       `Plazo estimado: ${formValues.timeline}`,
       `Presupuesto estimado: ${formValues.budgetRange}`,
+      `Medio de pago preferido: ${formValues.paymentPreference}`,
     ].join('\n')
   }
 
   function openLeadWhatsapp() {
     const fallbackCompany = leadForm.company.trim() || 'Cliente particular'
     const lines = [
-      'Hola MercadObra, quiero asesoria comercial para mi obra.',
+      'Hola MercadObra, quiero asesoría comercial para mi obra.',
       '',
       `Ruta: ${activeTrack.title}`,
       `Nombre: ${leadForm.name.trim() || 'No informado'}`,
@@ -307,6 +332,7 @@ export default function Landing() {
       `Proyecto: ${leadForm.projectType}`,
       `Plazo: ${leadForm.timeline}`,
       `Presupuesto: ${leadForm.budgetRange}`,
+      `Pago preferido: ${leadForm.paymentPreference}`,
     ]
 
     if (leadForm.message.trim()) {
@@ -348,6 +374,7 @@ export default function Landing() {
         projectType: projectTypeOptions[0],
         timeline: timelineOptions[1],
         budgetRange: budgetOptions[0],
+        paymentPreference: paymentPreferenceOptions[0],
         message: '',
       })
     } catch (error) {
@@ -364,73 +391,106 @@ export default function Landing() {
           <h2>Diseñá tu compra ideal para la obra, no solo una búsqueda más.</h2>
           <p>Buscá productos para compra directa o creá una ruta personalizada para comprar con más claridad.</p>
         </div>
-        <div className="catalog-search-wrap">
-          <label htmlFor="featured-search" className="catalog-search-label">
-            Buscar en destacados
-          </label>
-          <form className="catalog-search-form" onSubmit={handleFeaturedSearchSubmit}>
-            <div className="catalog-search-control">
-              <input
-                id="featured-search"
-                className="catalog-search-input"
-                type="search"
-                placeholder="Ej: Cemento, Taladro, Pintura..."
-                value={featuredSearchInput}
-                autoComplete="off"
-                onFocus={() => setShowFeaturedSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowFeaturedSuggestions(false), 120)}
-                onChange={(event) => {
-                  setFeaturedSearchInput(event.target.value)
-                  setShowFeaturedSuggestions(true)
-                }}
-                disabled={isSearching}
-              />
-              {featuredSearchInput && (
-                <button
-                  type="button"
-                  className="catalog-search-clear"
-                  onClick={clearFeaturedSearch}
-                  aria-label="Limpiar búsqueda"
-                  disabled={isSearching}
-                >
-                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                    <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                  </svg>
-                </button>
-              )}
-
-              {showFeaturedSuggestions && !isSearching && featuredSuggestions.length > 0 && (
-                <ul className="catalog-search-suggestions" role="listbox" aria-label="Sugerencias de búsqueda">
-                  {featuredSuggestions.map((suggestion) => (
-                    <li key={suggestion.id}>
-                      <button
-                        type="button"
-                        className="catalog-search-suggestion-btn"
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => selectFeaturedSuggestion(suggestion)}
-                      >
-                        <span className="catalog-search-suggestion-text">{suggestion.label}</span>
-                        <span
-                          className={`catalog-search-suggestion-tag${
-                            suggestion.type === 'Buscar'
-                              ? ' catalog-search-suggestion-tag--search'
-                              : suggestion.type === 'Reciente'
-                                ? ' catalog-search-suggestion-tag--recent'
-                                : ''
-                          }`}
-                        >
-                          {suggestion.type}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+        <div className="featured-search-panel">
+          <div className="featured-search-panel-head">
+            <span className="featured-search-panel-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22">
+                <path d="M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14Zm0 0 9 9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <div>
+              <p className="featured-search-panel-title">Buscador inteligente de productos</p>
+              <small>Compará en segundos por nombre, categoría o marca.</small>
             </div>
-            <button type="submit" className="catalog-search-submit" disabled={isSearching}>
-              {isSearching ? 'Buscando...' : 'Buscar'}
-            </button>
-          </form>
+          </div>
+
+          <div className="catalog-search-wrap">
+            <label htmlFor="featured-search" className="catalog-search-label">
+              Buscar en destacados
+            </label>
+            <form className="catalog-search-form" onSubmit={handleFeaturedSearchSubmit}>
+              <div className="catalog-search-control">
+                <span className="catalog-search-leading-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="18" height="18">
+                    <path d="M11 5a6 6 0 1 1 0 12 6 6 0 0 1 0-12Zm0 0 8 8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <input
+                  id="featured-search"
+                  className="catalog-search-input"
+                  type="search"
+                  placeholder="Ej: Cemento, Taladro, Pintura..."
+                  value={featuredSearchInput}
+                  autoComplete="off"
+                  onFocus={() => setShowFeaturedSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowFeaturedSuggestions(false), 120)}
+                  onChange={(event) => {
+                    setFeaturedSearchInput(event.target.value)
+                    setShowFeaturedSuggestions(true)
+                  }}
+                  disabled={isSearching}
+                />
+                {featuredSearchInput && (
+                  <button
+                    type="button"
+                    className="catalog-search-clear"
+                    onClick={clearFeaturedSearch}
+                    aria-label="Limpiar búsqueda"
+                    disabled={isSearching}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                      <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                )}
+
+                {showFeaturedSuggestions && !isSearching && featuredSuggestions.length > 0 && (
+                  <ul className="catalog-search-suggestions" role="listbox" aria-label="Sugerencias de búsqueda">
+                    {featuredSuggestions.map((suggestion) => (
+                      <li key={suggestion.id}>
+                        <button
+                          type="button"
+                          className="catalog-search-suggestion-btn"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => selectFeaturedSuggestion(suggestion)}
+                        >
+                          <span className="catalog-search-suggestion-text">{suggestion.label}</span>
+                          <span
+                            className={`catalog-search-suggestion-tag${
+                              suggestion.type === 'Buscar'
+                                ? ' catalog-search-suggestion-tag--search'
+                                : suggestion.type === 'Reciente'
+                                  ? ' catalog-search-suggestion-tag--recent'
+                                  : ''
+                            }`}
+                          >
+                            {suggestion.type}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <button type="submit" className="catalog-search-submit" disabled={isSearching}>
+                {isSearching ? 'Buscando...' : 'Buscar'}
+              </button>
+            </form>
+          </div>
+
+          <div className="featured-search-chips" aria-label="Búsquedas rápidas">
+            {quickSearchTerms.map((term) => (
+              <button
+                key={term}
+                type="button"
+                className="featured-search-chip"
+                onClick={() => handleQuickSearch(term)}
+                disabled={isSearching}
+              >
+                {term}
+              </button>
+            ))}
+          </div>
         </div>
 
         {isSearching && (
@@ -455,6 +515,18 @@ export default function Landing() {
           <span className="verified-badge">Compra directa</span>
           <span className="top-rated-badge">Proveedores verificados</span>
           <span className="fast-shipping-badge">Seguimiento de pedido</span>
+        </div>
+
+        <div className="payment-confidence-panel" aria-label="Opciones de pago disponibles">
+          <p className="payment-confidence-title">Pagá como te quede mejor</p>
+          <div className="payment-confidence-grid">
+            {paymentHighlights.map((payment) => (
+              <article key={payment.title} className="payment-confidence-card">
+                <h3>{payment.title}</h3>
+                <p>{payment.detail}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -532,8 +604,11 @@ export default function Landing() {
           </p>
           <div className="hero-actions">
             <Link to="/explorar" className="primary-link large-link">Explorar productos</Link>
-            <Link to="/proveedor/login" className="ghost-link large-link">Ingreso proveedores</Link>
+            <a href="#contacto" className="ghost-link large-link">Quiero cotizar mi proyecto</a>
           </div>
+          <p className="hero-secondary-link">
+            ¿Sos proveedor? <Link to="/proveedor/login">Ingresá acá</Link>.
+          </p>
           <ul className="metrics" aria-label="Indicadores principales">
             {metrics.map((item) => (
               <li key={item.label}>
@@ -646,15 +721,6 @@ export default function Landing() {
         <span className="eyebrow">Lead Concierge</span>
         <h2>Convertí tu interés en un plan de compra accionable.</h2>
         <p>Dejanos tus datos y recibí una guía inicial según etapa, plazo y presupuesto de tu proyecto.</p>
-
-        <div className="supplier-access-row" aria-label="Acceso para proveedores">
-          <Link to="/proveedor/login" className="ghost-link large-link supplier-access-link">
-            Iniciar sesión de proveedor
-          </Link>
-          <Link to="/proveedor" className="primary-link large-link supplier-access-link">
-            Ir al panel proveedor
-          </Link>
-        </div>
 
         <form className="lead-form" onSubmit={handleLeadSubmit}>
           <div className="lead-form-grid">
@@ -778,6 +844,21 @@ export default function Landing() {
                 ))}
               </select>
             </label>
+
+            <label className="form-field" htmlFor="lead-payment-preference">
+              <span className="form-label">Medio de pago preferido</span>
+              <select
+                id="lead-payment-preference"
+                name="paymentPreference"
+                className="form-input"
+                value={leadForm.paymentPreference}
+                onChange={handleLeadInputChange}
+              >
+                {paymentPreferenceOptions.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </label>
           </div>
 
           <label className="form-field" htmlFor="lead-message">
@@ -805,7 +886,7 @@ export default function Landing() {
             </button>
           </div>
 
-          <p className="whatsapp-direct-hint">Canal comercial directo para respuesta rapida por WhatsApp.</p>
+          <p className="whatsapp-direct-hint">Canal comercial directo para respuesta rápida por WhatsApp.</p>
         </form>
       </section>
     </>

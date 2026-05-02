@@ -142,6 +142,10 @@ async function getJsonRepo() {
         buyerName,
         buyerPhone,
         paymentMethod,
+        paymentStatus: paymentMethod === 'mercadopago' ? 'pending' : 'not_required',
+        paymentProvider: paymentMethod === 'mercadopago' ? 'mercadopago' : '',
+        paymentExternalId: '',
+        paymentPreferenceId: '',
         status: 'pending',
         trackingToken: generateTrackingToken(),
         createdAt: new Date().toISOString(),
@@ -161,9 +165,25 @@ async function getJsonRepo() {
 
         return {
           ...order,
+          paymentStatus: order.paymentStatus || 'not_required',
+          paymentProvider: order.paymentProvider || '',
+          paymentExternalId: order.paymentExternalId || '',
+          paymentPreferenceId: order.paymentPreferenceId || '',
           latestNotification: latestNotification || null,
         }
       })
+    },
+    async getOrderById(id) {
+      const db = readDb()
+      const order = db.orders.find((current) => Number(current.id) === Number(id))
+      if (!order) return null
+      return {
+        ...order,
+        paymentStatus: order.paymentStatus || 'not_required',
+        paymentProvider: order.paymentProvider || '',
+        paymentExternalId: order.paymentExternalId || '',
+        paymentPreferenceId: order.paymentPreferenceId || '',
+      }
     },
     async recordOrderNotification(orderId, notification) {
       const db = readDb()
@@ -205,6 +225,22 @@ async function getJsonRepo() {
       writeDb(db)
       return db.orders[index]
     },
+    async updateOrderPayment(id, updates = {}) {
+      const db = readDb()
+      const index = db.orders.findIndex((order) => Number(order.id) === Number(id))
+      if (index === -1) return null
+
+      db.orders[index] = {
+        ...db.orders[index],
+        paymentStatus: updates.paymentStatus ?? db.orders[index].paymentStatus ?? 'pending',
+        paymentProvider: updates.paymentProvider ?? db.orders[index].paymentProvider ?? '',
+        paymentExternalId: updates.paymentExternalId ?? db.orders[index].paymentExternalId ?? '',
+        paymentPreferenceId: updates.paymentPreferenceId ?? db.orders[index].paymentPreferenceId ?? '',
+      }
+
+      writeDb(db)
+      return db.orders[index]
+    },
     async getOrderByTracking(trackingToken, buyerPhone) {
       const db = readDb()
       const notificationLogs = Array.isArray(db.notificationLogs) ? db.notificationLogs : []
@@ -231,6 +267,10 @@ async function getJsonRepo() {
 
       return {
         ...order,
+        paymentStatus: order.paymentStatus || 'not_required',
+        paymentProvider: order.paymentProvider || '',
+        paymentExternalId: order.paymentExternalId || '',
+        paymentPreferenceId: order.paymentPreferenceId || '',
         items,
         latestNotification: notificationLogs
           .filter((log) => Number(log.orderId) === Number(order.id))
@@ -344,8 +384,18 @@ async function getPgRepo() {
           if (Number(product.stock) < item.quantity) throw new Error(`Stock insuficiente para ${product.name}. Disponible: ${product.stock}`)
         }
         const orderResult = await client.query(
-          'INSERT INTO orders (buyer_name, buyer_phone, payment_method, status, tracking_token) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-          [buyerName, buyerPhone, paymentMethod, 'pending', generateTrackingToken()]
+          `INSERT INTO orders (buyer_name, buyer_phone, payment_method, payment_status, payment_provider, status, tracking_token)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           RETURNING *`,
+          [
+            buyerName,
+            buyerPhone,
+            paymentMethod,
+            paymentMethod === 'mercadopago' ? 'pending' : 'not_required',
+            paymentMethod === 'mercadopago' ? 'mercadopago' : null,
+            'pending',
+            generateTrackingToken(),
+          ]
         )
         const order = orderResult.rows[0]
         for (const item of items) {
@@ -359,6 +409,10 @@ async function getPgRepo() {
           buyerName: order.buyer_name,
           buyerPhone: order.buyer_phone,
           paymentMethod: order.payment_method,
+          paymentStatus: order.payment_status || 'not_required',
+          paymentProvider: order.payment_provider || '',
+          paymentExternalId: order.payment_external_id || '',
+          paymentPreferenceId: order.payment_preference_id || '',
           status: order.status,
           trackingToken: order.tracking_token,
           createdAt: order.created_at,
@@ -386,6 +440,10 @@ async function getPgRepo() {
           buyerName: row.buyer_name,
           buyerPhone: row.buyer_phone,
           paymentMethod: row.payment_method,
+          paymentStatus: row.payment_status || 'not_required',
+          paymentProvider: row.payment_provider || '',
+          paymentExternalId: row.payment_external_id || '',
+          paymentPreferenceId: row.payment_preference_id || '',
           status: row.status,
           trackingToken: row.tracking_token,
           createdAt: row.created_at,
@@ -432,6 +490,64 @@ async function getPgRepo() {
         buyerName: row.buyer_name,
         buyerPhone: row.buyer_phone,
         paymentMethod: row.payment_method,
+        paymentStatus: row.payment_status || 'not_required',
+        paymentProvider: row.payment_provider || '',
+        paymentExternalId: row.payment_external_id || '',
+        paymentPreferenceId: row.payment_preference_id || '',
+        status: row.status,
+        trackingToken: row.tracking_token,
+        createdAt: row.created_at,
+      }
+    },
+    async getOrderById(id) {
+      const { rows } = await pool.query('SELECT * FROM orders WHERE id = $1 LIMIT 1', [Number(id)])
+      const row = rows[0]
+      if (!row) return null
+
+      return {
+        id: Number(row.id),
+        buyerName: row.buyer_name,
+        buyerPhone: row.buyer_phone,
+        paymentMethod: row.payment_method,
+        paymentStatus: row.payment_status || 'not_required',
+        paymentProvider: row.payment_provider || '',
+        paymentExternalId: row.payment_external_id || '',
+        paymentPreferenceId: row.payment_preference_id || '',
+        status: row.status,
+        trackingToken: row.tracking_token,
+        createdAt: row.created_at,
+      }
+    },
+    async updateOrderPayment(id, updates = {}) {
+      const { rows } = await pool.query(
+        `UPDATE orders
+         SET payment_status = COALESCE($1, payment_status),
+             payment_provider = COALESCE($2, payment_provider),
+             payment_external_id = COALESCE($3, payment_external_id),
+             payment_preference_id = COALESCE($4, payment_preference_id)
+         WHERE id = $5
+         RETURNING *`,
+        [
+          updates.paymentStatus ?? null,
+          updates.paymentProvider ?? null,
+          updates.paymentExternalId ?? null,
+          updates.paymentPreferenceId ?? null,
+          Number(id),
+        ]
+      )
+
+      const row = rows[0]
+      if (!row) return null
+
+      return {
+        id: Number(row.id),
+        buyerName: row.buyer_name,
+        buyerPhone: row.buyer_phone,
+        paymentMethod: row.payment_method,
+        paymentStatus: row.payment_status || 'not_required',
+        paymentProvider: row.payment_provider || '',
+        paymentExternalId: row.payment_external_id || '',
+        paymentPreferenceId: row.payment_preference_id || '',
         status: row.status,
         trackingToken: row.tracking_token,
         createdAt: row.created_at,
@@ -473,6 +589,10 @@ async function getPgRepo() {
         buyerName: row.buyer_name,
         buyerPhone: row.buyer_phone,
         paymentMethod: row.payment_method,
+        paymentStatus: row.payment_status || 'not_required',
+        paymentProvider: row.payment_provider || '',
+        paymentExternalId: row.payment_external_id || '',
+        paymentPreferenceId: row.payment_preference_id || '',
         status: row.status,
         trackingToken: row.tracking_token,
         createdAt: row.created_at,
