@@ -287,9 +287,10 @@ function buildRecommendationEmailContent(searchTerm, items) {
   }
 }
 
-async function sendRecommendationEmailViaResend({ email, subject, text, html }) {
+async function sendRecommendationEmailViaResend({ email, subject, html }) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), EMAIL_SEND_TIMEOUT_MS)
+  const htmlDocument = `<!doctype html><html><body style="margin:0;padding:0;">${html}</body></html>`
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
@@ -302,8 +303,7 @@ async function sendRecommendationEmailViaResend({ email, subject, text, html }) 
         from: RESEND_FROM,
         to: [email],
         subject,
-        text,
-        html,
+        html: htmlDocument,
       }),
       signal: controller.signal,
     })
@@ -327,7 +327,7 @@ async function sendRecommendationEmail(email, searchTerm, products) {
   const { text, html } = buildRecommendationEmailContent(searchTerm, items)
 
   if (RESEND_API_KEY && RESEND_FROM) {
-    await sendRecommendationEmailViaResend({ email, subject, text, html })
+    await sendRecommendationEmailViaResend({ email, subject, html })
     return { sent: true, channel: 'email-resend' }
   }
 
