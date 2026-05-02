@@ -496,6 +496,31 @@ app.post('/leads', async (req, res) => {
   return res.status(201).json(created)
 })
 
+app.post('/search-contacts', async (req, res) => {
+  const body = req.body || {}
+  const payload = {
+    searchTerm: String(body.searchTerm || '').trim(),
+    email: String(body.email || '').trim(),
+    phone: String(body.phone || '').trim(),
+    source: String(body.source || 'featured-search').trim(),
+  }
+
+  if (!payload.searchTerm) {
+    return res.status(400).json({ message: 'La búsqueda no puede estar vacía' })
+  }
+
+  if (payload.email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(payload.email)) {
+      return res.status(400).json({ message: 'Email inválido' })
+    }
+  }
+
+  const repo = await getRepository()
+  const created = await repo.createSearchContact(payload)
+  return res.status(201).json(created)
+})
+
 app.get('/orders/track/:trackingToken', async (req, res) => {
   const trackingToken = String(req.params.trackingToken || '').trim()
   const buyerPhone = String(req.query.phone || '').trim()

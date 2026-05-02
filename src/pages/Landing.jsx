@@ -4,7 +4,7 @@ import heroImg from '../assets/hero.png'
 import logoImg from '../assets/mercadobra.png'
 import { useProducts } from '../context/ProductContext'
 import ProductCard from '../components/ProductCard'
-import { createLead } from '../lib/api'
+import { createLead, createSearchContact } from '../lib/api'
 
 const categories = [
   { title: 'Hormigón y áridos', description: 'Encontrá cemento, arena, piedra, bloques y soluciones para obra gruesa en un solo lugar.' },
@@ -110,6 +110,11 @@ export default function Landing() {
   const [featuredSearchInput, setFeaturedSearchInput] = useState('')
   const [showFeaturedSuggestions, setShowFeaturedSuggestions] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
+  const [searchCaptureOpen, setSearchCaptureOpen] = useState(false)
+  const [searchCaptureSending, setSearchCaptureSending] = useState(false)
+  const [searchCaptureError, setSearchCaptureError] = useState('')
+  const [pendingSearchTerm, setPendingSearchTerm] = useState('')
+  const [searchContactForm, setSearchContactForm] = useState({ email: '', phone: '' })
   const [recentSearches, setRecentSearches] = useState([])
   const [leadForm, setLeadForm] = useState({
     name: '',
@@ -249,7 +254,15 @@ export default function Landing() {
 
   function handleFeaturedSearchSubmit(event) {
     event.preventDefault()
-    startFeaturedSearch(featuredSearchInput)
+    const term = featuredSearchInput.trim()
+    if (!term) {
+      startFeaturedSearch('')
+      return
+    }
+
+    setPendingSearchTerm(term)
+    setSearchCaptureError('')
+    setSearchCaptureOpen(true)
   }
 
   function selectFeaturedSuggestion(suggestion) {
@@ -265,6 +278,55 @@ export default function Landing() {
   function handleQuickSearch(term) {
     setFeaturedSearchInput(term)
     startFeaturedSearch(term)
+  }
+
+  function closeSearchCapture() {
+    setSearchCaptureOpen(false)
+    setSearchCaptureError('')
+    setPendingSearchTerm('')
+    setSearchContactForm({ email: '', phone: '' })
+  }
+
+  async function handleSearchCaptureSubmit({ saveContact }) {
+    const term = pendingSearchTerm.trim()
+
+    if (!term) {
+      closeSearchCapture()
+      return
+    }
+
+    if (!saveContact) {
+      closeSearchCapture()
+      startFeaturedSearch(term)
+      return
+    }
+
+    setSearchCaptureSending(true)
+    setSearchCaptureError('')
+
+    try {
+      const normalizedEmail = searchContactForm.email.trim()
+      const normalizedPhone = searchContactForm.phone.trim()
+
+      if (normalizedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+        setSearchCaptureError('Ingresá un email válido o dejalo vacío.')
+        return
+      }
+
+      await createSearchContact({
+        searchTerm: term,
+        email: normalizedEmail,
+        phone: normalizedPhone,
+        source: 'featured-search',
+      })
+
+      closeSearchCapture()
+      startFeaturedSearch(term)
+    } catch (error) {
+      setSearchCaptureError(error.message || 'No se pudo guardar el contacto')
+    } finally {
+      setSearchCaptureSending(false)
+    }
   }
 
   function handleLeadInputChange(event) {
@@ -491,6 +553,73 @@ export default function Landing() {
         )}
 
       </section>
+
+      {searchCaptureOpen && (
+        <div className="search-capture-modal-overlay" role="presentation" onClick={closeSearchCapture}>
+          <div
+            className="search-capture-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="search-capture-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 id="search-capture-title">Antes de buscar, ¿querés que te contactemos?</h3>
+            <p>
+              Es opcional. Si dejás mail o teléfono, te ayudamos con cotización y disponibilidad.
+            </p>
+
+            <div className="search-capture-fields">
+              <label className="form-field" htmlFor="search-capture-email">
+                <span className="form-label">Email (opcional)</span>
+                <input
+                  id="search-capture-email"
+                  className="form-input"
+                  type="email"
+                  value={searchContactForm.email}
+                  onChange={(event) =>
+                    setSearchContactForm((previous) => ({ ...previous, email: event.target.value }))
+                  }
+                  placeholder="tuemail@gmail.com"
+                />
+              </label>
+
+              <label className="form-field" htmlFor="search-capture-phone">
+                <span className="form-label">Teléfono (opcional)</span>
+                <input
+                  id="search-capture-phone"
+                  className="form-input"
+                  value={searchContactForm.phone}
+                  onChange={(event) =>
+                    setSearchContactForm((previous) => ({ ...previous, phone: event.target.value }))
+                  }
+                  placeholder="+54 9 11 1234 5678"
+                />
+              </label>
+            </div>
+
+            {searchCaptureError && <p className="search-capture-error">{searchCaptureError}</p>}
+
+            <div className="search-capture-actions">
+              <button
+                type="button"
+                className="search-capture-skip"
+                onClick={() => handleSearchCaptureSubmit({ saveContact: false })}
+                disabled={searchCaptureSending}
+              >
+                Omitir y buscar
+              </button>
+              <button
+                type="button"
+                className="catalog-search-submit"
+                onClick={() => handleSearchCaptureSubmit({ saveContact: true })}
+                disabled={searchCaptureSending}
+              >
+                {searchCaptureSending ? 'Guardando...' : 'Guardar y buscar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <section className="section journey-studio-section" id="journey-studio">
         <div className="section-heading narrow-left">

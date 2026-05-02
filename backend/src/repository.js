@@ -322,6 +322,26 @@ async function getJsonRepo() {
       writeDb(db)
       return created
     },
+    async createSearchContact(payload) {
+      const db = readDb()
+
+      if (!Array.isArray(db.searchContacts)) {
+        db.searchContacts = []
+      }
+
+      const created = {
+        id: nextId(db.searchContacts),
+        searchTerm: payload.searchTerm,
+        email: payload.email || '',
+        phone: payload.phone || '',
+        source: payload.source || 'featured-search',
+        createdAt: new Date().toISOString(),
+      }
+
+      db.searchContacts.push(created)
+      writeDb(db)
+      return created
+    },
   }
 }
 
@@ -659,6 +679,28 @@ async function getPgRepo() {
       )
 
       return mapLeadRow(rows[0])
+    },
+    async createSearchContact(payload) {
+      const { rows } = await pool.query(
+        `INSERT INTO search_contacts (search_term, email, phone, source)
+         VALUES ($1, $2, $3, $4)
+         RETURNING *`,
+        [
+          payload.searchTerm,
+          payload.email || null,
+          payload.phone || null,
+          payload.source || 'featured-search',
+        ]
+      )
+
+      return {
+        id: Number(rows[0].id),
+        searchTerm: rows[0].search_term,
+        email: rows[0].email || '',
+        phone: rows[0].phone || '',
+        source: rows[0].source || 'featured-search',
+        createdAt: rows[0].created_at,
+      }
     },
   }
 }

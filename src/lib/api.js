@@ -121,6 +121,13 @@ export function createLead(payload) {
   })
 }
 
+export function createSearchContact(payload) {
+  return request('/search-contacts', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function getOrders(token) {
   return request('/orders', {
     method: 'GET',
