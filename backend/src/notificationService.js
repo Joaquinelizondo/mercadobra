@@ -210,8 +210,19 @@ function formatRecommendationItems(products = []) {
   return products.slice(0, 5).map((product, index) => {
     const detailUrl = `${FRONTEND_PUBLIC_URL}/producto/${product.id}`
     return {
+      name: product.name,
+      company: product.company,
+      priceLabel: `$${Number(product.price || 0).toLocaleString('es-AR')}`,
+      detailUrl,
       text: `${index + 1}. ${product.name} · ${product.company} · $${Number(product.price || 0).toLocaleString('es-AR')} · ${detailUrl}`,
-      html: `<li><strong>${product.name}</strong> · ${product.company} · $${Number(product.price || 0).toLocaleString('es-AR')} · <a href="${detailUrl}">Ver producto</a></li>`,
+      html: `
+        <div style="border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin:0 0 10px;background:#ffffff;">
+          <div style="font-size:16px;font-weight:700;color:#111827;margin:0 0 6px;">${product.name}</div>
+          <div style="font-size:13px;color:#6b7280;margin:0 0 4px;">Proveedor: ${product.company}</div>
+          <div style="font-size:15px;font-weight:700;color:#1d4ed8;margin:0 0 10px;">$${Number(product.price || 0).toLocaleString('es-AR')}</div>
+          <a href="${detailUrl}" style="display:inline-block;padding:8px 12px;border-radius:10px;background:#111827;color:#ffffff;text-decoration:none;font-size:13px;font-weight:600;">Ver producto</a>
+        </div>
+      `,
     }
   })
 }
@@ -242,18 +253,31 @@ function buildRecommendationEmailContent(searchTerm, items) {
   textLines.push('Equipo MercadObra')
 
   const htmlItems = hasMatches
-    ? `<ul>${items.map((item) => item.html).join('')}</ul>`
-    : '<p>No encontramos coincidencias exactas en este momento. Te recomendamos ver resultados relacionados en el catalogo.</p>'
+    ? items.map((item) => item.html).join('')
+    : `
+      <div style="border:1px dashed #cbd5e1;border-radius:14px;padding:16px;background:#f8fafc;color:#334155;">
+        No encontramos coincidencias exactas en este momento. Te recomendamos ver resultados relacionados en el catalogo.
+      </div>
+    `
 
   const html = `
-    <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
-      <h2 style="margin: 0 0 12px;">MercadObra</h2>
-      <p style="margin: 0 0 12px;">Buscaste: <strong>${safeSearchTerm}</strong></p>
-      ${htmlItems}
-      <p style="margin: 16px 0 0;">
-        <a href="${exploreUrl}">Ver resultados en MercadObra</a>
-      </p>
-      <p style="margin: 16px 0 0;">Equipo MercadObra</p>
+    <div style="margin:0;padding:20px;background:#f3f4f6;font-family:Arial,sans-serif;color:#111827;">
+      <div style="max-width:620px;margin:0 auto;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e5e7eb;">
+        <div style="padding:22px;background:linear-gradient(135deg,#111827,#1f2937);color:#ffffff;">
+          <div style="font-size:13px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.85;">MercadObra</div>
+          <h2 style="margin:8px 0 6px;font-size:24px;line-height:1.2;">Estas son las mejores opciones para ti</h2>
+          <p style="margin:0;font-size:14px;opacity:0.92;">Busqueda: <strong>${safeSearchTerm}</strong></p>
+        </div>
+
+        <div style="padding:20px;">
+          ${htmlItems}
+
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e5e7eb;">
+            <a href="${exploreUrl}" style="display:inline-block;padding:10px 14px;border-radius:10px;background:#ea580c;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;">Ver mas opciones en MercadObra</a>
+          </div>
+        </div>
+      </div>
+      <p style="max-width:620px;margin:12px auto 0;color:#6b7280;font-size:12px;">Recibiste este mail porque solicitaste recomendaciones desde MercadObra.</p>
     </div>
   `
 
