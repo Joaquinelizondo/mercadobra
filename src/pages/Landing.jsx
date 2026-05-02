@@ -287,17 +287,11 @@ export default function Landing() {
     setSearchContactForm({ email: '', phone: '' })
   }
 
-  async function handleSearchCaptureSubmit({ saveContact }) {
+  async function handleSearchCaptureSubmit() {
     const term = pendingSearchTerm.trim()
 
     if (!term) {
       closeSearchCapture()
-      return
-    }
-
-    if (!saveContact) {
-      closeSearchCapture()
-      startFeaturedSearch(term)
       return
     }
 
@@ -313,12 +307,14 @@ export default function Landing() {
         return
       }
 
-      await createSearchContact({
-        searchTerm: term,
-        email: normalizedEmail,
-        phone: normalizedPhone,
-        source: 'featured-search',
-      })
+      if (normalizedEmail || normalizedPhone) {
+        await createSearchContact({
+          searchTerm: term,
+          email: normalizedEmail,
+          phone: normalizedPhone,
+          source: 'featured-search',
+        })
+      }
 
       closeSearchCapture()
       startFeaturedSearch(term)
@@ -563,10 +559,8 @@ export default function Landing() {
             aria-labelledby="search-capture-title"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 id="search-capture-title">Antes de buscar, ¿querés que te contactemos?</h3>
-            <p>
-              Es opcional. Si dejás mail o teléfono, te ayudamos con cotización y disponibilidad.
-            </p>
+            <h3 id="search-capture-title">Encontrá las mejores opciones para el proximo proyecto de tus suenos</h3>
+            <p>Dejá tu mail o teléfono si querés que después te ayudemos con la cotización.</p>
 
             <div className="search-capture-fields">
               <label className="form-field" htmlFor="search-capture-email">
@@ -602,19 +596,11 @@ export default function Landing() {
             <div className="search-capture-actions">
               <button
                 type="button"
-                className="search-capture-skip"
-                onClick={() => handleSearchCaptureSubmit({ saveContact: false })}
-                disabled={searchCaptureSending}
-              >
-                Omitir y buscar
-              </button>
-              <button
-                type="button"
                 className="catalog-search-submit"
-                onClick={() => handleSearchCaptureSubmit({ saveContact: true })}
+                onClick={handleSearchCaptureSubmit}
                 disabled={searchCaptureSending}
               >
-                {searchCaptureSending ? 'Guardando...' : 'Guardar y buscar'}
+                {searchCaptureSending ? 'Buscando...' : 'Buscar'}
               </button>
             </div>
           </div>
