@@ -1,7 +1,11 @@
 import nodemailer from 'nodemailer'
 
 const FRONTEND_PUBLIC_URL = process.env.FRONTEND_PUBLIC_URL || 'http://localhost:5173'
+const WHATSAPP_PROVIDER = (process.env.WHATSAPP_PROVIDER || 'webhook').toLowerCase()
 const WHATSAPP_WEBHOOK_URL = process.env.WHATSAPP_WEBHOOK_URL || ''
+const META_WHATSAPP_PHONE_NUMBER_ID = process.env.META_WHATSAPP_PHONE_NUMBER_ID || ''
+const META_WHATSAPP_ACCESS_TOKEN = process.env.META_WHATSAPP_ACCESS_TOKEN || ''
+const META_WHATSAPP_API_VERSION = process.env.META_WHATSAPP_API_VERSION || 'v22.0'
 const SMTP_HOST = process.env.SMTP_HOST || ''
 const SMTP_PORT = Number(process.env.SMTP_PORT || 587)
 const SMTP_USER = process.env.SMTP_USER || ''
@@ -48,6 +52,62 @@ async function sendViaWebhook(payload) {
     const text = await response.text()
     throw new Error(`Webhook notification failed (${response.status}): ${text.slice(0, 160)}`)
   }
+}
+
+function normalizePhoneNumber(phone) {
+  return String(phone || '').replace(/\D/g, '')
+}
+
+async function sendViaMetaCloud(payload) {
+  if (!META_WHATSAPP_PHONE_NUMBER_ID || !META_WHATSAPP_ACCESS_TOKEN) {
+    throw new Error('Meta WhatsApp provider is not configured')
+  }
+
+  const normalizedTo = normalizePhoneNumber(payload.to)
+  if (!normalizedTo) {
+    throw new Error('invalid destination phone')
+  }
+
+  const response = await fetch(
+    `https://graph.facebook.com/${META_WHATSAPP_API_VERSION}/${META_WHATSAPP_PHONE_NUMBER_ID}/messages`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${META_WHATSAPP_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: normalizedTo,
+        type: 'text',
+        text: {
+          preview_url: false,
+          body: payload.message,
+        },
+      }),
+    }
+  )
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`Meta WhatsApp notification failed (${response.status}): ${text.slice(0, 160)}`)
+  }
+}
+
+async function sendViaWhatsappProvider(payload) {
+  if (WHATSAPP_PROVIDER === 'meta') {
+    await sendViaMetaCloud(payload)
+    return 'whatsapp-meta'
+  }
+
+  if (WHATSAPP_WEBHOOK_URL) {
+    await sendViaWebhook(payload)
+    return 'whatsapp-webhook'
+  }
+
+  console.log('[notification:mock]', payload)
+  return 'whatsapp-mock'
 }
 
 let transporter = null
@@ -145,13 +205,8 @@ async function sendRecommendationWhatsapp(phone, searchTerm, products) {
     searchTerm,
   }
 
-  if (!WHATSAPP_WEBHOOK_URL) {
-    console.log('[recommendation:whatsapp:mock]', payload)
-    return { sent: true, channel: 'whatsapp-mock' }
-  }
-
-  await sendViaWebhook(payload)
-  return { sent: true, channel: 'whatsapp-webhook' }
+  const channel = await sendViaWhatsappProvider(payload)
+  return { sent: true, channel }
 }
 
 export async function notifyOrderStatusChanged(order) {
@@ -173,19 +228,11 @@ export async function notifyOrderStatusChanged(order) {
     }
   }
 
-  if (!WHATSAPP_WEBHOOK_URL) {
-    console.log('[notification:mock]', payload)
-    return {
-      sent: true,
-      channel: 'mock-console',
-    }
-  }
-
   try {
-    await sendViaWebhook(payload)
+    const channel = await sendViaWhatsappProvider(payload)
     return {
       sent: true,
-      channel: 'whatsapp-webhook',
+      channel,
     }
   } catch (error) {
     console.error('[notification:error]', error)
