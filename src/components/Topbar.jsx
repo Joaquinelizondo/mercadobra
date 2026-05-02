@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { companyInitials } from '../utils/format'
 import logoImg from '../assets/mercadobra.png'
 
 export default function Topbar() {
   const { supplierUser, logout } = useAuth()
+  const { cartCount, setCartOpen } = useCart()
   const { wishlist } = useWishlist()
 
   return (
@@ -32,6 +34,26 @@ export default function Topbar() {
           {wishlist.length > 0 && <span className="wishlist-badge">{wishlist.length}</span>}
         </Link>
 
+        <button
+          type="button"
+          className="topbar-cart-btn"
+          onClick={() => setCartOpen(true)}
+          title="Ver carrito"
+          aria-label={`Ver carrito (${cartCount} productos)`}
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path
+              d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4ZM3 6h18M16 10a4 4 0 0 1-8 0"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+          </svg>
+          {cartCount > 0 && <span className="wishlist-badge">{cartCount}</span>}
+        </button>
+
         {supplierUser ? (
           <div className="supplier-session">
             <span className="supplier-session-avatar">
@@ -45,9 +67,14 @@ export default function Topbar() {
             </button>
           </div>
         ) : (
-          <Link to="/proveedor/login" className="topbar-login-btn">
-            Ingresar como proveedor
-          </Link>
+          <>
+            <Link to="/proveedor/login" className="topbar-user-login-btn">
+              Iniciar sesión
+            </Link>
+            <Link to="/proveedor/login" className="topbar-login-btn">
+              Ingresar como proveedor
+            </Link>
+          </>
         )}
       </div>
     </header>
