@@ -3,7 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import { getRepository } from './repository.js'
 import { generateChatReply } from './chatService.js'
-import { notifyOrderStatusChanged } from './notificationService.js'
+import { notifyOrderStatusChanged, notifySearchRecommendations } from './notificationService.js'
 import {
   createMercadoPagoPreference,
   getMercadoPagoPayment,
@@ -518,7 +518,24 @@ app.post('/search-contacts', async (req, res) => {
 
   const repo = await getRepository()
   const created = await repo.createSearchContact(payload)
-  return res.status(201).json(created)
+  const matchedProducts = await repo.getProducts({ q: payload.searchTerm, stock: 'in' })
+  const notifications = await notifySearchRecommendations({
+    email: payload.email,
+    phone: payload.phone,
+    searchTerm: payload.searchTerm,
+    products: matchedProducts,
+  })
+
+  return res.status(201).json({
+    ...created,
+    notifications,
+    matches: matchedProducts.slice(0, 5).map((product) => ({
+      id: product.id,
+      name: product.name,
+      company: product.company,
+      price: product.price,
+    })),
+  })
 })
 
 app.get('/orders/track/:trackingToken', async (req, res) => {
