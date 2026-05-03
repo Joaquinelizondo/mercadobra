@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useProducts } from '../context/ProductContext'
 import ProductCard from '../components/ProductCard'
@@ -10,6 +10,16 @@ export default function Catalog() {
   const { supplierUser } = useAuth()
   const { productList } = useProducts()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const searchQuery = searchParams.get('q')?.trim() ?? ''
+
+  const filteredProducts = searchQuery
+    ? productList.filter((p) =>
+        [p.name, p.category, p.description, p.company]
+          .filter(Boolean)
+          .some((field) => field.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : productList
   const [publishOpen, setPublishOpen] = useState(false)
 
   function handlePublishClick() {
@@ -37,15 +47,15 @@ export default function Catalog() {
         </div>
 
         <div id="catalog-results">
-          {productList.length === 0 ? (
+          {filteredProducts.length === 0 ? (
             <EmptyState
               icon="🔍"
-              title="No hay productos publicados"
-              message="Todavía no hay productos disponibles en el catálogo."
+              title={searchQuery ? `Sin resultados para "${searchQuery}"` : 'No hay productos publicados'}
+              message={searchQuery ? 'Probá con otros términos de búsqueda.' : 'Todavía no hay productos disponibles en el catálogo.'}
             />
           ) : (
             <div className="products-grid">
-              {productList.map((product) => (
+              {filteredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>

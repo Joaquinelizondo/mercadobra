@@ -194,9 +194,9 @@ export default function Landing() {
       return [
         {
           id: `search-${featuredSearchInput}`,
-          label: `Buscar “${featuredSearchInput.trim()}” en todo el catálogo`,
+          label: `Cotizar "${featuredSearchInput.trim()}" en todo el catálogo`,
           value: featuredSearchInput.trim(),
-          type: 'Buscar',
+          type: 'Cotizar',
         },
       ]
     }
@@ -453,7 +453,7 @@ export default function Landing() {
 
           <div className="catalog-search-wrap">
             <label htmlFor="featured-search" className="catalog-search-label">
-              Buscar en destacados
+              Cotizar en destacados
             </label>
             <form className="catalog-search-form" onSubmit={handleFeaturedSearchSubmit}>
               <div className="catalog-search-control">
@@ -504,7 +504,7 @@ export default function Landing() {
                           <span className="catalog-search-suggestion-text">{suggestion.label}</span>
                           <span
                             className={`catalog-search-suggestion-tag${
-                              suggestion.type === 'Buscar'
+                              suggestion.type === 'Cotizar'
                                 ? ' catalog-search-suggestion-tag--search'
                                 : suggestion.type === 'Reciente'
                                   ? ' catalog-search-suggestion-tag--recent'
@@ -520,7 +520,7 @@ export default function Landing() {
                 )}
               </div>
               <button type="submit" className="catalog-search-submit" disabled={isSearching}>
-                {isSearching ? 'Buscando...' : 'Buscar'}
+                {isSearching ? 'Cotizando...' : 'Cotizar'}
               </button>
             </form>
           </div>
@@ -604,7 +604,7 @@ export default function Landing() {
                 onClick={handleSearchCaptureSubmit}
                 disabled={searchCaptureSending}
               >
-                {searchCaptureSending ? 'Buscando...' : 'Buscar'}
+                {searchCaptureSending ? 'Cotizando...' : 'Cotizar'}
               </button>
             </div>
           </div>
