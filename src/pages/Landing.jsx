@@ -5,6 +5,7 @@ import logoImg from '../assets/mercadobra.png'
 import { useProducts } from '../context/ProductContext'
 import ProductCard from '../components/ProductCard'
 import { createLead, createSearchContact } from '../lib/api'
+import { useSpeechInput } from '../hooks/useSpeechInput'
 
 const categories = [
   { title: 'Hormigón y áridos', description: 'Encontrá cemento, arena, piedra, bloques y soluciones para obra gruesa en un solo lugar.' },
@@ -137,6 +138,21 @@ export default function Landing() {
   const leadSectionRef = useRef(null)
   const featured = productList.slice(0, 6)
   const normalizedFeaturedInput = featuredSearchInput.trim().toLowerCase()
+  const {
+    isSupported: isVoiceSupported,
+    isListening: isVoiceListening,
+    error: voiceError,
+    startListening,
+    stopListening,
+    clearError: clearVoiceError,
+  } = useSpeechInput({
+    lang: 'es-AR',
+    onResult: (transcript) => {
+      setFeaturedSearchInput(transcript)
+      setShowFeaturedSuggestions(false)
+      startFeaturedSearch(transcript)
+    },
+  })
   const activeTrack = useMemo(
     () => journeyTracks.find((track) => track.id === activeTrackId) || journeyTracks[1],
     [activeTrackId]
@@ -273,6 +289,17 @@ export default function Landing() {
   function clearFeaturedSearch() {
     setFeaturedSearchInput('')
     setShowFeaturedSuggestions(false)
+    clearVoiceError()
+  }
+
+  function handleVoiceSearch() {
+    if (isVoiceListening) {
+      stopListening()
+      return
+    }
+
+    clearVoiceError()
+    startListening()
   }
 
   function handleQuickSearch(term) {
@@ -464,7 +491,7 @@ export default function Landing() {
                 </span>
                 <input
                   id="featured-search"
-                  className="catalog-search-input"
+                  className={`catalog-search-input${isVoiceSupported ? ' catalog-search-input--voice' : ''}`}
                   type="search"
                   placeholder="Ej: Cemento, Taladro, Pintura..."
                   value={featuredSearchInput}
@@ -480,13 +507,28 @@ export default function Landing() {
                 {featuredSearchInput && (
                   <button
                     type="button"
-                    className="catalog-search-clear"
+                    className={`catalog-search-clear${isVoiceSupported ? ' catalog-search-clear--with-voice' : ''}`}
                     onClick={clearFeaturedSearch}
                     aria-label="Limpiar búsqueda"
                     disabled={isSearching}
                   >
                     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
                       <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                )}
+
+                {isVoiceSupported && (
+                  <button
+                    type="button"
+                    className={`catalog-search-voice-btn${isVoiceListening ? ' catalog-search-voice-btn--active' : ''}`}
+                    onClick={handleVoiceSearch}
+                    aria-label={isVoiceListening ? 'Detener búsqueda por voz' : 'Iniciar búsqueda por voz'}
+                    title={isVoiceListening ? 'Detener búsqueda por voz' : 'Buscar por voz'}
+                    disabled={isSearching}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                      <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Zm0 0v16m-6-6a6 6 0 0 0 12 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </button>
                 )}
@@ -523,6 +565,13 @@ export default function Landing() {
                 {isSearching ? 'Cotizando...' : 'Cotizar'}
               </button>
             </form>
+            {isVoiceSupported && (
+              <p className="catalog-search-voice-status" aria-live="polite">
+                {isVoiceListening
+                  ? 'Escuchando... hablá ahora para buscar productos.'
+                  : voiceError || 'Tip: también podés buscar por voz con el micrófono.'}
+              </p>
+            )}
           </div>
 
           <div className="featured-search-chips" aria-label="Búsquedas rápidas">
