@@ -1072,10 +1072,6 @@
   transition: border-color 0.16s, background 0.16s, box-shadow 0.16s;
 }
 
-.catalog-search-input--voice {
-  padding-right: 84px;
-}
-
 .catalog-search-clear {
   position: absolute;
   top: 50%;
@@ -1099,40 +1095,34 @@
   color: #ffffff;
 }
 
-.catalog-search-clear--with-voice {
-  right: 44px;
-}
-
-.catalog-search-voice-btn {
-  position: absolute;
-  top: 50%;
-  right: 10px;
-  transform: translateY(-50%);
-  width: 30px;
-  height: 30px;
-  border: none;
-  border-radius: 999px;
+.catalog-search-voice-action {
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  padding: 0 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.16);
+  gap: 8px;
   cursor: pointer;
-  transition: background 0.16s, color 0.16s, transform 0.16s;
+  transition: background 0.16s, border-color 0.16s, transform 0.16s;
 }
 
-.catalog-search-voice-btn:hover {
-  background: rgba(255, 255, 255, 0.28);
-  color: #ffffff;
+.catalog-search-voice-action:hover {
+  background: rgba(255, 255, 255, 0.26);
+  border-color: rgba(255, 255, 255, 0.56);
 }
 
-.catalog-search-voice-btn--active {
+.catalog-search-voice-action--active {
   background: rgba(239, 68, 68, 0.22);
   color: #fecaca;
   animation: voice-pulse 1.1s ease-in-out infinite;
 }
 
-.catalog-search-voice-btn--unsupported {
+.catalog-search-voice-action--unsupported {
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.55);
 }

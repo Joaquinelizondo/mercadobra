@@ -491,7 +491,7 @@ export default function Landing() {
                 </span>
                 <input
                   id="featured-search"
-                  className={`catalog-search-input${isVoiceSupported ? ' catalog-search-input--voice' : ''}`}
+                  className="catalog-search-input"
                   type="search"
                   placeholder="Ej: Cemento, Taladro, Pintura..."
                   value={featuredSearchInput}
@@ -507,7 +507,7 @@ export default function Landing() {
                 {featuredSearchInput && (
                   <button
                     type="button"
-                    className={`catalog-search-clear${isVoiceSupported ? ' catalog-search-clear--with-voice' : ''}`}
+                    className="catalog-search-clear"
                     onClick={clearFeaturedSearch}
                     aria-label="Limpiar búsqueda"
                     disabled={isSearching}
@@ -517,25 +517,6 @@ export default function Landing() {
                     </svg>
                   </button>
                 )}
-
-                <button
-                  type="button"
-                  className={`catalog-search-voice-btn${isVoiceListening ? ' catalog-search-voice-btn--active' : ''}${!isVoiceSupported ? ' catalog-search-voice-btn--unsupported' : ''}`}
-                  onClick={handleVoiceSearch}
-                  aria-label={isVoiceListening ? 'Detener búsqueda por voz' : 'Iniciar búsqueda por voz'}
-                  title={
-                    !isVoiceSupported
-                      ? 'La búsqueda por voz no está disponible en este navegador'
-                      : isVoiceListening
-                        ? 'Detener búsqueda por voz'
-                        : 'Buscar por voz'
-                  }
-                  disabled={isSearching}
-                >
-                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                    <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Zm0 0v16m-6-6a6 6 0 0 0 12 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
 
                 {showFeaturedSuggestions && !isSearching && featuredSuggestions.length > 0 && (
                   <ul className="catalog-search-suggestions" role="listbox" aria-label="Sugerencias de búsqueda">
@@ -565,6 +546,25 @@ export default function Landing() {
                   </ul>
                 )}
               </div>
+              <button
+                type="button"
+                className={`catalog-search-voice-action${isVoiceListening ? ' catalog-search-voice-action--active' : ''}${!isVoiceSupported ? ' catalog-search-voice-action--unsupported' : ''}`}
+                onClick={handleVoiceSearch}
+                aria-label={isVoiceListening ? 'Detener búsqueda por voz' : 'Iniciar búsqueda por voz'}
+                title={
+                  !isVoiceSupported
+                    ? 'La búsqueda por voz no está disponible en este navegador'
+                    : isVoiceListening
+                      ? 'Detener búsqueda por voz'
+                      : 'Buscar por voz'
+                }
+                disabled={isSearching}
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                  <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Zm0 0v16m-6-6a6 6 0 0 0 12 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>Voz</span>
+              </button>
               <button type="submit" className="catalog-search-submit" disabled={isSearching}>
                 {isSearching ? 'Cotizando...' : 'Cotizar'}
               </button>
