@@ -518,20 +518,24 @@ export default function Landing() {
                   </button>
                 )}
 
-                {isVoiceSupported && (
-                  <button
-                    type="button"
-                    className={`catalog-search-voice-btn${isVoiceListening ? ' catalog-search-voice-btn--active' : ''}`}
-                    onClick={handleVoiceSearch}
-                    aria-label={isVoiceListening ? 'Detener búsqueda por voz' : 'Iniciar búsqueda por voz'}
-                    title={isVoiceListening ? 'Detener búsqueda por voz' : 'Buscar por voz'}
-                    disabled={isSearching}
-                  >
-                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                      <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Zm0 0v16m-6-6a6 6 0 0 0 12 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className={`catalog-search-voice-btn${isVoiceListening ? ' catalog-search-voice-btn--active' : ''}${!isVoiceSupported ? ' catalog-search-voice-btn--unsupported' : ''}`}
+                  onClick={handleVoiceSearch}
+                  aria-label={isVoiceListening ? 'Detener búsqueda por voz' : 'Iniciar búsqueda por voz'}
+                  title={
+                    !isVoiceSupported
+                      ? 'La búsqueda por voz no está disponible en este navegador'
+                      : isVoiceListening
+                        ? 'Detener búsqueda por voz'
+                        : 'Buscar por voz'
+                  }
+                  disabled={isSearching}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                    <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Zm0 0v16m-6-6a6 6 0 0 0 12 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
 
                 {showFeaturedSuggestions && !isSearching && featuredSuggestions.length > 0 && (
                   <ul className="catalog-search-suggestions" role="listbox" aria-label="Sugerencias de búsqueda">
@@ -565,13 +569,13 @@ export default function Landing() {
                 {isSearching ? 'Cotizando...' : 'Cotizar'}
               </button>
             </form>
-            {isVoiceSupported && (
-              <p className="catalog-search-voice-status" aria-live="polite">
-                {isVoiceListening
-                  ? 'Escuchando... hablá ahora para buscar productos.'
-                  : voiceError || 'Tip: también podés buscar por voz con el micrófono.'}
-              </p>
-            )}
+            <p className="catalog-search-voice-status" aria-live="polite">
+              {isVoiceListening
+                ? 'Escuchando... hablá ahora para buscar productos.'
+                : voiceError || (isVoiceSupported
+                  ? 'Tip: también podés buscar por voz con el micrófono.'
+                  : 'Este navegador no habilita búsqueda por voz. Probá Chrome/Edge en HTTPS o localhost.')}
+            </p>
           </div>
 
           <div className="featured-search-chips" aria-label="Búsquedas rápidas">
