@@ -45,6 +45,11 @@ export default function Cart() {
   const [copyMessage, setCopyMessage] = useState('')
   const [mercadoPagoEnabled, setMercadoPagoEnabled] = useState(true)
 
+  const normalizedBuyerName = checkoutForm.buyerName.trim()
+  const normalizedBuyerPhone = checkoutForm.buyerPhone.trim()
+  const buyerPhoneDigits = normalizedBuyerPhone.replace(/\D/g, '')
+  const isCheckoutFormValid = normalizedBuyerName.length >= 3 && buyerPhoneDigits.length >= 10
+
   useEffect(() => {
     let mounted = true
 
@@ -92,6 +97,10 @@ export default function Cart() {
 
   async function handleConfirm() {
     if (!selectedPayment) return
+    if (!isCheckoutFormValid) {
+      setOrderError('Completá nombre (mínimo 3 caracteres) y WhatsApp válido (mínimo 10 dígitos).')
+      return
+    }
 
     setOrderLoading(true)
     setOrderError('')
@@ -122,8 +131,8 @@ export default function Cart() {
       }
 
       const order = await createOrder({
-        buyerName: checkoutForm.buyerName.trim(),
-        buyerPhone: checkoutForm.buyerPhone.trim(),
+        buyerName: normalizedBuyerName,
+        buyerPhone: normalizedBuyerPhone,
         paymentMethod: selectedPayment,
         items: cartItems.map((item) => ({
           productId: item.id,
@@ -275,6 +284,7 @@ export default function Cart() {
                   value={checkoutForm.buyerName}
                   onChange={(event) => setCheckoutForm((prev) => ({ ...prev, buyerName: event.target.value }))}
                   placeholder="Ej: Juan Perez"
+                  autoComplete="name"
                 />
               </div>
               <div className="form-row">
@@ -282,12 +292,18 @@ export default function Cart() {
                 <input
                   id="cart-buyer-phone"
                   className="form-input"
+                  type="tel"
                   value={checkoutForm.buyerPhone}
                   onChange={(event) => setCheckoutForm((prev) => ({ ...prev, buyerPhone: event.target.value }))}
                   placeholder="Ej: +54 9 11 1234 5678"
+                  autoComplete="tel"
                 />
               </div>
             </div>
+
+            {!isCheckoutFormValid && (checkoutForm.buyerName || checkoutForm.buyerPhone) && (
+              <p className="cart-order-error">Ingresá nombre y WhatsApp válidos para continuar.</p>
+            )}
 
             {!mercadoPagoEnabled && (
               <p className="cart-order-error">
@@ -330,7 +346,7 @@ export default function Cart() {
               {orderError && <p className="cart-order-error">{orderError}</p>}
               <button
                 className="cart-confirm-btn"
-                disabled={!selectedPayment || orderLoading}
+                disabled={!selectedPayment || orderLoading || !isCheckoutFormValid}
                 onClick={handleConfirm}
               >
                 {orderLoading ? 'Enviando…' : 'Confirmar y enviar'}

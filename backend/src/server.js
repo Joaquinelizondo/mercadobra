@@ -10,12 +10,46 @@ import {
   isMercadoPagoConfigured,
   mapMercadoPagoStatus,
 } from './paymentService.js'
+import { config, validateEnvVars } from './config.js'
+import {
+  setupSecurityMiddleware,
+  createCorsMiddleware,
+  globalErrorHandler,
+  validateJsonContentType,
+  requestLogger,
+} from './security.js'
+import {
+  requireField,
+  validateEmail,
+  validatePassword,
+  validateNumber,
+  validateQuantity,
+  validatePhone,
+  validateEnum,
+  validateArray,
+  validateRequiredFields,
+  validateStringLength,
+  validateOrderStatus,
+  validatePaymentMethod,
+  asyncHandler,
+} from './validators.js'
+import {
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  ConflictError,
+  ServiceUnavailableError,
+  ValidationError,
+} from './errors.js'
+
+// Validar env vars antes de iniciar la app
+validateEnvVars()
 
 const app = express()
-const PORT = Number(process.env.PORT || 4000)
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173,http://localhost:4173'
-const FRONTEND_PUBLIC_URL = process.env.FRONTEND_PUBLIC_URL || 'http://localhost:5173'
-const BACKEND_PUBLIC_URL = process.env.BACKEND_PUBLIC_URL || `http://localhost:${PORT}`
+const PORT = config.port
+const FRONTEND_ORIGIN = config.frontendOrigin
+const FRONTEND_PUBLIC_URL = config.frontendPublicUrl
+const BACKEND_PUBLIC_URL = config.backendPublicUrl
 const ALLOWED_PAYMENT_METHODS = new Set(['transferencia', 'mercadopago'])
 const HAS_PUBLIC_HTTPS_FRONTEND = /^https:\/\//.test(FRONTEND_PUBLIC_URL)
 
@@ -24,32 +58,37 @@ const allowedOrigins = FRONTEND_ORIGIN
   .map((origin) => origin.trim())
   .filter(Boolean)
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) {
-        callback(null, true)
-        return
-      }
+// ============================================================================
+// SECURITY MIDDLEWARES (orden es importante)
+// ============================================================================
 
-      const isLocalhost = /^https?:\/\/localhost(?::\d+)?$/.test(origin)
-      if (isLocalhost || allowedOrigins.includes(origin)) {
-        callback(null, true)
-        return
-      }
+// 1. Helmet - Headers de seguridad HTTP (debe ser primero)
+setupSecurityMiddleware(app)
 
-      callback(new Error('Origin no permitido por CORS'))
-    },
-  })
-)
-app.use(express.json())
+// 2. CORS
+app.use(cors(createCorsMiddleware({ allowedOrigins, credentials: false })))
+
+// 3. Body parser
+app.use(express.json({ limit: '10kb' })) // Limita tamaño de payload
+
+// 4. Validar Content-Type en mutaciones
+app.use(validateJsonContentType)
+
+// 5. Request logger (solo en desarrollo)
+if (config.nodeEnv === 'development') {
+  app.use(requestLogger)
+}
+
+// ============================================================================
+// ENDPOINTS
+// ============================================================================
 
 async function authMiddleware(req, res, next) {
   const header = req.headers.authorization || ''
   const token = header.startsWith('Bearer ') ? header.slice(7) : ''
 
   if (!token.startsWith('mock-token-')) {
-    return res.status(401).json({ message: 'Token inválido o ausente' })
+    throw new AuthenticationError('Token inválido o ausente')
   }
 
   const userId = Number(token.replace('mock-token-', ''))
@@ -57,7 +96,7 @@ async function authMiddleware(req, res, next) {
   const user = await repo.findUserById(userId)
 
   if (!user) {
-    return res.status(401).json({ message: 'Sesión inválida' })
+    throw new AuthenticationError('Sesión inválida')
   }
 
   req.authUser = user
@@ -66,7 +105,7 @@ async function authMiddleware(req, res, next) {
 
 function providerOnly(req, res, next) {
   if (req.authUser?.role !== 'provider') {
-    return res.status(403).json({ message: 'Acceso solo para proveedores' })
+    throw new AuthorizationError('Acceso solo para proveedores')
   }
   next()
 }
@@ -79,17 +118,21 @@ app.get('/payments/mercadopago/config', (_req, res) => {
   res.json({ enabled: isMercadoPagoConfigured() })
 })
 
-app.post('/auth/login', async (req, res) => {
+app.post('/auth/login', asyncHandler(async (req, res) => {
   const { email, password } = req.body || {}
+
+  const normalizedEmail = validateEmail(email)
+  validatePassword(password)
+
   const repo = await getRepository()
-  const user = await repo.findUserByCredentials(email, password)
+  const user = await repo.findUserByCredentials(normalizedEmail, password)
 
   if (!user) {
-    return res.status(401).json({ message: 'Credenciales inválidas' })
+    throw new AuthenticationError('Credenciales inválidas')
   }
 
   if (user.role !== 'provider') {
-    return res.status(403).json({ message: 'Esta cuenta no pertenece a un proveedor' })
+    throw new AuthorizationError('Esta cuenta no pertenece a un proveedor')
   }
 
   const token = `mock-token-${user.id}`
@@ -104,32 +147,20 @@ app.post('/auth/login', async (req, res) => {
       company: user.company
     }
   })
-})
+}))
 
-app.post('/auth/customer/register', async (req, res) => {
+app.post('/auth/customer/register', asyncHandler(async (req, res) => {
   const { fullName, email, password } = req.body || {}
 
-  const normalizedEmail = String(email || '').trim().toLowerCase()
-  const normalizedName = String(fullName || '').trim()
-  const normalizedPassword = String(password || '')
-
-  if (!normalizedName) {
-    return res.status(400).json({ message: 'Ingresá tu nombre completo' })
-  }
-
-  if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
-    return res.status(400).json({ message: 'Ingresá un correo válido' })
-  }
-
-  if (normalizedPassword.length < 6) {
-    return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' })
-  }
+  const normalizedName = requireField(fullName, 'Nombre completo')
+  const normalizedEmail = validateEmail(email)
+  const normalizedPassword = validatePassword(password)
 
   const repo = await getRepository()
   const existing = await repo.findUserByEmail(normalizedEmail)
 
   if (existing) {
-    return res.status(409).json({ message: 'Ya existe una cuenta con ese correo' })
+    throw new ConflictError('Ya existe una cuenta con ese correo')
   }
 
   const created = await repo.createUser({
@@ -152,15 +183,19 @@ app.post('/auth/customer/register', async (req, res) => {
       company: created.company,
     },
   })
-})
+}))
 
-app.post('/auth/customer/login', async (req, res) => {
+app.post('/auth/customer/login', asyncHandler(async (req, res) => {
   const { email, password } = req.body || {}
+
+  const normalizedEmail = validateEmail(email)
+  validatePassword(password)
+
   const repo = await getRepository()
-  const user = await repo.findUserByCredentials(String(email || '').trim().toLowerCase(), password)
+  const user = await repo.findUserByCredentials(normalizedEmail, password)
 
   if (!user || user.role !== 'customer') {
-    return res.status(401).json({ message: 'Credenciales inválidas' })
+    throw new AuthenticationError('Credenciales inválidas')
   }
 
   const token = `mock-token-${user.id}`
@@ -175,7 +210,7 @@ app.post('/auth/customer/login', async (req, res) => {
       company: user.company,
     },
   })
-})
+}))
 
 app.get('/providers', async (_req, res) => {
   const repo = await getRepository()
@@ -194,17 +229,17 @@ app.get('/products', async (req, res) => {
   res.json(await repo.getProducts({ q, category, providerId, stock }))
 })
 
-app.get('/products/:id', async (req, res) => {
-  const id = Number(req.params.id)
+app.get('/products/:id', asyncHandler(async (req, res) => {
+  const id = validateNumber(req.params.id, 'Product ID', 1)
   const repo = await getRepository()
   const product = await repo.getProductById(id)
 
   if (!product) {
-    return res.status(404).json({ message: 'Producto no encontrado' })
+    throw new NotFoundError('Producto')
   }
 
   return res.json(product)
-})
+}))
 
 app.post('/products', authMiddleware, providerOnly, async (req, res) => {
   const body = req.body || {}
@@ -271,46 +306,33 @@ app.delete('/products/:id', authMiddleware, providerOnly, async (req, res) => {
   return res.status(204).send()
 })
 
-app.post('/orders', async (req, res) => {
+app.post('/orders', asyncHandler(async (req, res) => {
   const { items = [], buyerName = '', buyerPhone = '', paymentMethod = '' } = req.body || {}
-  const normalizedPaymentMethod = String(paymentMethod || '').trim().toLowerCase()
 
-  if (!items.length) {
-    return res.status(400).json({ message: 'La orden requiere al menos un producto' })
-  }
-
-  if (!normalizedPaymentMethod) {
-    return res.status(400).json({ message: 'Seleccioná un medio de pago válido' })
-  }
-
-  if (!ALLOWED_PAYMENT_METHODS.has(normalizedPaymentMethod)) {
-    return res.status(400).json({
-      message: `Medio de pago inválido. Opciones: ${Array.from(ALLOWED_PAYMENT_METHODS).join(', ')}`,
-    })
-  }
-
+  // Validar items
+  validateArray(items, 'Carrito')
   const normalizedItems = items.map((item) => ({
-    productId: Number(item.productId || item.id),
-    quantity: Number(item.quantity || 1),
+    productId: validateNumber(item.productId || item.id, 'Producto ID', 1),
+    quantity: validateQuantity(item.quantity),
   }))
 
-  if (normalizedItems.some((item) => item.quantity <= 0)) {
-    return res.status(400).json({ message: 'Hay cantidades inválidas en la orden' })
-  }
+  // Validar buyer info
+  requireField(buyerName, 'Nombre')
+  const normalizedPhone = validatePhone(buyerPhone)
 
-  try {
-    const repo = await getRepository()
-    const order = await repo.createOrder({
-      items: normalizedItems,
-      buyerName,
-      buyerPhone,
-      paymentMethod: normalizedPaymentMethod,
-    })
-    return res.status(201).json(order)
-  } catch (error) {
-    return res.status(400).json({ message: error.message || 'No se pudo crear la orden' })
-  }
-})
+  // Validar método de pago
+  const normalizedPaymentMethod = validatePaymentMethod(paymentMethod)
+
+  const repo = await getRepository()
+  const order = await repo.createOrder({
+    items: normalizedItems,
+    buyerName,
+    buyerPhone: normalizedPhone,
+    paymentMethod: normalizedPaymentMethod,
+  })
+
+  return res.status(201).json(order)
+}))
 
 app.post('/payments/mercadopago/checkout', async (req, res) => {
   const { items = [], buyerName = '', buyerPhone = '', paymentMethod = '' } = req.body || {}
@@ -581,14 +603,9 @@ app.get('/orders/track/:trackingToken', async (req, res) => {
   return res.json(order)
 })
 
-app.patch('/orders/:id/status', authMiddleware, providerOnly, async (req, res) => {
-  const orderId = Number(req.params.id)
-  const nextStatus = String(req.body?.status || '').trim().toLowerCase()
-  const validStatuses = new Set(['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'])
-
-  if (!validStatuses.has(nextStatus)) {
-    return res.status(400).json({ message: 'Estado de orden inválido' })
-  }
+app.patch('/orders/:id/status', authMiddleware, providerOnly, asyncHandler(async (req, res) => {
+  const orderId = validateNumber(req.params.id, 'Order ID', 1)
+  const nextStatus = validateOrderStatus(req.body?.status)
 
   const repo = await getRepository()
   const [orders, providerProducts] = await Promise.all([
@@ -598,19 +615,19 @@ app.patch('/orders/:id/status', authMiddleware, providerOnly, async (req, res) =
 
   const order = orders.find((current) => Number(current.id) === orderId)
   if (!order) {
-    return res.status(404).json({ message: 'Orden no encontrada' })
+    throw new NotFoundError('Orden')
   }
 
   const providerProductIds = new Set(providerProducts.map((product) => Number(product.id)))
   const canManageOrder = (order.items || []).some((item) => providerProductIds.has(Number(item.productId)))
 
   if (!canManageOrder) {
-    return res.status(403).json({ message: 'No podés cambiar el estado de esta orden' })
+    throw new AuthorizationError('No podés cambiar el estado de esta orden')
   }
 
   const updated = await repo.updateOrderStatus(orderId, nextStatus)
   if (!updated) {
-    return res.status(404).json({ message: 'Orden no encontrada' })
+    throw new NotFoundError('Orden')
   }
 
   const notification = await notifyOrderStatusChanged(updated)
@@ -621,7 +638,7 @@ app.patch('/orders/:id/status', authMiddleware, providerOnly, async (req, res) =
     notification,
     notificationLog,
   })
-})
+}))
 
 app.get('/orders/:id/notifications', authMiddleware, providerOnly, async (req, res) => {
   const orderId = Number(req.params.id)
@@ -654,26 +671,36 @@ app.get('/orders', authMiddleware, providerOnly, async (req, res) => {
   res.json(orders)
 })
 
-app.post('/chat', async (req, res) => {
+app.post('/chat', asyncHandler(async (req, res) => {
   const { message = '', history = [] } = req.body || {}
-  const normalizedMessage = String(message).trim()
 
-  if (!normalizedMessage) {
-    return res.status(400).json({ message: 'El mensaje no puede estar vacío' })
-  }
+  const normalizedMessage = validateStringLength(message, 'Mensaje', 1, 1200)
 
-  if (normalizedMessage.length > 1200) {
-    return res.status(400).json({ message: 'El mensaje es demasiado largo (máx 1200 caracteres)' })
-  }
+  const response = await generateChatReply({ message: normalizedMessage, history })
+  return res.json(response)
+}))
 
-  try {
-    const response = await generateChatReply({ message: normalizedMessage, history })
-    return res.json(response)
-  } catch (error) {
-    return res.status(500).json({ message: error.message || 'No se pudo generar la respuesta del chat' })
-  }
+// ============================================================================
+// GLOBAL ERROR HANDLER (debe ser el último middleware, antes de listen)
+// ============================================================================
+app.use(globalErrorHandler)
+
+const server = app.listen(PORT, () => {
+  console.log(`✅ MercadObra backend listening on http://localhost:${PORT}`)
 })
 
-app.listen(PORT, () => {
-  console.log(`MercadObra backend listening on http://localhost:${PORT}`)
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Error: El puerto ${PORT} ya está en uso. Intenta con otro puerto (PORT=XXXX).`)
+  } else if (err.code === 'EACCES') {
+    console.error(`❌ Error: No tenés permisos para usar el puerto ${PORT}. Intenta con un puerto > 1024.`)
+  } else {
+    console.error(`❌ Error del servidor:`, err.message)
+  }
+  process.exit(1)
 })
+
+// ============================================================================
+// GLOBAL ERROR HANDLER (debe ser el último middleware)
+// ============================================================================
+app.use(globalErrorHandler)

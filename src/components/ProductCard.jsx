@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { formatPrice, companyInitials } from '../utils/format'
@@ -8,13 +9,44 @@ export default function ProductCard({ product, onDelete }) {
   const { addToCart, setCartOpen } = useCart()
   const { isInWishlist, toggleWishlist } = useWishlist()
   const inWishlist = isInWishlist(product.id)
+  const [isAddingToCart, setIsAddingToCart] = useState(false)
 
   function handleCardClick() {
     navigate(`/producto/${product.id}`)
   }
 
+  function handleCardKeyDown(event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      handleCardClick()
+    }
+  }
+
+  function handleAddToCart(event) {
+    event.stopPropagation()
+    if (isAddingToCart) return
+
+    if (Number(product.stock) > 0) {
+      setIsAddingToCart(true)
+      addToCart(product)
+      setCartOpen(true)
+      window.setTimeout(() => setIsAddingToCart(false), 450)
+      return
+    }
+
+    navigate(`/proveedor/${encodeURIComponent(product.company)}`)
+  }
+
   return (
-    <article className="product-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
+    <article
+      className="product-card"
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+      role="button"
+      tabIndex={0}
+      style={{ cursor: 'pointer' }}
+      aria-label={`Ver detalle de ${product.name}`}
+    >
       <div className="product-img" style={{ '--product-color': product.color }} aria-hidden="true">
         <div className="product-tags-row">
           <span className="product-category-tag">{product.category}</span>
@@ -37,12 +69,16 @@ export default function ProductCard({ product, onDelete }) {
         </button>
       </div>
       <div className="product-body">
-        <a href={`/proveedor/${encodeURIComponent(product.company)}`} className="company-badge" onClick={(e) => e.stopPropagation()}>
+        <Link
+          to={`/proveedor/${encodeURIComponent(product.company)}`}
+          className="company-badge"
+          onClick={(event) => event.stopPropagation()}
+        >
           <span className="company-avatar" style={{ '--company-color': product.color }}>
             {companyInitials(product.company)}
           </span>
           <span className="company-name">{product.company}</span>
-        </a>
+        </Link>
         <h3 className="product-name">{product.name}</h3>
         <p className="product-desc">{product.description}</p>
         <div className="product-footer">
@@ -68,23 +104,15 @@ export default function ProductCard({ product, onDelete }) {
             )}
             <button
               className={`add-to-cart-btn${Number(product.stock) > 0 ? '' : ' add-to-cart-btn--consult'}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                if (Number(product.stock) > 0) {
-                  addToCart(product)
-                  setCartOpen(true)
-                  return
-                }
-
-                navigate(`/proveedor/${encodeURIComponent(product.company)}`)
-              }}
+              onClick={handleAddToCart}
+              disabled={isAddingToCart && Number(product.stock) > 0}
               aria-label={
                 Number(product.stock) > 0
                   ? `Comprar ${product.name} ahora`
                   : `Consultar a ${product.company} por ${product.name}`
               }
             >
-              {Number(product.stock) > 0 ? 'Comprar ahora' : 'Consultar stock'}
+              {Number(product.stock) > 0 ? (isAddingToCart ? 'Agregado' : 'Comprar ahora') : 'Consultar stock'}
             </button>
           </div>
         </div>
