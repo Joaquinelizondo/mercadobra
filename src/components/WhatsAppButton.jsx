@@ -1,13 +1,10 @@
-const WHATSAPP_NUMBER = String(import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(/\D/g, '')
-
-const DEFAULT_MESSAGE = encodeURIComponent(
-  'Hola MercadObra! Quiero consultar sobre materiales para mi obra.'
-)
+import { createWhatsAppLink } from '../utils/whatsapp'
 
 export default function WhatsAppButton() {
-  const href = WHATSAPP_NUMBER
-    ? `https://wa.me/${WHATSAPP_NUMBER}?text=${DEFAULT_MESSAGE}`
-    : `https://wa.me/?text=${DEFAULT_MESSAGE}`
+  const href = createWhatsAppLink({
+    intent: 'consulta',
+    source: 'boton-flotante',
+  })
 
   return (
     <a

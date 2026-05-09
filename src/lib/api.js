@@ -80,6 +80,13 @@ export function loginCustomer(email, password) {
   })
 }
 
+export function loginAdmin(email, password) {
+  return request('/auth/admin/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  })
+}
+
 export function registerCustomer(payload) {
   return request('/auth/customer/register', {
     method: 'POST',
@@ -145,6 +152,22 @@ export function updateOrderStatus(orderId, status, token) {
     method: 'PATCH',
     token,
     body: JSON.stringify({ status }),
+  })
+}
+
+export function getAdminQuoteConsultations(filters = {}, token) {
+  const params = new URLSearchParams()
+  if (filters.from) params.set('from', filters.from)
+  if (filters.to) params.set('to', filters.to)
+  if (filters.source) params.set('source', filters.source)
+  if (filters.eventType) params.set('eventType', filters.eventType)
+
+  const query = params.toString()
+  const path = query ? `/admin/quote-consultations?${query}` : '/admin/quote-consultations'
+
+  return request(path, {
+    method: 'GET',
+    token,
   })
 }
 

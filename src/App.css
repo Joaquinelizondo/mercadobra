@@ -571,6 +571,43 @@
   font-weight: 700;
 }
 
+.admin-access-section {
+  display: flex;
+  justify-content: center;
+}
+
+.admin-access-card {
+  width: min(760px, 100%);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  background: rgba(17, 24, 39, 0.22);
+  padding: 22px;
+  display: grid;
+  gap: 10px;
+}
+
+.admin-access-card h2 {
+  color: #ffffff;
+  margin: 0;
+}
+
+.admin-access-card p {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.admin-access-form {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-access-form .form-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.admin-access-form .form-input {
+  background: rgba(255, 255, 255, 0.95);
+}
+
 .benefits-list {
   list-style: none;
   margin: 0;
@@ -3383,6 +3420,87 @@
   width: fit-content;
 }
 
+.admin-quotes-page {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-quotes-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-quotes-head h1 {
+  margin: 0;
+  color: #ffffff;
+}
+
+.admin-quotes-head p {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.admin-quotes-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-quotes-filters {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-quotes-filters label {
+  display: grid;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.admin-quotes-table-wrap {
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.admin-quotes-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.admin-quotes-table th,
+.admin-quotes-table td {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.82rem;
+  color: #1f2937;
+}
+
+.admin-quotes-table th {
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 800;
+}
+
+.admin-quotes-empty {
+  text-align: center;
+  padding: 18px;
+  color: #6b7280;
+}
+
 .tracking-timeline {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -3783,6 +3901,10 @@
 
   .tracking-step-label {
     text-align: left;
+  }
+
+  .admin-quotes-filters {
+    grid-template-columns: 1fr;
   }
 
   .cart-list {

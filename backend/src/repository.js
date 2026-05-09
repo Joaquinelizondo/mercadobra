@@ -319,6 +319,29 @@ async function getJsonRepo() {
       }
 
       db.leads.push(created)
+
+      if (!Array.isArray(db.quoteConsultations)) {
+        db.quoteConsultations = []
+      }
+
+      db.quoteConsultations.push({
+        id: nextId(db.quoteConsultations),
+        eventType: 'lead',
+        source: payload.source || 'landing-lead',
+        name: payload.name,
+        email: payload.email,
+        phone: payload.phone,
+        zone: payload.zone,
+        projectType: payload.projectType || '',
+        budgetRange: payload.budgetRange || '',
+        paymentPreference: payload.paymentPreference || '',
+        message: payload.message || '',
+        searchTerm: '',
+        leadId: created.id,
+        searchContactId: null,
+        createdAt: created.createdAt,
+      })
+
       writeDb(db)
       return created
     },
@@ -339,8 +362,61 @@ async function getJsonRepo() {
       }
 
       db.searchContacts.push(created)
+
+      if (!Array.isArray(db.quoteConsultations)) {
+        db.quoteConsultations = []
+      }
+
+      db.quoteConsultations.push({
+        id: nextId(db.quoteConsultations),
+        eventType: 'search_contact',
+        source: payload.source || 'featured-search',
+        name: '',
+        email: payload.email || '',
+        phone: payload.phone || '',
+        zone: '',
+        projectType: '',
+        budgetRange: '',
+        paymentPreference: '',
+        message: '',
+        searchTerm: payload.searchTerm,
+        leadId: null,
+        searchContactId: created.id,
+        createdAt: created.createdAt,
+      })
+
       writeDb(db)
       return created
+    },
+    async getQuoteConsultations(filters = {}) {
+      const db = readDb()
+      const rows = Array.isArray(db.quoteConsultations) ? [...db.quoteConsultations] : []
+
+      let filtered = rows
+
+      if (filters.from) {
+        const fromTs = new Date(filters.from).getTime()
+        if (!Number.isNaN(fromTs)) {
+          filtered = filtered.filter((row) => new Date(row.createdAt).getTime() >= fromTs)
+        }
+      }
+
+      if (filters.to) {
+        const toTs = new Date(filters.to).getTime()
+        if (!Number.isNaN(toTs)) {
+          filtered = filtered.filter((row) => new Date(row.createdAt).getTime() <= toTs)
+        }
+      }
+
+      if (filters.source) {
+        filtered = filtered.filter((row) => String(row.source || '') === String(filters.source))
+      }
+
+      if (filters.eventType) {
+        filtered = filtered.filter((row) => String(row.eventType || '') === String(filters.eventType))
+      }
+
+      return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     },
   }
 }
@@ -678,7 +754,39 @@ async function getPgRepo() {
         ]
       )
 
-      return mapLeadRow(rows[0])
+      const created = mapLeadRow(rows[0])
+
+      await pool.query(
+        `INSERT INTO quote_consultations (
+          event_type,
+          source,
+          name,
+          email,
+          phone,
+          zone,
+          project_type,
+          budget_range,
+          payment_preference,
+          message,
+          lead_id
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [
+          'lead',
+          payload.source || 'landing-lead',
+          payload.name,
+          payload.email,
+          payload.phone,
+          payload.zone,
+          payload.projectType || null,
+          payload.budgetRange || null,
+          payload.paymentPreference || null,
+          payload.message || null,
+          created.id,
+        ]
+      )
+
+      return created
     },
     async createSearchContact(payload) {
       const { rows } = await pool.query(
@@ -693,7 +801,7 @@ async function getPgRepo() {
         ]
       )
 
-      return {
+      const created = {
         id: Number(rows[0].id),
         searchTerm: rows[0].search_term,
         email: rows[0].email || '',
@@ -701,6 +809,76 @@ async function getPgRepo() {
         source: rows[0].source || 'featured-search',
         createdAt: rows[0].created_at,
       }
+
+      await pool.query(
+        `INSERT INTO quote_consultations (
+          event_type,
+          source,
+          email,
+          phone,
+          search_term,
+          search_contact_id
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          'search_contact',
+          payload.source || 'featured-search',
+          payload.email || null,
+          payload.phone || null,
+          payload.searchTerm,
+          created.id,
+        ]
+      )
+
+      return created
+    },
+    async getQuoteConsultations(filters = {}) {
+      const values = []
+      const clauses = []
+
+      if (filters.from) {
+        values.push(filters.from)
+        clauses.push(`created_at >= $${values.length}`)
+      }
+
+      if (filters.to) {
+        values.push(filters.to)
+        clauses.push(`created_at <= $${values.length}`)
+      }
+
+      if (filters.source) {
+        values.push(filters.source)
+        clauses.push(`source = $${values.length}`)
+      }
+
+      if (filters.eventType) {
+        values.push(filters.eventType)
+        clauses.push(`event_type = $${values.length}`)
+      }
+
+      const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
+      const { rows } = await pool.query(
+        `SELECT * FROM quote_consultations ${where} ORDER BY created_at DESC LIMIT 2000`,
+        values
+      )
+
+      return rows.map((row) => ({
+        id: Number(row.id),
+        eventType: row.event_type,
+        source: row.source,
+        name: row.name || '',
+        email: row.email || '',
+        phone: row.phone || '',
+        zone: row.zone || '',
+        projectType: row.project_type || '',
+        budgetRange: row.budget_range || '',
+        paymentPreference: row.payment_preference || '',
+        message: row.message || '',
+        searchTerm: row.search_term || '',
+        leadId: row.lead_id ? Number(row.lead_id) : null,
+        searchContactId: row.search_contact_id ? Number(row.search_contact_id) : null,
+        createdAt: row.created_at,
+      }))
     },
   }
 }

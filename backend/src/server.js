@@ -110,6 +110,13 @@ function providerOnly(req, res, next) {
   next()
 }
 
+function adminOnly(req, res, next) {
+  if (req.authUser?.role !== 'admin') {
+    throw new AuthorizationError('Acceso solo para administradores')
+  }
+  next()
+}
+
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'mercadobra-backend' })
 })
@@ -207,6 +214,32 @@ app.post('/auth/customer/login', asyncHandler(async (req, res) => {
       email: user.email,
       role: user.role,
       providerId: user.providerId,
+      company: user.company,
+    },
+  })
+}))
+
+app.post('/auth/admin/login', asyncHandler(async (req, res) => {
+  const { email, password } = req.body || {}
+
+  const normalizedEmail = validateEmail(email)
+  validatePassword(password)
+
+  const repo = await getRepository()
+  const user = await repo.findUserByCredentials(normalizedEmail, password)
+
+  if (!user || user.role !== 'admin') {
+    throw new AuthenticationError('Credenciales de administrador inválidas')
+  }
+
+  const token = `mock-token-${user.id}`
+
+  return res.json({
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
       company: user.company,
     },
   })
@@ -494,6 +527,10 @@ app.post('/leads', async (req, res) => {
     phone: String(body.phone || '').trim(),
     zone: String(body.zone || '').trim(),
     plan: String(body.plan || '').trim().toLowerCase(),
+    source: String(body.source || 'landing-lead').trim(),
+    projectType: String(body.projectType || '').trim(),
+    budgetRange: String(body.budgetRange || '').trim(),
+    paymentPreference: String(body.paymentPreference || '').trim(),
     message: String(body.message || '').trim(),
   }
 
@@ -580,6 +617,25 @@ app.post('/search-contacts', async (req, res) => {
     })),
   })
 })
+
+app.get('/admin/quote-consultations', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const { from = '', to = '', source = '', eventType = '' } = req.query || {}
+
+  const filters = {
+    from: String(from || '').trim() || null,
+    to: String(to || '').trim() || null,
+    source: String(source || '').trim() || null,
+    eventType: String(eventType || '').trim() || null,
+  }
+
+  const repo = await getRepository()
+  const rows = await repo.getQuoteConsultations(filters)
+
+  return res.json({
+    total: rows.length,
+    rows,
+  })
+}))
 
 app.get('/orders/track/:trackingToken', async (req, res) => {
   const trackingToken = String(req.params.trackingToken || '').trim()

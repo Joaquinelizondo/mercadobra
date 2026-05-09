@@ -1,9 +1,10 @@
 import { createContext, useContext, useMemo, useState } from 'react'
-import { loginCustomer, loginSupplier, registerCustomer } from '../lib/api'
+import { loginAdmin, loginCustomer, loginSupplier, registerCustomer } from '../lib/api'
 
 const AuthContext = createContext(null)
 const SUPPLIER_SESSION_KEY = 'mercadobra-supplier-session'
 const CUSTOMER_SESSION_KEY = 'mercadobra-customer-session'
+const ADMIN_SESSION_KEY = 'mercadobra-admin-session'
 
 function getInitialSession(storageKey, userKey) {
   try {
@@ -22,6 +23,7 @@ function getInitialSession(storageKey, userKey) {
 export function AuthProvider({ children }) {
   const supplierInitial = getInitialSession(SUPPLIER_SESSION_KEY, 'supplierUser')
   const customerInitial = getInitialSession(CUSTOMER_SESSION_KEY, 'customerUser')
+  const adminInitial = getInitialSession(ADMIN_SESSION_KEY, 'adminUser')
 
   const [supplierUser, setSupplierUser] = useState(supplierInitial.user)
   const [token, setToken] = useState(supplierInitial.token)
@@ -32,6 +34,11 @@ export function AuthProvider({ children }) {
   const [customerToken, setCustomerToken] = useState(customerInitial.token)
   const [customerAuthError, setCustomerAuthError] = useState('')
   const [customerAuthLoading, setCustomerAuthLoading] = useState(false)
+
+  const [adminUser, setAdminUser] = useState(adminInitial.user)
+  const [adminToken, setAdminToken] = useState(adminInitial.token)
+  const [adminAuthError, setAdminAuthError] = useState('')
+  const [adminAuthLoading, setAdminAuthLoading] = useState(false)
 
   function persistSession(storageKey, userKey, nextUser, nextToken) {
     localStorage.setItem(
@@ -108,6 +115,30 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(CUSTOMER_SESSION_KEY)
   }
 
+  async function loginAdminAccount(email, password) {
+    setAdminAuthLoading(true)
+    setAdminAuthError('')
+    try {
+      const response = await loginAdmin(email.trim().toLowerCase(), password)
+      setAdminUser(response.user)
+      setAdminToken(response.token)
+      persistSession(ADMIN_SESSION_KEY, 'adminUser', response.user, response.token)
+      return response.user
+    } catch (error) {
+      setAdminAuthError(error.message || 'No se pudo iniciar sesión como admin')
+      return null
+    } finally {
+      setAdminAuthLoading(false)
+    }
+  }
+
+  function logoutAdmin() {
+    setAdminUser(null)
+    setAdminToken('')
+    setAdminAuthError('')
+    localStorage.removeItem(ADMIN_SESSION_KEY)
+  }
+
   const value = useMemo(
     () => ({
       supplierUser,
@@ -123,6 +154,12 @@ export function AuthProvider({ children }) {
       loginCustomer: loginCustomerAccount,
       registerCustomer: registerCustomerAccount,
       logoutCustomer,
+      adminUser,
+      adminToken,
+      adminAuthError,
+      adminAuthLoading,
+      loginAdmin: loginAdminAccount,
+      logoutAdmin,
     }),
     [
       supplierUser,
@@ -133,6 +170,10 @@ export function AuthProvider({ children }) {
       customerToken,
       customerAuthError,
       customerAuthLoading,
+      adminUser,
+      adminToken,
+      adminAuthError,
+      adminAuthLoading,
     ]
   )
 
@@ -159,6 +200,12 @@ export function useAuth() {
       loginCustomer: async () => null,
       registerCustomer: async () => null,
       logoutCustomer: () => {},
+      adminUser: null,
+      adminToken: '',
+      adminAuthError: '',
+      adminAuthLoading: false,
+      loginAdmin: async () => null,
+      logoutAdmin: () => {},
     }
   )
 }

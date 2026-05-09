@@ -10,6 +10,7 @@ import SupplierDashboard from './pages/SupplierDashboard'
 import CustomerLogin from './pages/CustomerLogin'
 import CustomerRegister from './pages/CustomerRegister'
 import OrderTracking from './pages/OrderTracking'
+import AdminQuoteConsultations from './pages/AdminQuoteConsultations'
 import NotFound from './pages/NotFound'
 import { useState } from 'react'
 import heroImg from './assets/hero.png'
@@ -858,6 +859,7 @@ export default function App() {
         <Route path="/proveedor/login" element={<SupplierLogin />} />
         <Route path="/proveedor" element={<SupplierDashboard />} />
         <Route path="/seguimiento/:trackingToken" element={<OrderTracking />} />
+        <Route path="/admin/cotizaciones" element={<AdminQuoteConsultations />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

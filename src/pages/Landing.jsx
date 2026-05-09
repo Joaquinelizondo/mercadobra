@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import heroImg from '../assets/hero.png'
 import logoImg from '../assets/mercadobra.png'
 import { useProducts } from '../context/ProductContext'
+import { useAuth } from '../context/AuthContext'
 import ProductCard from '../components/ProductCard'
 import { createLead, createSearchContact } from '../lib/api'
 import { useSpeechInput } from '../hooks/useSpeechInput'
+import { createWhatsAppLink } from '../utils/whatsapp'
 
 const categories = [
   { title: 'Hormigón y áridos', description: 'Cemento, arena, piedra y bloques en un solo lugar.' },
@@ -142,10 +144,10 @@ const ESTIMATOR_PROFILES = {
 }
 
 const RECENT_SEARCHES_KEY = 'mercadobra-recent-searches'
-const WHATSAPP_NUMBER = String(import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(/\D/g, '')
 
 export default function Landing() {
   const navigate = useNavigate()
+  const { loginAdmin, adminAuthLoading, adminAuthError } = useAuth()
   const { productList } = useProducts()
   const [featuredSearchInput, setFeaturedSearchInput] = useState('')
   const [showFeaturedSuggestions, setShowFeaturedSuggestions] = useState(false)
@@ -173,6 +175,8 @@ export default function Landing() {
   const [leadSubmitting, setLeadSubmitting] = useState(false)
   const [leadError, setLeadError] = useState('')
   const [leadSuccess, setLeadSuccess] = useState('')
+  const [adminLoginForm, setAdminLoginForm] = useState({ email: '', password: '' })
+  const [adminLoginStatus, setAdminLoginStatus] = useState('')
   const [estimatorProject, setEstimatorProject] = useState('pintar')
   const [estimatorArea, setEstimatorArea] = useState(30)
   const [estimatorBudget, setEstimatorBudget] = useState('medio')
@@ -449,29 +453,25 @@ export default function Landing() {
   }
 
   function openLeadWhatsapp() {
-    const fallbackCompany = leadForm.company.trim() || 'Cliente particular'
-    const lines = [
-      'Hola MercadObra, quiero asesoría comercial para mi obra.',
-      '',
-      `Ruta: ${activeTrack.title}`,
-      `Nombre: ${leadForm.name.trim() || 'No informado'}`,
-      `Empresa/Particular: ${fallbackCompany}`,
-      `Telefono: ${leadForm.phone.trim() || 'No informado'}`,
-      `Email: ${leadForm.email.trim() || 'No informado'}`,
-      `Zona: ${leadForm.zone.trim() || 'No informada'}`,
-      `Proyecto: ${leadForm.projectType}`,
-      `Plazo: ${leadForm.timeline}`,
-      `Presupuesto: ${leadForm.budgetRange}`,
-      `Pago preferido: ${leadForm.paymentPreference}`,
-    ]
+    const href = createWhatsAppLink({
+      intent: 'cotizar',
+      source: 'landing-lead-form',
+      data: {
+        route: activeTrack.title,
+        name: leadForm.name,
+        company: leadForm.company,
+        phone: leadForm.phone,
+        email: leadForm.email,
+        zone: leadForm.zone,
+        projectType: leadForm.projectType,
+        timeline: leadForm.timeline,
+        budget: leadForm.budgetRange,
+        paymentPreference: leadForm.paymentPreference,
+        message: leadForm.message,
+      },
+    })
 
-    if (leadForm.message.trim()) {
-      lines.push('', `Detalle: ${leadForm.message.trim()}`)
-    }
-
-    const message = encodeURIComponent(lines.join('\n'))
-    const endpoint = WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}` : 'https://wa.me/'
-    window.open(`${endpoint}?text=${message}`, '_blank', 'noopener,noreferrer')
+    window.open(href, '_blank', 'noopener,noreferrer')
   }
 
   async function handleLeadSubmit(event) {
@@ -490,6 +490,7 @@ export default function Landing() {
 
       await createLead({
         ...leadForm,
+        source: 'landing-lead-form',
         company: fallbackCompany,
         message: [leadForm.message.trim(), brief].filter(Boolean).join('\n\n'),
       })
@@ -517,6 +518,20 @@ export default function Landing() {
   function openEstimatorResults() {
     const query = estimatorResult.keywords.join(' ')
     navigate(`/explorar?q=${encodeURIComponent(query)}`)
+  }
+
+  async function handleAdminLogin(event) {
+    event.preventDefault()
+    setAdminLoginStatus('')
+
+    const user = await loginAdmin(adminLoginForm.email, adminLoginForm.password)
+    if (!user) {
+      return
+    }
+
+    setAdminLoginStatus('Acceso concedido. Redirigiendo al panel...')
+    setAdminLoginForm({ email: '', password: '' })
+    window.setTimeout(() => navigate('/admin/cotizaciones'), 250)
   }
 
   return (
@@ -812,6 +827,53 @@ export default function Landing() {
 
       <section className="info-strip">
         <p>Comprar materiales puede ser simple, rapido y con buen gusto.</p>
+      </section>
+
+      <section className="section admin-access-section" id="admin-access">
+        <div className="admin-access-card">
+          <span className="eyebrow">Acceso interno</span>
+          <h2>Panel admin de cotizaciones</h2>
+          <p>Entrá con usuario admin para ver la tabla completa y filtrar por fecha, tipo y origen.</p>
+
+          <form className="admin-access-form" onSubmit={handleAdminLogin}>
+            <label className="form-field" htmlFor="admin-email">
+              <span className="form-label">Usuario admin</span>
+              <input
+                id="admin-email"
+                type="email"
+                className="form-input"
+                value={adminLoginForm.email}
+                onChange={(event) =>
+                  setAdminLoginForm((previous) => ({ ...previous, email: event.target.value }))
+                }
+                placeholder="admin@mercadobra.com"
+                required
+              />
+            </label>
+
+            <label className="form-field" htmlFor="admin-password">
+              <span className="form-label">Contraseña</span>
+              <input
+                id="admin-password"
+                type="password"
+                className="form-input"
+                value={adminLoginForm.password}
+                onChange={(event) =>
+                  setAdminLoginForm((previous) => ({ ...previous, password: event.target.value }))
+                }
+                placeholder="••••••••"
+                required
+              />
+            </label>
+
+            <button type="submit" className="primary-link large-link lead-submit-btn" disabled={adminAuthLoading}>
+              {adminAuthLoading ? 'Validando...' : 'Entrar al panel admin'}
+            </button>
+          </form>
+
+          {adminAuthError && <p className="input-error">{adminAuthError}</p>}
+          {adminLoginStatus && <p className="input-success">{adminLoginStatus}</p>}
+        </div>
       </section>
 
       <section className="section estimator-section" id="estimador">

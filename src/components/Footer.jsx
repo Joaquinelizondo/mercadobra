@@ -1,5 +1,6 @@
 import logoImg from '../assets/mercadobra.png'
 import { siMercadopago, siVisa } from 'simple-icons'
+import { createWhatsAppLink } from '../utils/whatsapp'
 
 function PaymentBrandLogo({ icon, label }) {
   return (
@@ -37,6 +38,10 @@ function PaymentLogosRow() {
 
 export default function Footer() {
   const year = new Date().getFullYear()
+  const whatsappHref = createWhatsAppLink({
+    intent: 'consulta',
+    source: 'footer-redes',
+  })
 
   return (
     <footer className="footer">
@@ -88,7 +93,7 @@ export default function Footer() {
               </a>
             </li>
             <li>
-              <a href="https://wa.me/5491100000000" target="_blank" rel="noreferrer"
+              <a href={whatsappHref} target="_blank" rel="noreferrer"
                 className="social-link" aria-label="WhatsApp" title="WhatsApp">
                 <svg viewBox="0 0 24 24" className="social-icon" aria-hidden="true">
                   <path d="M20.5 3.5A11.3 11.3 0 0 0 2.8 17.2L1.5 22.5l5.4-1.3A11.3 11.3 0 1 0 20.5 3.5Zm-8.2 17.1a9.4 9.4 0 0 1-4.8-1.31l-.34-.2-3.2.77.76-3.12-.22-.36a9.46 9.46 0 1 1 7.98 4.22Zm5.2-7.1c-.28-.14-1.65-.81-1.9-.9-.25-.1-.43-.14-.61.14-.18.27-.7.9-.86 1.08-.16.18-.31.2-.59.07-.27-.14-1.14-.42-2.17-1.35-.8-.71-1.34-1.59-1.5-1.86-.16-.28-.02-.42.12-.56.13-.12.28-.32.41-.48.14-.16.18-.28.28-.46.09-.18.04-.35-.02-.49-.07-.14-.62-1.5-.85-2.05-.22-.53-.45-.46-.61-.47h-.52c-.18 0-.46.07-.71.35-.25.27-.95.93-.95 2.27 0 1.34.97 2.63 1.1 2.81.14.18 1.9 2.9 4.6 4.07.64.28 1.14.45 1.52.58.64.2 1.23.17 1.7.1.52-.08 1.65-.67 1.88-1.33.23-.66.23-1.22.16-1.33-.07-.11-.25-.17-.53-.31Z" fill="currentColor"/>

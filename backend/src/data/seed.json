@@ -71,6 +71,14 @@
       "role": "provider",
       "providerId": 1,
       "company": "Corralón La Obra"
+    },
+    {
+      "id": 2,
+      "email": "admin@mercadobra.com",
+      "password": "admin123",
+      "role": "admin",
+      "providerId": null,
+      "company": "MercadObra Admin"
     }
   ],
   "orders": [],

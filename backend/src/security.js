@@ -35,7 +35,7 @@ export function setupSecurityMiddleware(app) {
     message: 'Demasiados intentos de login. Intenta de nuevo en 15 minutos.',
     skip: (req) => {
       // Solo aplica a endpoints de auth
-      return !['/auth/login', '/auth/customer/login', '/auth/customer/register'].includes(req.path)
+      return !['/auth/login', '/auth/customer/login', '/auth/customer/register', '/auth/admin/login'].includes(req.path)
     },
   })
   app.use(authLimiter)

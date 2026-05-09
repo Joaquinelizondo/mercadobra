@@ -9,6 +9,7 @@ const REQUIRED_TABLES = [
   'order_items',
   'notification_logs',
   'leads',
+  'quote_consultations',
   'migrations',
 ]
 
