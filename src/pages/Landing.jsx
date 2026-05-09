@@ -461,10 +461,6 @@ export default function Landing() {
   return (
     <>
       <section className="section featured-search-section" id="inicio">
-        <div className="section-heading narrow">
-          <h2>Diseñá tu compra ideal para la obra, no solo una búsqueda más.</h2>
-          <p>Buscá productos para compra directa o creá una ruta personalizada para comprar con más claridad.</p>
-        </div>
         <div className="featured-search-panel">
           <div className="featured-search-panel-head">
             <span className="featured-search-panel-icon" aria-hidden="true">
@@ -473,14 +469,14 @@ export default function Landing() {
               </svg>
             </span>
             <div>
-              <p className="featured-search-panel-title">Buscador inteligente de productos</p>
-              <small>Compará en segundos por nombre, categoría o marca.</small>
+              <p className="featured-search-panel-title">Buscador inteligente</p>
+              <small>Encontrá por nombre, categoría o marca</small>
             </div>
           </div>
 
           <div className="catalog-search-wrap">
             <label htmlFor="featured-search" className="catalog-search-label">
-              Cotizar en destacados
+              Buscá productos
             </label>
             <form className="catalog-search-form" onSubmit={handleFeaturedSearchSubmit}>
               <div className="catalog-search-control">
@@ -493,7 +489,7 @@ export default function Landing() {
                   id="featured-search"
                   className="catalog-search-input"
                   type="search"
-                  placeholder="Ej: Cemento, Taladro, Pintura..."
+                  placeholder="Cemento, Taladro, Pintura..."
                   value={featuredSearchInput}
                   autoComplete="off"
                   onFocus={() => setShowFeaturedSuggestions(false)}
@@ -571,9 +567,9 @@ export default function Landing() {
             </form>
             <p className="catalog-search-voice-status" aria-live="polite">
               {isVoiceListening
-                ? 'Escuchando... hablá ahora para buscar productos.'
+                ? 'Escuchando... hablá ahora'
                 : voiceError || (isVoiceSupported
-                  ? 'Tip: también podés buscar por voz con el micrófono.'
+                  ? 'También podés buscar por voz'
                   : 'Este navegador no habilita búsqueda por voz. Probá Chrome/Edge en HTTPS o localhost.')}
             </p>
           </div>
