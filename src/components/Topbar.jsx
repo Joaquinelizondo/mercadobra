@@ -21,8 +21,8 @@ export default function Topbar() {
       <nav className="topbar-menu" aria-label="Navegación principal">
         <a href="/#inicio">Inicio</a>
         <a href="/#categorias">Categorías</a>
-        <Link to="/explorar">Explorar</Link>
-        <a href="/#como-funciona">Cómo funciona</a>
+        <Link to="/explorar">Ver todo</Link>
+        <a href="/#como-funciona">Cómo va</a>
         <a href="/#contacto">Contacto</a>
       </nav>
 
@@ -81,10 +81,10 @@ export default function Topbar() {
         ) : (
           <>
             <Link to="/cliente/login" className="topbar-user-login-btn">
-              Iniciar sesión
+              Quiero comprar
             </Link>
             <Link to="/proveedor/login" className="topbar-login-btn">
-              Ingresar como proveedor
+              Soy proveedor
             </Link>
           </>
         )}

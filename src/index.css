@@ -1,10 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Bricolage+Grotesque:wght@500;700;800&display=swap');
 
 :root {
   --text: #5a6472;
   --text-h: #13212f;
+  --text-primary: #13212f;
+  --text-muted: #5a6472;
   --bg: linear-gradient(180deg, #f97316 0%, #ea580c 42%, #c2410c 100%);
+  --bg-canvas: #ffffff;
   --border: rgba(255, 255, 255, 0.18);
+  --border-color: rgba(19, 33, 47, 0.12);
   --code-bg: #f4f3ec;
   --accent: #f97316;
   --accent-strong: #ea580c;
@@ -18,8 +22,8 @@
   --shadow:
     rgba(15, 23, 42, 0.08) 0 16px 40px -24px, rgba(15, 23, 42, 0.08) 0 8px 24px -18px;
 
-  --sans: Manrope, 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --heading: 'Space Grotesk', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --sans: Sora, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --heading: 'Bricolage Grotesque', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 18px/145% var(--sans);
@@ -40,7 +44,12 @@
 body {
   margin: 0;
   min-width: 320px;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 8% 10%, rgba(255, 220, 180, 0.36), transparent 34%),
+    radial-gradient(circle at 86% 12%, rgba(255, 255, 255, 0.2), transparent 32%),
+    linear-gradient(165deg, #fb923c 0%, #f97316 32%, #ea580c 65%, #9a3412 100%);
+  background-attachment: fixed;
+  overflow-x: hidden;
 }
 
 #root {

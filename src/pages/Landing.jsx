@@ -8,42 +8,42 @@ import { createLead, createSearchContact } from '../lib/api'
 import { useSpeechInput } from '../hooks/useSpeechInput'
 
 const categories = [
-  { title: 'Hormigón y áridos', description: 'Encontrá cemento, arena, piedra, bloques y soluciones para obra gruesa en un solo lugar.' },
-  { title: 'Hierro y estructuras', description: 'Compará perfiles, mallas, chapas y caños para avanzar tu proyecto con el mejor precio.' },
-  { title: 'Terminaciones', description: 'Elegí pisos, revestimientos, pinturas, sanitarios y grifería para cada ambiente.' },
-  { title: 'Herramientas y seguridad', description: 'Comprá herramientas, protección personal y equipamiento confiable para tu obra.' },
+  { title: 'Hormigón y áridos', description: 'Cemento, arena, piedra y bloques en un solo lugar.' },
+  { title: 'Hierro y estructuras', description: 'Perfiles, mallas, chapas y caños sin perder tiempo.' },
+  { title: 'Terminaciones', description: 'Pisos, revestimientos, pinturas y grifería para cerrar bien la obra.' },
+  { title: 'Herramientas y seguridad', description: 'Herramientas y protección confiable para trabajar tranquilo.' },
 ]
 
 const benefits = [
-  'Compará precios y productos por categoría en minutos.',
-  'Contactá proveedores verificados sin salir de la plataforma.',
-  'Guardá favoritos para decidir con calma antes de comprar.',
-  'Seguimiento del pedido para tener control de cada etapa de tu compra.',
+  'Compará precios en minutos.',
+  'Contactá proveedores verificados al toque.',
+  'Guardá favoritos y decidí tranquilo.',
+  'Seguí tu pedido paso a paso.',
 ]
 
 const metrics = [
-  { value: '+500', label: 'productos para hogar y obra' },
-  { value: '24/7', label: 'catálogo disponible para comprar' },
-  { value: '1 clic', label: 'para contactar al proveedor' },
+  { value: '+500', label: 'productos para tu obra' },
+  { value: '24/7', label: 'catálogo siempre abierto' },
+  { value: '1 clic', label: 'para hablar con proveedores' },
 ]
 
 const testimonios = [
   {
     name: 'Lucía Martínez',
     company: 'Remodelación de cocina',
-    text: 'Pude comparar materiales y resolver la compra completa para mi cocina desde casa. El contacto con proveedores fue rápido y claro.',
+    text: 'Comparé materiales y cerré toda la compra de la cocina desde casa. El contacto con proveedores fue rapidísimo y re claro.',
     rating: 5
   },
   {
     name: 'Nicolás Rojas',
     company: 'Ampliación familiar',
-    text: 'Usé MercadObra para conseguir hierro, cemento y herramientas. Ahorré tiempo y pude elegir por precio y disponibilidad.',
+    text: 'Conseguí hierro, cemento y herramientas en un toque. Ahorré tiempo y elegí por precio y disponibilidad sin marearme.',
     rating: 5
   },
   {
     name: 'Agustina Pérez',
     company: 'Refacción de baño',
-    text: 'Me ayudó mucho tener seguimiento del pedido. Sentí más seguridad comprando materiales para una obra chica.',
+    text: 'El seguimiento del pedido me dio mucha tranquilidad. Para una obra chica, te cambia todo comprar así de claro.',
     rating: 4
   }
 ]
@@ -52,7 +52,7 @@ const journeyTracks = [
   {
     id: 'express',
     title: 'Ruta Express 72h',
-    subtitle: 'Para resolver compras urgentes sin perder control de precio.',
+    subtitle: 'Para resolver compras urgentes sin perder el control del precio.',
     audience: 'Ideal para arreglos rápidos y entregas inmediatas',
     plan: 'premium',
     checklist: [
@@ -64,7 +64,7 @@ const journeyTracks = [
   {
     id: 'smart',
     title: 'Ruta Ahorro Inteligente',
-    subtitle: 'Para comparar opciones y optimizar cada peso de tu obra.',
+    subtitle: 'Para comparar opciones y estirar cada peso de tu obra.',
     audience: 'Ideal para remodelaciones planificadas',
     plan: 'pro',
     checklist: [
@@ -76,7 +76,7 @@ const journeyTracks = [
   {
     id: 'proyecto',
     title: 'Ruta Proyecto Completo',
-    subtitle: 'Para obras por etapas con compras ordenadas.',
+    subtitle: 'Para obras por etapas con compras bien ordenadas.',
     audience: 'Ideal para ampliaciones, obra nueva o cambios grandes',
     plan: 'premium',
     checklist: [
@@ -437,7 +437,7 @@ export default function Landing() {
         company: fallbackCompany,
         message: [leadForm.message.trim(), brief].filter(Boolean).join('\n\n'),
       })
-      setLeadSuccess('¡Gracias! Recibimos tu solicitud y te contactamos a la brevedad.')
+      setLeadSuccess('Listo, ya recibimos tu solicitud. Te escribimos en breve.')
       setLeadForm({
         name: '',
         company: '',
@@ -461,11 +461,11 @@ export default function Landing() {
   return (
     <>
       <section className="section featured-search-section" id="inicio">
-        <h1 className="featured-search-title">Encontrá las mejores opciones para la próxima construcción de tus sueños</h1>
+        <h1 className="featured-search-title">Tu obra arranca aca</h1>
         <div className="featured-search-panel">
           <div className="catalog-search-wrap">
             <label htmlFor="featured-search" className="catalog-search-label">
-              Buscá productos
+              Escribi lo que necesitas
             </label>
             <form className="catalog-search-form" onSubmit={handleFeaturedSearchSubmit}>
               <div className="catalog-search-control">
@@ -551,7 +551,7 @@ export default function Landing() {
                 <span>Voz</span>
               </button>
               <button type="submit" className="catalog-search-submit" disabled={isSearching}>
-                {isSearching ? 'Cotizando...' : 'Cotizar'}
+                {isSearching ? 'Buscando...' : 'Ver opciones'}
               </button>
             </form>
             <p className="catalog-search-voice-status" aria-live="polite">
@@ -585,8 +585,8 @@ export default function Landing() {
                 <path d="M3 11 12 4l9 7v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2v-9Z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <p>Buscando productos en construcción...</p>
-            <small>Estamos preparando resultados para vos.</small>
+            <p>Buscando productos para tu obra...</p>
+            <small>Te estamos armando resultados piola.</small>
           </div>
         )}
 
@@ -601,8 +601,8 @@ export default function Landing() {
             aria-labelledby="search-capture-title"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 id="search-capture-title">Encontrá las mejores opciones para el proximo proyecto de tus suenos</h3>
-            <p>Dejá tu mail o teléfono si querés que después te ayudemos con la cotización.</p>
+            <h3 id="search-capture-title">¿Te damos una mano con esto?</h3>
+            <p>Dejanos tu mail o telefono y te escribimos con opciones.</p>
 
             <div className="search-capture-fields">
               <label className="form-field" htmlFor="search-capture-email">
@@ -651,9 +651,9 @@ export default function Landing() {
 
       <section className="section journey-studio-section" id="journey-studio">
         <div className="section-heading narrow-left">
-          <span className="eyebrow">Journey Studio</span>
-          <h2>Una experiencia de compra que se adapta al momento real de tu obra.</h2>
-          <p>Elegí una ruta y activá una guía personalizada para convertir visitas en decisiones de compra.</p>
+          <span className="eyebrow">Modo Obra</span>
+          <h2>Elegi una ruta segun el momento de tu proyecto.</h2>
+          <p>Simple, clara y pensada para decidir bien.</p>
         </div>
 
         <div className="journey-track-grid" role="tablist" aria-label="Rutas de compra">
@@ -674,7 +674,7 @@ export default function Landing() {
 
         <div className="journey-playbook" aria-live="polite">
           <div>
-            <p className="card-kicker">Playbook activo</p>
+            <p className="card-kicker">Ruta activa</p>
             <h3>{activeTrack.title}</h3>
             <p>{activeTrack.subtitle}</p>
           </div>
@@ -684,7 +684,7 @@ export default function Landing() {
             ))}
           </ul>
           <button type="button" className="primary-link large-link lead-submit-btn" onClick={startGuidedLeadCapture}>
-            Activar esta ruta para mi proyecto
+            Activar esta ruta
           </button>
         </div>
       </section>
@@ -693,7 +693,7 @@ export default function Landing() {
         <div className="catalog-section-heading">
           <div className="section-heading" style={{ flex: 1 }}>
             <span className="eyebrow">Productos destacados</span>
-            <h2>Elegí materiales y herramientas para avanzar tu obra hoy mismo.</h2>
+            <h2>Materiales y herramientas para avanzar hoy mismo.</h2>
           </div>
           <Link to="/explorar" className="ghost-link">
             Ver catálogo completo →
@@ -708,25 +708,24 @@ export default function Landing() {
 
         <div style={{ textAlign: 'center' }}>
           <Link to="/explorar" className="primary-link large-link" style={{ display: 'inline-flex' }}>
-            Explorar todos los productos
+            Ver todo el catalogo
           </Link>
         </div>
       </section>
 
       <section className="hero-section">
         <div className="hero-copy">
-          <span className="eyebrow">Comprá simple, rápido y con respaldo</span>
-          <h1>Tu obra, tu ritmo: una experiencia pensada para decidir mejor.</h1>
+          <span className="eyebrow">Simple, claro y al grano</span>
+          <h1>Tu obra, a tu manera.</h1>
           <p className="hero-text">
-            MercadObra combina catálogo, comparación y asesoría en un mismo flujo para que cada visita
-            avance hacia una compra real, sin fricción y con contexto.
+            Precios claros, proveedores reales y una experiencia comoda para comprar sin vueltas.
           </p>
           <div className="hero-actions">
-            <Link to="/explorar" className="primary-link large-link">Explorar productos</Link>
-            <a href="#contacto" className="ghost-link large-link">Quiero cotizar mi proyecto</a>
+            <Link to="/explorar" className="primary-link large-link">Explorar ahora</Link>
+            <a href="#contacto" className="ghost-link large-link">Quiero ayuda para comprar</a>
           </div>
           <p className="hero-secondary-link">
-            ¿Sos proveedor? <Link to="/proveedor/login">Ingresá acá</Link>.
+            ¿Sos proveedor? <Link to="/proveedor/login">Entrá por acá</Link>.
           </p>
           <ul className="metrics" aria-label="Indicadores principales">
             {metrics.map((item) => (
@@ -743,21 +742,21 @@ export default function Landing() {
           <img src={logoImg} className="hero-logo" alt="Logo MercadObra" />
           <img src={heroImg} alt="Ilustración de materiales y herramientas de obra" />
           <div className="hero-card-content">
-            <p className="card-kicker">Pensado para particulares</p>
-            <h2>Buscá, compará y comprá con tranquilidad para cada etapa de tu proyecto.</h2>
-            <p>Desde obra gruesa hasta terminaciones, encontrá todo en un solo lugar con proveedores reales.</p>
+            <p className="card-kicker">Pensado para personas reales</p>
+            <h2>Busca, compara y compra con tranquilidad.</h2>
+            <p>Desde la base hasta la terminacion, todo en un mismo lugar.</p>
           </div>
         </div>
       </section>
 
       <section className="info-strip">
-        <p>MercadObra está diseñado para que clientes particulares compren materiales de construcción con más claridad, confianza y velocidad.</p>
+        <p>Comprar materiales puede ser simple, rapido y con buen gusto.</p>
       </section>
 
       <section className="section" id="categorias">
         <div className="section-heading">
           <span className="eyebrow">Categorías destacadas</span>
-          <h2>Todo lo que tu obra necesita, organizado para decidir mejor.</h2>
+          <h2>Todo lo que necesitas, ordenado para decidir facil.</h2>
         </div>
         <div className="categories-grid">
           {categories.map((cat) => (
@@ -772,23 +771,23 @@ export default function Landing() {
       <section className="section section-alt" id="como-funciona">
         <div className="section-heading narrow">
           <span className="eyebrow">Cómo funciona</span>
-          <h2>Comprar materiales online nunca fue tan simple.</h2>
+          <h2>Comprar para la obra nunca fue tan facil.</h2>
         </div>
         <div className="steps-grid">
           <article className="step-card">
             <span>01</span>
             <h3>Buscá lo que necesitás</h3>
-            <p>Filtrá por producto, categoría o proveedor y encontrá opciones rápido.</p>
+            <p>Filtrá por producto, categoría o proveedor y encontrá opciones al toque.</p>
           </article>
           <article className="step-card">
             <span>02</span>
             <h3>Compará y consultá</h3>
-            <p>Revisá precios, disponibilidad y resolvé dudas antes de concretar la compra.</p>
+            <p>Revisá precios, disponibilidad y sacate dudas antes de cerrar la compra.</p>
           </article>
           <article className="step-card">
             <span>03</span>
             <h3>Comprá y hacé seguimiento</h3>
-            <p>Elegí tu proveedor y seguí el estado del pedido hasta la entrega.</p>
+            <p>Elegí proveedor y seguí el pedido hasta que te llegue.</p>
           </article>
         </div>
       </section>
@@ -796,7 +795,7 @@ export default function Landing() {
       <section className="section benefits-section">
         <div className="section-heading narrow">
           <span className="eyebrow">Por qué MercadObra</span>
-          <h2>Una experiencia de compra pensada para clientes particulares.</h2>
+          <h2>Una experiencia cercana, moderna y bien hecha.</h2>
         </div>
         <div className="benefits-panel">
           <ul className="benefits-list">
@@ -804,16 +803,16 @@ export default function Landing() {
           </ul>
           <aside className="highlight-box">
             <p className="card-kicker">Ideal para</p>
-            <h3>Quienes construyen, reforman o equipan su hogar por primera vez.</h3>
-            <p>MercadObra te da contexto para comprar con confianza, sin tecnicismos innecesarios y con acceso directo a proveedores.</p>
+            <h3>Quienes construyen o reforman por primera vez.</h3>
+            <p>Comprá con confianza, sin vueltas y con contacto directo.</p>
           </aside>
         </div>
       </section>
 
       <section className="section testimonios-section" id="testimonios">
         <div className="section-heading">
-          <span className="eyebrow">Lo que dicen nuestros clientes</span>
-          <h2>Experiencias reales de compra en MercadObra</h2>
+          <span className="eyebrow">Lo que cuenta la comunidad</span>
+          <h2>Experiencias reales en MercadObra</h2>
         </div>
 
         <div className="testimonios-grid">
@@ -837,9 +836,9 @@ export default function Landing() {
       </section>
 
       <section className="section cta-section" id="contacto" ref={leadSectionRef}>
-        <span className="eyebrow">Lead Concierge</span>
-        <h2>Convertí tu interés en un plan de compra accionable.</h2>
-        <p>Dejanos tus datos y recibí una guía inicial según etapa, plazo y presupuesto de tu proyecto.</p>
+          <span className="eyebrow">Te acompañamos de verdad</span>
+          <h2>Contanos tu proyecto y te armamos un plan claro.</h2>
+          <p>Sin vueltas: etapa, tiempos y presupuesto en una sola charla.</p>
 
         <form className="lead-form" onSubmit={handleLeadSubmit}>
           <div className="lead-form-grid">
@@ -998,14 +997,14 @@ export default function Landing() {
 
           <div className="hero-actions centered-actions">
             <button type="submit" className="primary-link large-link lead-submit-btn" disabled={leadSubmitting}>
-              {leadSubmitting ? 'Enviando...' : 'Quiero mi plan de compra personalizado'}
+              {leadSubmitting ? 'Enviando...' : 'Quiero mi plan'}
             </button>
             <button type="button" className="whatsapp-direct-btn" onClick={openLeadWhatsapp}>
-              Hablar por WhatsApp ahora
+              Hablar por WhatsApp
             </button>
           </div>
 
-          <p className="whatsapp-direct-hint">Canal comercial directo para respuesta rápida por WhatsApp.</p>
+          <p className="whatsapp-direct-hint">Te respondemos rapido por WhatsApp.</p>
         </form>
       </section>
     </>

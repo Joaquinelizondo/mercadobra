@@ -46,7 +46,7 @@ export default function Footer() {
             <img src={logoImg} className="footer-logo" alt="MercadObra" />
           </a>
           <p>
-            Marketplace para empresas, barracas y distribuidores de productos para construcción.
+            Tu lugar para encontrar materiales y proveedores de construcción, rápido y sin vueltas.
           </p>
         </section>
 
@@ -112,7 +112,7 @@ export default function Footer() {
       <div className="footer-bottom">
         <p className="footer-bottom-payment-title">Medios de pago</p>
         <PaymentLogosRow />
-        <p>© {year} MercadObra. Todos los derechos reservados.</p>
+        <p>© {year} MercadObra. Hecho para que tu obra avance.</p>
       </div>
     </footer>
   )

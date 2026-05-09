@@ -1,14 +1,37 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useCart } from '../context/CartContext'
 import { useProducts } from '../context/ProductContext'
 import ProductCard from '../components/ProductCard'
 import PublishModal from '../components/PublishModal'
 import EmptyState from '../components/EmptyState'
 import { SkeletonGrid } from '../components/Skeleton'
+import { formatPrice } from '../utils/format'
 
 const PAGE_SIZE = 12
+const MAX_COMPARE = 3
 const ALLOWED_SORTS = new Set(['relevance', 'stock-first', 'price-asc', 'price-desc', 'name-asc'])
+const COMBO_TEMPLATES = [
+  {
+    id: 'inicio-obra',
+    title: 'Combo Inicio de Obra',
+    description: 'Base rapida para arrancar: cemento, arena y piedra.',
+    terms: ['cemento', 'arena', 'piedra'],
+  },
+  {
+    id: 'estructura',
+    title: 'Combo Estructura',
+    description: 'Para avanzar firme: hierro, malla y perfil.',
+    terms: ['hierro', 'malla', 'perfil'],
+  },
+  {
+    id: 'terminacion',
+    title: 'Combo Terminacion',
+    description: 'Cierre final: pintura, porcelanato y griferia.',
+    terms: ['pintura', 'porcelanato', 'griferia'],
+  },
+]
 
 function normalizeText(value) {
   return String(value || '')
@@ -24,10 +47,13 @@ function parsePageParam(value) {
 
 export default function Catalog() {
   const { supplierUser } = useAuth()
+  const { addToCart, setCartOpen } = useCart()
   const { productList, loadingProducts } = useProducts()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [publishOpen, setPublishOpen] = useState(false)
+  const [compareIds, setCompareIds] = useState([])
+  const [comboFeedback, setComboFeedback] = useState('')
   const infiniteSentinelRef = useRef(null)
 
   const searchQuery = searchParams.get('q')?.trim() ?? ''
@@ -86,6 +112,34 @@ export default function Catalog() {
 
   const hasMoreInInfinite = viewMode === 'infinite' && currentPage < totalPages
 
+  const comparedProducts = useMemo(
+    () => compareIds
+      .map((id) => productList.find((product) => product.id === id))
+      .filter(Boolean),
+    [compareIds, productList]
+  )
+
+  const comboCards = useMemo(
+    () => COMBO_TEMPLATES.map((template) => {
+      const products = template.terms
+        .map((term) => productList.find((product) => {
+          const haystack = normalizeText([product.name, product.category, product.description].join(' '))
+          return haystack.includes(normalizeText(term))
+        }))
+        .filter(Boolean)
+
+      const uniqueProducts = [...new Map(products.map((product) => [product.id, product])).values()]
+      const total = uniqueProducts.reduce((sum, product) => sum + Number(product.price || 0), 0)
+
+      return {
+        ...template,
+        products: uniqueProducts,
+        total,
+      }
+    }),
+    [productList]
+  )
+
   const updateSearchParams = useCallback((updates, { resetPage = false, replace = false } = {}) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
@@ -136,6 +190,35 @@ export default function Catalog() {
     } else {
       setPublishOpen(true)
     }
+  }
+
+  function toggleCompare(productId) {
+    setCompareIds((previous) => {
+      if (previous.includes(productId)) {
+        return previous.filter((id) => id !== productId)
+      }
+      if (previous.length >= MAX_COMPARE) {
+        return previous
+      }
+      return [...previous, productId]
+    })
+  }
+
+  function clearCompare() {
+    setCompareIds([])
+  }
+
+  function addComboToCart(combo) {
+    if (!combo.products.length) {
+      setComboFeedback('No encontramos productos para ese combo todavia.')
+      window.setTimeout(() => setComboFeedback(''), 2200)
+      return
+    }
+
+    combo.products.forEach((product) => addToCart(product))
+    setCartOpen(true)
+    setComboFeedback(`${combo.title} agregado al carrito.`)
+    window.setTimeout(() => setComboFeedback(''), 2200)
   }
 
   return (
@@ -200,6 +283,69 @@ export default function Catalog() {
           </label>
         </div>
 
+        <section className="catalog-combos" aria-label="Combos sugeridos para obra">
+          <div className="catalog-combos-head">
+            <h3>Combos de obra</h3>
+            <p>Elegi un combo y sumalo completo en un click.</p>
+          </div>
+          <div className="catalog-combos-grid">
+            {comboCards.map((combo) => (
+              <article key={combo.id} className="catalog-combo-card">
+                <h4>{combo.title}</h4>
+                <p>{combo.description}</p>
+                <small>
+                  {combo.products.length ? `${combo.products.length} productos · ${formatPrice(combo.total)}` : 'Proximamente'}
+                </small>
+                <button
+                  type="button"
+                  className="catalog-combo-btn"
+                  onClick={() => addComboToCart(combo)}
+                  disabled={!combo.products.length}
+                >
+                  Agregar combo
+                </button>
+              </article>
+            ))}
+          </div>
+          {comboFeedback && <p className="catalog-combo-feedback">{comboFeedback}</p>}
+        </section>
+
+        <section className="catalog-compare" aria-label="Comparador de productos">
+          <div className="catalog-compare-head">
+            <h3>Comparador rapido</h3>
+            <p>Selecciona hasta 3 productos para compararlos.</p>
+          </div>
+          {comparedProducts.length === 0 ? (
+            <div className="catalog-compare-empty">Todavia no seleccionaste productos para comparar.</div>
+          ) : (
+            <>
+              <div className="catalog-compare-grid">
+                {comparedProducts.map((product) => (
+                  <article key={product.id} className="catalog-compare-card">
+                    <h4>{product.name}</h4>
+                    <p>{product.company}</p>
+                    <ul>
+                      <li>{formatPrice(product.price)} / {product.unit}</li>
+                      <li>{Number(product.stock) > 0 ? 'Con stock' : 'Sin stock'}</li>
+                      <li>{product.category}</li>
+                    </ul>
+                    <button
+                      type="button"
+                      className="catalog-compare-remove"
+                      onClick={() => toggleCompare(product.id)}
+                    >
+                      Quitar
+                    </button>
+                  </article>
+                ))}
+              </div>
+              <button type="button" className="catalog-compare-clear" onClick={clearCompare}>
+                Limpiar comparador
+              </button>
+            </>
+          )}
+        </section>
+
         <div id="catalog-results">
           {loadingProducts ? (
             <SkeletonGrid count={6} />
@@ -213,7 +359,13 @@ export default function Catalog() {
             <>
               <div className="products-grid products-grid--reveal">
                 {visibleProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onToggleCompare={toggleCompare}
+                    isCompared={compareIds.includes(product.id)}
+                    compareDisabled={!compareIds.includes(product.id) && compareIds.length >= MAX_COMPARE}
+                  />
                 ))}
               </div>
               {viewMode === 'pages' && totalPages > 1 && (

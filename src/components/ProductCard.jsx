@@ -4,12 +4,21 @@ import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { formatPrice, companyInitials } from '../utils/format'
 
-export default function ProductCard({ product, onDelete }) {
+const ADD_FEEDBACK = ['Listo, al carrito', 'Sumado', 'Buenisimo, agregado']
+
+export default function ProductCard({
+  product,
+  onDelete,
+  onToggleCompare,
+  isCompared = false,
+  compareDisabled = false,
+}) {
   const navigate = useNavigate()
   const { addToCart, setCartOpen } = useCart()
   const { isInWishlist, toggleWishlist } = useWishlist()
   const inWishlist = isInWishlist(product.id)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const [addFeedback, setAddFeedback] = useState('')
 
   function handleCardClick() {
     navigate(`/producto/${product.id}`)
@@ -28,9 +37,14 @@ export default function ProductCard({ product, onDelete }) {
 
     if (Number(product.stock) > 0) {
       setIsAddingToCart(true)
+      const feedbackIndex = Math.floor(Math.random() * ADD_FEEDBACK.length)
+      setAddFeedback(ADD_FEEDBACK[feedbackIndex])
       addToCart(product)
       setCartOpen(true)
-      window.setTimeout(() => setIsAddingToCart(false), 450)
+      window.setTimeout(() => {
+        setIsAddingToCart(false)
+        setAddFeedback('')
+      }, 900)
       return
     }
 
@@ -48,6 +62,21 @@ export default function ProductCard({ product, onDelete }) {
       aria-label={`Ver detalle de ${product.name}`}
     >
       <div className="product-img" style={{ '--product-color': product.color }} aria-hidden="true">
+        {onToggleCompare && (
+          <button
+            type="button"
+            className={`product-compare-toggle${isCompared ? ' product-compare-toggle--active' : ''}`}
+            onClick={(event) => {
+              event.stopPropagation()
+              onToggleCompare(product.id)
+            }}
+            disabled={!isCompared && compareDisabled}
+            aria-label={isCompared ? 'Quitar de comparacion' : 'Agregar a comparacion'}
+            title={isCompared ? 'Quitar de comparacion' : 'Comparar'}
+          >
+            {isCompared ? 'Comparando' : 'Comparar'}
+          </button>
+        )}
         <div className="product-tags-row">
           <span className="product-category-tag">{product.category}</span>
           <span className={`product-buy-tag${Number(product.stock) > 0 ? ' product-buy-tag--direct' : ''}`}>
@@ -103,7 +132,7 @@ export default function ProductCard({ product, onDelete }) {
               </button>
             )}
             <button
-              className={`add-to-cart-btn${Number(product.stock) > 0 ? '' : ' add-to-cart-btn--consult'}`}
+              className={`add-to-cart-btn${Number(product.stock) > 0 ? '' : ' add-to-cart-btn--consult'}${isAddingToCart && Number(product.stock) > 0 ? ' add-to-cart-btn--success' : ''}`}
               onClick={handleAddToCart}
               disabled={isAddingToCart && Number(product.stock) > 0}
               aria-label={
@@ -116,6 +145,7 @@ export default function ProductCard({ product, onDelete }) {
             </button>
           </div>
         </div>
+        {addFeedback && <p className="product-action-feedback">{addFeedback}</p>}
       </div>
     </article>
   )
