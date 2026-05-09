@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import heroImg from '../assets/hero.png'
 import logoImg from '../assets/mercadobra.png'
 import { useProducts } from '../context/ProductContext'
-import { useAuth } from '../context/AuthContext'
 import ProductCard from '../components/ProductCard'
 import { createLead, createSearchContact } from '../lib/api'
 import { useSpeechInput } from '../hooks/useSpeechInput'
@@ -147,7 +146,6 @@ const RECENT_SEARCHES_KEY = 'mercadobra-recent-searches'
 
 export default function Landing() {
   const navigate = useNavigate()
-  const { loginAdmin, adminAuthLoading, adminAuthError } = useAuth()
   const { productList } = useProducts()
   const [featuredSearchInput, setFeaturedSearchInput] = useState('')
   const [showFeaturedSuggestions, setShowFeaturedSuggestions] = useState(false)
@@ -175,8 +173,6 @@ export default function Landing() {
   const [leadSubmitting, setLeadSubmitting] = useState(false)
   const [leadError, setLeadError] = useState('')
   const [leadSuccess, setLeadSuccess] = useState('')
-  const [adminLoginForm, setAdminLoginForm] = useState({ email: '', password: '' })
-  const [adminLoginStatus, setAdminLoginStatus] = useState('')
   const [estimatorProject, setEstimatorProject] = useState('pintar')
   const [estimatorArea, setEstimatorArea] = useState(30)
   const [estimatorBudget, setEstimatorBudget] = useState('medio')
@@ -522,20 +518,6 @@ export default function Landing() {
     navigate(`/explorar?q=${encodeURIComponent(query)}`)
   }
 
-  async function handleAdminLogin(event) {
-    event.preventDefault()
-    setAdminLoginStatus('')
-
-    const user = await loginAdmin(adminLoginForm.email, adminLoginForm.password)
-    if (!user) {
-      return
-    }
-
-    setAdminLoginStatus('Acceso concedido. Redirigiendo al panel...')
-    setAdminLoginForm({ email: '', password: '' })
-    window.setTimeout(() => navigate('/admin/cotizaciones'), 250)
-  }
-
   return (
     <>
       <section className="section featured-search-section" id="inicio">
@@ -842,53 +824,6 @@ export default function Landing() {
 
       <section className="info-strip">
         <p>Comprar materiales puede ser simple, rapido y con buen gusto.</p>
-      </section>
-
-      <section className="section admin-access-section" id="admin-access">
-        <div className="admin-access-card">
-          <span className="eyebrow">Acceso interno</span>
-          <h2>Panel admin de cotizaciones</h2>
-          <p>Entrá con usuario admin para ver la tabla completa y filtrar por fecha, tipo y origen.</p>
-
-          <form className="admin-access-form" onSubmit={handleAdminLogin}>
-            <label className="form-field" htmlFor="admin-email">
-              <span className="form-label">Usuario admin</span>
-              <input
-                id="admin-email"
-                type="email"
-                className="form-input"
-                value={adminLoginForm.email}
-                onChange={(event) =>
-                  setAdminLoginForm((previous) => ({ ...previous, email: event.target.value }))
-                }
-                placeholder="admin@mercadobra.com"
-                required
-              />
-            </label>
-
-            <label className="form-field" htmlFor="admin-password">
-              <span className="form-label">Contraseña</span>
-              <input
-                id="admin-password"
-                type="password"
-                className="form-input"
-                value={adminLoginForm.password}
-                onChange={(event) =>
-                  setAdminLoginForm((previous) => ({ ...previous, password: event.target.value }))
-                }
-                placeholder="••••••••"
-                required
-              />
-            </label>
-
-            <button type="submit" className="primary-link large-link lead-submit-btn" disabled={adminAuthLoading}>
-              {adminAuthLoading ? 'Validando...' : 'Entrar al panel admin'}
-            </button>
-          </form>
-
-          {adminAuthError && <p className="input-error">{adminAuthError}</p>}
-          {adminLoginStatus && <p className="input-success">{adminLoginStatus}</p>}
-        </div>
       </section>
 
       <section className="section estimator-section" id="estimador">

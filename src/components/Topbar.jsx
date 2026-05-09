@@ -24,7 +24,7 @@ export default function Topbar() {
         <a href={homeHash('categorias')}>Categorías</a>
         <Link to="/explorar">Ver todo</Link>
         <a href={homeHash('como-funciona')}>Cómo va</a>
-        <a href={homeHash('admin-access')}>Admin</a>
+        <Link to="/admin/login">Admin</Link>
         <a href={homeHash('contacto')}>Contacto</a>
       </nav>
 

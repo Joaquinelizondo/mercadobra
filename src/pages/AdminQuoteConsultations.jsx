@@ -11,7 +11,7 @@ const EVENT_TYPES = [
 
 export default function AdminQuoteConsultations() {
   const { adminUser, adminToken, logoutAdmin } = useAuth()
-  const adminAccessPath = `${import.meta.env.BASE_URL}#admin-access`
+  const adminAccessPath = `${import.meta.env.BASE_URL}admin/login`
   const [filters, setFilters] = useState({
     from: '',
     to: '',

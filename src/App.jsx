@@ -9,6 +9,7 @@ import SupplierLogin from './pages/SupplierLogin'
 import SupplierDashboard from './pages/SupplierDashboard'
 import CustomerLogin from './pages/CustomerLogin'
 import CustomerRegister from './pages/CustomerRegister'
+import AdminLogin from './pages/AdminLogin'
 import OrderTracking from './pages/OrderTracking'
 import AdminQuoteConsultations from './pages/AdminQuoteConsultations'
 import NotFound from './pages/NotFound'
@@ -856,6 +857,7 @@ export default function App() {
         <Route path="/proveedor/:company" element={<SupplierProfile />} />
         <Route path="/cliente/login" element={<CustomerLogin />} />
         <Route path="/cliente/registro" element={<CustomerRegister />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/proveedor/login" element={<SupplierLogin />} />
         <Route path="/proveedor" element={<SupplierDashboard />} />
         <Route path="/seguimiento/:trackingToken" element={<OrderTracking />} />
