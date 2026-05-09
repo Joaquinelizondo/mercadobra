@@ -477,6 +477,100 @@
   gap: 18px;
 }
 
+.estimator-section {
+  border-radius: 28px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(251, 191, 36, 0.24), transparent 40%),
+    rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+.estimator-head {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  color: var(--text-on-dark-soft);
+}
+
+.estimator-head h2 {
+  color: #ffffff;
+}
+
+.estimator-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.9fr);
+  gap: 16px;
+}
+
+.estimator-controls {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.estimator-controls .form-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.estimator-controls .form-input,
+.estimator-controls input[type='range'] {
+  width: 100%;
+}
+
+.estimator-range-value {
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.estimator-result {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(17, 24, 39, 0.28);
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.estimator-result h3 {
+  margin: 0;
+  color: #ffffff;
+}
+
+.estimator-result ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.estimator-result li {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.9rem;
+  padding-left: 16px;
+  position: relative;
+}
+
+.estimator-result li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: #fdba74;
+}
+
+.estimator-budget {
+  margin: 0;
+  color: #fdba74;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .benefits-list {
   list-style: none;
   margin: 0;
@@ -3289,6 +3383,52 @@
   width: fit-content;
 }
 
+.tracking-timeline {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.tracking-step {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  color: #94a3b8;
+}
+
+.tracking-step-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  box-shadow: 0 0 0 4px rgba(203, 213, 225, 0.3);
+}
+
+.tracking-step-label {
+  font-size: 0.72rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.tracking-step--done .tracking-step-dot {
+  background: #10b981;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.24);
+}
+
+.tracking-step--done .tracking-step-label {
+  color: #059669;
+}
+
+.tracking-step--current .tracking-step-dot {
+  background: #f97316;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.24);
+}
+
+.tracking-step--current .tracking-step-label {
+  color: #c2410c;
+}
+
 .payment-option {
   display: flex;
   align-items: center;
@@ -3411,6 +3551,7 @@
   .topbar,
   .hero-section,
   .benefits-panel,
+  .estimator-grid,
   .categories-grid,
   .steps-grid {
     grid-template-columns: 1fr;
@@ -3627,6 +3768,21 @@
 
   .cart-header h2 {
     font-size: 1.05rem;
+  }
+
+  .tracking-timeline {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .tracking-step {
+    grid-template-columns: auto 1fr;
+    justify-items: start;
+    align-items: center;
+  }
+
+  .tracking-step-label {
+    text-align: left;
   }
 
   .cart-list {

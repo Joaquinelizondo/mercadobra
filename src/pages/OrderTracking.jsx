@@ -29,6 +29,8 @@ const STATUS_VARIANTS = {
   cancelled: 'danger',
 }
 
+const TRACKING_STEPS = ['pending', 'confirmed', 'preparing', 'shipped', 'delivered']
+
 export default function OrderTracking() {
   const { trackingToken = '' } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -41,6 +43,11 @@ export default function OrderTracking() {
     () => STATUS_LABELS[order?.status] || order?.status || 'Pendiente',
     [order?.status]
   )
+
+  const statusIndex = useMemo(() => {
+    const index = TRACKING_STEPS.indexOf(order?.status)
+    return index >= 0 ? index : 0
+  }, [order?.status])
 
   useEffect(() => {
     const prefilled = searchParams.get('phone') || ''
@@ -100,6 +107,22 @@ export default function OrderTracking() {
             <p>Estado: <Badge variant={STATUS_VARIANTS[order.status] || 'default'}>{statusLabel}</Badge></p>
             <p>Pago: <strong>{PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod || 'No informado'}</strong></p>
             <p>Fecha: {new Date(order.createdAt).toLocaleString('es-AR')}</p>
+
+            <div className="tracking-timeline" aria-label="Linea de tiempo del pedido">
+              {TRACKING_STEPS.map((status, index) => {
+                const done = index <= statusIndex && order.status !== 'cancelled'
+                const current = index === statusIndex && order.status !== 'cancelled'
+                return (
+                  <div
+                    key={status}
+                    className={`tracking-step${done ? ' tracking-step--done' : ''}${current ? ' tracking-step--current' : ''}`}
+                  >
+                    <span className="tracking-step-dot" aria-hidden="true" />
+                    <span className="tracking-step-label">{STATUS_LABELS[status]}</span>
+                  </div>
+                )
+              })}
+            </div>
 
             <ul className="tracking-items">
               {(order.items || []).map((item, index) => (

@@ -102,6 +102,45 @@ const paymentPreferenceOptions = ['A convenir', 'Transferencia bancaria', 'Tarje
 
 const quickSearchTerms = ['Cemento', 'Hierro', 'Arena', 'Pintura', 'Taladro']
 
+const ESTIMATOR_PROFILES = {
+  pintar: {
+    label: 'Pintar ambientes',
+    keywords: ['Pintura', 'Rodillo', 'Sellador'],
+    calc(area) {
+      const paintBuckets = Math.max(1, Math.ceil(area / 40))
+      return [
+        `${paintBuckets} balde(s) de latex interior`,
+        `${Math.max(1, Math.ceil(area / 25))} sellador(es)`,
+        'Kit rodillo + bandeja',
+      ]
+    },
+  },
+  bano: {
+    label: 'Refaccion de bano',
+    keywords: ['Griferia', 'Porcelanato', 'Sanitarios'],
+    calc(area) {
+      const porcelanato = Math.max(4, Math.ceil(area * 1.2))
+      return [
+        `${porcelanato} m2 de porcelanato`,
+        `${Math.max(2, Math.ceil(area / 8))} bolsa(s) de adhesivo`,
+        'Set griferia + accesorios',
+      ]
+    },
+  },
+  base: {
+    label: 'Base para obra chica',
+    keywords: ['Cemento', 'Arena', 'Piedra'],
+    calc(area) {
+      const cementBags = Math.max(4, Math.ceil(area / 6))
+      return [
+        `${cementBags} bolsa(s) de cemento`,
+        `${Math.max(1, Math.ceil(area / 20))} m3 de arena`,
+        `${Math.max(1, Math.ceil(area / 24))} m3 de piedra`,
+      ]
+    },
+  },
+}
+
 const RECENT_SEARCHES_KEY = 'mercadobra-recent-searches'
 const WHATSAPP_NUMBER = String(import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(/\D/g, '')
 
@@ -134,6 +173,9 @@ export default function Landing() {
   const [leadSubmitting, setLeadSubmitting] = useState(false)
   const [leadError, setLeadError] = useState('')
   const [leadSuccess, setLeadSuccess] = useState('')
+  const [estimatorProject, setEstimatorProject] = useState('pintar')
+  const [estimatorArea, setEstimatorArea] = useState(30)
+  const [estimatorBudget, setEstimatorBudget] = useState('medio')
   const searchTimerRef = useRef(null)
   const leadSectionRef = useRef(null)
   const featured = productList.slice(0, 6)
@@ -157,6 +199,20 @@ export default function Landing() {
     () => journeyTracks.find((track) => track.id === activeTrackId) || journeyTracks[1],
     [activeTrackId]
   )
+
+  const estimatorResult = useMemo(() => {
+    const profile = ESTIMATOR_PROFILES[estimatorProject] || ESTIMATOR_PROFILES.pintar
+    const area = Math.max(1, Number(estimatorArea) || 1)
+    const factor = estimatorBudget === 'alto' ? 1.3 : estimatorBudget === 'bajo' ? 0.85 : 1
+    const suggestedBudget = Math.round(area * 9500 * factor)
+
+    return {
+      title: profile.label,
+      keywords: profile.keywords,
+      items: profile.calc(area),
+      suggestedBudget,
+    }
+  }, [estimatorProject, estimatorArea, estimatorBudget])
 
   const featuredSuggestionItems = useMemo(() => {
     const productNames = [...new Set(productList.map((product) => product.name))].map((value) => ({
@@ -458,6 +514,11 @@ export default function Landing() {
     }
   }
 
+  function openEstimatorResults() {
+    const query = estimatorResult.keywords.join(' ')
+    navigate(`/explorar?q=${encodeURIComponent(query)}`)
+  }
+
   return (
     <>
       <section className="section featured-search-section" id="inicio">
@@ -751,6 +812,74 @@ export default function Landing() {
 
       <section className="info-strip">
         <p>Comprar materiales puede ser simple, rapido y con buen gusto.</p>
+      </section>
+
+      <section className="section estimator-section" id="estimador">
+        <div className="estimator-head">
+          <span className="eyebrow">Estimador rapido</span>
+          <h2>Calcula una base para tu proyecto en menos de un minuto.</h2>
+          <p>Elegi el tipo de trabajo, ajusta metros y mira una lista sugerida para arrancar.</p>
+        </div>
+
+        <div className="estimator-grid">
+          <div className="estimator-controls">
+            <label className="form-field" htmlFor="estimator-project">
+              <span className="form-label">Que queres resolver</span>
+              <select
+                id="estimator-project"
+                className="form-input"
+                value={estimatorProject}
+                onChange={(event) => setEstimatorProject(event.target.value)}
+              >
+                <option value="pintar">Pintar ambientes</option>
+                <option value="bano">Refaccion de bano</option>
+                <option value="base">Base para obra chica</option>
+              </select>
+            </label>
+
+            <label className="form-field" htmlFor="estimator-area">
+              <span className="form-label">Superficie estimada (m2)</span>
+              <input
+                id="estimator-area"
+                type="range"
+                min="10"
+                max="180"
+                step="5"
+                value={estimatorArea}
+                onChange={(event) => setEstimatorArea(Number(event.target.value))}
+              />
+              <small className="estimator-range-value">{estimatorArea} m2</small>
+            </label>
+
+            <label className="form-field" htmlFor="estimator-budget">
+              <span className="form-label">Nivel de presupuesto</span>
+              <select
+                id="estimator-budget"
+                className="form-input"
+                value={estimatorBudget}
+                onChange={(event) => setEstimatorBudget(event.target.value)}
+              >
+                <option value="bajo">Ajustado</option>
+                <option value="medio">Equilibrado</option>
+                <option value="alto">Premium</option>
+              </select>
+            </label>
+          </div>
+
+          <aside className="estimator-result" aria-live="polite">
+            <p className="card-kicker">Resultado estimado</p>
+            <h3>{estimatorResult.title}</h3>
+            <ul>
+              {estimatorResult.items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <p className="estimator-budget">Presupuesto orientativo: ARS {estimatorResult.suggestedBudget.toLocaleString('es-AR')}</p>
+            <button type="button" className="primary-link large-link lead-submit-btn" onClick={openEstimatorResults}>
+              Ver opciones para este plan
+            </button>
+          </aside>
+        </div>
       </section>
 
       <section className="section" id="categorias">
