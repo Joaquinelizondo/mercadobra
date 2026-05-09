@@ -392,19 +392,17 @@ export default function Landing() {
         return
       }
 
-      if (normalizedEmail || normalizedPhone) {
-        try {
-          await createSearchContact({
-            searchTerm: term,
-            name: normalizedName,
-            email: normalizedEmail,
-            phone: normalizedPhone,
-            source: 'featured-search',
-          })
-        } catch (error) {
-          // Optional capture should never block the search flow.
-          console.warn('search contact capture failed:', error?.message || error)
-        }
+      try {
+        await createSearchContact({
+          searchTerm: term,
+          name: normalizedName,
+          email: normalizedEmail,
+          phone: normalizedPhone,
+          source: 'featured-search',
+        })
+      } catch (error) {
+        // Search should continue even if optional capture fails.
+        console.warn('search contact capture failed:', error?.message || error)
       }
 
       closeSearchCapture()
