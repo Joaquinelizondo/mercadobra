@@ -1540,6 +1540,20 @@
   font-size: clamp(1.35rem, 3vw, 1.95rem);
 }
 
+.featured-search-title {
+  margin: 0 0 32px 0;
+  font-size: clamp(1.75rem, 5vw, 2.8rem);
+  font-weight: 950;
+  background: linear-gradient(135deg, #ffffff 0%, #fca5a5 50%, #ff6b6b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  filter: drop-shadow(0 4px 12px rgba(252, 165, 165, 0.35));
+}
+
 .featured-search-panel {
   border-radius: 22px;
   border: 1px solid rgba(255, 255, 255, 0.62);
