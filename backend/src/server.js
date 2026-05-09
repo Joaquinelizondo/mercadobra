@@ -574,6 +574,7 @@ app.post('/search-contacts', async (req, res) => {
   const body = req.body || {}
   const payload = {
     searchTerm: String(body.searchTerm || '').trim(),
+    name: String(body.name || '').trim(),
     email: String(body.email || '').trim(),
     phone: String(body.phone || '').trim(),
     source: String(body.source || 'featured-search').trim(),

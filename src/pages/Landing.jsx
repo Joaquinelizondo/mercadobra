@@ -156,7 +156,7 @@ export default function Landing() {
   const [searchCaptureSending, setSearchCaptureSending] = useState(false)
   const [searchCaptureError, setSearchCaptureError] = useState('')
   const [pendingSearchTerm, setPendingSearchTerm] = useState('')
-  const [searchContactForm, setSearchContactForm] = useState({ email: '', phone: '' })
+  const [searchContactForm, setSearchContactForm] = useState({ name: '', email: '', phone: '' })
   const [recentSearches, setRecentSearches] = useState([])
   const [leadForm, setLeadForm] = useState({
     name: '',
@@ -371,7 +371,7 @@ export default function Landing() {
     setSearchCaptureOpen(false)
     setSearchCaptureError('')
     setPendingSearchTerm('')
-    setSearchContactForm({ email: '', phone: '' })
+    setSearchContactForm({ name: '', email: '', phone: '' })
   }
 
   async function handleSearchCaptureSubmit() {
@@ -386,6 +386,7 @@ export default function Landing() {
     setSearchCaptureError('')
 
     try {
+      const normalizedName = searchContactForm.name.trim()
       const normalizedEmail = searchContactForm.email.trim()
       const normalizedPhone = searchContactForm.phone.trim()
 
@@ -399,6 +400,7 @@ export default function Landing() {
         try {
           await createSearchContact({
             searchTerm: term,
+            name: normalizedName,
             email: normalizedEmail,
             phone: normalizedPhone,
             source: 'featured-search',
@@ -681,6 +683,19 @@ export default function Landing() {
             <p>Dejanos tu mail o telefono y te escribimos con opciones.</p>
 
             <div className="search-capture-fields">
+              <label className="form-field" htmlFor="search-capture-name">
+                <span className="form-label">Nombre (opcional)</span>
+                <input
+                  id="search-capture-name"
+                  className="form-input"
+                  value={searchContactForm.name}
+                  onChange={(event) =>
+                    setSearchContactForm((previous) => ({ ...previous, name: event.target.value }))
+                  }
+                  placeholder="Tu nombre"
+                />
+              </label>
+
               <label className="form-field" htmlFor="search-capture-email">
                 <span className="form-label">Email (opcional)</span>
                 <input

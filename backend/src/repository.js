@@ -355,6 +355,7 @@ async function getJsonRepo() {
       const created = {
         id: nextId(db.searchContacts),
         searchTerm: payload.searchTerm,
+        name: payload.name || '',
         email: payload.email || '',
         phone: payload.phone || '',
         source: payload.source || 'featured-search',
@@ -371,7 +372,7 @@ async function getJsonRepo() {
         id: nextId(db.quoteConsultations),
         eventType: 'search_contact',
         source: payload.source || 'featured-search',
-        name: '',
+        name: payload.name || '',
         email: payload.email || '',
         phone: payload.phone || '',
         zone: '',
@@ -804,6 +805,7 @@ async function getPgRepo() {
       const created = {
         id: Number(rows[0].id),
         searchTerm: rows[0].search_term,
+        name: payload.name || '',
         email: rows[0].email || '',
         phone: rows[0].phone || '',
         source: rows[0].source || 'featured-search',
@@ -814,15 +816,17 @@ async function getPgRepo() {
         `INSERT INTO quote_consultations (
           event_type,
           source,
+          name,
           email,
           phone,
           search_term,
           search_contact_id
         )
-        VALUES ($1, $2, $3, $4, $5, $6)`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           'search_contact',
           payload.source || 'featured-search',
+          payload.name || null,
           payload.email || null,
           payload.phone || null,
           payload.searchTerm,
