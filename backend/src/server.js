@@ -79,6 +79,21 @@ if (config.nodeEnv === 'development') {
   app.use(requestLogger)
 }
 
+// Compatibilidad: algunos entornos exponen el backend bajo /api/*.
+app.use((req, _res, next) => {
+  if (req.url === '/api' || req.url === '/api/') {
+    req.url = '/'
+    next()
+    return
+  }
+
+  if (req.url.startsWith('/api/')) {
+    req.url = req.url.slice(4)
+  }
+
+  next()
+})
+
 // ============================================================================
 // ENDPOINTS
 // ============================================================================

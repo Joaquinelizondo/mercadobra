@@ -1,9 +1,31 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
+const ENV_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').trim()
+const DEFAULT_API_BASE_URL = import.meta.env.DEV
+  ? 'http://localhost:4000'
+  : `${window.location.origin}/api`
+const API_BASE_URL = ENV_API_BASE_URL || DEFAULT_API_BASE_URL
+
+function normalizeBaseUrl(url) {
+  return String(url || '').replace(/\/+$/, '')
+}
+
+function getApiBaseCandidates() {
+  const primary = normalizeBaseUrl(API_BASE_URL)
+  const candidates = [primary]
+
+  if (primary.endsWith('/api')) {
+    candidates.push(primary.slice(0, -4))
+  } else {
+    candidates.push(`${primary}/api`)
+  }
+
+  return [...new Set(candidates.filter(Boolean))]
+}
 
 async function request(path, options = {}) {
   const token = options.token || ''
-  const requestUrl = `${API_BASE_URL}${path}`
+  const baseCandidates = getApiBaseCandidates()
   let response
+  let requestUrl = `${baseCandidates[0]}${path}`
 
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 25000)
@@ -18,6 +40,19 @@ async function request(path, options = {}) {
       signal: controller.signal,
       ...options,
     })
+
+    if (!response.ok && response.status === 404 && baseCandidates.length > 1) {
+      requestUrl = `${baseCandidates[1]}${path}`
+      response = await fetch(requestUrl, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(options.headers || {}),
+        },
+        signal: controller.signal,
+        ...options,
+      })
+    }
   } catch (fetchError) {
     if (fetchError?.name === 'AbortError') {
       throw new Error('El servidor tardó demasiado en responder. Intentá de nuevo en unos segundos.')
