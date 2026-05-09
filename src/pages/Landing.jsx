@@ -461,19 +461,8 @@ export default function Landing() {
   return (
     <>
       <section className="section featured-search-section" id="inicio">
+        <h1 className="featured-search-title">Encontrá las mejores opciones para la próxima construcción de tus sueños</h1>
         <div className="featured-search-panel">
-          <div className="featured-search-panel-head">
-            <span className="featured-search-panel-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="22" height="22">
-                <path d="M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14Zm0 0 9 9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-            <div>
-              <p className="featured-search-panel-title">Buscador inteligente</p>
-              <small>Encontrá por nombre, categoría o marca</small>
-            </div>
-          </div>
-
           <div className="catalog-search-wrap">
             <label htmlFor="featured-search" className="catalog-search-label">
               Buscá productos
