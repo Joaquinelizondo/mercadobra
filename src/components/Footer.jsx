@@ -42,12 +42,13 @@ export default function Footer() {
     intent: 'consulta',
     source: 'footer-redes',
   })
+  const homeHash = (sectionId) => `${import.meta.env.BASE_URL}#${sectionId}`
 
   return (
     <footer className="footer">
       <div className="footer-grid">
         <section>
-          <a href="/#inicio" className="footer-brand-link" aria-label="Ir al inicio">
+          <a href={homeHash('inicio')} className="footer-brand-link" aria-label="Ir al inicio">
             <img src={logoImg} className="footer-logo" alt="MercadObra" />
           </a>
           <p>
@@ -58,10 +59,10 @@ export default function Footer() {
         <section>
           <h3>Enlaces</h3>
           <ul>
-            <li><a href="/#inicio">Inicio</a></li>
-            <li><a href="/#categorias">Categorías</a></li>
-            <li><a href="/#como-funciona">Cómo funciona</a></li>
-            <li><a href="/#contacto">Contacto</a></li>
+            <li><a href={homeHash('inicio')}>Inicio</a></li>
+            <li><a href={homeHash('categorias')}>Categorías</a></li>
+            <li><a href={homeHash('como-funciona')}>Cómo funciona</a></li>
+            <li><a href={homeHash('contacto')}>Contacto</a></li>
           </ul>
         </section>
 

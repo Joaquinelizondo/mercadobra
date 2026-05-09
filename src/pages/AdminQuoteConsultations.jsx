@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getAdminQuoteConsultations } from '../lib/api'
 
@@ -10,8 +10,8 @@ const EVENT_TYPES = [
 ]
 
 export default function AdminQuoteConsultations() {
-  const navigate = useNavigate()
   const { adminUser, adminToken, logoutAdmin } = useAuth()
+  const adminAccessPath = `${import.meta.env.BASE_URL}#admin-access`
   const [filters, setFilters] = useState({
     from: '',
     to: '',
@@ -25,9 +25,9 @@ export default function AdminQuoteConsultations() {
 
   useEffect(() => {
     if (!adminUser || !adminToken) {
-      navigate('/#admin-access')
+      window.location.assign(adminAccessPath)
     }
-  }, [adminUser, adminToken, navigate])
+  }, [adminUser, adminToken, adminAccessPath])
 
   async function loadData(nextFilters = filters) {
     setLoading(true)
@@ -81,7 +81,7 @@ export default function AdminQuoteConsultations() {
             className="catalog-page-btn"
             onClick={() => {
               logoutAdmin()
-              navigate('/#admin-access')
+              window.location.assign(adminAccessPath)
             }}
           >
             Cerrar sesion admin

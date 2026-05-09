@@ -9,6 +9,7 @@ export default function Topbar() {
   const { supplierUser, logout, customerUser, logoutCustomer } = useAuth()
   const { cartCount, setCartOpen } = useCart()
   const { wishlist } = useWishlist()
+  const homeHash = (sectionId) => `${import.meta.env.BASE_URL}#${sectionId}`
 
   return (
     <header className="topbar">
@@ -19,12 +20,12 @@ export default function Topbar() {
       </div>
 
       <nav className="topbar-menu" aria-label="Navegación principal">
-        <a href="/#inicio">Inicio</a>
-        <a href="/#categorias">Categorías</a>
+        <a href={homeHash('inicio')}>Inicio</a>
+        <a href={homeHash('categorias')}>Categorías</a>
         <Link to="/explorar">Ver todo</Link>
-        <a href="/#como-funciona">Cómo va</a>
-        <a href="/#admin-access">Admin</a>
-        <a href="/#contacto">Contacto</a>
+        <a href={homeHash('como-funciona')}>Cómo va</a>
+        <a href={homeHash('admin-access')}>Admin</a>
+        <a href={homeHash('contacto')}>Contacto</a>
       </nav>
 
       <div className="topbar-actions">

@@ -8,6 +8,7 @@ export default function SupplierLogin() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const redirect = searchParams.get('redirect') || '/proveedor'
+  const contactPath = `${import.meta.env.BASE_URL}#contacto`
 
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
@@ -89,7 +90,7 @@ export default function SupplierLogin() {
 
           <p className="login-signup-hint">
             ¿Tu empresa todavía no tiene cuenta?{' '}
-            <a href="/#contacto">Contactanos</a> para sumarte.
+            <a href={contactPath}>Contactanos</a> para sumarte.
           </p>
         </form>
 
