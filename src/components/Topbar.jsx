@@ -23,6 +23,7 @@ export default function Topbar() {
         <a href="/#categorias">Categorías</a>
         <Link to="/explorar">Ver todo</Link>
         <a href="/#como-funciona">Cómo va</a>
+        <a href="/#admin-access">Admin</a>
         <a href="/#contacto">Contacto</a>
       </nav>
 

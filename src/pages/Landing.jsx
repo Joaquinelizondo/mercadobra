@@ -827,6 +827,9 @@ export default function Landing() {
 
       <section className="info-strip">
         <p>Comprar materiales puede ser simple, rapido y con buen gusto.</p>
+        <div className="hero-actions centered-actions">
+          <a href="#admin-access" className="primary-link">Entrar como admin</a>
+        </div>
       </section>
 
       <section className="section admin-access-section" id="admin-access">
