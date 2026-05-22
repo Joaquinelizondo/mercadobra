@@ -230,12 +230,9 @@ export default function Catalog() {
 
   return (
     <>
-      {/* Cotizador grupal premium */}
+      {/* Cotizador libre premium (único) */}
       <div style={{ marginBottom: '2.5rem' }}>
-        <GroupQuoteWidget
-          products={cartItems.length > 0 ? cartItems : []}
-          onSubmit={handleGroupQuoteSubmit}
-        />
+        <GroupQuoteWidget />
       </div>
       <section className="section catalog-section" id="explorar">
         <div className="catalog-section-heading">
