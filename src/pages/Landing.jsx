@@ -148,6 +148,7 @@ export default function Landing() {
   const navigate = useNavigate()
   const { productList } = useProducts()
   const [featuredSearchInput, setFeaturedSearchInput] = useState('')
+  const [featuredChips, setFeaturedChips] = useState([])
   const [showFeaturedSuggestions, setShowFeaturedSuggestions] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [searchCaptureOpen, setSearchCaptureOpen] = useState(false)
@@ -545,8 +546,25 @@ export default function Landing() {
                     setFeaturedSearchInput(event.target.value)
                     setShowFeaturedSuggestions(false)
                   }}
+                  onKeyDown={e => {
+                    if ((e.key === "Enter" || e.key === ",") && featuredSearchInput.trim()) {
+                      e.preventDefault();
+                      if (!featuredChips.includes(featuredSearchInput.trim())) {
+                        setFeaturedChips([...featuredChips, featuredSearchInput.trim()]);
+                      }
+                      setFeaturedSearchInput("");
+                    }
+                  }}
                   disabled={isSearching}
                 />
+                <div className="catalog-search-chips-list">
+                  {featuredChips.map((chip, idx) => (
+                    <span className="catalog-search-chip" key={idx}>
+                      {chip}
+                      <button type="button" className="catalog-search-chip-remove" onClick={() => setFeaturedChips(featuredChips.filter((_, i) => i !== idx))} title="Quitar">×</button>
+                    </span>
+                  ))}
+                </div>
                 {featuredSearchInput && (
                   <button
                     type="button"
