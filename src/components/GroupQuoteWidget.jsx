@@ -120,3 +120,5 @@ const GroupQuoteWidget = () => {
     </form>
   );
 };
+
+export default GroupQuoteWidget;
