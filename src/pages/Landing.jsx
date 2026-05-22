@@ -327,13 +327,16 @@ export default function Landing() {
 
   function handleFeaturedSearchSubmit(event) {
     event.preventDefault()
-    const term = featuredSearchInput.trim()
-    if (!term) {
+    let terms = [...featuredChips]
+    if (featuredSearchInput.trim()) {
+      terms.push(featuredSearchInput.trim())
+    }
+    const query = terms.join(' ')
+    if (!query) {
       startFeaturedSearch('')
       return
     }
-
-    setPendingSearchTerm(term)
+    setPendingSearchTerm(query)
     setSearchCaptureError('')
     setSearchCaptureOpen(true)
   }
@@ -547,7 +550,7 @@ export default function Landing() {
                     setShowFeaturedSuggestions(false)
                   }}
                   onKeyDown={e => {
-                    if ((e.key === "Enter" || e.key === ",") && featuredSearchInput.trim()) {
+                    if ((e.key === "Enter" || e.key === "," || e.key === " ") && featuredSearchInput.trim()) {
                       e.preventDefault();
                       if (!featuredChips.includes(featuredSearchInput.trim())) {
                         setFeaturedChips([...featuredChips, featuredSearchInput.trim()]);
@@ -561,7 +564,16 @@ export default function Landing() {
                   {featuredChips.map((chip, idx) => (
                     <span className="catalog-search-chip" key={idx}>
                       {chip}
-                      <button type="button" className="catalog-search-chip-remove" onClick={() => setFeaturedChips(featuredChips.filter((_, i) => i !== idx))} title="Quitar">×</button>
+                      <button
+                        type="button"
+                        className="catalog-search-chip-remove"
+                        onClick={() => setFeaturedChips(featuredChips.filter((_, i) => i !== idx))}
+                        title="Quitar"
+                        aria-label={`Quitar ${chip}`}
+                        style={{ marginLeft: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontWeight: 'bold', fontSize: '1.1em', lineHeight: 1 }}
+                      >
+                        ×
+                      </button>
                     </span>
                   ))}
                 </div>
