@@ -128,7 +128,7 @@ const GroupQuoteWidget = ({ products, onSubmit }) => {
             onFocus={() => setShowDropdown(true)}
             autoComplete="off"
           />
-          {showDropdown && search && filteredProducts.length > 0 && (
+          {showDropdown && search.length > 1 && filteredProducts.length > 0 && (
             <ul className="gq-autodrop">
               {filteredProducts.slice(0, 8).map((p) => (
                 <li key={p.id} onClick={() => handleAddProduct(p)}>
@@ -140,7 +140,7 @@ const GroupQuoteWidget = ({ products, onSubmit }) => {
         </div>
         <div className="gq-products">
           {quoteItems.length === 0 ? (
-            <div className="gq-empty">Agrega productos para cotizar.</div>
+            <div className="gq-empty">Agregá productos usando el buscador de arriba.</div>
           ) : (
             quoteItems.map(item => (
               <div className="gq-card" key={item.id}>
