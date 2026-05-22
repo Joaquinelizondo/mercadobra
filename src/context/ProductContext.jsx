@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { INITIAL_PRODUCTS, CARD_COLORS } from '../data/products'
-import { createProduct, getProducts, removeProduct } from '../lib/api'
+import { createProduct, getProducts, removeProduct, updateProduct } from '../lib/api'
 
 const ProductContext = createContext(null)
 const FALLBACK_OUT_OF_STOCK_IDS = new Set([3, 8, 11])
@@ -87,11 +87,42 @@ export function ProductProvider({ children }) {
     setProductList((prev) => prev.filter((p) => p.id !== id))
   }
 
+  async function editProduct(id, formData, supplierUser, token = '') {
+    const payload = {
+      name: String(formData.name || '').trim(),
+      description: String(formData.description || '').trim(),
+      category: formData.category,
+      company: supplierUser?.company || formData.company || '',
+      providerId: Number(supplierUser?.providerId || formData.providerId || 0),
+      price: Number(formData.price),
+      unit: formData.unit,
+      stock: Number(formData.stock ?? 0),
+    }
+
+    try {
+      const updated = normalizeProduct(await updateProduct(id, payload, token))
+      setProductList((prev) => prev.map((product) => (product.id === updated.id ? updated : product)))
+      return updated
+    } catch (error) {
+      if (!usingFallback) {
+        throw error
+      }
+
+      const updated = normalizeProduct({
+        ...payload,
+        id: Number(id),
+      })
+      setProductList((prev) => prev.map((product) => (product.id === Number(id) ? { ...product, ...updated } : product)))
+      return updated
+    }
+  }
+
   const value = useMemo(
     () => ({
       productList,
       addProduct,
       deleteProduct,
+      editProduct,
       refreshProducts,
       loadingProducts,
       productError,

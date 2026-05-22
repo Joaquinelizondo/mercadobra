@@ -8,10 +8,11 @@ const EMPTY_FORM = { name: '', category: 'Hormigón', price: '', unit: 'bolsa', 
 
 export default function PublishModal({ onClose, onPublished, initialFormData = null }) {
   const { supplierUser, token } = useAuth()
-  const { addProduct } = useProducts()
+  const { addProduct, editProduct } = useProducts()
   const [formData, setFormData] = useState(() => ({ ...EMPTY_FORM, ...(initialFormData || {}) }))
   const [formSuccess, setFormSuccess] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const isEditMode = Boolean(initialFormData?.id)
 
   useEffect(() => {
     if (initialFormData) {
@@ -30,16 +31,18 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
     setSubmitError('')
 
     try {
-      const newProduct = await addProduct(formData, supplierUser, token)
+      const savedProduct = isEditMode
+        ? await editProduct(initialFormData.id, formData, supplierUser, token)
+        : await addProduct(formData, supplierUser, token)
       setFormSuccess(true)
       setTimeout(() => {
         setFormData(EMPTY_FORM)
         setFormSuccess(false)
         onClose()
-        if (onPublished) onPublished(newProduct)
+        if (onPublished) onPublished(savedProduct)
       }, 1800)
     } catch (error) {
-      setSubmitError(error.message || 'No se pudo publicar el producto')
+      setSubmitError(error.message || (isEditMode ? 'No se pudo actualizar el producto' : 'No se pudo publicar el producto'))
     }
   }
 
@@ -48,7 +51,7 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
       <div className="modal-overlay" onClick={onClose} aria-hidden="true" />
       <div className="publish-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div className="modal-header">
-          <h2 id="modal-title">Publicar producto</h2>
+          <h2 id="modal-title">{isEditMode ? 'Editar producto' : 'Publicar producto'}</h2>
           <button className="cart-close" onClick={onClose} aria-label="Cerrar">
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
               <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
@@ -59,8 +62,10 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
         {formSuccess ? (
           <div className="publish-success">
             <div className="success-icon" aria-hidden="true">✓</div>
-            <p>¡Producto publicado con éxito!</p>
-            <p className="success-sub">Ya aparece en el catálogo.</p>
+            <p>{isEditMode ? '¡Producto actualizado con éxito!' : '¡Producto publicado con éxito!'}</p>
+            <p className="success-sub">
+              {isEditMode ? 'Los cambios ya están visibles en tu catálogo.' : 'Ya aparece en el catálogo.'}
+            </p>
           </div>
         ) : (
           <form className="publish-form" onSubmit={handleSubmit} noValidate>
@@ -146,7 +151,9 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
               />
             </div>
 
-            <button type="submit" className="cart-confirm-btn">Publicar en el catálogo</button>
+            <button type="submit" className="cart-confirm-btn">
+              {isEditMode ? 'Guardar cambios' : 'Publicar en el catálogo'}
+            </button>
           </form>
         )}
       </div>
