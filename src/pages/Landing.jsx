@@ -621,19 +621,7 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="featured-search-chips" aria-label="Búsquedas rápidas">
-            {quickSearchTerms.map((term) => (
-              <button
-                key={term}
-                type="button"
-                className="featured-search-chip"
-                onClick={() => handleQuickSearch(term)}
-                disabled={isSearching}
-              >
-                {term}
-              </button>
-            ))}
-          </div>
+          {/* Chips de búsqueda rápida eliminados para UX más limpia */}
         </div>
 
         {isSearching && (
