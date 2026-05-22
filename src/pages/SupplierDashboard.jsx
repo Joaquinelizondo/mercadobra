@@ -43,6 +43,7 @@ export default function SupplierDashboard() {
   const { productList, deleteProduct } = useProducts()
   const [publishOpen, setPublishOpen] = useState(false)
   const [publishDraft, setPublishDraft] = useState(null)
+  const [editingProduct, setEditingProduct] = useState(null)
   const [orders, setOrders] = useState([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [ordersError, setOrdersError] = useState('')
@@ -135,7 +136,14 @@ export default function SupplierDashboard() {
             </div>
           </div>
           <div className="dashboard-welcome-actions">
-            <button className="publish-btn" onClick={() => setPublishOpen(true)}>
+            <button
+              className="publish-btn"
+              onClick={() => {
+                setEditingProduct(null)
+                setPublishDraft(null)
+                setPublishOpen(true)
+              }}
+            >
               <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style={{ flexShrink: 0 }}>
                 <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
               </svg>
@@ -274,6 +282,19 @@ export default function SupplierDashboard() {
                 <ProductCard
                   key={product.id}
                   product={product}
+                  onEdit={(selectedProduct) => {
+                    setPublishDraft(null)
+                    setEditingProduct({
+                      id: selectedProduct.id,
+                      name: selectedProduct.name,
+                      category: selectedProduct.category,
+                      price: String(selectedProduct.price),
+                      unit: selectedProduct.unit,
+                      stock: String(selectedProduct.stock ?? 0),
+                      description: selectedProduct.description || '',
+                    })
+                    setPublishOpen(true)
+                  }}
                   onDelete={(id) => deleteProduct(id, token)}
                 />
               ))}
@@ -287,8 +308,9 @@ export default function SupplierDashboard() {
           onClose={() => {
             setPublishOpen(false)
             setPublishDraft(null)
+            setEditingProduct(null)
           }}
-          initialFormData={publishDraft}
+          initialFormData={editingProduct || publishDraft}
         />
       )}
     </>

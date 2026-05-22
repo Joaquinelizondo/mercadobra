@@ -101,6 +101,14 @@ export function removeProduct(id, token) {
   })
 }
 
+export function updateProduct(id, payload, token) {
+  return request(`/products/${id}`, {
+    method: 'PATCH',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
 export function loginSupplier(email, password) {
   return request('/auth/login', {
     method: 'POST',

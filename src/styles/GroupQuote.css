@@ -1,0 +1,117 @@
+.group-quote-widget.premium {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 6px 32px 0 rgba(0,0,0,0.10), 0 1.5px 6px 0 rgba(0,0,0,0.08);
+  padding: 2.5rem 2rem 2rem 2rem;
+  max-width: 900px;
+  margin: 2rem auto;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+.gq-title {
+  font-size: 2.1rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #1a1a1a;
+  letter-spacing: -1px;
+  text-align: center;
+}
+.gq-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.gq-products {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+}
+.gq-card {
+  background: #f8fafd;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.06);
+  padding: 1.2rem 1rem 1rem 1rem;
+  min-width: 220px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  transition: box-shadow 0.2s;
+}
+.gq-card:hover {
+  box-shadow: 0 4px 16px 0 rgba(0,0,0,0.13);
+}
+.gq-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 0.7rem;
+}
+.gq-qty {
+  width: 60px;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 1rem;
+  text-align: center;
+}
+.gq-remove {
+  background: #fff0f0;
+  color: #e74c3c;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.gq-remove:hover {
+  background: #ffeaea;
+}
+.gq-actions {
+  display: flex;
+  justify-content: center;
+}
+.gq-submit {
+  background: linear-gradient(90deg, #1e90ff 0%, #00c6fb 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.15rem;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 2.2rem;
+  box-shadow: 0 2px 8px 0 rgba(30,144,255,0.10);
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.gq-submit:disabled {
+  background: #e0e7ef;
+  color: #b0b8c1;
+  cursor: not-allowed;
+}
+.gq-success {
+  color: #1abc9c;
+  background: #e8fcf6;
+  border-radius: 6px;
+  padding: 0.7rem 1rem;
+  text-align: center;
+  margin-top: 1rem;
+  font-weight: 500;
+}
+.gq-error {
+  color: #e74c3c;
+  background: #fff0f0;
+  border-radius: 6px;
+  padding: 0.7rem 1rem;
+  text-align: center;
+  margin-top: 1rem;
+  font-weight: 500;
+}
+.gq-empty {
+  color: #888;
+  font-size: 1.1rem;
+  text-align: center;
+  padding: 2rem 0;
+  width: 100%;
+}
