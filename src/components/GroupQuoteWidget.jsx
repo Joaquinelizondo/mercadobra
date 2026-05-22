@@ -62,8 +62,6 @@ const GroupQuoteWidget = () => {
   };
 
 
-};
-
   return (
     <form className="gq-widget" onSubmit={handleSubmit} autoComplete="off">
       <h3 className="gq-title">Cotizá lo que necesitás</h3>
@@ -121,3 +119,4 @@ const GroupQuoteWidget = () => {
       </div>
     </form>
   );
+};
