@@ -1,3 +1,76 @@
+/* --- LISTA DE PRODUCTOS (UX TOP) --- */
+.gq-list-mode .gq-input-row {
+  gap: 0.5rem;
+}
+.gq-list-mode .gq-add-btn {
+  background: linear-gradient(90deg, #1e90ff 0%, #00c6fb 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.5rem;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px 0 rgba(30,144,255,0.10);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.gq-list-mode .gq-add-btn:disabled {
+  background: #e0e7ef;
+  color: #b0b8c1;
+  cursor: not-allowed;
+}
+.gq-list-mode .gq-products-listbox {
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1.5px solid #d1d5db;
+  margin: 0.7rem 0 1.1rem 0;
+  padding: 0.7rem 1rem 0.5rem 1rem;
+  box-shadow: 0 2px 8px 0 rgba(30,144,255,0.04);
+}
+.gq-list-mode .gq-products-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.gq-list-mode .gq-product-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 1.08rem;
+}
+.gq-list-mode .gq-product-item:last-child {
+  border-bottom: none;
+}
+.gq-list-mode .gq-product-name {
+  flex: 1;
+  color: #0a2540;
+  font-weight: 500;
+  word-break: break-word;
+}
+.gq-list-mode .gq-remove-btn {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  font-size: 1.3rem;
+  margin-left: 0.7rem;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.13s, color 0.13s;
+}
+.gq-list-mode .gq-remove-btn:hover {
+  background: #ffeaea;
+  color: #b71c1c;
+}
 /* --- COTIZADOR CLÁSICO (PRIORIDAD) --- */
 .group-quote-widget.classic {
   background: #fff;
