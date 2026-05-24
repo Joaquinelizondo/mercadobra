@@ -1,3 +1,152 @@
+/* --- COTIZADOR CLÁSICO (PRIORIDAD) --- */
+.group-quote-widget.classic {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px 0 rgba(30,144,255,0.10), 0 1.5px 6px 0 rgba(0,0,0,0.07);
+  padding: 2.2rem 1.5rem 1.7rem 1.5rem;
+  max-width: 480px;
+  margin: 2.5rem auto 1.5rem auto;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  position: relative;
+  z-index: 2;
+}
+.group-quote-widget.classic .gq-title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 1.3rem;
+  color: #0a2540;
+  letter-spacing: -1.2px;
+  text-align: center;
+}
+.group-quote-widget.classic .gq-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  align-items: stretch;
+}
+.group-quote-widget.classic .gq-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  justify-content: center;
+}
+.group-quote-widget.classic .gq-input.main {
+  flex: 1 1 220px;
+  min-width: 0;
+  background: #f8fafc;
+  border: 1.5px solid #d1d5db;
+  border-radius: 9px;
+  font-size: 1.18rem;
+  padding: 1.1rem 1.2rem;
+  outline: none;
+  transition: border 0.15s, background 0.15s;
+  color: #0a2540;
+  box-shadow: 0 1.5px 6px 0 rgba(30,144,255,0.04);
+  width: 360px;
+  max-width: 90vw;
+}
+.group-quote-widget.classic .gq-input.main:focus {
+  border-color: #1e90ff;
+  background: #fff;
+}
+.group-quote-widget.classic .gq-mic-btn {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: #1e90ff;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1.5px 6px 0 rgba(30,144,255,0.07);
+  margin-left: 12px;
+}
+.group-quote-widget.classic .gq-mic-btn:hover {
+  background: #e0f2fe;
+  color: #0a2540;
+}
+.group-quote-widget.classic .gq-mic-active {
+  background: #bae6fd;
+  color: #0a2540;
+  box-shadow: 0 2px 10px 0 rgba(30,144,255,0.13);
+}
+.group-quote-widget.classic .gq-submit-btn {
+  background: linear-gradient(90deg, #1e90ff 0%, #00c6fb 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.13rem;
+  border: none;
+  border-radius: 9px;
+  padding: 0.95rem 2.2rem;
+  box-shadow: 0 2px 12px 0 rgba(30,144,255,0.13);
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s, transform 0.13s;
+  letter-spacing: 0.01em;
+  margin: 0 auto;
+  display: block;
+  margin-top: 18px;
+}
+.group-quote-widget.classic .gq-submit-btn:disabled {
+  background: #e0e7ef;
+  color: #b0b8c1;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.group-quote-widget.classic .gq-submit-btn:active {
+  transform: scale(0.97);
+}
+.group-quote-widget.classic .gq-error {
+  color: #e74c3c;
+  background: linear-gradient(90deg, #fff0f0 60%, #ffeaea 100%);
+  border-radius: 8px;
+  padding: 0.7rem 1.1rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.01rem;
+  box-shadow: 0 2px 8px 0 rgba(231,76,60,0.08);
+  margin-top: 0.2rem;
+  margin-bottom: 0.2rem;
+}
+.group-quote-widget.classic .gq-success {
+  color: #1abc9c;
+  background: linear-gradient(90deg, #e8fcf6 60%, #d1fae5 100%);
+  border-radius: 8px;
+  padding: 0.7rem 1.1rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.01rem;
+  box-shadow: 0 2px 8px 0 rgba(16,185,129,0.08);
+  margin-top: 0.2rem;
+  margin-bottom: 0.2rem;
+}
+@media (max-width: 600px) {
+  .group-quote-widget.classic {
+    padding: 1.1rem 0.2rem 1.1rem 0.2rem;
+    max-width: 99vw;
+  }
+  .group-quote-widget.classic .gq-input.main {
+    font-size: 1.01rem;
+    padding: 0.8rem 0.7rem;
+    width: 99vw;
+    max-width: 99vw;
+  }
+  .group-quote-widget.classic .gq-title {
+    font-size: 1.2rem;
+  }
+  .group-quote-widget.classic .gq-mic-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 1.2rem;
+  }
+  .group-quote-widget.classic .gq-submit-btn {
+    font-size: 1rem;
+    padding: 0.7rem 1.2rem;
+  }
+}
 /* --- NEEDS CHIPS (COTIZADOR LIBRE) --- */
 .gq-needs-list {
   display: flex;
