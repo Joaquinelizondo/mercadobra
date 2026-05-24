@@ -205,6 +205,7 @@ export default function Landing() {
   return (
     <>
       {/* Cotizador grupal premium (primer bloque visible) */}
+
       <section className="section group-quote-section" id="cotizador-grupal">
         <GroupQuoteWidget onSuccess={prods => {
           if (prods && prods.length > 0) {
@@ -216,9 +217,10 @@ export default function Landing() {
         }} />
       </section>
 
-      {Array.isArray(quotedProducts) && quotedProducts.length > 0 && (
-        <section className="section quoted-results-section" id="productos-cotizados" style={{maxWidth: 820, margin: '0 auto 2.5rem auto', background: '#fff7ed', borderRadius: 18, border: '1.5px solid #fb923c', boxShadow: '0 2px 8px 0 rgba(251,146,60,0.07)', padding: '1.5rem 2rem'}}>
-          <h3 style={{color: '#fb923c', fontWeight: 800, fontSize: '1.3rem', marginBottom: 12}}>Productos cotizados</h3>
+      {/* Productos cotizados arriba de los destacados */}
+      <section className="section quoted-results-section" id="productos-cotizados" style={{maxWidth: 820, margin: '0 auto 2.5rem auto', background: '#fff7ed', borderRadius: 18, border: '1.5px solid #fb923c', boxShadow: '0 2px 8px 0 rgba(251,146,60,0.07)', padding: '1.5rem 2rem'}}>
+        <h3 style={{color: '#fb923c', fontWeight: 800, fontSize: '1.3rem', marginBottom: 12}}>Productos cotizados</h3>
+        {Array.isArray(quotedProducts) && quotedProducts.length > 0 ? (
           <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
             {quotedProducts.map((prod, idx) => (
               <li key={prod + idx} style={{background: '#fff', borderRadius: 8, marginBottom: 8, padding: '0.7rem 1.1rem', color: '#b45309', fontWeight: 700, fontSize: '1.08em', boxShadow: '0 1px 4px 0 rgba(251,146,60,0.04)'}}>
@@ -226,8 +228,10 @@ export default function Landing() {
               </li>
             ))}
           </ul>
-        </section>
-      )}
+        ) : (
+          <div style={{color: '#b45309', fontWeight: 500, fontSize: '1.08em', padding: '0.7rem 0'}}>No hay productos similares en el catálogo. Te avisaremos cuando haya novedades.</div>
+        )}
+      </section>
 
       {/* Productos destacados */}
       <section className="section featured-section" id="featured-results">
