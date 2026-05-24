@@ -64,8 +64,9 @@ export default function GroupQuoteWidget() {
     try {
       await createLead({
         name: "Cotizador grupal",
+        company: "Cotizador Web",
         email: "voz@mercadobra.com",
-        phone: "-",
+        phone: "0000000000",
         message: products.join(", "),
         plan: "pro",
         source: "group-quote-widget-lista",
