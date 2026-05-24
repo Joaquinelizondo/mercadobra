@@ -90,19 +90,20 @@ export default function GroupQuoteWidget({ onSuccess }) {
       return;
     }
     try {
+      const quoted = [...products];
       await createLead({
         name: client.name,
         company: "Cotizador Web",
         email: client.email,
         phone: client.phone,
-        message: products.join(", "),
+        message: quoted.join(", "),
         plan: "pro",
         source: "group-quote-widget-lista",
-        products: products.map((name) => ({ name })),
+        products: quoted.map((name) => ({ name })),
       });
       setSuccess(true);
       setStep(3);
-      if (onSuccess) onSuccess([...products]);
+      if (onSuccess) onSuccess(quoted);
       setProducts([]);
       setInput("");
       setClient({ name: "", email: "", phone: "" });
