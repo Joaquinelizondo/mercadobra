@@ -67,7 +67,7 @@ export default function GroupQuoteWidget() {
         email: "voz@mercadobra.com",
         phone: "-",
         message: products.join(", "),
-        plan: "cotizador-lista",
+        plan: "pro",
         source: "group-quote-widget-lista",
         products: products.map((name) => ({ name })),
       });
