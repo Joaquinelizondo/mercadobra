@@ -178,38 +178,209 @@ export default function Landing() {
   const [estimatorArea, setEstimatorArea] = useState(30)
   const [estimatorBudget, setEstimatorBudget] = useState('medio')
   const searchTimerRef = useRef(null)
+  // ...resto del código...
+  // Definir variables derivadas necesarias para el render
+  const featured = useMemo(() => productList.slice(0, 8), [productList])
+  const activeTrack = useMemo(() => journeyTracks.find((t) => t.id === activeTrackId) || journeyTracks[0], [activeTrackId])
+  const estimatorResult = useMemo(() => {
+    const profile = ESTIMATOR_PROFILES[estimatorProject] || ESTIMATOR_PROFILES.pintar
+    return {
+      title: profile.label,
+      keywords: profile.keywords,
+      items: profile.calc(estimatorArea),
+      suggestedBudget: estimatorArea * (estimatorBudget === 'bajo' ? 2500 : estimatorBudget === 'alto' ? 6000 : 4000),
+    }
+  }, [estimatorProject, estimatorArea, estimatorBudget])
+  const leadSectionRef = useRef(null)
 
-      <section className="section featured-search-section" id="inicio">
-        <h1 className="featured-search-title">Tu obra arranca aca</h1>
-        <div className="featured-search-panel">
-          <div className="catalog-search-wrap">
-            <label htmlFor="featured-search" className="catalog-search-label">
-              Escribi lo que necesitas
-            </label>
-            <form className="catalog-search-form" onSubmit={handleFeaturedSearchSubmit}>
-              {/* ...existing code for buscador y chips... */}
-            </form>
-            <p className="catalog-search-voice-status" aria-live="polite">
-              {/* ...existing code for voice status... */}
-            </p>
+  return (
+    <>
+      {/* Productos destacados */}
+      <section className="section featured-section" id="featured-results">
+        <div className="catalog-section-heading">
+          <div className="section-heading" style={{ flex: 1 }}>
+            <span className="eyebrow">Productos destacados</span>
+            <h2>Materiales y herramientas para avanzar hoy mismo.</h2>
           </div>
+          <Link to="/explorar" className="ghost-link">
+            Ver catálogo completo →
+          </Link>
         </div>
-        {/* Campos de obra destacados debajo del cotizador */}
-        <section className="section cta-section" id="contacto" ref={leadSectionRef}>
-          <span className="eyebrow">Te acompañamos de verdad</span>
-          <h2>Contanos tu proyecto y te armamos un plan claro.</h2>
-          <p>Sin vueltas: etapa, tiempos y presupuesto en una sola charla.</p>
-          <form className="lead-form" onSubmit={handleLeadSubmit}>
-            {/* ...existing code for form fields, message, errors, buttons... */}
-          </form>
-        </section>
-        {isSearching && (
-          <div className="search-loading-card" role="status" aria-live="polite">
-            {/* ...existing code for loading... */}
-          </div>
-        )}
+        <div className="products-grid">
+          {featured.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <Link to="/explorar" className="primary-link large-link" style={{ display: 'inline-flex' }}>
+            Ver todo el catalogo
+          </Link>
+        </div>
       </section>
-  }
+
+      {/* Campos de obra destacados debajo de productos */}
+      <section className="section cta-section" id="contacto" ref={leadSectionRef}>
+        <span className="eyebrow">Te acompañamos de verdad</span>
+        <h2>Contanos tu proyecto y te armamos un plan claro.</h2>
+        <p>Sin vueltas: etapa, tiempos y presupuesto en una sola charla.</p>
+        <form className="lead-form" onSubmit={handleLeadSubmit}>
+          <div className="lead-form-grid">
+            {/* ...existing code for form fields... */}
+            <label className="form-field" htmlFor="lead-name">
+              <span className="form-label">Nombre y apellido</span>
+              <input
+                id="lead-name"
+                name="name"
+                className="form-input"
+                value={leadForm.name}
+                onChange={handleLeadInputChange}
+                required
+              />
+            </label>
+            <label className="form-field" htmlFor="lead-company">
+              <span className="form-label">Empresa o particular</span>
+              <input
+                id="lead-company"
+                name="company"
+                className="form-input"
+                value={leadForm.company}
+                onChange={handleLeadInputChange}
+                placeholder="Ej: Cliente particular"
+              />
+            </label>
+            <label className="form-field" htmlFor="lead-email">
+              <span className="form-label">Email</span>
+              <input
+                id="lead-email"
+                name="email"
+                type="email"
+                className="form-input"
+                value={leadForm.email}
+                onChange={handleLeadInputChange}
+                required
+              />
+            </label>
+            <label className="form-field" htmlFor="lead-phone">
+              <span className="form-label">Teléfono</span>
+              <input
+                id="lead-phone"
+                name="phone"
+                className="form-input"
+                value={leadForm.phone}
+                onChange={handleLeadInputChange}
+                required
+              />
+            </label>
+            <label className="form-field" htmlFor="lead-zone">
+              <span className="form-label">Zona</span>
+              <input
+                id="lead-zone"
+                name="zone"
+                className="form-input"
+                value={leadForm.zone}
+                onChange={handleLeadInputChange}
+                placeholder="Ej: CABA, Zona Norte"
+              />
+            </label>
+            <label className="form-field" htmlFor="lead-plan">
+              <span className="form-label">Nivel de acompañamiento</span>
+              <select
+                id="lead-plan"
+                name="plan"
+                className="form-input"
+                value={leadForm.plan}
+                onChange={handleLeadInputChange}
+                required
+              >
+                <option value="pro">Pro · guía y comparación</option>
+                <option value="premium">Premium · respuesta prioritaria</option>
+              </select>
+            </label>
+            <label className="form-field" htmlFor="lead-project-type">
+              <span className="form-label">Tipo de proyecto</span>
+              <select
+                id="lead-project-type"
+                name="projectType"
+                className="form-input"
+                value={leadForm.projectType}
+                onChange={handleLeadInputChange}
+              >
+                {projectTypeOptions.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+            <label className="form-field" htmlFor="lead-timeline">
+              <span className="form-label">Plazo estimado</span>
+              <select
+                id="lead-timeline"
+                name="timeline"
+                className="form-input"
+                value={leadForm.timeline}
+                onChange={handleLeadInputChange}
+              >
+                {timelineOptions.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+            <label className="form-field" htmlFor="lead-budget-range">
+              <span className="form-label">Presupuesto aproximado</span>
+              <select
+                id="lead-budget-range"
+                name="budgetRange"
+                className="form-input"
+                value={leadForm.budgetRange}
+                onChange={handleLeadInputChange}
+              >
+                {budgetOptions.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+            <label className="form-field" htmlFor="lead-payment-preference">
+              <span className="form-label">Medio de pago preferido</span>
+              <select
+                id="lead-payment-preference"
+                name="paymentPreference"
+                className="form-input"
+                value={leadForm.paymentPreference}
+                onChange={handleLeadInputChange}
+              >
+                {paymentPreferenceOptions.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label className="form-field" htmlFor="lead-message">
+            <span className="form-label">Mensaje (opcional)</span>
+            <textarea
+              id="lead-message"
+              name="message"
+              className="form-input lead-form-textarea"
+              value={leadForm.message}
+              onChange={handleLeadInputChange}
+              rows={4}
+              placeholder="Contanos qué querés resolver primero en tu obra"
+            />
+          </label>
+          {leadError && <p className="input-error" role="alert">{leadError}</p>}
+          {leadSuccess && <p className="input-success" role="status">{leadSuccess}</p>}
+          <div className="hero-actions centered-actions">
+            <button type="submit" className="primary-link large-link lead-submit-btn" disabled={leadSubmitting}>
+              {leadSubmitting ? 'Enviando...' : 'Quiero mi plan'}
+            </button>
+            <button type="button" className="whatsapp-direct-btn" onClick={openLeadWhatsapp}>
+              Hablar por WhatsApp
+            </button>
+          </div>
+          <p className="whatsapp-direct-hint">Te respondemos rapido por WhatsApp.</p>
+        </form>
+      </section>
+    </>
+  )
+}
 
   function handleFeaturedSearchSubmit(event) {
     event.preventDefault()
@@ -406,490 +577,4 @@ export default function Landing() {
     navigate(`/explorar?q=${encodeURIComponent(query)}`)
   }
 
-  return (
-
-      {/* Productos destacados */}
-      <section className="section featured-section" id="featured-results">
-        <div className="catalog-section-heading">
-          <div className="section-heading" style={{ flex: 1 }}>
-            <span className="eyebrow">Productos destacados</span>
-            <h2>Materiales y herramientas para avanzar hoy mismo.</h2>
-          </div>
-          <Link to="/explorar" className="ghost-link">
-            Ver catálogo completo →
-          </Link>
-        </div>
-        <div className="products-grid">
-          {featured.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <Link to="/explorar" className="primary-link large-link" style={{ display: 'inline-flex' }}>
-            Ver todo el catalogo
-          </Link>
-        </div>
-      </section>
-
-      {/* Campos de obra destacados debajo de productos */}
-      <section className="section cta-section" id="contacto" ref={leadSectionRef}>
-        <span className="eyebrow">Te acompañamos de verdad</span>
-        <h2>Contanos tu proyecto y te armamos un plan claro.</h2>
-        <p>Sin vueltas: etapa, tiempos y presupuesto en una sola charla.</p>
-        <form className="lead-form" onSubmit={handleLeadSubmit}>
-          <div className="lead-form-grid">
-            {/* ...existing code for form fields... */}
-          </div>
-          {/* ...existing code for message, errors, buttons... */}
-        </form>
-      </section>
-                  placeholder="+54 9 11 1234 5678"
-                />
-              </label>
-            </div>
-
-            {searchCaptureError && <p className="search-capture-error">{searchCaptureError}</p>}
-
-            <div className="search-capture-actions">
-              <button
-                type="button"
-                className="catalog-search-submit"
-                onClick={handleSearchCaptureSubmit}
-                disabled={searchCaptureSending}
-              >
-                {searchCaptureSending ? 'Cotizando...' : 'Cotizar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <section className="section journey-studio-section" id="journey-studio">
-        <div className="section-heading narrow-left">
-          <span className="eyebrow">Modo Obra</span>
-          <h2>Elegi una ruta segun el momento de tu proyecto.</h2>
-          <p>Simple, clara y pensada para decidir bien.</p>
-        </div>
-
-        <div className="journey-track-grid" role="tablist" aria-label="Rutas de compra">
-          {journeyTracks.map((track) => (
-            <button
-              key={track.id}
-              type="button"
-              className={`journey-track-card${activeTrackId === track.id ? ' journey-track-card--active' : ''}`}
-              onClick={() => activateTrack(track)}
-            >
-              <span className="journey-track-pill">{track.plan === 'premium' ? 'Atención Premium' : 'Atención Pro'}</span>
-              <h3>{track.title}</h3>
-              <p>{track.subtitle}</p>
-              <small>{track.audience}</small>
-            </button>
-          ))}
-        </div>
-
-        <div className="journey-playbook" aria-live="polite">
-          <div>
-            <p className="card-kicker">Ruta activa</p>
-            <h3>{activeTrack.title}</h3>
-            <p>{activeTrack.subtitle}</p>
-          </div>
-          <ul>
-            {activeTrack.checklist.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-          <button type="button" className="primary-link large-link lead-submit-btn" onClick={startGuidedLeadCapture}>
-            Activar esta ruta
-          </button>
-        </div>
-      </section>
-
-      <section className="section featured-section" id="featured-results">
-        <div className="catalog-section-heading">
-          <div className="section-heading" style={{ flex: 1 }}>
-            <span className="eyebrow">Productos destacados</span>
-            <h2>Materiales y herramientas para avanzar hoy mismo.</h2>
-          </div>
-          <Link to="/explorar" className="ghost-link">
-            Ver catálogo completo →
-          </Link>
-        </div>
-
-        <div className="products-grid">
-          {featured.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-
-        <div style={{ textAlign: 'center' }}>
-          <Link to="/explorar" className="primary-link large-link" style={{ display: 'inline-flex' }}>
-            Ver todo el catalogo
-          </Link>
-        </div>
-      </section>
-
-      <section className="hero-section">
-        <div className="hero-copy">
-          <span className="eyebrow">Simple, claro y al grano</span>
-          <h1>Tu obra, a tu manera.</h1>
-          <p className="hero-text">
-            Precios claros, proveedores reales y una experiencia comoda para comprar sin vueltas.
-          </p>
-          <div className="hero-actions">
-            <Link to="/explorar" className="primary-link large-link">Explorar ahora</Link>
-            <a href="#contacto" className="ghost-link large-link">Quiero ayuda para comprar</a>
-          </div>
-          <p className="hero-secondary-link">
-            ¿Sos proveedor? <Link to="/proveedor/login">Entrá por acá</Link>.
-          </p>
-          <ul className="metrics" aria-label="Indicadores principales">
-            {metrics.map((item) => (
-              <li key={item.label}>
-                <strong>{item.value}</strong>
-                <span>{item.label}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="hero-card">
-          <div className="hero-card-badge">Nueva plataforma</div>
-          <img src={logoImg} className="hero-logo" alt="Logo MercadObra" />
-          <img src={heroImg} alt="Ilustración de materiales y herramientas de obra" />
-          <div className="hero-card-content">
-            <p className="card-kicker">Pensado para personas reales</p>
-            <h2>Busca, compara y compra con tranquilidad.</h2>
-            <p>Desde la base hasta la terminacion, todo en un mismo lugar.</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="info-strip">
-        <p>Comprar materiales puede ser simple, rapido y con buen gusto.</p>
-      </section>
-
-      <section className="section estimator-section" id="estimador">
-        <div className="estimator-head">
-          <span className="eyebrow">Estimador rapido</span>
-          <h2>Calcula una base para tu proyecto en menos de un minuto.</h2>
-          <p>Elegi el tipo de trabajo, ajusta metros y mira una lista sugerida para arrancar.</p>
-        </div>
-
-        <div className="estimator-grid">
-          <div className="estimator-controls">
-            <label className="form-field" htmlFor="estimator-project">
-              <span className="form-label">Que queres resolver</span>
-              <select
-                id="estimator-project"
-                className="form-input"
-                value={estimatorProject}
-                onChange={(event) => setEstimatorProject(event.target.value)}
-              >
-                <option value="pintar">Pintar ambientes</option>
-                <option value="bano">Refaccion de bano</option>
-                <option value="base">Base para obra chica</option>
-              </select>
-            </label>
-
-            <label className="form-field" htmlFor="estimator-area">
-              <span className="form-label">Superficie estimada (m2)</span>
-              <input
-                id="estimator-area"
-                type="range"
-                min="10"
-                max="180"
-                step="5"
-                value={estimatorArea}
-                onChange={(event) => setEstimatorArea(Number(event.target.value))}
-              />
-              <small className="estimator-range-value">{estimatorArea} m2</small>
-            </label>
-
-            <label className="form-field" htmlFor="estimator-budget">
-              <span className="form-label">Nivel de presupuesto</span>
-              <select
-                id="estimator-budget"
-                className="form-input"
-                value={estimatorBudget}
-                onChange={(event) => setEstimatorBudget(event.target.value)}
-              >
-                <option value="bajo">Ajustado</option>
-                <option value="medio">Equilibrado</option>
-                <option value="alto">Premium</option>
-              </select>
-            </label>
-          </div>
-
-          <aside className="estimator-result" aria-live="polite">
-            <p className="card-kicker">Resultado estimado</p>
-            <h3>{estimatorResult.title}</h3>
-            <ul>
-              {estimatorResult.items.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            <p className="estimator-budget">Presupuesto orientativo: ARS {estimatorResult.suggestedBudget.toLocaleString('es-AR')}</p>
-            <button type="button" className="primary-link large-link lead-submit-btn" onClick={openEstimatorResults}>
-              Ver opciones para este plan
-            </button>
-          </aside>
-        </div>
-      </section>
-
-      <section className="section" id="categorias">
-        <div className="section-heading">
-          <span className="eyebrow">Categorías destacadas</span>
-          <h2>Todo lo que necesitas, ordenado para decidir facil.</h2>
-        </div>
-        <div className="categories-grid">
-          {categories.map((cat) => (
-            <article key={cat.title} className="category-card">
-              <h3>{cat.title}</h3>
-              <p>{cat.description}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="section section-alt" id="como-funciona">
-        <div className="section-heading narrow">
-          <span className="eyebrow">Cómo funciona</span>
-          <h2>Comprar para la obra nunca fue tan facil.</h2>
-        </div>
-        <div className="steps-grid">
-          <article className="step-card">
-            <span>01</span>
-            <h3>Buscá lo que necesitás</h3>
-            <p>Filtrá por producto, categoría o proveedor y encontrá opciones al toque.</p>
-          </article>
-          <article className="step-card">
-            <span>02</span>
-            <h3>Compará y consultá</h3>
-            <p>Revisá precios, disponibilidad y sacate dudas antes de cerrar la compra.</p>
-          </article>
-          <article className="step-card">
-            <span>03</span>
-            <h3>Comprá y hacé seguimiento</h3>
-            <p>Elegí proveedor y seguí el pedido hasta que te llegue.</p>
-          </article>
-        </div>
-      </section>
-
-      <section className="section benefits-section">
-        <div className="section-heading narrow">
-          <span className="eyebrow">Por qué MercadObra</span>
-          <h2>Una experiencia cercana, moderna y bien hecha.</h2>
-        </div>
-        <div className="benefits-panel">
-          <ul className="benefits-list">
-            {benefits.map((b) => <li key={b}>{b}</li>)}
-          </ul>
-          <aside className="highlight-box">
-            <p className="card-kicker">Ideal para</p>
-            <h3>Quienes construyen o reforman por primera vez.</h3>
-            <p>Comprá con confianza, sin vueltas y con contacto directo.</p>
-          </aside>
-        </div>
-      </section>
-
-      <section className="section testimonios-section" id="testimonios">
-        <div className="section-heading">
-          <span className="eyebrow">Lo que cuenta la comunidad</span>
-          <h2>Experiencias reales en MercadObra</h2>
-        </div>
-
-        <div className="testimonios-grid">
-          {testimonios.map((test, idx) => (
-            <div key={idx} className="testimonio-card">
-              <div className="testimonio-rating">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className={`star${i < test.rating ? ' star--filled' : ''}`}>★</span>
-                ))}
-              </div>
-              <p className="testimonio-text">"{test.text}"</p>
-              <div className="testimonio-author">
-                <div>
-                  <p className="author-name">{test.name}</p>
-                  <p className="author-company">{test.company}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="section cta-section" id="contacto" ref={leadSectionRef}>
-          <span className="eyebrow">Te acompañamos de verdad</span>
-          <h2>Contanos tu proyecto y te armamos un plan claro.</h2>
-          <p>Sin vueltas: etapa, tiempos y presupuesto en una sola charla.</p>
-
-        <form className="lead-form" onSubmit={handleLeadSubmit}>
-          <div className="lead-form-grid">
-            <label className="form-field" htmlFor="lead-name">
-              <span className="form-label">Nombre y apellido</span>
-              <input
-                id="lead-name"
-                name="name"
-                className="form-input"
-                value={leadForm.name}
-                onChange={handleLeadInputChange}
-                required
-              />
-            </label>
-
-            <label className="form-field" htmlFor="lead-company">
-              <span className="form-label">Empresa o particular</span>
-              <input
-                id="lead-company"
-                name="company"
-                className="form-input"
-                value={leadForm.company}
-                onChange={handleLeadInputChange}
-                placeholder="Ej: Cliente particular"
-              />
-            </label>
-
-            <label className="form-field" htmlFor="lead-email">
-              <span className="form-label">Email</span>
-              <input
-                id="lead-email"
-                name="email"
-                type="email"
-                className="form-input"
-                value={leadForm.email}
-                onChange={handleLeadInputChange}
-                required
-              />
-            </label>
-
-            <label className="form-field" htmlFor="lead-phone">
-              <span className="form-label">Teléfono</span>
-              <input
-                id="lead-phone"
-                name="phone"
-                className="form-input"
-                value={leadForm.phone}
-                onChange={handleLeadInputChange}
-                required
-              />
-            </label>
-
-            <label className="form-field" htmlFor="lead-zone">
-              <span className="form-label">Zona</span>
-              <input
-                id="lead-zone"
-                name="zone"
-                className="form-input"
-                value={leadForm.zone}
-                onChange={handleLeadInputChange}
-                placeholder="Ej: CABA, Zona Norte"
-              />
-            </label>
-
-            <label className="form-field" htmlFor="lead-plan">
-              <span className="form-label">Nivel de acompañamiento</span>
-              <select
-                id="lead-plan"
-                name="plan"
-                className="form-input"
-                value={leadForm.plan}
-                onChange={handleLeadInputChange}
-                required
-              >
-                <option value="pro">Pro · guía y comparación</option>
-                <option value="premium">Premium · respuesta prioritaria</option>
-              </select>
-            </label>
-
-            <label className="form-field" htmlFor="lead-project-type">
-              <span className="form-label">Tipo de proyecto</span>
-              <select
-                id="lead-project-type"
-                name="projectType"
-                className="form-input"
-                value={leadForm.projectType}
-                onChange={handleLeadInputChange}
-              >
-                {projectTypeOptions.map((option) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </label>
-
-            <label className="form-field" htmlFor="lead-timeline">
-              <span className="form-label">Plazo estimado</span>
-              <select
-                id="lead-timeline"
-                name="timeline"
-                className="form-input"
-                value={leadForm.timeline}
-                onChange={handleLeadInputChange}
-              >
-                {timelineOptions.map((option) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </label>
-
-            <label className="form-field" htmlFor="lead-budget-range">
-              <span className="form-label">Presupuesto aproximado</span>
-              <select
-                id="lead-budget-range"
-                name="budgetRange"
-                className="form-input"
-                value={leadForm.budgetRange}
-                onChange={handleLeadInputChange}
-              >
-                {budgetOptions.map((option) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </label>
-
-            <label className="form-field" htmlFor="lead-payment-preference">
-              <span className="form-label">Medio de pago preferido</span>
-              <select
-                id="lead-payment-preference"
-                name="paymentPreference"
-                className="form-input"
-                value={leadForm.paymentPreference}
-                onChange={handleLeadInputChange}
-              >
-                {paymentPreferenceOptions.map((option) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <label className="form-field" htmlFor="lead-message">
-            <span className="form-label">Mensaje (opcional)</span>
-            <textarea
-              id="lead-message"
-              name="message"
-              className="form-input lead-form-textarea"
-              value={leadForm.message}
-              onChange={handleLeadInputChange}
-              rows={4}
-              placeholder="Contanos qué querés resolver primero en tu obra"
-            />
-          </label>
-
-          {leadError && <p className="input-error" role="alert">{leadError}</p>}
-          {leadSuccess && <p className="input-success" role="status">{leadSuccess}</p>}
-
-          <div className="hero-actions centered-actions">
-            <button type="submit" className="primary-link large-link lead-submit-btn" disabled={leadSubmitting}>
-              {leadSubmitting ? 'Enviando...' : 'Quiero mi plan'}
-            </button>
-            <button type="button" className="whatsapp-direct-btn" onClick={openLeadWhatsapp}>
-              Hablar por WhatsApp
-            </button>
-          </div>
-
-          <p className="whatsapp-direct-hint">Te respondemos rapido por WhatsApp.</p>
-        </form>
-      </section>
-    </>
-  )
-}
+  // No debe haber un return vacío ni un cierre de bloque extra aquí.
