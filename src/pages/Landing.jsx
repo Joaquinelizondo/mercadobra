@@ -178,7 +178,14 @@ export default function Landing() {
   const [estimatorProject, setEstimatorProject] = useState('pintar')
   const [estimatorArea, setEstimatorArea] = useState(30)
   const [estimatorBudget, setEstimatorBudget] = useState('medio')
-  const [quotedProducts, setQuotedProducts] = useState([])
+  const [quotedProducts, setQuotedProducts] = useState(() => {
+    try {
+      const stored = localStorage.getItem('quotedProducts')
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      return []
+    }
+  })
   const searchTimerRef = useRef(null)
   // ...resto del código...
   // Definir variables derivadas necesarias para el render
@@ -199,7 +206,14 @@ export default function Landing() {
     <>
       {/* Cotizador grupal premium (primer bloque visible) */}
       <section className="section group-quote-section" id="cotizador-grupal">
-        <GroupQuoteWidget onSuccess={prods => { if (prods && prods.length > 0) setQuotedProducts(prods); }} />
+        <GroupQuoteWidget onSuccess={prods => {
+          if (prods && prods.length > 0) {
+            setQuotedProducts(prods)
+            try {
+              localStorage.setItem('quotedProducts', JSON.stringify(prods))
+            } catch {}
+          }
+        }} />
       </section>
 
       {Array.isArray(quotedProducts) && quotedProducts.length > 0 && (
