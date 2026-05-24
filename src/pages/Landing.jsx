@@ -199,10 +199,10 @@ export default function Landing() {
     <>
       {/* Cotizador grupal premium (primer bloque visible) */}
       <section className="section group-quote-section" id="cotizador-grupal">
-        <GroupQuoteWidget onSuccess={setQuotedProducts} />
+        <GroupQuoteWidget onSuccess={prods => { if (prods && prods.length > 0) setQuotedProducts(prods); }} />
       </section>
 
-      {quotedProducts.length > 0 && (
+      {Array.isArray(quotedProducts) && quotedProducts.length > 0 && (
         <section className="section quoted-results-section" id="productos-cotizados" style={{maxWidth: 820, margin: '0 auto 2.5rem auto', background: '#fff7ed', borderRadius: 18, border: '1.5px solid #fb923c', boxShadow: '0 2px 8px 0 rgba(251,146,60,0.07)', padding: '1.5rem 2rem'}}>
           <h3 style={{color: '#fb923c', fontWeight: 800, fontSize: '1.3rem', marginBottom: 12}}>Productos cotizados</h3>
           <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
