@@ -190,19 +190,19 @@ export default function GroupQuoteWidget() {
         </form>
       )}
       {step === 2 && (
-        <form className="gq-form" onSubmit={handleStep2Submit} autoComplete="off">
-          <div className="gq-products-listbox" style={{ marginBottom: 16 }}>
-            <div style={{ fontWeight: 500, marginBottom: 8 }}>Productos a cotizar:</div>
+        <form className="gq-form" onSubmit={handleStep2Submit} autoComplete="off" style={{marginTop: 8}}>
+          <div className="gq-products-listbox" style={{ marginBottom: 18 }}>
+            <div style={{ fontWeight: 600, marginBottom: 10, fontSize: '1.08em', color: '#fb923c' }}>Productos a cotizar:</div>
             <ul className="gq-products-list">
               {products.map((prod, idx) => (
-                <li key={prod + idx} className="gq-product-item">
-                  <span className="gq-product-name">{prod}</span>
+                <li key={prod + idx} className="gq-product-item" style={{border: 'none', background: '#fff7ed', borderRadius: 8, marginBottom: 6, padding: '0.7rem 1rem'}}>
+                  <span className="gq-product-name" style={{color: '#b45309', fontWeight: 700}}>{prod}</span>
                 </li>
               ))}
             </ul>
           </div>
-          <div className="gq-client-form">
-            <label className="gq-label">
+          <div className="gq-client-form" style={{display: 'flex', flexDirection: 'column', gap: 18}}>
+            <label className="gq-label" style={{fontWeight: 600, color: '#22223b', marginBottom: 2}}>
               Nombre y apellido
               <input
                 className="gq-input"
@@ -211,9 +211,11 @@ export default function GroupQuoteWidget() {
                 onChange={handleClientChange}
                 disabled={loading}
                 required
+                placeholder="Ej: Juan Pérez"
+                style={{marginTop: 6, fontSize: '1.09em', borderRadius: 12, border: '1.5px solid #e5e7eb', padding: '1.1rem 1.2rem', background: '#fff'}}
               />
             </label>
-            <label className="gq-label">
+            <label className="gq-label" style={{fontWeight: 600, color: '#22223b', marginBottom: 2}}>
               Email
               <input
                 className="gq-input"
@@ -223,9 +225,11 @@ export default function GroupQuoteWidget() {
                 onChange={handleClientChange}
                 disabled={loading}
                 required
+                placeholder="Ej: juan@email.com"
+                style={{marginTop: 6, fontSize: '1.09em', borderRadius: 12, border: '1.5px solid #e5e7eb', padding: '1.1rem 1.2rem', background: '#fff'}}
               />
             </label>
-            <label className="gq-label">
+            <label className="gq-label" style={{fontWeight: 600, color: '#22223b', marginBottom: 2}}>
               Teléfono
               <input
                 className="gq-input"
@@ -234,22 +238,35 @@ export default function GroupQuoteWidget() {
                 onChange={handleClientChange}
                 disabled={loading}
                 required
+                placeholder="Ej: 11 2345-6789"
+                style={{marginTop: 6, fontSize: '1.09em', borderRadius: 12, border: '1.5px solid #e5e7eb', padding: '1.1rem 1.2rem', background: '#fff'}}
               />
             </label>
           </div>
           {clientError && <div className="gq-error">{clientError}</div>}
-          <button className="gq-submit-btn" type="submit" disabled={loading}>
-            {loading ? "Enviando..." : "Enviar cotización"
-            }
+          <button className="gq-submit-btn" type="submit" disabled={loading} style={{marginTop: 18}}>
+            {loading ? "Enviando..." : "Enviar cotización"}
           </button>
         </form>
       )}
       {step === 3 && (
-        <div className="gq-success" style={{ textAlign: 'center', padding: '2rem 0' }}>
-          ¡Cotización enviada! Te contactaremos pronto.<br />
-          <span style={{ fontSize: '1.1em', color: '#666' }}>
-            Revisá tu email para ver el detalle de la cotización.
-          </span>
+        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+          <div className="gq-success" style={{marginBottom: 18}}>
+            ¡Cotización enviada! Te contactaremos pronto.<br />
+            <span style={{ fontSize: '1.1em', color: '#666' }}>
+              Revisá tu email para ver el detalle de la cotización.
+            </span>
+          </div>
+          <div className="gq-products-listbox" style={{margin: '0 auto', maxWidth: 420}}>
+            <div style={{ fontWeight: 600, marginBottom: 10, fontSize: '1.08em', color: '#fb923c' }}>Productos cotizados:</div>
+            <ul className="gq-products-list">
+              {products.map((prod, idx) => (
+                <li key={prod + idx} className="gq-product-item" style={{border: 'none', background: '#fff7ed', borderRadius: 8, marginBottom: 6, padding: '0.7rem 1rem'}}>
+                  <span className="gq-product-name" style={{color: '#b45309', fontWeight: 700}}>{prod}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
     </div>
