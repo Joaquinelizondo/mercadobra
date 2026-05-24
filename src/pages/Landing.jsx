@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import heroImg from '../assets/hero.png'
 import logoImg from '../assets/mercadobra.png'
 import { useProducts } from '../context/ProductContext'
+import { useAuth } from '../context/AuthContext'
+import { createProduct } from '../lib/api'
 import ProductCard from '../components/ProductCard'
 import { createLead, createSearchContact } from '../lib/api'
 import { useSpeechInput } from '../hooks/useSpeechInput'
@@ -146,6 +148,20 @@ const ESTIMATOR_PROFILES = {
 const RECENT_SEARCHES_KEY = 'mercadobra-recent-searches'
 
 export default function Landing() {
+  const { adminUser, adminToken } = useAuth()
+  const [addProductForm, setAddProductForm] = useState({
+    name: '',
+    price: '',
+    company: '',
+    unit: '',
+    category: '',
+    stock: '',
+    image: '',
+    description: '',
+  })
+  const [addProductLoading, setAddProductLoading] = useState(false)
+  const [addProductError, setAddProductError] = useState('')
+  const [addProductSuccess, setAddProductSuccess] = useState('')
   const navigate = useNavigate()
   const { productList } = useProducts()
   const [featuredSearchInput, setFeaturedSearchInput] = useState('')
@@ -190,6 +206,20 @@ export default function Landing() {
   // ...resto del código...
   // Definir variables derivadas necesarias para el render
   const featured = useMemo(() => productList.slice(0, 8), [productList])
+
+  // Cruzar productos cotizados con el catálogo
+  const quotedMatches = useMemo(() => {
+    if (!Array.isArray(quotedProducts) || quotedProducts.length === 0) return { found: [], notFound: [] };
+    const found = [];
+    const notFound = [];
+    quotedProducts.forEach(q => {
+      // Búsqueda simple: incluye si el nombre del producto del catálogo contiene el texto cotizado (case-insensitive)
+      const match = productList.find(p => p.name.toLowerCase().includes(q.toLowerCase()));
+      if (match) found.push(match);
+      else notFound.push(q);
+    });
+    return { found, notFound };
+  }, [quotedProducts, productList]);
   const activeTrack = useMemo(() => journeyTracks.find((t) => t.id === activeTrackId) || journeyTracks[0], [activeTrackId])
   const estimatorResult = useMemo(() => {
     const profile = ESTIMATOR_PROFILES[estimatorProject] || ESTIMATOR_PROFILES.pintar
@@ -202,9 +232,68 @@ export default function Landing() {
   }, [estimatorProject, estimatorArea, estimatorBudget])
   const leadSectionRef = useRef(null)
 
+  async function handleAddProductSubmit(e) {
+    e.preventDefault()
+    setAddProductError('')
+    setAddProductSuccess('')
+    setAddProductLoading(true)
+    try {
+      const payload = {
+        name: addProductForm.name,
+        price: Number(addProductForm.price),
+        company: addProductForm.company,
+        unit: addProductForm.unit,
+        category: addProductForm.category,
+        stock: Number(addProductForm.stock),
+        image: addProductForm.image,
+        description: addProductForm.description,
+      }
+      await createProduct(payload, adminToken)
+      setAddProductSuccess('Producto agregado correctamente')
+      setAddProductForm({ name: '', price: '', company: '', unit: '', category: '', stock: '', image: '', description: '' })
+    } catch (err) {
+      setAddProductError(err.message || 'Error al agregar producto')
+    } finally {
+      setAddProductLoading(false)
+    }
+  }
+
+  function handleAddProductInput(e) {
+    setAddProductForm(f => ({ ...f, [e.target.name]: e.target.value }))
+  }
+
   return (
     <>
+      {/* Sección solo visible para admin */}
+      {adminUser && (
+        <section className="section admin-add-product" style={{maxWidth: 820, margin: '2.5rem auto 2rem auto', background: '#f1f5f9', borderRadius: 18, border: '1.5px solid #e5e7eb', boxShadow: '0 2px 8px 0 rgba(30,144,255,0.04)', padding: '1.5rem 2rem'}}>
+          <h3 style={{color: '#22223b', fontWeight: 800, fontSize: '1.2rem', marginBottom: 12}}>Agregar producto de proveedor</h3>
+          <form onSubmit={handleAddProductSubmit} style={{display: 'flex', flexWrap: 'wrap', gap: 16}}>
+            <input name="name" value={addProductForm.name} onChange={handleAddProductInput} placeholder="Nombre" required style={{flex: '1 1 180px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
+            <input name="price" value={addProductForm.price} onChange={handleAddProductInput} placeholder="Precio" type="number" min="0" required style={{flex: '1 1 120px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
+            <input name="company" value={addProductForm.company} onChange={handleAddProductInput} placeholder="Proveedor" required style={{flex: '1 1 140px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
+            <input name="unit" value={addProductForm.unit} onChange={handleAddProductInput} placeholder="Unidad (ej: bolsa, m³)" required style={{flex: '1 1 100px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
+            <input name="category" value={addProductForm.category} onChange={handleAddProductInput} placeholder="Categoría" required style={{flex: '1 1 120px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
+            <input name="stock" value={addProductForm.stock} onChange={handleAddProductInput} placeholder="Stock" type="number" min="0" required style={{flex: '1 1 80px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
+            <input name="image" value={addProductForm.image} onChange={handleAddProductInput} placeholder="URL imagen (opcional)" style={{flex: '2 1 220px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
+            <input name="description" value={addProductForm.description} onChange={handleAddProductInput} placeholder="Descripción" style={{flex: '2 1 220px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
+            <button type="submit" disabled={addProductLoading} style={{padding: '10px 24px', borderRadius: 8, background: '#fb923c', color: '#fff', fontWeight: 700, border: 'none', marginTop: 8}}>
+              {addProductLoading ? 'Agregando...' : 'Agregar producto'}
+            </button>
+          </form>
+          {addProductError && <div style={{color: '#e74c3c', marginTop: 8}}>{addProductError}</div>}
+          {addProductSuccess && <div style={{color: '#1abc9c', marginTop: 8}}>{addProductSuccess}</div>}
+        </section>
+      )}
+        {/*
+          Los productos agregados por admin se integran al catálogo principal automáticamente,
+          ya que el contexto de productos se actualiza desde el backend.
+          Si quieres forzar el refresco tras agregar, puedes llamar a getProducts() tras éxito.
+        */}
+        {/* Refrescar productos tras agregar uno nuevo */}
+        {addProductSuccess && typeof getProducts === 'function' && getProducts()}
       {/* Cotizador grupal premium (primer bloque visible) */}
+
       <section className="section group-quote-section" id="cotizador-grupal">
         <GroupQuoteWidget onSuccess={prods => {
           if (prods && prods.length > 0) {
@@ -216,18 +305,32 @@ export default function Landing() {
         }} />
       </section>
 
-      {Array.isArray(quotedProducts) && quotedProducts.length > 0 && (
-        <section className="section quoted-results-section" id="productos-cotizados" style={{maxWidth: 820, margin: '0 auto 2.5rem auto', background: '#fff7ed', borderRadius: 18, border: '1.5px solid #fb923c', boxShadow: '0 2px 8px 0 rgba(251,146,60,0.07)', padding: '1.5rem 2rem'}}>
-          <h3 style={{color: '#fb923c', fontWeight: 800, fontSize: '1.3rem', marginBottom: 12}}>Productos cotizados</h3>
-          <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
-            {quotedProducts.map((prod, idx) => (
-              <li key={prod + idx} style={{background: '#fff', borderRadius: 8, marginBottom: 8, padding: '0.7rem 1.1rem', color: '#b45309', fontWeight: 700, fontSize: '1.08em', boxShadow: '0 1px 4px 0 rgba(251,146,60,0.04)'}}>
-                {prod}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {/* Productos cotizados arriba de los destacados */}
+      <section className="section quoted-results-section" id="productos-cotizados" style={{maxWidth: 820, margin: '0 auto 2.5rem auto', background: '#fff7ed', borderRadius: 18, border: '1.5px solid #fb923c', boxShadow: '0 2px 8px 0 rgba(251,146,60,0.07)', padding: '1.5rem 2rem'}}>
+        <h3 style={{color: '#fb923c', fontWeight: 800, fontSize: '1.3rem', marginBottom: 12}}>Productos cotizados</h3>
+        {quotedProducts.length === 0 ? (
+          <div style={{color: '#b45309', fontWeight: 500, fontSize: '1.08em', padding: '0.7rem 0'}}>No hay productos similares en el catálogo. Te avisaremos cuando haya novedades.</div>
+        ) : (
+          <>
+            {quotedMatches.found.length > 0 && (
+              <div className="products-grid" style={{marginBottom: 16}}>
+                {quotedMatches.found.map(product => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
+            {quotedMatches.notFound.length > 0 && (
+              <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
+                {quotedMatches.notFound.map((prod, idx) => (
+                  <li key={prod + idx} style={{background: '#fff', borderRadius: 8, marginBottom: 8, padding: '0.7rem 1.1rem', color: '#b45309', fontWeight: 700, fontSize: '1.08em', boxShadow: '0 1px 4px 0 rgba(251,146,60,0.04)'}}>
+                    {prod} <span style={{color:'#e74c3c', fontWeight:400, fontSize:'0.97em'}}>(no disponible en catálogo)</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </section>
 
       {/* Productos destacados */}
       <section className="section featured-section" id="featured-results">
