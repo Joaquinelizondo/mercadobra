@@ -190,6 +190,20 @@ export default function Landing() {
   // ...resto del código...
   // Definir variables derivadas necesarias para el render
   const featured = useMemo(() => productList.slice(0, 8), [productList])
+
+  // Cruzar productos cotizados con el catálogo
+  const quotedMatches = useMemo(() => {
+    if (!Array.isArray(quotedProducts) || quotedProducts.length === 0) return { found: [], notFound: [] };
+    const found = [];
+    const notFound = [];
+    quotedProducts.forEach(q => {
+      // Búsqueda simple: incluye si el nombre del producto del catálogo contiene el texto cotizado (case-insensitive)
+      const match = productList.find(p => p.name.toLowerCase().includes(q.toLowerCase()));
+      if (match) found.push(match);
+      else notFound.push(q);
+    });
+    return { found, notFound };
+  }, [quotedProducts, productList]);
   const activeTrack = useMemo(() => journeyTracks.find((t) => t.id === activeTrackId) || journeyTracks[0], [activeTrackId])
   const estimatorResult = useMemo(() => {
     const profile = ESTIMATOR_PROFILES[estimatorProject] || ESTIMATOR_PROFILES.pintar
@@ -220,16 +234,27 @@ export default function Landing() {
       {/* Productos cotizados arriba de los destacados */}
       <section className="section quoted-results-section" id="productos-cotizados" style={{maxWidth: 820, margin: '0 auto 2.5rem auto', background: '#fff7ed', borderRadius: 18, border: '1.5px solid #fb923c', boxShadow: '0 2px 8px 0 rgba(251,146,60,0.07)', padding: '1.5rem 2rem'}}>
         <h3 style={{color: '#fb923c', fontWeight: 800, fontSize: '1.3rem', marginBottom: 12}}>Productos cotizados</h3>
-        {Array.isArray(quotedProducts) && quotedProducts.length > 0 ? (
-          <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
-            {quotedProducts.map((prod, idx) => (
-              <li key={prod + idx} style={{background: '#fff', borderRadius: 8, marginBottom: 8, padding: '0.7rem 1.1rem', color: '#b45309', fontWeight: 700, fontSize: '1.08em', boxShadow: '0 1px 4px 0 rgba(251,146,60,0.04)'}}>
-                {prod}
-              </li>
-            ))}
-          </ul>
-        ) : (
+        {quotedProducts.length === 0 ? (
           <div style={{color: '#b45309', fontWeight: 500, fontSize: '1.08em', padding: '0.7rem 0'}}>No hay productos similares en el catálogo. Te avisaremos cuando haya novedades.</div>
+        ) : (
+          <>
+            {quotedMatches.found.length > 0 && (
+              <div className="products-grid" style={{marginBottom: 16}}>
+                {quotedMatches.found.map(product => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
+            {quotedMatches.notFound.length > 0 && (
+              <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
+                {quotedMatches.notFound.map((prod, idx) => (
+                  <li key={prod + idx} style={{background: '#fff', borderRadius: 8, marginBottom: 8, padding: '0.7rem 1.1rem', color: '#b45309', fontWeight: 700, fontSize: '1.08em', boxShadow: '0 1px 4px 0 rgba(251,146,60,0.04)'}}>
+                    {prod} <span style={{color:'#e74c3c', fontWeight:400, fontSize:'0.97em'}}>(no disponible en catálogo)</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </section>
 
