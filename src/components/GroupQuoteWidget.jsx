@@ -62,7 +62,62 @@ const GroupQuoteWidget = () => {
   };
 
 
-  return null;
+  return (
+    <div className="group-quote-widget">
+      <h2 className="gq-title">Cotizá lo que necesitás</h2>
+      <form className="gq-form" onSubmit={handleSubmit} autoComplete="off">
+        <div className="gq-chips-row">
+          {needs.map((need, idx) => (
+            <span className="gq-chip" key={idx}>
+              {need}
+              <button type="button" className="gq-chip-remove" onClick={() => handleRemoveNeed(idx)} aria-label="Eliminar necesidad">×</button>
+            </span>
+          ))}
+          <input
+            className="gq-input"
+            type="text"
+            placeholder={needs.length === 0 ? "Ej: cemento, pintura, hierro..." : "Agregá otra necesidad"}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleInputKeyDown}
+            disabled={loading}
+          />
+        </div>
+        <div className="gq-contact-row">
+          <input
+            className="gq-contact-input"
+            type="text"
+            placeholder="Nombre y apellido"
+            value={contact.name}
+            onChange={e => setContact({ ...contact, name: e.target.value })}
+            disabled={loading}
+            required
+          />
+          <input
+            className="gq-contact-input"
+            type="email"
+            placeholder="Email"
+            value={contact.email}
+            onChange={e => setContact({ ...contact, email: e.target.value })}
+            disabled={loading}
+            required
+          />
+          <input
+            className="gq-contact-input"
+            type="tel"
+            placeholder="Teléfono"
+            value={contact.phone}
+            onChange={e => setContact({ ...contact, phone: e.target.value })}
+            disabled={loading}
+            required
+          />
+        </div>
+        {error && <div className="gq-error">{error}</div>}
+        {success && <div className="gq-success">¡Cotización enviada! Te contactaremos pronto.</div>}
+        <button className="gq-submit-btn" type="submit" disabled={loading}>{loading ? "Enviando..." : "Cotizar"}</button>
+      </form>
+    </div>
+  );
 };
 
 export default GroupQuoteWidget;
