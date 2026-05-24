@@ -178,151 +178,37 @@ export default function Landing() {
   const [estimatorArea, setEstimatorArea] = useState(30)
   const [estimatorBudget, setEstimatorBudget] = useState('medio')
   const searchTimerRef = useRef(null)
-  const leadSectionRef = useRef(null)
-  const featured = productList.slice(0, 6)
-  const normalizedFeaturedInput = featuredSearchInput.trim().toLowerCase()
-  const {
-    isSupported: isVoiceSupported,
-    isListening: isVoiceListening,
-    error: voiceError,
-    startListening,
-    stopListening,
-    clearError: clearVoiceError,
-  } = useSpeechInput({
-    lang: 'es-AR',
-    onResult: (transcript) => {
-      setFeaturedSearchInput(transcript)
-      setShowFeaturedSuggestions(false)
-      startFeaturedSearch(transcript)
-    },
-  })
-  const activeTrack = useMemo(
-    () => journeyTracks.find((track) => track.id === activeTrackId) || journeyTracks[1],
-    [activeTrackId]
-  )
 
-  const estimatorResult = useMemo(() => {
-    const profile = ESTIMATOR_PROFILES[estimatorProject] || ESTIMATOR_PROFILES.pintar
-    const area = Math.max(1, Number(estimatorArea) || 1)
-    const factor = estimatorBudget === 'alto' ? 1.3 : estimatorBudget === 'bajo' ? 0.85 : 1
-    const suggestedBudget = Math.round(area * 9500 * factor)
-
-    return {
-      title: profile.label,
-      keywords: profile.keywords,
-      items: profile.calc(area),
-      suggestedBudget,
-    }
-  }, [estimatorProject, estimatorArea, estimatorBudget])
-
-  const featuredSuggestionItems = useMemo(() => {
-    const productNames = [...new Set(productList.map((product) => product.name))].map((value) => ({
-      id: `product-${value}`,
-      label: value,
-      value,
-      type: 'Producto',
-    }))
-
-    const companies = [...new Set(productList.map((product) => product.company))].map((value) => ({
-      id: `company-${value}`,
-      label: value,
-      value,
-      type: 'Proveedor',
-    }))
-
-    const categoriesList = [...new Set(productList.map((product) => product.category))].map((value) => ({
-      id: `category-${value}`,
-      label: value,
-      value,
-      type: 'Categoría',
-    }))
-
-    return [...productNames, ...companies, ...categoriesList]
-  }, [productList])
-
-  const featuredSuggestions = useMemo(() => {
-    if (!normalizedFeaturedInput) {
-      const recent = recentSearches.map((value) => ({
-        id: `recent-${value}`,
-        label: value,
-        value,
-        type: 'Reciente',
-      }))
-      const quickProducts = featuredSuggestionItems.filter((item) => item.type === 'Producto').slice(0, 4)
-      const quickCategories = featuredSuggestionItems.filter((item) => item.type === 'Categoría').slice(0, 2)
-      return [...recent, ...quickProducts, ...quickCategories].slice(0, 6)
-    }
-
-    const matches = featuredSuggestionItems
-      .filter((item) => item.label.toLowerCase().includes(normalizedFeaturedInput))
-      .sort((a, b) => {
-        const aStarts = a.label.toLowerCase().startsWith(normalizedFeaturedInput)
-        const bStarts = b.label.toLowerCase().startsWith(normalizedFeaturedInput)
-        if (aStarts === bStarts) return a.label.localeCompare(b.label)
-        return aStarts ? -1 : 1
-      })
-      .slice(0, 5)
-
-    if (!matches.length && featuredSearchInput.trim()) {
-      return [
-        {
-          id: `search-${featuredSearchInput}`,
-          label: `Cotizar "${featuredSearchInput.trim()}" en todo el catálogo`,
-          value: featuredSearchInput.trim(),
-          type: 'Cotizar',
-        },
-      ]
-    }
-
-    return matches
-  }, [featuredSuggestionItems, normalizedFeaturedInput, featuredSearchInput, recentSearches])
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(RECENT_SEARCHES_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed)) {
-          setRecentSearches(parsed.filter(Boolean).slice(0, 5))
-        }
-      }
-    } catch {
-      setRecentSearches([])
-    }
-
-    return () => {
-      if (searchTimerRef.current) {
-        clearTimeout(searchTimerRef.current)
-      }
-    }
-  }, [])
-
-  function saveRecentSearch(term) {
-    const nextTerm = term.trim()
-    if (!nextTerm) {
-      return
-    }
-
-    setRecentSearches((previous) => {
-      const next = [nextTerm, ...previous.filter((item) => item.toLowerCase() !== nextTerm.toLowerCase())].slice(0, 5)
-      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next))
-      return next
-    })
-  }
-
-  function startFeaturedSearch(term) {
-    const nextTerm = term.trim()
-    if (searchTimerRef.current) {
-      clearTimeout(searchTimerRef.current)
-    }
-
-    setShowFeaturedSuggestions(false)
-    saveRecentSearch(nextTerm)
-    setIsSearching(true)
-    searchTimerRef.current = setTimeout(() => {
-      setIsSearching(false)
-      navigate(nextTerm ? `/explorar?q=${encodeURIComponent(nextTerm)}` : '/explorar')
-    }, 700)
+      <section className="section featured-search-section" id="inicio">
+        <h1 className="featured-search-title">Tu obra arranca aca</h1>
+        <div className="featured-search-panel">
+          <div className="catalog-search-wrap">
+            <label htmlFor="featured-search" className="catalog-search-label">
+              Escribi lo que necesitas
+            </label>
+            <form className="catalog-search-form" onSubmit={handleFeaturedSearchSubmit}>
+              {/* ...existing code for buscador y chips... */}
+            </form>
+            <p className="catalog-search-voice-status" aria-live="polite">
+              {/* ...existing code for voice status... */}
+            </p>
+          </div>
+        </div>
+        {/* Campos de obra destacados debajo del cotizador */}
+        <section className="section cta-section" id="contacto" ref={leadSectionRef}>
+          <span className="eyebrow">Te acompañamos de verdad</span>
+          <h2>Contanos tu proyecto y te armamos un plan claro.</h2>
+          <p>Sin vueltas: etapa, tiempos y presupuesto en una sola charla.</p>
+          <form className="lead-form" onSubmit={handleLeadSubmit}>
+            {/* ...existing code for form fields, message, errors, buttons... */}
+          </form>
+        </section>
+        {isSearching && (
+          <div className="search-loading-card" role="status" aria-live="polite">
+            {/* ...existing code for loading... */}
+          </div>
+        )}
+      </section>
   }
 
   function handleFeaturedSearchSubmit(event) {
@@ -521,202 +407,42 @@ export default function Landing() {
   }
 
   return (
-    <>
-      <section className="section featured-search-section" id="inicio">
-        <h1 className="featured-search-title">Tu obra arranca aca</h1>
-        <div className="featured-search-panel">
-          <div className="catalog-search-wrap">
-            <label htmlFor="featured-search" className="catalog-search-label">
-              Escribi lo que necesitas
-            </label>
-            <form className="catalog-search-form" onSubmit={handleFeaturedSearchSubmit}>
-              <div className="catalog-search-control">
-                <span className="catalog-search-leading-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="18" height="18">
-                    <path d="M11 5a6 6 0 1 1 0 12 6 6 0 0 1 0-12Zm0 0 8 8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <input
-                  id="featured-search"
-                  className="catalog-search-input"
-                  type="search"
-                  placeholder="Cemento, Taladro, Pintura..."
-                  value={featuredSearchInput}
-                  autoComplete="off"
-                  onFocus={() => setShowFeaturedSuggestions(false)}
-                  onBlur={() => setShowFeaturedSuggestions(false)}
-                  onChange={(event) => {
-                    setFeaturedSearchInput(event.target.value)
-                    setShowFeaturedSuggestions(false)
-                  }}
-                  onKeyDown={e => {
-                    if ((e.key === "Enter" || e.key === "," || e.key === " ") && featuredSearchInput.trim()) {
-                      e.preventDefault();
-                      if (!featuredChips.includes(featuredSearchInput.trim())) {
-                        setFeaturedChips([...featuredChips, featuredSearchInput.trim()]);
-                      }
-                      setFeaturedSearchInput("");
-                    }
-                  }}
-                  disabled={isSearching}
-                />
-                <div className="catalog-search-chips-list">
-                  {featuredChips.map((chip, idx) => (
-                    <span className="catalog-search-chip" key={idx}>
-                      {chip}
-                      <button
-                        type="button"
-                        className="catalog-search-chip-remove"
-                        onClick={() => setFeaturedChips(featuredChips.filter((_, i) => i !== idx))}
-                        title="Quitar"
-                        aria-label={`Quitar ${chip}`}
-                        style={{ marginLeft: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontWeight: 'bold', fontSize: '1.1em', lineHeight: 1 }}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-                {featuredSearchInput && (
-                  <button
-                    type="button"
-                    className="catalog-search-clear"
-                    onClick={clearFeaturedSearch}
-                    aria-label="Limpiar búsqueda"
-                    disabled={isSearching}
-                  >
-                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                      <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                    </svg>
-                  </button>
-                )}
 
-                {showFeaturedSuggestions && !isSearching && featuredSuggestions.length > 0 && (
-                  <ul className="catalog-search-suggestions" role="listbox" aria-label="Sugerencias de búsqueda">
-                    {featuredSuggestions.map((suggestion) => (
-                      <li key={suggestion.id}>
-                        <button
-                          type="button"
-                          className="catalog-search-suggestion-btn"
-                          onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => selectFeaturedSuggestion(suggestion)}
-                        >
-                          <span className="catalog-search-suggestion-text">{suggestion.label}</span>
-                          <span
-                            className={`catalog-search-suggestion-tag${
-                              suggestion.type === 'Cotizar'
-                                ? ' catalog-search-suggestion-tag--search'
-                                : suggestion.type === 'Reciente'
-                                  ? ' catalog-search-suggestion-tag--recent'
-                                  : ''
-                            }`}
-                          >
-                            {suggestion.type}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <button
-                type="button"
-                className={`catalog-search-voice-action${isVoiceListening ? ' catalog-search-voice-action--active' : ''}${!isVoiceSupported ? ' catalog-search-voice-action--unsupported' : ''}`}
-                onClick={handleVoiceSearch}
-                aria-label={isVoiceListening ? 'Detener búsqueda por voz' : 'Iniciar búsqueda por voz'}
-                title={
-                  !isVoiceSupported
-                    ? 'La búsqueda por voz no está disponible en este navegador'
-                    : isVoiceListening
-                      ? 'Detener búsqueda por voz'
-                      : 'Buscar por voz'
-                }
-                disabled={isSearching}
-              >
-                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                  <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Zm0 0v16m-6-6a6 6 0 0 0 12 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span>Voz</span>
-              </button>
-              <button type="submit" className="catalog-search-submit" disabled={isSearching}>
-                {isSearching ? 'Buscando...' : 'Ver opciones'}
-              </button>
-            </form>
-            <p className="catalog-search-voice-status" aria-live="polite">
-              {isVoiceListening
-                ? 'Escuchando... hablá ahora'
-                : voiceError || (isVoiceSupported
-                  ? 'También podés buscar por voz'
-                  : 'Este navegador no habilita búsqueda por voz. Probá Chrome/Edge en HTTPS o localhost.')}
-            </p>
+      {/* Productos destacados */}
+      <section className="section featured-section" id="featured-results">
+        <div className="catalog-section-heading">
+          <div className="section-heading" style={{ flex: 1 }}>
+            <span className="eyebrow">Productos destacados</span>
+            <h2>Materiales y herramientas para avanzar hoy mismo.</h2>
           </div>
-
-          {/* Chips de búsqueda rápida eliminados para UX más limpia */}
+          <Link to="/explorar" className="ghost-link">
+            Ver catálogo completo →
+          </Link>
         </div>
-
-        {isSearching && (
-          <div className="search-loading-card" role="status" aria-live="polite">
-            <div className="search-loading-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="36" height="36">
-                <path d="M3 11 12 4l9 7v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2v-9Z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <p>Buscando productos para tu obra...</p>
-            <small>Te estamos armando resultados piola.</small>
-          </div>
-        )}
-
+        <div className="products-grid">
+          {featured.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <Link to="/explorar" className="primary-link large-link" style={{ display: 'inline-flex' }}>
+            Ver todo el catalogo
+          </Link>
+        </div>
       </section>
 
-      {searchCaptureOpen && (
-        <div className="search-capture-modal-overlay" role="presentation" onClick={closeSearchCapture}>
-          <div
-            className="search-capture-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="search-capture-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h3 id="search-capture-title">¿Te damos una mano con esto?</h3>
-            <p>Dejanos tu mail o telefono y te escribimos con opciones.</p>
-
-            <div className="search-capture-fields">
-              <label className="form-field" htmlFor="search-capture-name">
-                <span className="form-label">Nombre (opcional)</span>
-                <input
-                  id="search-capture-name"
-                  className="form-input"
-                  value={searchContactForm.name}
-                  onChange={(event) =>
-                    setSearchContactForm((previous) => ({ ...previous, name: event.target.value }))
-                  }
-                  placeholder="Tu nombre"
-                />
-              </label>
-
-              <label className="form-field" htmlFor="search-capture-email">
-                <span className="form-label">Email (opcional)</span>
-                <input
-                  id="search-capture-email"
-                  className="form-input"
-                  type="email"
-                  value={searchContactForm.email}
-                  onChange={(event) =>
-                    setSearchContactForm((previous) => ({ ...previous, email: event.target.value }))
-                  }
-                  placeholder="tuemail@gmail.com"
-                />
-              </label>
-
-              <label className="form-field" htmlFor="search-capture-phone">
-                <span className="form-label">Teléfono (opcional)</span>
-                <input
-                  id="search-capture-phone"
-                  className="form-input"
-                  value={searchContactForm.phone}
-                  onChange={(event) =>
-                    setSearchContactForm((previous) => ({ ...previous, phone: event.target.value }))
-                  }
+      {/* Campos de obra destacados debajo de productos */}
+      <section className="section cta-section" id="contacto" ref={leadSectionRef}>
+        <span className="eyebrow">Te acompañamos de verdad</span>
+        <h2>Contanos tu proyecto y te armamos un plan claro.</h2>
+        <p>Sin vueltas: etapa, tiempos y presupuesto en una sola charla.</p>
+        <form className="lead-form" onSubmit={handleLeadSubmit}>
+          <div className="lead-form-grid">
+            {/* ...existing code for form fields... */}
+          </div>
+          {/* ...existing code for message, errors, buttons... */}
+        </form>
+      </section>
                   placeholder="+54 9 11 1234 5678"
                 />
               </label>

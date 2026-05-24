@@ -62,63 +62,7 @@ const GroupQuoteWidget = () => {
   };
 
 
-  return (
-    <form className="gq-widget" onSubmit={handleSubmit} autoComplete="off">
-      <h3 className="gq-title">Cotizá lo que necesitás</h3>
-      {success && <div className="gq-success">¡Cotización enviada! Te contactaremos pronto.</div>}
-      {error && <div className="gq-error">{error}</div>}
-      <div className="gq-contact">
-        <input
-          className="gq-contact-input"
-          type="text"
-          placeholder="Tu nombre"
-          value={contact.name}
-          onChange={e => setContact(c => ({ ...c, name: e.target.value }))}
-          required
-        />
-        <input
-          className="gq-contact-input"
-          type="email"
-          placeholder="Tu email"
-          value={contact.email}
-          onChange={e => setContact(c => ({ ...c, email: e.target.value }))}
-          required
-        />
-        <input
-          className="gq-contact-input"
-          type="tel"
-          placeholder="Tu WhatsApp"
-          value={contact.phone}
-          onChange={e => setContact(c => ({ ...c, phone: e.target.value }))}
-          required
-        />
-      </div>
-      <div className="gq-needs-box">
-        <input
-          type="text"
-          className="gq-autoinput"
-          placeholder="Escribí lo que necesitás y presioná Enter..."
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleInputKeyDown}
-          autoComplete="off"
-        />
-        <div className="gq-needs-list">
-          {needs.map((need, idx) => (
-            <span className="gq-need-chip" key={idx}>
-              {need}
-              <button type="button" className="gq-remove-chip" onClick={() => handleRemoveNeed(idx)} title="Quitar">×</button>
-            </span>
-          ))}
-        </div>
-      </div>
-      <div className="gq-actions" style={{ marginBottom: '1.2rem', justifyContent: 'flex-start' }}>
-        <button type="submit" className="gq-submit" disabled={loading || needs.length === 0}>
-          {loading ? "Enviando..." : "Solicitar Cotización"}
-        </button>
-      </div>
-    </form>
-  );
+  return null;
 };
 
 export default GroupQuoteWidget;
