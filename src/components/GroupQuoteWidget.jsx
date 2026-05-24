@@ -1,11 +1,9 @@
-
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSpeechInput } from '../hooks/useSpeechInput';
 import "../styles/GroupQuote.css";
 import { createLead } from "../lib/api";
 
-const GroupQuoteWidget = () => {
+export default function GroupQuoteWidget() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -26,7 +24,8 @@ const GroupQuoteWidget = () => {
     },
     lang: 'es-AR',
   });
-  React.useEffect(() => {
+
+  useEffect(() => {
     setVoiceError(speechError || "");
   }, [speechError]);
 
@@ -71,7 +70,8 @@ const GroupQuoteWidget = () => {
             value={input}
             onChange={e => setInput(e.target.value)}
             disabled={loading || isVoiceListening}
-            style={{ fontSize: '1.25rem', padding: '1.1rem 1.2rem', width: 360, maxWidth: '90%' }}
+            maxLength={120}
+            autoFocus
           />
           {isVoiceSupported && (
             <button
@@ -88,7 +88,6 @@ const GroupQuoteWidget = () => {
               }}
               disabled={loading}
               aria-label="Dictar por voz"
-              style={{ marginLeft: 12, fontSize: '1.6rem', background: 'none', border: 'none', cursor: 'pointer' }}
             >
               <span role="img" aria-label="micrófono">{isVoiceListening ? '🎤' : '🎙️'}</span>
             </button>
@@ -97,12 +96,10 @@ const GroupQuoteWidget = () => {
         {voiceError && <div className="gq-error">{voiceError}</div>}
         {error && <div className="gq-error">{error}</div>}
         {success && <div className="gq-success">¡Cotización enviada! Te contactaremos pronto.</div>}
-        <button className="gq-submit-btn" type="submit" disabled={loading} style={{ fontSize: '1.15rem', marginTop: 18 }}>
+        <button className="gq-submit-btn" type="submit" disabled={loading}>
           {loading ? "Enviando..." : "Arrancar mi obra"}
         </button>
       </form>
     </div>
   );
-};
-
-export default GroupQuoteWidget;
+}
