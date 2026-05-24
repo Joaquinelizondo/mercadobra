@@ -7,6 +7,7 @@ import ProductCard from '../components/ProductCard'
 import { createLead, createSearchContact } from '../lib/api'
 import { useSpeechInput } from '../hooks/useSpeechInput'
 import { createWhatsAppLink } from '../utils/whatsapp'
+import GroupQuoteWidget from '../components/GroupQuoteWidget'
 
 const categories = [
   { title: 'Hormigón y áridos', description: 'Cemento, arena, piedra y bloques en un solo lugar.' },
@@ -218,7 +219,12 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Campos de obra destacados debajo de productos */}
+      {/* Cotizador grupal premium (debe quedar siempre) */}
+      <section className="section group-quote-section" id="cotizador-grupal">
+        <GroupQuoteWidget />
+      </section>
+
+      {/* Campos de obra destacados debajo del cotizador */}
       <section className="section cta-section" id="contacto" ref={leadSectionRef}>
         <span className="eyebrow">Te acompañamos de verdad</span>
         <h2>Contanos tu proyecto y te armamos un plan claro.</h2>
