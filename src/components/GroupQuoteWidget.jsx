@@ -1,10 +1,33 @@
 
 import React, { useState } from "react";
+import { useSpeechInput } from '../hooks/useSpeechInput';
 import "../styles/GroupQuote.css";
 import { createLead } from "../lib/api";
 
 // Cotizador libre: permite ingresar necesidades como "chips" y cotizar
 const GroupQuoteWidget = () => {
+    // Integración con voz
+    const [voiceError, setVoiceError] = useState('');
+    const {
+      isSupported: isVoiceSupported,
+      isListening: isVoiceListening,
+      error: speechError,
+      startListening,
+      stopListening,
+      clearError: clearVoiceError,
+    } = useSpeechInput({
+      onResult: (transcript) => {
+        if (transcript && transcript.trim()) {
+          setInput(transcript.trim());
+        }
+      },
+      lang: 'es-AR',
+    });
+
+    // Sincronizar errores de voz
+    React.useEffect(() => {
+      setVoiceError(speechError || '');
+    }, [speechError]);
   const [needs, setNeeds] = useState([]); // Cada necesidad es un string
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -80,9 +103,31 @@ const GroupQuoteWidget = () => {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleInputKeyDown}
-            disabled={loading}
+            disabled={loading || isVoiceListening}
+            style={{ width: 180, minWidth: 120 }}
           />
+          {isVoiceSupported && (
+            <button
+              type="button"
+              className={`gq-mic-btn${isVoiceListening ? ' gq-mic-active' : ''}`}
+              title={isVoiceListening ? 'Detener dictado' : 'Dictar por voz'}
+              onClick={() => {
+                if (isVoiceListening) {
+                  stopListening();
+                } else {
+                  clearVoiceError();
+                  startListening();
+                }
+              }}
+              disabled={loading}
+              aria-label="Dictar por voz"
+              style={{ marginLeft: 8 }}
+            >
+              <span role="img" aria-label="micrófono">{isVoiceListening ? '🎤' : '🎙️'}</span>
+            </button>
+          )}
         </div>
+        {voiceError && <div className="gq-error">{voiceError}</div>}
         <div className="gq-contact-row">
           <input
             className="gq-contact-input"
