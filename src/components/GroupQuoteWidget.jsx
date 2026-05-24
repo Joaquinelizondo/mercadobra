@@ -5,7 +5,7 @@ import "../styles/GroupQuote.css";
 import { createLead } from "../lib/api";
 
 
-export default function GroupQuoteWidget() {
+export default function GroupQuoteWidget({ onSuccess }) {
   const [step, setStep] = useState(1); // 1: productos, 2: datos cliente, 3: éxito
   const [input, setInput] = useState("");
   const [products, setProducts] = useState([]);
@@ -102,6 +102,7 @@ export default function GroupQuoteWidget() {
       });
       setSuccess(true);
       setStep(3);
+      if (onSuccess) onSuccess(products);
       setProducts([]);
       setInput("");
       setClient({ name: "", email: "", phone: "" });
