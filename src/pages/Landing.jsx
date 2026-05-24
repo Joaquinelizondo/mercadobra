@@ -196,6 +196,11 @@ export default function Landing() {
 
   return (
     <>
+      {/* Cotizador grupal premium (primer bloque visible) */}
+      <section className="section group-quote-section" id="cotizador-grupal">
+        <GroupQuoteWidget />
+      </section>
+
       {/* Productos destacados */}
       <section className="section featured-section" id="featured-results">
         <div className="catalog-section-heading">
@@ -217,11 +222,6 @@ export default function Landing() {
             Ver todo el catalogo
           </Link>
         </div>
-      </section>
-
-      {/* Cotizador grupal premium (debe quedar siempre) */}
-      <section className="section group-quote-section" id="cotizador-grupal">
-        <GroupQuoteWidget />
       </section>
 
       {/* Campos de obra destacados debajo del cotizador */}
