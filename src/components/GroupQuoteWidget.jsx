@@ -102,7 +102,7 @@ export default function GroupQuoteWidget({ onSuccess }) {
       });
       setSuccess(true);
       setStep(3);
-      if (onSuccess) onSuccess(products);
+      if (onSuccess) onSuccess([...products]);
       setProducts([]);
       setInput("");
       setClient({ name: "", email: "", phone: "" });
