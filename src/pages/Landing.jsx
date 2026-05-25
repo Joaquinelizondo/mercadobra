@@ -163,7 +163,7 @@ export default function Landing() {
   const [addProductError, setAddProductError] = useState('')
   const [addProductSuccess, setAddProductSuccess] = useState('')
   const navigate = useNavigate()
-  const { productList } = useProducts()
+  const { productList, addProduct } = useProducts()
   const [featuredSearchInput, setFeaturedSearchInput] = useState('')
   const [featuredChips, setFeaturedChips] = useState([])
   const [showFeaturedSuggestions, setShowFeaturedSuggestions] = useState(false)
@@ -238,18 +238,13 @@ export default function Landing() {
     setAddProductSuccess('')
     setAddProductLoading(true)
     try {
+      // Siempre pasar providerId: null si es admin
       const payload = {
-        name: addProductForm.name,
-        price: Number(addProductForm.price),
-        company: addProductForm.company,
-        unit: addProductForm.unit,
-        category: addProductForm.category,
-        stock: Number(addProductForm.stock),
-        image: addProductForm.image,
-        description: addProductForm.description,
+        ...addProductForm,
+        providerId: null,
       }
-      await createProduct(payload, adminToken)
-      setAddProductSuccess('Producto agregado correctamente')
+      await addProduct(payload, null, adminToken)
+      setAddProductSuccess('Artículo guardado correctamente y visible en el catálogo.')
       setAddProductForm({ name: '', price: '', company: '', unit: '', category: '', stock: '', image: '', description: '' })
     } catch (err) {
       setAddProductError(err.message || 'Error al agregar producto')
