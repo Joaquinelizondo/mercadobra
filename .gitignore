@@ -28,3 +28,5 @@ dist-ssr
 
 # Backend local DB file
 backend/src/data/db.json
+.vercel
+.env*
