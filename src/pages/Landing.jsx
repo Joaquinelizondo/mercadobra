@@ -282,7 +282,21 @@ export default function Landing() {
             </button>
           </form>
           {addProductError && <div style={{color: '#e74c3c', marginTop: 8}}>{addProductError}</div>}
-          {addProductSuccess && <div style={{color: '#1abc9c', marginTop: 8}}>{addProductSuccess}</div>}
+          {addProductSuccess && (
+            <div style={{
+              background: '#d1fae5',
+              color: '#065f46',
+              border: '1.5px solid #10b981',
+              borderRadius: 10,
+              padding: '10px 18px',
+              marginTop: 12,
+              fontWeight: 700,
+              fontSize: '1.08em',
+              boxShadow: '0 2px 8px 0 rgba(16,185,129,0.07)'
+            }}>
+              <span style={{marginRight: 8}}>✅</span>Artículo guardado correctamente y visible en el catálogo.
+            </div>
+          )}
         </section>
       )}
         {/*
