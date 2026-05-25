@@ -243,8 +243,8 @@ export default function Landing() {
         ...addProductForm,
         providerId: null,
       }
-      await addProduct(payload, null, adminToken)
-      setAddProductSuccess('Artículo guardado correctamente y visible en el catálogo.')
+      const { message } = await addProduct(payload, null, adminToken)
+      setAddProductSuccess(message || 'Artículo guardado correctamente y visible en el catálogo.')
       setAddProductForm({ name: '', price: '', company: '', unit: '', category: '', stock: '', image: '', description: '' })
     } catch (err) {
       setAddProductError(err.message || 'Error al agregar producto')
