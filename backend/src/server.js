@@ -318,7 +318,7 @@ app.post('/products', authMiddleware, (req, res, next) => {
     description: body.description,
     category: body.category,
     company: body.company,
-    providerId: Number(body.providerId),
+    providerId: body.providerId === null || body.providerId === undefined || body.providerId === '' ? null : Number(body.providerId),
     price: Number(body.price),
     unit: body.unit,
     stock: Number(body.stock ?? 0),
