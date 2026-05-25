@@ -118,19 +118,20 @@ async function authMiddleware(req, res, next) {
   next()
 }
 
-function providerOnly(req, res, next) {
-  if (req.authUser?.role !== 'provider') {
-    throw new AuthorizationError('Acceso solo para proveedores')
+
+function requireRoleOrAdmin(role) {
+  return function (req, _res, next) {
+    if (req.authUser?.role !== role && req.authUser?.role !== 'admin') {
+      throw new AuthorizationError(
+        `Acceso solo para ${role === 'admin' ? 'administradores' : role + 'es'}`
+      )
+    }
+    next()
   }
-  next()
 }
 
-function adminOnly(req, res, next) {
-  if (req.authUser?.role !== 'admin') {
-    throw new AuthorizationError('Acceso solo para administradores')
-  }
-  next()
-}
+const providerOnly = requireRoleOrAdmin('provider')
+const adminOnly = requireRole('admin')
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'mercadobra-backend' })
@@ -289,7 +290,13 @@ app.get('/products/:id', asyncHandler(async (req, res) => {
   return res.json(product)
 }))
 
-app.post('/products', authMiddleware, providerOnly, async (req, res) => {
+app.post('/products', authMiddleware, (req, res, next) => {
+  // Permitir tanto admin como provider
+  if (req.authUser?.role !== 'provider' && req.authUser?.role !== 'admin') {
+    return next(new AuthorizationError('Acceso solo para proveedores o administradores'))
+  }
+  next()
+}, async (req, res) => {
   const body = req.body || {}
   const required = ['name', 'description', 'category', 'company', 'providerId', 'price', 'unit']
   const missing = required.filter((field) => body[field] === undefined || body[field] === '')
@@ -298,9 +305,13 @@ app.post('/products', authMiddleware, providerOnly, async (req, res) => {
     return res.status(400).json({ message: `Faltan campos: ${missing.join(', ')}` })
   }
 
-  if (Number(body.providerId) !== Number(req.authUser.providerId)) {
-    return res.status(403).json({ message: 'No podés publicar productos para otro proveedor' })
+  // Si es provider, solo puede publicar productos para su propio providerId
+  if (req.authUser.role === 'provider') {
+    if (Number(body.providerId) !== Number(req.authUser.providerId)) {
+      return res.status(403).json({ message: 'No podés publicar productos para otro proveedor' })
+    }
   }
+  // Si es admin, puede publicar productos con cualquier providerId (incluso null)
 
   const repo = await getRepository()
   const created = await repo.createProduct({
@@ -308,14 +319,17 @@ app.post('/products', authMiddleware, providerOnly, async (req, res) => {
     description: body.description,
     category: body.category,
     company: body.company,
-    providerId: Number(body.providerId),
+    providerId: body.providerId === null || body.providerId === undefined || body.providerId === '' ? null : Number(body.providerId),
     price: Number(body.price),
     unit: body.unit,
     stock: Number(body.stock ?? 0),
     color: body.color || '#ea580c'
   })
 
-  return res.status(201).json(created)
+  return res.status(201).json({
+    message: 'Producto guardado correctamente',
+    product: created
+  })
 })
 
 app.patch('/products/:id', authMiddleware, providerOnly, async (req, res) => {
