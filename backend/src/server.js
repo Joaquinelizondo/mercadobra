@@ -289,7 +289,13 @@ app.get('/products/:id', asyncHandler(async (req, res) => {
   return res.json(product)
 }))
 
-app.post('/products', authMiddleware, providerOnly, async (req, res) => {
+app.post('/products', authMiddleware, (req, res, next) => {
+  // Permitir tanto admin como provider
+  if (req.authUser?.role !== 'provider' && req.authUser?.role !== 'admin') {
+    return next(new AuthorizationError('Acceso solo para proveedores o administradores'))
+  }
+  next()
+}, async (req, res) => {
   const body = req.body || {}
   const required = ['name', 'description', 'category', 'company', 'providerId', 'price', 'unit']
   const missing = required.filter((field) => body[field] === undefined || body[field] === '')
@@ -298,9 +304,13 @@ app.post('/products', authMiddleware, providerOnly, async (req, res) => {
     return res.status(400).json({ message: `Faltan campos: ${missing.join(', ')}` })
   }
 
-  if (Number(body.providerId) !== Number(req.authUser.providerId)) {
-    return res.status(403).json({ message: 'No podés publicar productos para otro proveedor' })
+  // Si es provider, solo puede publicar productos para su propio providerId
+  if (req.authUser.role === 'provider') {
+    if (Number(body.providerId) !== Number(req.authUser.providerId)) {
+      return res.status(403).json({ message: 'No podés publicar productos para otro proveedor' })
+    }
   }
+  // Si es admin, puede publicar productos con cualquier providerId (incluso null)
 
   const repo = await getRepository()
   const created = await repo.createProduct({
