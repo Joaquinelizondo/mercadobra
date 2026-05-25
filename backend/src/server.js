@@ -118,19 +118,20 @@ async function authMiddleware(req, res, next) {
   next()
 }
 
-function providerOnly(req, res, next) {
-  if (req.authUser?.role !== 'provider') {
-    throw new AuthorizationError('Acceso solo para proveedores')
+
+function requireRoleOrAdmin(role) {
+  return function (req, _res, next) {
+    if (req.authUser?.role !== role && req.authUser?.role !== 'admin') {
+      throw new AuthorizationError(
+        `Acceso solo para ${role === 'admin' ? 'administradores' : role + 'es'}`
+      )
+    }
+    next()
   }
-  next()
 }
 
-function adminOnly(req, res, next) {
-  if (req.authUser?.role !== 'admin') {
-    throw new AuthorizationError('Acceso solo para administradores')
-  }
-  next()
-}
+const providerOnly = requireRoleOrAdmin('provider')
+const adminOnly = requireRole('admin')
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'mercadobra-backend' })
@@ -325,7 +326,10 @@ app.post('/products', authMiddleware, (req, res, next) => {
     color: body.color || '#ea580c'
   })
 
-  return res.status(201).json(created)
+  return res.status(201).json({
+    message: 'Producto guardado correctamente',
+    product: created
+  })
 })
 
 app.patch('/products/:id', authMiddleware, providerOnly, async (req, res) => {
