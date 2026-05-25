@@ -59,9 +59,11 @@ export function ProductProvider({ children }) {
     }
 
     try {
-      const created = normalizeProduct(await createProduct(payload, token))
+      const response = await createProduct(payload, token)
+      // Si el backend responde { product, message }
+      const created = normalizeProduct(response.product || response)
       setProductList((prev) => [created, ...prev])
-      return created
+      return { product: created, message: response.message }
     } catch (error) {
       if (usingFallback) {
         const newProduct = normalizeProduct({
@@ -69,7 +71,7 @@ export function ProductProvider({ children }) {
           ...payload,
         })
         setProductList((prev) => [newProduct, ...prev])
-        return newProduct
+        return { product: newProduct, message: 'Producto guardado (modo offline)' }
       }
       throw error
     }
