@@ -80,13 +80,13 @@ export function validatePhone(phone) {
   const normalized = String(phone ?? '').trim()
   const digitsOnly = normalized.replace(/\D/g, '')
 
-  if (digitsOnly.length < 10) {
+  if (digitsOnly.length < 10 || digitsOnly.length > 15) {
     throw new ValidationError(
-      `Teléfono inválido: debe tener al menos 10 dígitos. Tienes ${digitsOnly.length}.`
+      `Teléfono inválido: debe tener entre 10 y 15 dígitos. Tienes ${digitsOnly.length}.`
     )
   }
 
-  return normalized
+  return digitsOnly
 }
 
 /**

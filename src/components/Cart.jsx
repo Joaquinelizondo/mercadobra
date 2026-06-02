@@ -48,7 +48,7 @@ export default function Cart() {
   const normalizedBuyerName = checkoutForm.buyerName.trim()
   const normalizedBuyerPhone = checkoutForm.buyerPhone.trim()
   const buyerPhoneDigits = normalizedBuyerPhone.replace(/\D/g, '')
-  const isCheckoutFormValid = normalizedBuyerName.length >= 3 && buyerPhoneDigits.length >= 10
+  const isCheckoutFormValid = normalizedBuyerName.length >= 3 && buyerPhoneDigits.length >= 10 && buyerPhoneDigits.length <= 15
 
   useEffect(() => {
     let mounted = true
@@ -98,7 +98,7 @@ export default function Cart() {
   async function handleConfirm() {
     if (!selectedPayment) return
     if (!isCheckoutFormValid) {
-      setOrderError('Completá nombre (mínimo 3 caracteres) y WhatsApp válido (mínimo 10 dígitos).')
+      setOrderError('Completá nombre (mínimo 3 caracteres) y WhatsApp válido (entre 10 y 15 dígitos).')
       return
     }
 
@@ -302,7 +302,7 @@ export default function Cart() {
             </div>
 
             {!isCheckoutFormValid && (checkoutForm.buyerName || checkoutForm.buyerPhone) && (
-              <p className="cart-order-error">Ingresá nombre y WhatsApp válidos para continuar.</p>
+              <p className="cart-order-error">Ingresá nombre y WhatsApp válidos (entre 10 y 15 dígitos).</p>
             )}
 
             {!mercadoPagoEnabled && (
