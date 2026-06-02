@@ -131,7 +131,7 @@ function requireRoleOrAdmin(role) {
 }
 
 const providerOnly = requireRoleOrAdmin('provider')
-const adminOnly = requireRole('admin')
+const adminOnly = requireRoleOrAdmin('admin')
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'mercadobra-backend' })
