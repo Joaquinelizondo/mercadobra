@@ -116,7 +116,7 @@ export default function ProductCard({
             <span className="price-amount">{formatPrice(product.price)}</span>
             <span className="price-unit">/ {product.unit}</span>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="product-actions">
             {onEdit && (
               <button
                 className="product-delete-btn"
