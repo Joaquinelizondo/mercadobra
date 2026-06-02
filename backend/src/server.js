@@ -3,7 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import { getRepository } from './repository.js'
 import { generateChatReply } from './chatService.js'
-import { notifyOrderStatusChanged, notifySearchRecommendations } from './notificationService.js'
+import { notifyOrderCreated, notifyOrderStatusChanged, notifySearchRecommendations } from './notificationService.js'
 import {
   createMercadoPagoPreference,
   getMercadoPagoPayment,
@@ -392,6 +392,15 @@ app.post('/orders', asyncHandler(async (req, res) => {
     buyerPhone: normalizedPhone,
     paymentMethod: normalizedPaymentMethod,
   })
+
+  void notifyOrderCreated(order, normalizedItems)
+    .then(async (notification) => {
+      const storedRepo = await getRepository()
+      await storedRepo.recordOrderNotification(order.id, notification)
+    })
+    .catch((error) => {
+      console.error('[order-created:notification:error]', error)
+    })
 
   return res.status(201).json(order)
 }))

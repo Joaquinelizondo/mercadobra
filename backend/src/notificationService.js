@@ -9,6 +9,8 @@ const META_WHATSAPP_API_VERSION = process.env.META_WHATSAPP_API_VERSION || 'v22.
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || ''
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || ''
 const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM || ''
+const TRANSFER_ACCOUNT_NAME = process.env.TRANSFER_ACCOUNT_NAME || ''
+const TRANSFER_ACCOUNT_NUMBER = process.env.TRANSFER_ACCOUNT_NUMBER || ''
 const SMTP_HOST = process.env.SMTP_HOST || ''
 const SMTP_PORT = Number(process.env.SMTP_PORT || 587)
 const SMTP_USER = process.env.SMTP_USER || ''
@@ -53,6 +55,49 @@ function formatMessage(order) {
 
   if (trackingUrl) {
     lines.push(`Seguimiento: ${trackingUrl}`)
+  }
+
+  return lines.join('\n')
+}
+
+function formatOrderConfirmationMessage(order, items = []) {
+  const paymentLabel = String(order.paymentMethod || '').trim().toLowerCase() === 'transferencia'
+    ? 'Transferencia bancaria'
+    : String(order.paymentMethod || '').trim() || 'No informado'
+
+  const lines = [
+    '*MercadObra*',
+    `*Pedido recibido #${order.id}*`,
+    '',
+    'Tu pedido fue realizado correctamente ✅',
+    'A la brevedad te llega la confirmación final.',
+    `*Medio de pago:* ${paymentLabel}`,
+  ]
+
+  if (paymentLabel === 'Transferencia bancaria') {
+    if (TRANSFER_ACCOUNT_NAME) {
+      lines.push(`*Titular:* ${TRANSFER_ACCOUNT_NAME}`)
+    }
+
+    if (TRANSFER_ACCOUNT_NUMBER) {
+      lines.push(`*Cuenta:* ${TRANSFER_ACCOUNT_NUMBER}`)
+    }
+  }
+
+  if (Array.isArray(items) && items.length > 0) {
+    lines.push('')
+    lines.push('*Detalle:*')
+    items.slice(0, 8).forEach((item, index) => {
+      const quantity = Number(item.quantity || 1)
+      const name = item.name || `Producto ${item.productId || index + 1}`
+      const company = item.company ? ` · ${item.company}` : ''
+      lines.push(`• ${name}${company} x${quantity}`)
+    })
+  }
+
+  if (order.trackingToken && order.buyerPhone) {
+    lines.push('')
+    lines.push(`*Seguimiento:* ${FRONTEND_PUBLIC_URL}/seguimiento/${order.trackingToken}?phone=${encodeURIComponent(order.buyerPhone)}`)
   }
 
   return lines.join('\n')
@@ -440,6 +485,41 @@ export async function notifyOrderStatusChanged(order) {
 
   try {
     const channel = await withTimeout(sendViaWhatsappProvider(payload), WHATSAPP_SEND_TIMEOUT_MS, 'order whatsapp send')
+    return {
+      sent: true,
+      channel,
+    }
+  } catch (error) {
+    console.error('[notification:error]', error)
+    return {
+      sent: false,
+      reason: error.message,
+      channel: 'whatsapp-webhook',
+    }
+  }
+}
+
+export async function notifyOrderCreated(order, items = []) {
+  if (!order?.buyerPhone) {
+    return {
+      sent: false,
+      reason: 'buyer phone missing',
+      channel: 'none',
+    }
+  }
+
+  const message = formatOrderConfirmationMessage(order, items)
+  const payload = {
+    channel: 'whatsapp',
+    to: order.buyerPhone,
+    message,
+    orderId: order.id,
+    paymentMethod: order.paymentMethod,
+    trackingToken: order.trackingToken,
+  }
+
+  try {
+    const channel = await withTimeout(sendViaWhatsappProvider(payload), WHATSAPP_SEND_TIMEOUT_MS, 'order confirmation whatsapp send')
     return {
       sent: true,
       channel,
