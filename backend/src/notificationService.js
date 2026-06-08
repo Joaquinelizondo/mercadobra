@@ -61,9 +61,14 @@ function formatMessage(order) {
 }
 
 function formatOrderConfirmationMessage(order, items = []) {
-  const paymentLabel = String(order.paymentMethod || '').trim().toLowerCase() === 'transferencia'
-    ? 'Transferencia bancaria'
-    : String(order.paymentMethod || '').trim() || 'No informado'
+  const paymentKey = String(order.paymentMethod || '').trim().toLowerCase()
+  const paymentLabels = {
+    transferencia: 'Transferencia bancaria',
+    mercadopago: 'MercadoPago',
+    tarjeta_credito: 'Tarjeta de crédito',
+    tarjeta_debito: 'Tarjeta de débito',
+  }
+  const paymentLabel = paymentLabels[paymentKey] || String(order.paymentMethod || '').trim() || 'No informado'
 
   const lines = [
     '*MercadObra*',
