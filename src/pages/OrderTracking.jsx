@@ -130,7 +130,7 @@ export default function OrderTracking() {
                   <span>{item.name || `Producto #${item.productId}`}</span>
                   <span>
                     x{item.quantity}
-                    {typeof item.price === 'number' ? ` · ${formatPrice(item.price * item.quantity)}` : ''}
+                    {typeof item.price === 'number' ? ` · ${formatPrice(item.price * item.quantity, item.currency)}` : ''}
                   </span>
                 </li>
               ))}

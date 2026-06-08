@@ -6,10 +6,12 @@ const ProductContext = createContext(null)
 const FALLBACK_OUT_OF_STOCK_IDS = new Set([3, 8, 11])
 
 function normalizeProduct(product) {
+  const normalizedCurrency = String(product.currency || 'UYU').toUpperCase()
   return {
     ...product,
     id: Number(product.id),
     price: Number(product.price),
+    currency: normalizedCurrency === 'USD' ? 'USD' : 'UYU',
     stock: Number(
       product.stock ?? (FALLBACK_OUT_OF_STOCK_IDS.has(Number(product.id)) ? 0 : 20)
     ),
@@ -53,6 +55,7 @@ export function ProductProvider({ children }) {
       company,
       providerId,
       price: Number(formData.price),
+      currency: String(formData.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
       unit: formData.unit,
       stock: Number(formData.stock ?? 0),
       color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
@@ -97,6 +100,7 @@ export function ProductProvider({ children }) {
       company: supplierUser?.company || formData.company || '',
       providerId: Number(supplierUser?.providerId || formData.providerId || 0),
       price: Number(formData.price),
+      currency: String(formData.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
       unit: formData.unit,
       stock: Number(formData.stock ?? 0),
     }

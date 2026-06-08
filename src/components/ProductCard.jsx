@@ -113,7 +113,7 @@ export default function ProductCard({
         <p className="product-desc">{product.description}</p>
         <div className="product-footer">
           <div className="product-price">
-            <span className="price-amount">{formatPrice(product.price)}</span>
+            <span className="price-amount">{formatPrice(product.price, product.currency)}</span>
             <span className="price-unit">/ {product.unit}</span>
           </div>
           <div className="product-actions">

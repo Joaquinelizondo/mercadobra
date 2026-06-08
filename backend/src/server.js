@@ -314,6 +314,7 @@ app.post('/products', authMiddleware, (req, res, next) => {
   // Si es admin, puede publicar productos con cualquier providerId (incluso null)
 
   const repo = await getRepository()
+  const normalizedCurrency = validateEnum(body.currency ?? 'UYU', ['uyu', 'usd'], 'Moneda').toUpperCase()
   const created = await repo.createProduct({
     name: body.name,
     description: body.description,
@@ -321,6 +322,7 @@ app.post('/products', authMiddleware, (req, res, next) => {
     company: body.company,
     providerId: body.providerId === null || body.providerId === undefined || body.providerId === '' ? null : Number(body.providerId),
     price: Number(body.price),
+    currency: normalizedCurrency,
     unit: body.unit,
     stock: Number(body.stock ?? 0),
     color: body.color || '#ea580c'
@@ -335,6 +337,9 @@ app.post('/products', authMiddleware, (req, res, next) => {
 app.patch('/products/:id', authMiddleware, providerOnly, async (req, res) => {
   const id = Number(req.params.id)
   const updates = req.body || {}
+  if (updates.currency !== undefined) {
+    updates.currency = validateEnum(updates.currency, ['uyu', 'usd'], 'Moneda').toUpperCase()
+  }
   const repo = await getRepository()
   const existing = await repo.getProductById(id)
 
@@ -447,10 +452,20 @@ app.post('/payments/mercadopago/checkout', async (req, res) => {
           productId: product.id,
           name: product.name,
           price: Number(product.price),
+          currency: String(product.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
           quantity: Number(item.quantity),
         }
       })
     )
+
+    const currencies = [...new Set(productSnapshots.map((item) => item.currency))]
+    if (currencies.length > 1) {
+      return res.status(400).json({
+        message: 'No se puede pagar en un solo checkout productos en monedas diferentes (UYU y USD).',
+      })
+    }
+
+    const checkoutCurrency = currencies[0] || 'UYU'
 
     createdOrder = await repo.createOrder({
       items: normalizedItems,
@@ -465,7 +480,7 @@ app.post('/payments/mercadopago/checkout', async (req, res) => {
         id: String(item.productId),
         title: item.name,
         quantity: item.quantity,
-        currency_id: 'ARS',
+        currency_id: checkoutCurrency,
         unit_price: item.price,
       })),
       payer: {

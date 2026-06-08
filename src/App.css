@@ -3733,6 +3733,40 @@
     grid-template-columns: 1fr;
   }
 
+  .quoted-results-section {
+    padding: 1.15rem 1rem !important;
+  }
+
+  .quoted-results-section .products-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quoted-results-section .product-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .quoted-results-section .product-actions {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+  }
+
+  .quoted-results-section .add-to-cart-btn {
+    display: flex;
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+    max-width: 100%;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.15;
+    padding: 11px 12px;
+  }
+
 }
 
 @media (max-width: 640px) {

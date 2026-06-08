@@ -155,7 +155,7 @@ export default function ProductDetail() {
 
             <div className="product-detail-price-section">
               <div className="product-detail-price">
-                <span className="price-amount">{formatPrice(product.price)}</span>
+                <span className="price-amount">{formatPrice(product.price, product.currency)}</span>
                 <span className="price-unit">/ {product.unit}</span>
               </div>
             </div>

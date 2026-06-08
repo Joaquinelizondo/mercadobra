@@ -336,7 +336,7 @@ export default function Catalog() {
                     <h4>{product.name}</h4>
                     <p>{product.company}</p>
                     <ul>
-                      <li>{formatPrice(product.price)} / {product.unit}</li>
+                      <li>{formatPrice(product.price, product.currency)} / {product.unit}</li>
                       <li>{Number(product.stock) > 0 ? 'Con stock' : 'Sin stock'}</li>
                       <li>{product.category}</li>
                     </ul>
