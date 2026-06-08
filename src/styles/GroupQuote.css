@@ -1,7 +1,7 @@
 /* --- LISTA DE PRODUCTOS (UX TOP, INTEGRADO) --- */
 .gq-list-mode {
   width: 100%;
-  max-width: 960px;
+  max-width: 1120px;
   margin: 0 auto 32px auto;
 }
 .gq-list-mode .gq-input-row {
@@ -116,7 +116,7 @@
     0 20px 36px -26px rgba(15, 23, 42, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.75);
   padding: 2.2rem 2.5rem 2rem 2.5rem;
-  max-width: 960px;
+  max-width: 1120px;
   margin: 2.5rem auto 1.5rem auto;
   font-family: var(--sans, 'Segoe UI', Arial, sans-serif);
   position: relative;

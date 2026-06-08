@@ -152,6 +152,7 @@ export default function Landing() {
   const [addProductForm, setAddProductForm] = useState({
     name: '',
     price: '',
+    currency: 'UYU',
     company: '',
     unit: '',
     category: '',
@@ -245,7 +246,7 @@ export default function Landing() {
       }
       const { message } = await addProduct(payload, null, adminToken)
       setAddProductSuccess(message || 'Artículo guardado correctamente y visible en el catálogo.')
-      setAddProductForm({ name: '', price: '', company: '', unit: '', category: '', stock: '', image: '', description: '' })
+      setAddProductForm({ name: '', price: '', currency: 'UYU', company: '', unit: '', category: '', stock: '', image: '', description: '' })
     } catch (err) {
       setAddProductError(err.message || 'Error al agregar producto')
     } finally {
@@ -266,6 +267,10 @@ export default function Landing() {
           <form onSubmit={handleAddProductSubmit} style={{display: 'flex', flexWrap: 'wrap', gap: 16}}>
             <input name="name" value={addProductForm.name} onChange={handleAddProductInput} placeholder="Nombre" required style={{flex: '1 1 180px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
             <input name="price" value={addProductForm.price} onChange={handleAddProductInput} placeholder="Precio" type="number" min="0" required style={{flex: '1 1 120px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
+            <select name="currency" value={addProductForm.currency} onChange={handleAddProductInput} style={{flex: '1 1 180px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}}>
+              <option value="UYU">Pesos uruguayos (UYU)</option>
+              <option value="USD">Dolares (USD)</option>
+            </select>
             <input name="company" value={addProductForm.company} onChange={handleAddProductInput} placeholder="Proveedor" required style={{flex: '1 1 140px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
             <input name="unit" value={addProductForm.unit} onChange={handleAddProductInput} placeholder="Unidad (ej: bolsa, m³)" required style={{flex: '1 1 100px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
             <input name="category" value={addProductForm.category} onChange={handleAddProductInput} placeholder="Categoría" required style={{flex: '1 1 120px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
@@ -315,11 +320,9 @@ export default function Landing() {
       </section>
 
       {/* Productos cotizados arriba de los destacados */}
-      <section className="section quoted-results-section" id="productos-cotizados" style={{maxWidth: 820, margin: '0 auto 2.5rem auto', background: '#fff7ed', borderRadius: 18, border: '1.5px solid #fb923c', boxShadow: '0 2px 8px 0 rgba(251,146,60,0.07)', padding: '1.5rem 2rem'}}>
-        <h3 style={{color: '#fb923c', fontWeight: 800, fontSize: '1.3rem', marginBottom: 12}}>Productos cotizados</h3>
-        {quotedProducts.length === 0 ? (
-          <div style={{color: '#b45309', fontWeight: 500, fontSize: '1.08em', padding: '0.7rem 0'}}>No hay productos similares en el catálogo. Te avisaremos cuando haya novedades.</div>
-        ) : (
+      {quotedProducts.length > 0 && (
+        <section className="section quoted-results-section" id="productos-cotizados" style={{maxWidth: 1120, width: '100%', margin: '0 auto 2.5rem auto', background: '#fff7ed', borderRadius: 18, border: '1.5px solid #fb923c', boxShadow: '0 2px 8px 0 rgba(251,146,60,0.07)', padding: '1.5rem 2rem'}}>
+          <h3 style={{color: '#fb923c', fontWeight: 800, fontSize: '1.3rem', marginBottom: 12, textAlign: 'center'}}>Productos cotizados</h3>
           <>
             {quotedMatches.found.length > 0 && (
               <div className="products-grid" style={{marginBottom: 16}}>
@@ -338,8 +341,8 @@ export default function Landing() {
               </ul>
             )}
           </>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Productos destacados */}
       <section className="section featured-section" id="featured-results">

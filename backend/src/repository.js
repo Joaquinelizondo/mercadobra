@@ -3,6 +3,7 @@ import { nextId, readDb, writeDb } from './store.js'
 import { randomBytes } from 'crypto'
 
 function mapProductRow(row) {
+  const normalizedCurrency = String(row.currency || 'UYU').toUpperCase()
   return {
     id: Number(row.id),
     name: row.name,
@@ -11,6 +12,7 @@ function mapProductRow(row) {
     company: row.company,
     providerId: Number(row.provider_id ?? row.providerId),
     price: Number(row.price),
+    currency: normalizedCurrency === 'USD' ? 'USD' : 'UYU',
     unit: row.unit,
     stock: Number(row.stock),
     color: row.color,
@@ -126,7 +128,11 @@ async function getJsonRepo() {
     },
     async createProduct(payload) {
       const db = readDb()
-      const created = { ...payload, id: nextId(db.products) }
+      const created = {
+        ...payload,
+        currency: String(payload.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
+        id: nextId(db.products),
+      }
       db.products.push(created)
       writeDb(db)
       return created
@@ -284,6 +290,7 @@ async function getJsonRepo() {
           company: product?.company,
           unit: product?.unit,
           price: product?.price !== undefined ? Number(product.price) : undefined,
+          currency: String(product?.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
         }
       })
 
@@ -487,10 +494,10 @@ async function getPgRepo() {
     },
     async createProduct(payload) {
       const { rows } = await pool.query(
-        `INSERT INTO products (name, description, category, company, provider_id, price, unit, stock, color)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `INSERT INTO products (name, description, category, company, provider_id, price, currency, unit, stock, color)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          RETURNING *`,
-        [payload.name, payload.description, payload.category, payload.company, payload.providerId, payload.price, payload.unit, payload.stock, payload.color]
+        [payload.name, payload.description, payload.category, payload.company, payload.providerId, payload.price, payload.currency || 'UYU', payload.unit, payload.stock, payload.color]
       )
       return mapProductRow(rows[0])
     },
@@ -500,10 +507,10 @@ async function getPgRepo() {
       const merged = { ...current, ...updates }
       const { rows } = await pool.query(
         `UPDATE products
-         SET name = $1, description = $2, category = $3, company = $4, provider_id = $5, price = $6, unit = $7, stock = $8, color = $9
-         WHERE id = $10
+         SET name = $1, description = $2, category = $3, company = $4, provider_id = $5, price = $6, currency = $7, unit = $8, stock = $9, color = $10
+         WHERE id = $11
          RETURNING *`,
-        [merged.name, merged.description, merged.category, merged.company, merged.providerId, merged.price, merged.unit, merged.stock, merged.color, id]
+        [merged.name, merged.description, merged.category, merged.company, merged.providerId, merged.price, merged.currency || 'UYU', merged.unit, merged.stock, merged.color, id]
       )
       return mapProductRow(rows[0])
     },
@@ -701,7 +708,7 @@ async function getPgRepo() {
       if (!row) return null
 
       const itemsResult = await pool.query(
-        `SELECT oi.product_id, oi.quantity, p.name, p.company, p.unit, p.price
+        `SELECT oi.product_id, oi.quantity, p.name, p.company, p.unit, p.price, p.currency
          FROM order_items oi
          JOIN products p ON p.id = oi.product_id
          WHERE oi.order_id = $1
@@ -723,6 +730,7 @@ async function getPgRepo() {
           company: item.company,
           unit: item.unit,
           price: Number(item.price),
+          currency: String(item.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
         })),
         buyerName: row.buyer_name,
         buyerPhone: row.buyer_phone,

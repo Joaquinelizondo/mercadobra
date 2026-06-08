@@ -1,9 +1,14 @@
-export function formatPrice(n) {
-  return new Intl.NumberFormat('es-AR', {
+export function formatPrice(n, currency = 'UYU') {
+  const amount = Number(n)
+  const safeAmount = Number.isFinite(amount) ? amount : 0
+
+  const normalizedCurrency = String(currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU'
+
+  return new Intl.NumberFormat('es-UY', {
     style: 'currency',
-    currency: 'ARS',
+    currency: normalizedCurrency,
     maximumFractionDigits: 0,
-  }).format(n)
+  }).format(safeAmount)
 }
 
 export function companyInitials(name) {

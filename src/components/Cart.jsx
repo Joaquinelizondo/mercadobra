@@ -49,6 +49,7 @@ export default function Cart() {
   const normalizedBuyerPhone = checkoutForm.buyerPhone.trim()
   const buyerPhoneDigits = normalizedBuyerPhone.replace(/\D/g, '')
   const isCheckoutFormValid = normalizedBuyerName.length >= 3 && buyerPhoneDigits.length >= 10 && buyerPhoneDigits.length <= 15
+  const cartCurrency = String(cartItems[0]?.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU'
 
   useEffect(() => {
     let mounted = true
@@ -247,14 +248,14 @@ export default function Cart() {
                         <span className="qty-value">{item.quantity}</span>
                         <button className="qty-btn" onClick={() => changeQty(item.id, 1)} aria-label="Agregar uno">+</button>
                       </div>
-                      <p className="cart-item-subtotal">{formatPrice(item.price * item.quantity)}</p>
+                      <p className="cart-item-subtotal">{formatPrice(item.price * item.quantity, item.currency)}</p>
                     </li>
                   ))}
                 </ul>
                 <div className="cart-footer">
                   <div className="cart-total">
                     <span>Total estimado</span>
-                    <strong>{formatPrice(cartTotal)}</strong>
+                    <strong>{formatPrice(cartTotal, cartCurrency)}</strong>
                   </div>
                   <button className="cart-confirm-btn" onClick={() => setStep('payment')}>
                     Elegir medio de pago →
@@ -341,7 +342,7 @@ export default function Cart() {
             <div className="cart-footer">
               <div className="cart-total">
                 <span>Total final</span>
-                <strong>{formatPrice(cartTotal)}</strong>
+                <strong>{formatPrice(cartTotal, cartCurrency)}</strong>
               </div>
               {orderError && <p className="cart-order-error">{orderError}</p>}
               <button

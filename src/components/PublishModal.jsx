@@ -4,7 +4,7 @@ import { useProducts } from '../context/ProductContext'
 import { companyInitials } from '../utils/format'
 import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../data/constants'
 
-const EMPTY_FORM = { name: '', category: 'Hormigón', price: '', unit: 'bolsa', stock: '0', description: '' }
+const EMPTY_FORM = { name: '', category: 'Hormigón', price: '', currency: 'UYU', unit: 'bolsa', stock: '0', description: '' }
 
 export default function PublishModal({ onClose, onPublished, initialFormData = null }) {
   const { supplierUser, token } = useAuth()
@@ -109,19 +109,34 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
               </div>
             </div>
 
-            <div className="form-row">
-              <label className="form-label" htmlFor="pub-price">Precio (ARS) *</label>
-              <input
-                id="pub-price"
-                className="form-input"
-                name="price"
-                type="number"
-                min="1"
-                value={formData.price}
-                onChange={handleChange}
-                placeholder="Ej: 8500"
-                required
-              />
+            <div className="form-row form-row--2col">
+              <div>
+                <label className="form-label" htmlFor="pub-price">Precio *</label>
+                <input
+                  id="pub-price"
+                  className="form-input"
+                  name="price"
+                  type="number"
+                  min="1"
+                  value={formData.price}
+                  onChange={handleChange}
+                  placeholder="Ej: 8500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="form-label" htmlFor="pub-currency">Moneda</label>
+                <select
+                  id="pub-currency"
+                  className="form-input"
+                  name="currency"
+                  value={formData.currency}
+                  onChange={handleChange}
+                >
+                  <option value="UYU">Pesos uruguayos (UYU)</option>
+                  <option value="USD">Dolares (USD)</option>
+                </select>
+              </div>
             </div>
 
             <div className="form-row">
