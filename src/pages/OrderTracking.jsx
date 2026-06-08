@@ -16,8 +16,8 @@ const STATUS_LABELS = {
 const PAYMENT_LABELS = {
   transferencia: 'Transferencia bancaria',
   mercadopago: 'MercadoPago',
-  efectivo: 'Efectivo',
-  cheque: 'Cheque diferido',
+  tarjeta_credito: 'Tarjeta de crédito',
+  tarjeta_debito: 'Tarjeta de débito',
 }
 
 const STATUS_VARIANTS = {
