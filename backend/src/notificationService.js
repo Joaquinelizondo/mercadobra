@@ -17,7 +17,10 @@ const SMTP_USER = process.env.SMTP_USER || ''
 const SMTP_PASS = process.env.SMTP_PASS || ''
 const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER || ''
 const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
-const RESEND_FROM = process.env.RESEND_FROM || SMTP_FROM || ''
+const CONFIGURED_RESEND_FROM = process.env.RESEND_FROM || SMTP_FROM || ''
+const RESEND_FROM = CONFIGURED_RESEND_FROM && !/@resend\.dev\b/i.test(CONFIGURED_RESEND_FROM)
+  ? CONFIGURED_RESEND_FROM
+  : 'Oxida Studio <formularios@send.mercadobra.com>'
 const EMAIL_SEND_TIMEOUT_MS = Number(process.env.EMAIL_SEND_TIMEOUT_MS || 12000)
 const LEADS_NOTIFICATION_EMAIL = process.env.LEADS_NOTIFICATION_EMAIL || 'contacto@mercadobra.com'
 const WHATSAPP_SEND_TIMEOUT_MS = Number(process.env.WHATSAPP_SEND_TIMEOUT_MS || 12000)
