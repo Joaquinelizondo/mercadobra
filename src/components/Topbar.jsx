@@ -23,6 +23,7 @@ export default function Topbar() {
         <a href={homeHash('inicio')}>Inicio</a>
         <a href={homeHash('categorias')}>Categorías</a>
         <Link to="/explorar">Ver todo</Link>
+        <Link to="/oxida" className="topbar-oxida-link"><span>Oxida</span><small>Studio</small></Link>
         <a href={homeHash('como-funciona')}>Cómo va</a>
         <Link to="/admin/login">Admin</Link>
         <a href={homeHash('contacto')}>Contacto</a>

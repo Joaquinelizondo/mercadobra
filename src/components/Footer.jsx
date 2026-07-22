@@ -1,4 +1,6 @@
 import logoImg from '../assets/mercadobra.png'
+import { Link } from 'react-router-dom'
+import OxidaWordmark from './OxidaWordmark'
 import { siMercadopago, siVisa } from 'simple-icons'
 import { createWhatsAppLink } from '../utils/whatsapp'
 
@@ -46,11 +48,24 @@ export default function Footer() {
 
   return (
     <footer className="footer">
-      <div className="footer-grid">
-        <section>
-          <a href={homeHash('inicio')} className="footer-brand-link" aria-label="Ir al inicio">
-            <img src={logoImg} className="footer-logo" alt="MercadObra" />
+      <div className="footer-brand-system">
+        <div className="footer-master-brand">
+          <span className="footer-brand-label">La plataforma para construir mejor</span>
+          <a href={homeHash('inicio')} className="footer-brand-link" aria-label="Mercadobra, ir al inicio">
+            <img src={logoImg} className="footer-logo footer-logo--master" alt="Mercadobra" />
           </a>
+        </div>
+        <div className="footer-subbrands">
+          <span className="footer-brand-label">Nuestras marcas</span>
+          <Link to="/oxida" className="footer-subbrand-card" aria-label="Conocer Oxida Studio, una marca de Mercadobra">
+            <OxidaWordmark className="footer-subbrand-logo" />
+          </Link>
+        </div>
+      </div>
+
+      <div className="footer-grid">
+        <section className="footer-about">
+          <h3>Mercadobra</h3>
           <p>
             Tu lugar para encontrar materiales y proveedores de construcción, rápido y sin vueltas.
           </p>
@@ -61,6 +76,7 @@ export default function Footer() {
           <ul>
             <li><a href={homeHash('inicio')}>Inicio</a></li>
             <li><a href={homeHash('categorias')}>Categorías</a></li>
+            <li><Link to="/oxida">Oxida Studio</Link></li>
             <li><a href={homeHash('como-funciona')}>Cómo funciona</a></li>
             <li><a href={homeHash('contacto')}>Contacto</a></li>
           </ul>

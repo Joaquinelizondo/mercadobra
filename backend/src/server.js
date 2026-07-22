@@ -3,7 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import { getRepository } from './repository.js'
 import { generateChatReply } from './chatService.js'
-import { notifyOrderCreated, notifyOrderStatusChanged, notifySearchRecommendations } from './notificationService.js'
+import { notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifySearchRecommendations } from './notificationService.js'
 import {
   createMercadoPagoPreference,
   getMercadoPagoPayment,
@@ -605,7 +605,11 @@ app.post('/leads', async (req, res) => {
 
   const repo = await getRepository()
   const created = await repo.createLead(payload)
-  return res.status(201).json(created)
+  const notification = await notifyLeadCreated({ ...payload, ...created }).catch((error) => {
+    console.error('[lead:notification:error]', error)
+    return { sent: false, channel: 'email', reason: error.message }
+  })
+  return res.status(201).json({ ...created, notification })
 })
 
 app.post('/search-contacts', async (req, res) => {

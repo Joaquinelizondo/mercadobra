@@ -10,6 +10,7 @@ import { createLead, createSearchContact } from '../lib/api'
 import { useSpeechInput } from '../hooks/useSpeechInput'
 import { createWhatsAppLink } from '../utils/whatsapp'
 import GroupQuoteWidget from '../components/GroupQuoteWidget'
+import OxidaSpotlight from '../components/OxidaSpotlight'
 
 const categories = [
   { title: 'Hormigón y áridos', description: 'Cemento, arena, piedra y bloques en un solo lugar.' },
@@ -306,7 +307,9 @@ export default function Landing() {
         */}
         {/* Refrescar productos tras agregar uno nuevo */}
         {addProductSuccess && typeof getProducts === 'function' && getProducts()}
-      {/* Cotizador grupal premium (primer bloque visible) */}
+      <OxidaSpotlight />
+
+      {/* Cotizador grupal premium */}
 
       <section className="section group-quote-section" id="cotizador-grupal">
         <GroupQuoteWidget onSuccess={prods => {

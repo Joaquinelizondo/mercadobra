@@ -19,6 +19,7 @@ const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER || ''
 const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
 const RESEND_FROM = process.env.RESEND_FROM || SMTP_FROM || ''
 const EMAIL_SEND_TIMEOUT_MS = Number(process.env.EMAIL_SEND_TIMEOUT_MS || 12000)
+const LEADS_NOTIFICATION_EMAIL = process.env.LEADS_NOTIFICATION_EMAIL || 'contacto@mercadobra.com'
 const WHATSAPP_SEND_TIMEOUT_MS = Number(process.env.WHATSAPP_SEND_TIMEOUT_MS || 12000)
 
 const STATUS_LABELS = {
@@ -379,7 +380,7 @@ function buildRecommendationEmailContent(searchTerm, items) {
   }
 }
 
-async function sendRecommendationEmailViaResend({ email, subject, html }) {
+async function sendRecommendationEmailViaResend({ email, subject, html, replyTo = '' }) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), EMAIL_SEND_TIMEOUT_MS)
   const htmlDocument = `<!doctype html><html><body style="margin:0;padding:0;">${html}</body></html>`
@@ -396,6 +397,7 @@ async function sendRecommendationEmailViaResend({ email, subject, html }) {
         to: [email],
         subject,
         html: htmlDocument,
+        ...(replyTo ? { reply_to: replyTo } : {}),
       }),
       signal: controller.signal,
     })
@@ -407,6 +409,79 @@ async function sendRecommendationEmailViaResend({ email, subject, html }) {
   } finally {
     clearTimeout(timer)
   }
+}
+
+function escapeEmailHtml(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;')
+}
+
+export async function notifyLeadCreated(lead) {
+  const destination = LEADS_NOTIFICATION_EMAIL
+  const subject = `Oxida Studio · Nueva consulta de ${lead.name}`
+  const fields = [
+    ['Nombre', lead.name],
+    ['Email', lead.email],
+    ['WhatsApp', lead.phone],
+    ['Empresa', lead.company],
+    ['Zona', lead.zone],
+    ['Tipo de proyecto', lead.projectType],
+    ['Presupuesto', lead.budgetRange],
+    ['Origen', lead.source],
+  ].filter(([, value]) => value)
+
+  const text = [
+    'Nueva consulta desde Oxida Studio',
+    '',
+    ...fields.map(([label, value]) => `${label}: ${value}`),
+    '',
+    'Mensaje:',
+    lead.message || 'Sin mensaje',
+  ].join('\n')
+
+  const rows = fields.map(([label, value]) => `
+    <tr>
+      <td style="padding:8px 12px;color:#78716c;font-size:13px;vertical-align:top;">${escapeEmailHtml(label)}</td>
+      <td style="padding:8px 12px;color:#1c1917;font-size:14px;font-weight:600;">${escapeEmailHtml(value)}</td>
+    </tr>
+  `).join('')
+  const html = `
+    <div style="max-width:620px;margin:auto;background:#f4f1e9;font-family:Arial,sans-serif;color:#1c1917;">
+      <div style="background:#1c1c19;padding:24px;color:#fff;border-top:6px solid #ae552e;">
+        <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#d47b50;">Oxida Studio · by Mercadobra</div>
+        <h1 style="font-size:26px;margin:10px 0 0;">Nueva consulta de proyecto</h1>
+      </div>
+      <div style="padding:20px;">
+        <table width="100%" cellspacing="0" cellpadding="0" style="background:#fff;border:1px solid #ded8cc;">${rows}</table>
+        <div style="margin-top:18px;padding:18px;background:#fff;border-left:4px solid #ae552e;">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#78716c;margin-bottom:8px;">Mensaje</div>
+          <div style="font-size:15px;line-height:1.6;white-space:pre-wrap;">${escapeEmailHtml(lead.message || 'Sin mensaje')}</div>
+        </div>
+      </div>
+    </div>
+  `
+
+  if (RESEND_API_KEY && RESEND_FROM) {
+    await sendRecommendationEmailViaResend({ email: destination, subject, html, replyTo: lead.email })
+    return { sent: true, channel: 'email-resend', to: destination }
+  }
+
+  const emailTransporter = getTransporter()
+  if (!emailTransporter) {
+    console.log('[lead:email:mock]', { to: destination, subject, lead })
+    return { sent: false, channel: 'email-mock', to: destination, reason: 'email provider not configured' }
+  }
+
+  await withTimeout(
+    emailTransporter.sendMail({ from: SMTP_FROM, to: destination, replyTo: lead.email, subject, text, html }),
+    EMAIL_SEND_TIMEOUT_MS,
+    'lead email send'
+  )
+  return { sent: true, channel: 'email-smtp', to: destination }
 }
 
 async function sendRecommendationEmail(email, searchTerm, products) {

@@ -13,6 +13,7 @@ import AdminLogin from './pages/AdminLogin'
 import OrderTracking from './pages/OrderTracking'
 import AdminQuoteConsultations from './pages/AdminQuoteConsultations'
 import NotFound from './pages/NotFound'
+import OxidaStudio from './pages/OxidaStudio'
 import { useState } from 'react'
 import heroImg from './assets/hero.png'
 import logoImg from './assets/mercadobra.png'
@@ -851,6 +852,7 @@ export default function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Landing />} />
+        <Route path="/oxida" element={<OxidaStudio />} />
         <Route path="/explorar" element={<Catalog />} />
         <Route path="/producto/:id" element={<ProductDetail />} />
         <Route path="/favoritos" element={<Wishlist />} />

@@ -1,0 +1,140 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap');
+
+.oxida-site { --ox-ink:#1c1c19; --ox-paper:#e8e5dc; --ox-rust:#ae552e; --ox-line:rgba(28,28,25,.2); width:100%; overflow:hidden; color:var(--ox-ink); background:var(--ox-paper); font-family:'DM Sans',sans-serif; border-radius:28px; box-shadow:0 26px 60px rgba(70,32,15,.22); }
+.oxida-site * { box-sizing:border-box; }
+.oxida-nav { height:92px; padding:0 clamp(24px,5vw,72px); display:grid; grid-template-columns:180px 1fr 180px; align-items:center; border-bottom:1px solid var(--ox-line); position:absolute; z-index:5; width:100%; color:#eeeae0; }
+.oxida-nav-brand { height:72px; width:180px; display:flex; align-items:center; overflow:hidden; }
+.oxida-nav-brand img { width:300px; max-width:none; height:auto; margin-left:-59px; filter:brightness(0) invert(1); }
+.oxida-nav nav { display:flex; justify-content:center; gap:36px; }
+.oxida-nav nav a { color:inherit; text-decoration:none; font-size:.72rem; text-transform:uppercase; letter-spacing:.16em; }
+.oxida-by-brand { display:flex; align-items:center; justify-content:flex-end; gap:8px; color:inherit; text-decoration:none; }
+.oxida-by-brand span { font:italic .8rem Georgia,serif; opacity:.7; }
+.oxida-by-brand img { width:120px; filter:brightness(0) invert(1); }
+.oxida-menu-button { display:none; border:0; background:transparent; padding:8px; }
+.oxida-menu-button span { display:block; width:24px; height:1px; background:#fff; margin:6px; }
+
+.oxida-hero { min-height:min(860px,90svh); background:#171715; color:#f1eee5; display:grid; grid-template-columns:52% 48%; position:relative; }
+.oxida-hero-media { min-height:min(860px,90svh); position:relative; overflow:hidden; }
+.oxida-hero-media::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent 55%,rgba(23,23,21,.5)),linear-gradient(0deg,rgba(23,23,21,.3),transparent 35%); }
+.oxida-hero-media img { width:100%; height:100%; position:absolute; object-fit:cover; object-position:center; filter:saturate(.68) contrast(1.07); }
+.oxida-hero-count { position:absolute; z-index:1; left:clamp(24px,5vw,72px); bottom:42px; font-size:.67rem; letter-spacing:.2em; }
+.oxida-hero-copy { padding:90px clamp(28px,6vw,100px) 80px clamp(36px,5vw,80px); display:flex; flex-direction:column; justify-content:center; position:relative; }
+.oxida-hero-copy::before { content:''; width:1px; background:rgba(255,255,255,.14); position:absolute; top:92px; bottom:0; left:0; }
+.oxida-label,.oxida-section-number { font-size:.65rem; letter-spacing:.21em; text-transform:uppercase; font-weight:600; }
+.oxida-label { color:#bf6a43; margin-bottom:34px; }
+.oxida-hero-brand-lockup { width:min(285px,100%); margin:0 0 34px; }
+.oxida-hero-brand-lockup .oxida-wordmark-name { font-size:3.65rem; }
+.oxida-hero-brand-lockup .oxida-wordmark-studio { font-size:1.05rem; }
+.oxida-hero-brand-lockup .oxida-wordmark-byline { display:block; margin-top:12px; padding:0; color:#c6754f; font:italic .76rem Georgia,serif; letter-spacing:.08em; text-align:center; }
+.oxida-hero h1 { color:#f1eee5; font:500 clamp(3.3rem,6.7vw,7.7rem)/.87 'Manrope',sans-serif; letter-spacing:-.075em; margin:0; }
+.oxida-hero h1 em { color:#bf6a43; font-family:Georgia,serif; font-weight:400; }
+.oxida-hero-intro { color:rgba(241,238,229,.68); max-width:490px; font-size:clamp(.95rem,1.2vw,1.15rem); line-height:1.65; margin:42px 0 38px; }
+.oxida-arrow-link { width:max-content; color:#f1eee5; text-decoration:none; text-transform:uppercase; font-size:.7rem; letter-spacing:.16em; padding-bottom:10px; border-bottom:1px solid #bf6a43; display:flex; gap:35px; align-items:center; }
+.oxida-arrow-link span { font-size:1.3rem; color:#bf6a43; }
+.oxida-scroll-note { position:absolute; right:24px; bottom:42px; font-size:.55rem; letter-spacing:.2em; writing-mode:vertical-rl; color:rgba(255,255,255,.4); }
+
+.oxida-manifesto { padding:clamp(90px,14vw,210px) clamp(24px,9vw,140px); background:#e8e5dc; display:grid; grid-template-columns:220px 1fr; gap:30px; }
+.oxida-section-number { color:#8e4d31; margin:10px 0 0; }
+.oxida-manifesto h2,.oxida-section-heading h2,.oxida-quote h2 { font:500 clamp(2.7rem,6vw,6.8rem)/.97 'Manrope',sans-serif; letter-spacing:-.065em; color:#1c1c19; margin:0; }
+.oxida-manifesto h2 span,.oxida-section-heading h2 span,.oxida-quote h2 span { color:#ae552e; font-family:Georgia,serif; font-weight:400; font-style:italic; }
+.oxida-manifesto > p:last-child { grid-column:2; max-width:590px; font-size:1rem; line-height:1.75; color:#65635c; margin:45px 0 0 auto; }
+
+.oxida-projects { background:#262622; color:#e8e5dc; padding:clamp(90px,11vw,170px) clamp(24px,6vw,90px); }
+.oxida-section-heading { display:grid; grid-template-columns:1fr minmax(250px,400px); align-items:end; gap:50px; margin-bottom:80px; }
+.oxida-projects .oxida-section-heading h2,.oxida-process .oxida-section-heading h2 { color:#e8e5dc; }
+.oxida-section-heading > p { color:#918f88; line-height:1.7; font-size:.9rem; max-width:360px; }
+.oxida-project-grid { display:grid; grid-template-columns:repeat(12,1fr); gap:70px 24px; align-items:start; }
+.oxida-project-card { grid-column:span 5; }
+.oxida-project-card:nth-child(2),.oxida-project-card:nth-child(5) { grid-column:7 / span 6; margin-top:130px; }
+.oxida-project-card.is-wide { grid-column:span 6; }
+.oxida-project-image { position:relative; overflow:hidden; background:#111; }
+.oxida-project-card:nth-child(1) .oxida-project-image { aspect-ratio:4/5; }
+.oxida-project-card:nth-child(2) .oxida-project-image { aspect-ratio:4/3; }
+.oxida-project-card:nth-child(3) .oxida-project-image,.oxida-project-card:nth-child(4) .oxida-project-image,.oxida-project-card:nth-child(5) .oxida-project-image { aspect-ratio:4/5; }
+.oxida-project-card:nth-child(6) .oxida-project-image { aspect-ratio:5/4; }
+.oxida-project-image img { width:100%; height:100%; object-fit:cover; display:block; filter:saturate(.72); transition:transform .8s cubic-bezier(.2,.7,.2,1),filter .5s; }
+.oxida-project-card:hover img { transform:scale(1.025); filter:saturate(.95); }
+.oxida-project-image > span { position:absolute; right:14px; top:14px; width:32px; height:32px; display:grid; place-items:center; background:#e8e5dc; color:#1c1c19; font-size:.6rem; }
+.oxida-project-meta { border-top:1px solid rgba(255,255,255,.16); margin-top:18px; padding-top:16px; display:grid; grid-template-columns:110px 1fr; gap:20px; }
+.oxida-project-meta p { text-transform:uppercase; letter-spacing:.15em; font-size:.58rem; color:#a35a39; }
+.oxida-project-meta h3 { color:#e8e5dc; font:500 1.15rem/1.25 'Manrope',sans-serif; margin:0; }
+
+.oxida-process { background:#1d1d1a; padding:clamp(90px,11vw,170px) clamp(24px,6vw,90px); color:#e8e5dc; border-top:1px solid rgba(255,255,255,.08); }
+.oxida-process-heading { margin-bottom:75px; }
+.oxida-process-list { border-top:1px solid rgba(255,255,255,.18); display:grid; grid-template-columns:repeat(4,1fr); }
+.oxida-process-list article { min-height:300px; padding:28px 28px 35px 0; border-right:1px solid rgba(255,255,255,.18); display:flex; flex-direction:column; }
+.oxida-process-list article:not(:first-child) { padding-left:28px; }
+.oxida-process-list article:last-child { border-right:0; }
+.oxida-process-list span { color:#b85d35; font-size:.7rem; }
+.oxida-process-list h3 { margin:auto 0 16px; font:500 1.55rem 'Manrope',sans-serif; color:#e8e5dc; }
+.oxida-process-list p { color:#8f8e88; line-height:1.6; font-size:.8rem; }
+
+.oxida-quote { background:#b55c35; padding:clamp(90px,11vw,170px) clamp(24px,7vw,110px); display:grid; grid-template-columns:1fr 1.05fr; gap:clamp(50px,9vw,150px); }
+.oxida-quote h2 { color:#181815; margin:25px 0 35px; }
+.oxida-quote h2 span { color:#eeeae0; }
+.oxida-quote-copy > p:not(.oxida-section-number) { max-width:420px; color:rgba(24,24,21,.72); line-height:1.65; }
+.oxida-quote .oxida-section-number { color:#2b2924; }
+.oxida-response-time { display:flex; align-items:center; gap:16px; border-top:1px solid rgba(24,24,21,.35); padding-top:25px; margin-top:55px; max-width:300px; }
+.oxida-response-time strong { font:500 2.4rem 'Manrope'; }
+.oxida-response-time span { font-size:.65rem; line-height:1.4; text-transform:uppercase; letter-spacing:.13em; }
+.oxida-form { display:grid; grid-template-columns:1fr 1fr; gap:25px 22px; align-content:center; }
+.oxida-form label { display:flex; flex-direction:column; gap:10px; }
+.oxida-form label.is-full { grid-column:1/-1; }
+.oxida-form label > span { font-size:.6rem; letter-spacing:.16em; text-transform:uppercase; font-weight:600; }
+.oxida-form input,.oxida-form select,.oxida-form textarea { width:100%; border:0; border-bottom:1px solid rgba(24,24,21,.5); border-radius:0; padding:8px 0 14px; background:transparent; color:#181815; font:400 .9rem 'DM Sans'; outline:none; }
+.oxida-form input::placeholder,.oxida-form textarea::placeholder { color:rgba(24,24,21,.52); }
+.oxida-form input:focus,.oxida-form select:focus,.oxida-form textarea:focus { border-color:#eeeae0; }
+.oxida-form button { grid-column:1/-1; margin-top:18px; width:100%; border:1px solid #181815; background:#181815; color:#eeeae0; padding:19px 25px; font:.67rem 'DM Sans'; letter-spacing:.16em; text-transform:uppercase; display:flex; justify-content:space-between; cursor:pointer; transition:.25s; }
+.oxida-form button:hover { background:transparent; color:#181815; }
+.oxida-form button:disabled { cursor:wait; opacity:.68; }
+.oxida-form-success { grid-column:1/-1; color:#181815; font-size:.8rem; }
+.oxida-form-error { grid-column:1/-1; color:#5f1e0b; font-size:.8rem; font-weight:600; }
+
+.oxida-footer { min-height:320px; padding:70px clamp(24px,6vw,90px) 35px; background:#171715; color:#e8e5dc; display:grid; grid-template-columns:1fr 1fr 1fr; align-items:start; gap:50px; }
+.oxida-footer-logo { width:230px; height:75px; overflow:hidden; }
+.oxida-footer-logo img { width:380px; max-width:none; margin:-70px 0 0 -74px; filter:brightness(0) invert(1); }
+.oxida-footer > p { font-size:.75rem; line-height:1.6; color:#82817b; }
+.oxida-footer-by { display:flex; flex-direction:column; align-items:flex-end; text-decoration:none; color:#77766f; font-size:.58rem; letter-spacing:.14em; text-transform:uppercase; }
+.oxida-footer-by img { margin-top:8px; width:165px; filter:brightness(0) invert(1); }
+.oxida-footer .oxida-copyright { grid-column:1/-1; border-top:1px solid rgba(255,255,255,.12); padding-top:25px; margin-top:50px; font-size:.6rem; letter-spacing:.12em; }
+
+.oxida-brand-signoff { min-height:230px; background:#171715; color:#e8e5dc; padding:45px clamp(24px,6vw,90px); display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,.1); }
+.oxida-signoff-logo { width:min(350px,52%); height:auto; padding:14px 18px; background:#eeeae0; }
+.oxida-signoff-by { display:flex; flex-direction:column; align-items:flex-end; gap:6px; color:#77766f; font-size:.58rem; letter-spacing:.14em; text-transform:uppercase; }
+.oxida-signoff-by img { width:180px; filter:brightness(0) invert(1); }
+
+@media (max-width: 800px) {
+  .oxida-nav { height:76px; grid-template-columns:1fr auto; padding:0 18px; }
+  .oxida-nav-brand { width:150px; height:64px; }
+  .oxida-nav-brand img { width:250px; margin-left:-50px; }
+  .oxida-nav nav { display:none; position:absolute; top:76px; left:0; right:0; padding:30px; background:#171715; flex-direction:column; gap:24px; border-top:1px solid rgba(255,255,255,.1); }
+  .oxida-nav nav.is-open { display:flex; }
+  .oxida-by-brand { display:none; }
+  .oxida-menu-button { display:block; }
+  .oxida-hero { grid-template-columns:1fr; min-height:auto; }
+  .oxida-hero-media { min-height:62svh; }
+  .oxida-hero-copy { padding:65px 24px 85px; }
+  .oxida-hero-copy::before,.oxida-scroll-note { display:none; }
+  .oxida-hero h1 { font-size:clamp(3.5rem,16vw,5.4rem); }
+  .oxida-hero-intro { margin-top:30px; }
+  .oxida-manifesto { grid-template-columns:1fr; padding:90px 24px; }
+  .oxida-manifesto > p:last-child { grid-column:auto; margin:30px 0 0; }
+  .oxida-section-heading { grid-template-columns:1fr; margin-bottom:50px; }
+  .oxida-section-heading > p { margin-top:8px; }
+  .oxida-projects,.oxida-process { padding:90px 20px; }
+  .oxida-project-grid { display:block; }
+  .oxida-project-card,.oxida-project-card:nth-child(2),.oxida-project-card:nth-child(5) { margin:0 0 58px; }
+  .oxida-project-card .oxida-project-image { aspect-ratio:4/5; }
+  .oxida-process-list { grid-template-columns:1fr; }
+  .oxida-process-list article,.oxida-process-list article:not(:first-child) { min-height:190px; padding:25px 5px; border-right:0; border-bottom:1px solid rgba(255,255,255,.16); }
+  .oxida-process-list h3 { margin:35px 0 10px; }
+  .oxida-quote { grid-template-columns:1fr; padding:90px 24px; }
+  .oxida-form { grid-template-columns:1fr; }
+  .oxida-form label,.oxida-form label.is-full,.oxida-form button { grid-column:1; }
+  .oxida-footer { grid-template-columns:1fr; padding:60px 24px 30px; gap:25px; }
+  .oxida-footer-by { align-items:flex-start; }
+  .oxida-footer .oxida-copyright { grid-column:1; margin-top:25px; }
+  .oxida-brand-signoff { flex-direction:column; align-items:flex-start; min-height:280px; }
+  .oxida-signoff-logo { width:min(330px,100%); }
+  .oxida-signoff-by { align-items:flex-start; }
+}
