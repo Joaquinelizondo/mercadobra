@@ -4,6 +4,7 @@ import { useProducts } from '../context/ProductContext'
 import ProductCard from '../components/ProductCard'
 import OxidaWordmark from '../components/OxidaWordmark'
 import heroImage from '../assets/oxida/escalera.jpeg'
+import mercadoBraLogo from '../assets/mercadobra.png'
 import './Storefront.css'
 
 const categoryCopy = {
@@ -25,11 +26,16 @@ export default function Storefront() {
     <div className="storefront">
       <section className="store-hero" id="inicio">
         <div className="store-hero-copy">
-          <p className="store-kicker">Diseño · Fabricación · Envíos en Uruguay</p>
+          <div className="store-brand-context">
+            <img src={mercadoBraLogo} alt="MercadoBra" />
+            <span>presenta</span>
+            <strong>Oxida Studio</strong>
+          </div>
+          <p className="store-kicker">Primera colección · Diseño · Fabricación · Envíos en Uruguay</p>
           <h1>Objetos firmes.<br /><em>Espacios propios.</em></h1>
           <p className="store-hero-text">
-            Una colección de piezas esenciales en hierro y madera, diseñadas por Oxida
-            y fabricadas para acompañarte durante años.
+            MercadoBra abre su primera colección junto a Oxida Studio: piezas esenciales
+            en hierro y madera, listas para comprar o adaptar a tu espacio.
           </p>
           <div className="store-hero-actions">
             <Link to="/explorar" className="store-button store-button--primary">Ver la colección</Link>
@@ -61,6 +67,18 @@ export default function Storefront() {
             </Link>
           ))}
         </div>
+      </section>
+
+      <section className="store-mercadobra-note">
+        <div>
+          <span>MercadoBra</span>
+          <h2>Todo para transformar tu espacio, en un solo lugar.</h2>
+        </div>
+        <p>
+          Empezamos con la colección Oxida y seguimos ampliando el catálogo con
+          productos, talleres y proveedores seleccionados.
+        </p>
+        <Link to="/explorar">Explorar MercadoBra ↗</Link>
       </section>
 
       <section className="store-section" id="coleccion">

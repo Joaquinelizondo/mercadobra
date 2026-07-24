@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { companyInitials } from '../utils/format'
-import OxidaWordmark from './OxidaWordmark'
+import logoImg from '../assets/mercadobra.png'
 
 export default function Topbar() {
   const { supplierUser, logout, customerUser, logoutCustomer, adminUser } = useAuth()
@@ -14,16 +14,17 @@ export default function Topbar() {
   return (
     <header className="topbar">
       <div className="brand-wrap">
-        <Link to="/" className="store-nav-brand" aria-label="Oxida Studio, inicio">
-          <OxidaWordmark />
+        <Link to="/" className="store-nav-brand" aria-label="MercadoBra, inicio">
+          <img src={logoImg} className="brand-logo" alt="MercadoBra" />
         </Link>
       </div>
 
       <nav className="topbar-menu" aria-label="Navegación principal">
-        <Link to="/explorar">Tienda</Link>
-        <a href={homeHash('categorias')}>Colecciones</a>
-        <Link to="/oxida">A medida</Link>
-        <a href={homeHash('como-funciona')}>El estudio</a>
+        <a href={homeHash('inicio')}>Inicio</a>
+        <a href={homeHash('categorias')}>Categorías</a>
+        <Link to="/explorar">Ver todo</Link>
+        <Link to="/oxida" className="topbar-oxida-link"><span>Oxida</span><small>Studio</small></Link>
+        <a href={homeHash('como-funciona')}>Cómo funciona</a>
         {adminUser && <Link to="/admin/productos">Administrar tienda</Link>}
       </nav>
 

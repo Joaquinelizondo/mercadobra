@@ -66,10 +66,8 @@
   flex: 1 1 auto;
 }
 
-.store-nav-brand { display: block; width: 132px; text-decoration: none; }
-.store-nav-brand .oxida-wordmark-name { font-size: 1.45rem; color: #23231f; }
-.store-nav-brand .oxida-wordmark-studio { font-size: .55rem; color: #23231f; }
-.store-nav-brand .oxida-wordmark-line { color: #23231f; margin-block: .08em .15em; }
+.store-nav-brand { display: block; width: min(230px, 34vw); text-decoration: none; }
+.store-nav-brand .brand-logo { width: 100%; }
 .admin-login-oxida { display: block; width: 180px; margin: 0 auto 24px; text-decoration: none; }
 .admin-login-oxida .oxida-wordmark { color: #292823; }
 .admin-login-oxida .oxida-wordmark-name { font-size: 2.1rem; }
