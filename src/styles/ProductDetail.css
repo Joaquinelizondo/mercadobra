@@ -440,4 +440,43 @@
   margin: 0 0 40px 0;
   color: var(--text-primary);
 }
-
+.product-configuration { margin: 26px 0; padding: 22px; background: #f2ede4; border: 1px solid #ded5c8; }
+.product-configuration-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; margin-bottom: 17px; }
+.product-configuration-heading h3 { margin: 0; color: #292823; font-size: 1rem; }
+.product-configuration-heading span { color: #80776c; font-size: .68rem; }
+.product-option-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.product-option-grid label { display: flex; flex-direction: column; gap: 6px; color: #6e665c; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
+.product-option-grid select { width: 100%; padding: 11px 9px; border: 1px solid #cfc5b7; border-radius: 2px; background: #fff; color: #292823; font: .77rem inherit; }
+.product-customize-button { border-color: #a8522e !important; color: #8f4327 !important; }
+.product-simple-inquiry { width: 100%; border: 0; background: transparent; color: #6f675d; text-decoration: underline; cursor: pointer; font: 700 .72rem inherit; }
+.customizer-modal { position: fixed; z-index: 510; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(720px, 94vw); max-height: 92vh; overflow-y: auto; background: #eee9df; color: #292823; box-shadow: 0 32px 90px rgba(0,0,0,.36); }
+.customizer-modal > header { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 28px; background: #242420; color: #eee9df; }
+.customizer-modal header span { color: #c36d44; font-size: .62rem; text-transform: uppercase; letter-spacing: .14em; }
+.customizer-modal header h2 { margin: 4px 0 0; color: #eee9df; font-size: 1.35rem; }
+.customizer-modal header button { border: 0; background: transparent; color: #eee9df; font-size: 1.8rem; cursor: pointer; }
+.customizer-modal form { padding: 28px; }
+.customizer-summary { display: grid; grid-template-columns: repeat(3, 1fr); margin-bottom: 24px; border: 1px solid #cbc1b4; }
+.customizer-summary span { padding: 13px; border-right: 1px solid #cbc1b4; color: #292823; font-weight: 700; font-size: .8rem; }
+.customizer-summary span:last-child { border: 0; }
+.customizer-summary small { display: block; margin-bottom: 4px; color: #9b4e30; text-transform: uppercase; letter-spacing: .1em; }
+.customizer-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.customizer-fields label { display: flex; flex-direction: column; gap: 6px; color: #5f594f; font-size: .72rem; font-weight: 700; }
+.customizer-fields label.is-full { grid-column: 1 / -1; }
+.customizer-fields input,.customizer-fields textarea { padding: 11px 12px; border: 1px solid #c9bfb1; border-radius: 2px; background: #faf8f3; font: inherit; }
+.customizer-upload { display: flex; flex-direction: column; gap: 4px; margin-top: 18px; padding: 18px; border: 1px dashed #a8522e; background: #e5ded2; cursor: pointer; }
+.customizer-upload span { color: #7a7165; font-size: .68rem; }
+.customizer-upload input { margin-top: 9px; }
+.customizer-previews { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+.customizer-previews img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+.customizer-error { margin-top: 12px; color: #922d1c; font-size: .75rem; }
+.customizer-submit { display: flex; justify-content: space-between; width: 100%; margin-top: 22px; padding: 16px 18px; border: 0; background: #242420; color: #eee9df; font-weight: 800; cursor: pointer; }
+.customizer-success { padding: 60px 35px; text-align: center; }
+.customizer-success strong { color: #292823; font: 600 2rem Georgia, serif; }
+.customizer-success p { margin: 12px auto 24px; max-width: 430px; color: #6e675d; }
+.customizer-success button { padding: 13px 18px; border: 0; background: #292823; color: #fff; cursor: pointer; }
+@media (max-width: 650px) {
+  .product-option-grid,.customizer-summary,.customizer-fields { grid-template-columns: 1fr; }
+  .customizer-summary span { border-right: 0; border-bottom: 1px solid #cbc1b4; }
+  .customizer-fields label.is-full { grid-column: 1; }
+  .customizer-previews { grid-template-columns: repeat(2, 1fr); }
+}

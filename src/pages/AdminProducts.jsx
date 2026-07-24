@@ -57,6 +57,7 @@ export default function AdminProducts() {
         <div className="admin-store-actions">
           <Link to="/" className="admin-store-link">Ver tienda ↗</Link>
           <Link to="/admin/cotizaciones" className="admin-store-link">Consultas</Link>
+          <Link to="/admin/personalizaciones" className="admin-store-link">Personalizaciones</Link>
           <button type="button" className="admin-store-link" onClick={logoutAdmin}>Cerrar sesión</button>
         </div>
       </header>

@@ -16,6 +16,8 @@ import NotFound from './pages/NotFound'
 import OxidaStudio from './pages/OxidaStudio'
 import Storefront from './pages/Storefront'
 import AdminProducts from './pages/AdminProducts'
+import AdminCustomRequests from './pages/AdminCustomRequests'
+import './pages/AdminCustomRequests.css'
 import { useState } from 'react'
 import heroImg from './assets/hero.png'
 import logoImg from './assets/mercadobra.png'
@@ -864,6 +866,7 @@ export default function App() {
         <Route path="/cliente/registro" element={<CustomerRegister />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/productos" element={<AdminProducts />} />
+        <Route path="/admin/personalizaciones" element={<AdminCustomRequests />} />
         <Route path="/proveedor/login" element={<SupplierLogin />} />
         <Route path="/proveedor" element={<SupplierDashboard />} />
         <Route path="/seguimiento/:trackingToken" element={<OrderTracking />} />

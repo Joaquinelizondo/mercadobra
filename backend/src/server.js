@@ -619,6 +619,44 @@ app.post('/leads', async (req, res) => {
   return res.status(201).json({ ...created, notification })
 })
 
+app.post('/custom-requests', asyncHandler(async (req, res) => {
+  const body = req.body || {}
+  const configuration = body.configuration || {}
+  const payload = {
+    productId: Number(body.productId || 0),
+    productName: requireField(body.productName, 'Producto'),
+    name: requireField(body.name, 'Nombre'),
+    email: validateEmail(body.email),
+    phone: requireField(body.phone, 'WhatsApp'),
+    zone: requireField(body.zone, 'Zona'),
+    configuration: {
+      size: requireField(configuration.size, 'Medida'),
+      color: requireField(configuration.color, 'Color'),
+      finish: requireField(configuration.finish, 'Terminación'),
+    },
+    message: String(body.message || '').trim().slice(0, 2000),
+    photos: Array.isArray(body.photos) ? body.photos.slice(0, 4) : [],
+  }
+  const repo = await getRepository()
+  const created = await repo.createCustomRequest(payload)
+  return res.status(201).json(created)
+}))
+
+app.get('/admin/custom-requests', authMiddleware, adminOnly, asyncHandler(async (_req, res) => {
+  const repo = await getRepository()
+  const rows = await repo.getCustomRequests()
+  return res.json({ total: rows.length, rows })
+}))
+
+app.patch('/admin/custom-requests/:id', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const allowedStatuses = ['new', 'reviewing', 'quoted', 'closed']
+  const status = validateEnum(req.body?.status, allowedStatuses, 'Estado')
+  const repo = await getRepository()
+  const updated = await repo.updateCustomRequestStatus(req.params.id, status)
+  if (!updated) throw new NotFoundError('Solicitud')
+  return res.json(updated)
+}))
+
 app.post('/search-contacts', async (req, res) => {
   const body = req.body || {}
   const payload = {

@@ -1,0 +1,30 @@
+.admin-custom-page { min-height: 75vh; padding: clamp(28px,5vw,65px); border-radius: 28px; background: #eee9df; color: #292823; }
+.admin-custom-page > header { display: flex; justify-content: space-between; align-items: end; gap: 30px; padding-bottom: 32px; border-bottom: 1px solid #c8beaf; }
+.admin-custom-page header span { color: #a8522e; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .13em; }
+.admin-custom-page h1 { margin: 8px 0; color: #292823; font-size: clamp(2.2rem,4vw,4rem); }
+.admin-custom-page header p { color: #766e63; }
+.admin-custom-page nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-custom-page nav a { padding: 9px 11px; color: #514b43; font-size: .74rem; font-weight: 700; text-decoration: none; }
+.admin-custom-list { display: grid; gap: 18px; margin-top: 32px; }
+.admin-custom-list article { padding: 25px; background: #faf8f3; border: 1px solid #d5ccbf; }
+.admin-custom-card-head { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
+.admin-custom-card-head span { color: #9b4f31; font-size: .65rem; letter-spacing: .1em; }
+.admin-custom-card-head h2 { margin: 5px 0 0; color: #292823; font-size: 1.4rem; }
+.admin-custom-card-head select { padding: 9px 12px; border: 1px solid #bfb4a5; background: #eee9df; color: #292823; font-weight: 700; }
+.admin-custom-config { display: grid; grid-template-columns: repeat(3,1fr); margin: 20px 0; border-block: 1px solid #ded6ca; }
+.admin-custom-config span { padding: 13px 0; font-weight: 700; }
+.admin-custom-config small { display: block; margin-bottom: 3px; color: #8c8377; text-transform: uppercase; letter-spacing: .08em; }
+.admin-custom-contact { display: grid; grid-template-columns: minmax(180px,.6fr) 1.4fr; gap: 30px; }
+.admin-custom-contact > div { display: flex; flex-direction: column; gap: 3px; }
+.admin-custom-contact a { color: #a8522e; text-decoration: none; }
+.admin-custom-contact p { color: #6e675d; line-height: 1.6; }
+.admin-custom-photos { display: grid; grid-template-columns: repeat(4,100px); gap: 8px; margin-top: 18px; }
+.admin-custom-photos img { width: 100px; height: 100px; object-fit: cover; }
+.admin-custom-error { margin-top: 22px; padding: 12px; background: #fff0ec; color: #8e2f1d; }
+.admin-custom-empty { margin-top: 35px; padding: 65px 20px; border: 1px dashed #bdb2a3; text-align: center; color: #746c62; }
+@media (max-width:650px) {
+  .admin-custom-page > header,.admin-custom-card-head { align-items: flex-start; flex-direction: column; }
+  .admin-custom-config,.admin-custom-contact { grid-template-columns:1fr; }
+  .admin-custom-photos { grid-template-columns:repeat(2,1fr); }
+  .admin-custom-photos img { width:100%; height:auto; aspect-ratio:1; }
+}

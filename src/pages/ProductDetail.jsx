@@ -7,6 +7,7 @@ import { formatPrice, companyInitials } from '../utils/format'
 import ProductCard from '../components/ProductCard'
 import Breadcrumb from '../components/Breadcrumb'
 import EmptyState from '../components/EmptyState'
+import ProductCustomizer from '../components/ProductCustomizer'
 import '../styles/ProductDetail.css'
 
 export default function ProductDetail() {
@@ -19,6 +20,12 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1)
   const [inquiryOpen, setInquiryOpen] = useState(false)
   const [inquiryMessage, setInquiryMessage] = useState('')
+  const [configuration, setConfiguration] = useState({
+    size: 'Estándar',
+    color: 'Negro mate',
+    finish: 'Pintura al horno',
+  })
+  const [customizerOpen, setCustomizerOpen] = useState(false)
 
   const product = useMemo(() => {
     return productList.find((p) => p.id === Number(id))
@@ -160,6 +167,42 @@ export default function ProductDetail() {
               </div>
             </div>
 
+            <div className="product-configuration">
+              <div className="product-configuration-heading">
+                <h3>Configurá tu pieza</h3>
+                <span>El precio final puede variar según las opciones.</span>
+              </div>
+              <div className="product-option-grid">
+                <label>
+                  <span>Medida</span>
+                  <select value={configuration.size} onChange={(event) => setConfiguration((previous) => ({ ...previous, size: event.target.value }))}>
+                    <option>Estándar</option>
+                    <option>Compacta</option>
+                    <option>Grande</option>
+                    <option>A medida</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Color</span>
+                  <select value={configuration.color} onChange={(event) => setConfiguration((previous) => ({ ...previous, color: event.target.value }))}>
+                    <option>Negro mate</option>
+                    <option>Blanco cálido</option>
+                    <option>Óxido natural</option>
+                    <option>Personalizado</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Terminación</span>
+                  <select value={configuration.finish} onChange={(event) => setConfiguration((previous) => ({ ...previous, finish: event.target.value }))}>
+                    <option>Pintura al horno</option>
+                    <option>Metal natural protegido</option>
+                    <option>Texturada</option>
+                    <option>A definir</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
             {/* Specs */}
             <div className="product-detail-specs">
               <h3 className="specs-title">Especificaciones</h3>
@@ -228,10 +271,13 @@ export default function ProductDetail() {
                 </button>
               )}
               <button
-                className={`btn-secondary${isOutOfStock ? ' btn-secondary--full' : ''}`}
-                onClick={() => setInquiryOpen(!inquiryOpen)}
+                className="btn-secondary product-customize-button"
+                onClick={() => setCustomizerOpen(true)}
               >
-                {isOutOfStock ? 'Sin stock - Consultar disponibilidad' : 'Realizar consulta'}
+                Personalizar este producto
+              </button>
+              <button className="product-simple-inquiry" onClick={() => setInquiryOpen(!inquiryOpen)}>
+                {isOutOfStock ? 'Consultar disponibilidad' : 'Tengo una consulta'}
               </button>
             </div>
 
@@ -274,6 +320,13 @@ export default function ProductDetail() {
           </div>
         )}
       </div>
+      {customizerOpen && (
+        <ProductCustomizer
+          product={product}
+          configuration={configuration}
+          onClose={() => setCustomizerOpen(false)}
+        />
+      )}
     </section>
   )
 }

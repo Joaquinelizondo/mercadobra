@@ -31,6 +31,27 @@ function mapProviderRow(row) {
   }
 }
 
+function mapCustomRequestRow(row) {
+  return {
+    id: Number(row.id),
+    productId: Number(row.product_id ?? row.productId),
+    productName: row.product_name ?? row.productName,
+    name: row.customer_name ?? row.name,
+    email: row.email,
+    phone: row.phone,
+    zone: row.zone,
+    configuration: {
+      size: row.size,
+      color: row.color,
+      finish: row.finish,
+    },
+    message: row.message || '',
+    photos: Array.isArray(row.photos) ? row.photos : [],
+    status: row.status || 'new',
+    createdAt: row.created_at ?? row.createdAt,
+  }
+}
+
 function mapUserRow(row) {
   const rawProviderId = row.provider_id ?? row.providerId
   return {
@@ -306,6 +327,32 @@ async function getJsonRepo() {
           .filter((log) => Number(log.orderId) === Number(order.id))
           .sort((a, b) => Number(b.id) - Number(a.id))[0] || null,
       }
+    },
+    async createCustomRequest(payload) {
+      const db = readDb()
+      if (!Array.isArray(db.customRequests)) db.customRequests = []
+      const created = {
+        ...payload,
+        id: nextId(db.customRequests),
+        status: 'new',
+        createdAt: new Date().toISOString(),
+      }
+      db.customRequests.unshift(created)
+      writeDb(db)
+      return created
+    },
+    async getCustomRequests() {
+      const db = readDb()
+      return Array.isArray(db.customRequests) ? db.customRequests : []
+    },
+    async updateCustomRequestStatus(id, status) {
+      const db = readDb()
+      if (!Array.isArray(db.customRequests)) return null
+      const index = db.customRequests.findIndex((item) => Number(item.id) === Number(id))
+      if (index === -1) return null
+      db.customRequests[index] = { ...db.customRequests[index], status }
+      writeDb(db)
+      return db.customRequests[index]
     },
     async createLead(payload) {
       const db = readDb()
@@ -747,6 +794,39 @@ async function getPgRepo() {
           ? mapNotificationLogRow(latestNotificationResult.rows[0])
           : null,
       }
+    },
+    async createCustomRequest(payload) {
+      const { rows } = await pool.query(
+        `INSERT INTO custom_requests
+          (product_id, product_name, customer_name, email, phone, zone, size, color, finish, message, photos)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+         RETURNING *`,
+        [
+          payload.productId,
+          payload.productName,
+          payload.name,
+          payload.email,
+          payload.phone,
+          payload.zone,
+          payload.configuration.size,
+          payload.configuration.color,
+          payload.configuration.finish,
+          payload.message || '',
+          JSON.stringify(payload.photos || []),
+        ]
+      )
+      return mapCustomRequestRow(rows[0])
+    },
+    async getCustomRequests() {
+      const { rows } = await pool.query('SELECT * FROM custom_requests ORDER BY created_at DESC')
+      return rows.map(mapCustomRequestRow)
+    },
+    async updateCustomRequestStatus(id, status) {
+      const { rows } = await pool.query(
+        'UPDATE custom_requests SET status = $1 WHERE id = $2 RETURNING *',
+        [status, Number(id)]
+      )
+      return rows[0] ? mapCustomRequestRow(rows[0]) : null
     },
     async createLead(payload) {
       const { rows } = await pool.query(

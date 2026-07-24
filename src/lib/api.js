@@ -171,6 +171,25 @@ export function createLead(payload) {
   })
 }
 
+export function createCustomRequest(payload) {
+  return request('/custom-requests', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getAdminCustomRequests(token) {
+  return request('/admin/custom-requests', { token })
+}
+
+export function updateAdminCustomRequest(id, status, token) {
+  return request(`/admin/custom-requests/${id}`, {
+    method: 'PATCH',
+    token,
+    body: JSON.stringify({ status }),
+  })
+}
+
 export function createSearchContact(payload) {
   return request('/search-contacts', {
     method: 'POST',
