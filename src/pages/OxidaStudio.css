@@ -31,6 +31,9 @@
 .oxida-hero-intro { color:rgba(241,238,229,.68); max-width:490px; font-size:clamp(.95rem,1.2vw,1.15rem); line-height:1.65; margin:42px 0 38px; }
 .oxida-arrow-link { width:max-content; color:#f1eee5; text-decoration:none; text-transform:uppercase; font-size:.7rem; letter-spacing:.16em; padding-bottom:10px; border-bottom:1px solid #bf6a43; display:flex; gap:35px; align-items:center; }
 .oxida-arrow-link span { font-size:1.3rem; color:#bf6a43; }
+.oxida-hero-actions { display:flex; align-items:center; flex-wrap:wrap; gap:26px; }
+.oxida-hero-custom-link { color:rgba(241,238,229,.62); text-decoration:none; text-transform:uppercase; font-size:.66rem; letter-spacing:.13em; transition:color .2s; }
+.oxida-hero-custom-link:hover { color:#f1eee5; }
 .oxida-scroll-note { position:absolute; right:24px; bottom:42px; font-size:.55rem; letter-spacing:.2em; writing-mode:vertical-rl; color:rgba(255,255,255,.4); }
 
 .oxida-manifesto { padding:clamp(90px,14vw,210px) clamp(24px,9vw,140px); background:#e8e5dc; display:grid; grid-template-columns:220px 1fr; gap:30px; }
@@ -38,6 +41,24 @@
 .oxida-manifesto h2,.oxida-section-heading h2,.oxida-quote h2 { font:500 clamp(2.7rem,6vw,6.8rem)/.97 'Manrope',sans-serif; letter-spacing:-.065em; color:#1c1c19; margin:0; }
 .oxida-manifesto h2 span,.oxida-section-heading h2 span,.oxida-quote h2 span { color:#ae552e; font-family:Georgia,serif; font-weight:400; font-style:italic; }
 .oxida-manifesto > p:last-child { grid-column:2; max-width:590px; font-size:1rem; line-height:1.75; color:#65635c; margin:45px 0 0 auto; }
+
+.oxida-shop { padding:clamp(90px,11vw,160px) clamp(24px,6vw,90px); background:#dcd7cc; }
+.oxida-shop-heading { display:grid; grid-template-columns:1fr minmax(270px,420px); align-items:end; gap:55px; margin-bottom:65px; }
+.oxida-shop-heading h2 { margin:14px 0 0; color:#1c1c19; font:500 clamp(2.7rem,6vw,6.5rem)/.95 'Manrope',sans-serif; letter-spacing:-.065em; }
+.oxida-shop-heading h2 span { color:#ae552e; font-family:Georgia,serif; font-weight:400; font-style:italic; }
+.oxida-shop-heading > div:last-child p { color:#65635c; line-height:1.7; font-size:.9rem; }
+.oxida-shop-heading a { display:inline-block; margin-top:25px; padding-bottom:7px; border-bottom:1px solid #ae552e; color:#1c1c19; font-size:.68rem; font-weight:700; text-decoration:none; text-transform:uppercase; letter-spacing:.13em; }
+.oxida-shop-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:22px; }
+.oxida-shop .product-card { border:0; border-radius:0; background:#eeeae0; box-shadow:none; }
+.oxida-shop .product-card:hover { transform:translateY(-5px); box-shadow:0 22px 40px rgba(44,31,22,.14); }
+.oxida-shop .product-img { height:320px; border-radius:0; }
+.oxida-shop .product-body { padding:20px; }
+.oxida-shop .product-name { color:#1c1c19; font:600 1.1rem 'Manrope',sans-serif; }
+.oxida-shop .product-desc { color:#6e6a61; font-size:.78rem; }
+.oxida-shop .price-amount { color:#1c1c19; }
+.oxida-shop .add-to-cart-btn { border-radius:0; background:#1c1c19; color:#eeeae0; }
+.oxida-shop .product-category-tag { border-radius:0; background:#eeeae0; color:#1c1c19; }
+.oxida-shop-loading { color:#65635c; }
 
 .oxida-projects { background:#262622; color:#e8e5dc; padding:clamp(90px,11vw,170px) clamp(24px,6vw,90px); }
 .oxida-section-heading { display:grid; grid-template-columns:1fr minmax(250px,400px); align-items:end; gap:50px; margin-bottom:80px; }
@@ -119,6 +140,9 @@
   .oxida-hero-intro { margin-top:30px; }
   .oxida-manifesto { grid-template-columns:1fr; padding:90px 24px; }
   .oxida-manifesto > p:last-child { grid-column:auto; margin:30px 0 0; }
+  .oxida-shop { padding:90px 20px; }
+  .oxida-shop-heading { grid-template-columns:1fr; margin-bottom:45px; }
+  .oxida-shop-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .oxida-section-heading { grid-template-columns:1fr; margin-bottom:50px; }
   .oxida-section-heading > p { margin-top:8px; }
   .oxida-projects,.oxida-process { padding:90px 20px; }
@@ -137,4 +161,9 @@
   .oxida-brand-signoff { flex-direction:column; align-items:flex-start; min-height:280px; }
   .oxida-signoff-logo { width:min(330px,100%); }
   .oxida-signoff-by { align-items:flex-start; }
+}
+
+@media (max-width: 520px) {
+  .oxida-shop-grid { grid-template-columns:1fr; }
+  .oxida-shop .product-img { height:360px; }
 }
