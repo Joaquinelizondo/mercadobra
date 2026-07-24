@@ -34,7 +34,12 @@ export function ProductProvider({ children }) {
     setProductError('')
     try {
       const products = await getProducts()
-      setProductList(products.map(normalizeProduct))
+      const remoteProducts = products.map(normalizeProduct)
+      const remoteNames = new Set(remoteProducts.map((product) => product.name.trim().toLowerCase()))
+      const oxidaCollection = INITIAL_PRODUCTS
+        .filter((product) => !remoteNames.has(product.name.trim().toLowerCase()))
+        .map(normalizeProduct)
+      setProductList([...oxidaCollection, ...remoteProducts])
       setUsingFallback(false)
     } catch (error) {
       setProductList(INITIAL_PRODUCTS.map(normalizeProduct))
