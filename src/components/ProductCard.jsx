@@ -20,6 +20,7 @@ export default function ProductCard({
   const inWishlist = isInWishlist(product.id)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
   const [addFeedback, setAddFeedback] = useState('')
+  const coverImage = product.images?.[0]?.url || product.image || ''
 
   function handleCardClick() {
     navigate(`/producto/${product.id}`)
@@ -62,7 +63,8 @@ export default function ProductCard({
       style={{ cursor: 'pointer' }}
       aria-label={`Ver detalle de ${product.name}`}
     >
-      <div className="product-img" style={{ '--product-color': product.color }} aria-hidden="true">
+      <div className={`product-img${coverImage ? ' product-img--photo' : ''}`} style={{ '--product-color': product.color }}>
+        {coverImage && <img src={coverImage} alt={product.images?.[0]?.alt || product.name} />}
         {onToggleCompare && (
           <button
             type="button"

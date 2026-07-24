@@ -1,0 +1,29 @@
+.admin-store { min-height: 75vh; padding: clamp(26px, 5vw, 64px); border-radius: 28px; background: #f3efe6; color: #292823; }
+.admin-store-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-bottom: 24px; border-bottom: 1px solid #cec6b9; }
+.admin-store-brand { display: flex; align-items: center; gap: 18px; }
+.admin-store-brand .oxida-wordmark { width: 120px; color: #292823; }
+.admin-store-brand .oxida-wordmark-name { font-size: 1.45rem; }
+.admin-store-brand .oxida-wordmark-studio { font-size: .5rem; }
+.admin-store-brand > span { padding-left: 18px; border-left: 1px solid #bdb4a6; color: #746c61; font-size: .75rem; text-transform: uppercase; letter-spacing: .12em; }
+.admin-store-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.admin-store-link { padding: 9px 12px; border: 0; background: transparent; color: #514c45; font: 700 .75rem inherit; text-decoration: none; cursor: pointer; }
+.admin-store-title { display: flex; justify-content: space-between; align-items: end; gap: 24px; padding: 54px 0 36px; }
+.admin-store-title p { color: #a8522e; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; }
+.admin-store-title h1 { margin: 8px 0; color: #292823; font-size: clamp(2.6rem, 5vw, 4.6rem); }
+.admin-store-title > div > span { color: #7a7369; font-size: .85rem; }
+.admin-store-create { display: inline-flex; align-items: center; gap: 8px; padding: 14px 20px; border: 0; border-radius: 3px; background: #292823; color: #f4f0e8; font-weight: 800; cursor: pointer; }
+.admin-store-create span { color: #c7764e; font-size: 1.2rem; }
+.admin-store-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.admin-store-error { margin-bottom: 20px; padding: 12px 16px; border: 1px solid #c95f48; background: #fff2ee; color: #8b2f20; border-radius: 8px; }
+.admin-store-empty { padding: 70px 20px; border: 1px dashed #b9afa0; text-align: center; color: #746c61; }
+.admin-store-empty h2 { color: #292823; }
+.admin-store-empty .admin-store-create { margin-top: 24px; }
+@media (max-width: 820px) {
+  .admin-store-header, .admin-store-title { align-items: flex-start; flex-direction: column; }
+  .admin-store-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .admin-store { padding: 24px 18px; border-radius: 18px; }
+  .admin-store-brand > span { display: none; }
+  .admin-store-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,5 @@
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS images JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+ALTER TABLE products
+ALTER COLUMN provider_id DROP NOT NULL;

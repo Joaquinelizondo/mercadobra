@@ -1,3 +1,3 @@
-export const CATALOG_CATEGORIES = ['Todos', 'Hormigón', 'Hierro', 'Terminaciones', 'Herramientas']
-export const UNIT_OPTIONS = ['bolsa', 'm²', 'm³', 'barra', 'paño', 'unidad', 'juego', 'rollo', 'kit', 'par', 'litro', 'balde']
-export const CATEGORY_OPTIONS = ['Hormigón', 'Hierro', 'Terminaciones', 'Herramientas']
+export const CATALOG_CATEGORIES = ['Todos', 'Mobiliario', 'Escaleras y barandas', 'Fachadas y divisores', 'Estructuras']
+export const UNIT_OPTIONS = ['unidad', 'juego', 'm²', 'metro', 'proyecto']
+export const CATEGORY_OPTIONS = ['Mobiliario', 'Escaleras y barandas', 'Fachadas y divisores', 'Estructuras', 'Otro']

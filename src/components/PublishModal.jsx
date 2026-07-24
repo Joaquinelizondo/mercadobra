@@ -1,28 +1,40 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useProducts } from '../context/ProductContext'
 import { companyInitials } from '../utils/format'
 import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../data/constants'
 
-const EMPTY_FORM = { name: '', category: 'Hormigón', price: '', currency: 'UYU', unit: 'bolsa', stock: '0', description: '' }
+const EMPTY_FORM = { name: '', category: 'Mobiliario', price: '', currency: 'UYU', unit: 'unidad', stock: '0', description: '', images: [] }
 
 export default function PublishModal({ onClose, onPublished, initialFormData = null }) {
-  const { supplierUser, token } = useAuth()
+  const { supplierUser, token, adminUser, adminToken } = useAuth()
   const { addProduct, editProduct } = useProducts()
   const [formData, setFormData] = useState(() => ({ ...EMPTY_FORM, ...(initialFormData || {}) }))
   const [formSuccess, setFormSuccess] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const isEditMode = Boolean(initialFormData?.id)
-
-  useEffect(() => {
-    if (initialFormData) {
-      setFormData({ ...EMPTY_FORM, ...initialFormData })
-    }
-  }, [initialFormData])
+  const publisher = supplierUser || (adminUser ? { company: 'Oxida Studio', providerId: null } : null)
+  const publisherToken = supplierUser ? token : adminToken
 
   function handleChange(e) {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  function handleImages(event) {
+    const files = Array.from(event.target.files || []).slice(0, 5)
+    if (files.some((file) => file.size > 2 * 1024 * 1024)) {
+      setSubmitError('Cada imagen debe pesar menos de 2 MB.')
+      event.target.value = ''
+      return
+    }
+    setSubmitError('')
+    Promise.all(files.map((file) => new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve({ url: reader.result, alt: formData.name || file.name })
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    }))).then((images) => setFormData((previous) => ({ ...previous, images })))
   }
 
   async function handleSubmit(e) {
@@ -32,8 +44,8 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
 
     try {
       const savedProduct = isEditMode
-        ? await editProduct(initialFormData.id, formData, supplierUser, token)
-        : await addProduct(formData, supplierUser, token)
+        ? await editProduct(initialFormData.id, { ...formData, company: publisher?.company }, publisher, publisherToken)
+        : await addProduct({ ...formData, company: publisher?.company }, publisher, publisherToken)
       setFormSuccess(true)
       setTimeout(() => {
         setFormData(EMPTY_FORM)
@@ -74,9 +86,9 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
               <label className="form-label">Empresa proveedora</label>
               <div className="form-locked">
                 <span className="form-locked-avatar">
-                  {supplierUser && companyInitials(supplierUser.company)}
+                  {publisher && companyInitials(publisher.company)}
                 </span>
-                <span className="form-locked-name">{supplierUser?.company}</span>
+                <span className="form-locked-name">{publisher?.company}</span>
                 <span className="form-locked-tag">Tu cuenta</span>
               </div>
             </div>
@@ -151,6 +163,25 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
                 onChange={handleChange}
                 placeholder="Ej: 100"
               />
+            </div>
+
+            <div className="form-row">
+              <label className="form-label" htmlFor="pub-images">Fotos del producto</label>
+              <label className="product-photo-picker" htmlFor="pub-images">
+                <strong>Subir fotos</strong>
+                <span>Hasta 5 imágenes JPG, PNG o WEBP (máx. 2 MB). La primera será la portada.</span>
+              </label>
+              <input id="pub-images" className="product-photo-input" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleImages} />
+              {formData.images?.length > 0 && (
+                <div className="product-photo-preview">
+                  {formData.images.map((image, index) => (
+                    <div key={`${image.url.slice(0, 30)}-${index}`}>
+                      <img src={image.url} alt={image.alt || `Vista previa ${index + 1}`} />
+                      {index === 0 && <span>Portada</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="form-row">

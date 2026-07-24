@@ -66,6 +66,15 @@
   flex: 1 1 auto;
 }
 
+.store-nav-brand { display: block; width: 132px; text-decoration: none; }
+.store-nav-brand .oxida-wordmark-name { font-size: 1.45rem; color: #23231f; }
+.store-nav-brand .oxida-wordmark-studio { font-size: .55rem; color: #23231f; }
+.store-nav-brand .oxida-wordmark-line { color: #23231f; margin-block: .08em .15em; }
+.admin-login-oxida { display: block; width: 180px; margin: 0 auto 24px; text-decoration: none; }
+.admin-login-oxida .oxida-wordmark { color: #292823; }
+.admin-login-oxida .oxida-wordmark-name { font-size: 2.1rem; }
+.admin-login-oxida .oxida-wordmark-studio { font-size: .72rem; }
+
 .brand-logo {
   width: min(300px, 46vw);
   max-width: 100%;
@@ -2535,12 +2544,37 @@
 
 .product-img {
   position: relative;
-  height: 120px;
+  height: 250px;
   background: linear-gradient(135deg, color-mix(in srgb, var(--product-color) 60%, #fff), color-mix(in srgb, var(--product-color) 90%, #000));
   display: flex;
   align-items: flex-end;
   padding: 12px;
 }
+
+.product-img--photo {
+  background: #ddd7cc;
+  overflow: hidden;
+}
+
+.product-img--photo > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .45s ease;
+}
+
+.product-card:hover .product-img--photo > img {
+  transform: scale(1.035);
+}
+
+.product-photo-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.product-photo-picker { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 22px; border: 1px dashed #a8522e; border-radius: 10px; background: #f5efe6; color: #292823; cursor: pointer; text-align: center; }
+.product-photo-picker span { color: #766f66; font-size: .76rem; }
+.product-photo-preview { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
+.product-photo-preview > div { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 6px; background: #ddd; }
+.product-photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.product-photo-preview span { position: absolute; left: 4px; bottom: 4px; padding: 2px 5px; background: #222; color: #fff; border-radius: 3px; font-size: .6rem; }
 .product-compare-toggle {
   position: absolute;
   top: 8px;

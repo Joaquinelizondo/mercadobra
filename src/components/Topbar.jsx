@@ -3,10 +3,10 @@ import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { companyInitials } from '../utils/format'
-import logoImg from '../assets/mercadobra.png'
+import OxidaWordmark from './OxidaWordmark'
 
 export default function Topbar() {
-  const { supplierUser, logout, customerUser, logoutCustomer } = useAuth()
+  const { supplierUser, logout, customerUser, logoutCustomer, adminUser } = useAuth()
   const { cartCount, setCartOpen } = useCart()
   const { wishlist } = useWishlist()
   const homeHash = (sectionId) => `${import.meta.env.BASE_URL}#${sectionId}`
@@ -14,19 +14,17 @@ export default function Topbar() {
   return (
     <header className="topbar">
       <div className="brand-wrap">
-        <Link to="/">
-          <img src={logoImg} className="brand-logo" alt="MercadObra" />
+        <Link to="/" className="store-nav-brand" aria-label="Oxida Studio, inicio">
+          <OxidaWordmark />
         </Link>
       </div>
 
       <nav className="topbar-menu" aria-label="Navegación principal">
-        <a href={homeHash('inicio')}>Inicio</a>
-        <a href={homeHash('categorias')}>Categorías</a>
-        <Link to="/explorar">Ver todo</Link>
-        <Link to="/oxida" className="topbar-oxida-link"><span>Oxida</span><small>Studio</small></Link>
-        <a href={homeHash('como-funciona')}>Cómo va</a>
-        <Link to="/admin/login">Admin</Link>
-        <a href={homeHash('contacto')}>Contacto</a>
+        <Link to="/explorar">Tienda</Link>
+        <a href={homeHash('categorias')}>Colecciones</a>
+        <Link to="/oxida">A medida</Link>
+        <a href={homeHash('como-funciona')}>El estudio</a>
+        {adminUser && <Link to="/admin/productos">Administrar tienda</Link>}
       </nav>
 
       <div className="topbar-actions">
@@ -84,7 +82,7 @@ export default function Topbar() {
         ) : (
           <>
             <Link to="/cliente/login" className="topbar-user-login-btn">
-              Quiero comprar
+              Mi cuenta
             </Link>
             <Link to="/proveedor/login" className="topbar-login-btn">
               Soy proveedor

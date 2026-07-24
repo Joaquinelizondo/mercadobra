@@ -14,6 +14,8 @@ import OrderTracking from './pages/OrderTracking'
 import AdminQuoteConsultations from './pages/AdminQuoteConsultations'
 import NotFound from './pages/NotFound'
 import OxidaStudio from './pages/OxidaStudio'
+import Storefront from './pages/Storefront'
+import AdminProducts from './pages/AdminProducts'
 import { useState } from 'react'
 import heroImg from './assets/hero.png'
 import logoImg from './assets/mercadobra.png'
@@ -851,7 +853,8 @@ export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<Storefront />} />
+        <Route path="/mercadobra" element={<Landing />} />
         <Route path="/oxida" element={<OxidaStudio />} />
         <Route path="/explorar" element={<Catalog />} />
         <Route path="/producto/:id" element={<ProductDetail />} />
@@ -860,6 +863,7 @@ export default function App() {
         <Route path="/cliente/login" element={<CustomerLogin />} />
         <Route path="/cliente/registro" element={<CustomerRegister />} />
         <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/productos" element={<AdminProducts />} />
         <Route path="/proveedor/login" element={<SupplierLogin />} />
         <Route path="/proveedor" element={<SupplierDashboard />} />
         <Route path="/seguimiento/:trackingToken" element={<OrderTracking />} />

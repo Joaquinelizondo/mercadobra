@@ -47,7 +47,7 @@ function parsePageParam(value) {
 }
 
 export default function Catalog() {
-  const { supplierUser } = useAuth()
+  const { supplierUser, adminUser } = useAuth()
   const { addToCart, setCartOpen, cartItems, clearCart } = useCart()
   const { productList, loadingProducts } = useProducts()
     // Handler para enviar la cotización grupal (simulado)
@@ -192,7 +192,7 @@ export default function Catalog() {
   }, [hasMoreInInfinite, currentPage, updateSearchParams])
 
   function handlePublishClick() {
-    if (!supplierUser) {
+    if (!supplierUser && !adminUser) {
       navigate('/proveedor/login?redirect=/explorar')
     } else {
       setPublishOpen(true)
@@ -237,8 +237,8 @@ export default function Catalog() {
       <section className="section catalog-section" id="explorar">
         <div className="catalog-section-heading">
           <div className="section-heading" style={{ flex: 1 }}>
-            <span className="eyebrow">Catálogo de productos</span>
-            <h2>Explorá materiales, herramientas y mucho más.</h2>
+            <span className="eyebrow">Colección Oxida</span>
+            <h2>Diseños base para comprar o adaptar.</h2>
             <p className="catalog-meta">
               {filteredProducts.length} resultado{filteredProducts.length === 1 ? '' : 's'}
               {searchQuery ? ` para "${searchQuery}"` : ''}

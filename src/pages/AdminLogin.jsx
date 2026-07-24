@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import logoImg from '../assets/mercadobra.png'
+import OxidaWordmark from '../components/OxidaWordmark'
 
 export default function AdminLogin() {
   const { adminUser, loginAdmin, adminAuthError, adminAuthLoading } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/admin/cotizaciones'
+  const redirect = searchParams.get('redirect') || '/admin/productos'
 
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
@@ -37,8 +37,8 @@ export default function AdminLogin() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <Link to="/">
-          <img src={logoImg} className="login-logo" alt="MercadObra" />
+        <Link to="/" className="admin-login-oxida">
+          <OxidaWordmark />
         </Link>
 
         <div className="login-card-header">
@@ -47,8 +47,8 @@ export default function AdminLogin() {
               <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.33 0-8 2.67-8 4v1h16v-1c0-1.33-2.67-4-8-4Z" fill="currentColor"/>
             </svg>
           </div>
-          <h1>Panel admin de cotizaciones</h1>
-          <p>Entrá con usuario admin para ver la tabla completa y filtrar por fecha, tipo y origen.</p>
+          <h1>Administrá tu tienda Oxida</h1>
+          <p>Cargá productos, fotos, precios y disponibilidad desde un único lugar.</p>
         </div>
 
         <form className="publish-form" onSubmit={handleSubmit} noValidate>

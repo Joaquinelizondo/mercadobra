@@ -15,6 +15,11 @@ function normalizeProduct(product) {
     stock: Number(
       product.stock ?? (FALLBACK_OUT_OF_STOCK_IDS.has(Number(product.id)) ? 0 : 20)
     ),
+    images: Array.isArray(product.images)
+      ? product.images
+      : product.image
+        ? [{ url: product.image, alt: product.name }]
+        : [],
   }
 }
 
@@ -45,7 +50,10 @@ export function ProductProvider({ children }) {
   }, [])
 
   async function addProduct(formData, supplierUser, token = '') {
-    const providerId = Number(supplierUser?.providerId || formData.providerId || 0)
+    const rawProviderId = supplierUser?.providerId ?? formData.providerId
+    const providerId = rawProviderId === null || rawProviderId === undefined || rawProviderId === ''
+      ? null
+      : Number(rawProviderId)
     const company = supplierUser?.company || formData.company || ''
 
     const payload = {
@@ -58,6 +66,7 @@ export function ProductProvider({ children }) {
       currency: String(formData.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
       unit: formData.unit,
       stock: Number(formData.stock ?? 0),
+      images: Array.isArray(formData.images) ? formData.images : [],
       color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
     }
 
@@ -98,11 +107,17 @@ export function ProductProvider({ children }) {
       description: String(formData.description || '').trim(),
       category: formData.category,
       company: supplierUser?.company || formData.company || '',
-      providerId: Number(supplierUser?.providerId || formData.providerId || 0),
+      providerId: (() => {
+        const rawProviderId = supplierUser?.providerId ?? formData.providerId
+        return rawProviderId === null || rawProviderId === undefined || rawProviderId === ''
+          ? null
+          : Number(rawProviderId)
+      })(),
       price: Number(formData.price),
       currency: String(formData.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
       unit: formData.unit,
       stock: Number(formData.stock ?? 0),
+      images: Array.isArray(formData.images) ? formData.images : [],
     }
 
     try {

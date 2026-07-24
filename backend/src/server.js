@@ -69,7 +69,7 @@ setupSecurityMiddleware(app)
 app.use(cors(createCorsMiddleware({ allowedOrigins, credentials: false })))
 
 // 3. Body parser
-app.use(express.json({ limit: '10kb' })) // Limita tamaño de payload
+app.use(express.json({ limit: '12mb' })) // Permite galerías de hasta cinco imágenes optimizadas
 
 // 4. Validar Content-Type en mutaciones
 app.use(validateJsonContentType)
@@ -325,7 +325,8 @@ app.post('/products', authMiddleware, (req, res, next) => {
     currency: normalizedCurrency,
     unit: body.unit,
     stock: Number(body.stock ?? 0),
-    color: body.color || '#ea580c'
+    color: body.color || '#ea580c',
+    images: Array.isArray(body.images) ? body.images.slice(0, 5) : []
   })
 
   return res.status(201).json({
@@ -347,7 +348,10 @@ app.patch('/products/:id', authMiddleware, providerOnly, async (req, res) => {
     return res.status(404).json({ message: 'Producto no encontrado' })
   }
 
-  if (Number(existing.providerId) !== Number(req.authUser.providerId)) {
+  if (
+    req.authUser.role === 'provider' &&
+    Number(existing.providerId) !== Number(req.authUser.providerId)
+  ) {
     return res.status(403).json({ message: 'No podés editar productos de otro proveedor' })
   }
 
@@ -364,7 +368,10 @@ app.delete('/products/:id', authMiddleware, providerOnly, async (req, res) => {
     return res.status(404).json({ message: 'Producto no encontrado' })
   }
 
-  if (Number(existing.providerId) !== Number(req.authUser.providerId)) {
+  if (
+    req.authUser.role === 'provider' &&
+    Number(existing.providerId) !== Number(req.authUser.providerId)
+  ) {
     return res.status(403).json({ message: 'No podés eliminar productos de otro proveedor' })
   }
 
