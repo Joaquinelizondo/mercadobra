@@ -9,7 +9,6 @@ import ProductCard from '../components/ProductCard'
 import { createLead, createSearchContact } from '../lib/api'
 import { useSpeechInput } from '../hooks/useSpeechInput'
 import { createWhatsAppLink } from '../utils/whatsapp'
-import GroupQuoteWidget from '../components/GroupQuoteWidget'
 import OxidaSpotlight from '../components/OxidaSpotlight'
 
 const categories = [
@@ -196,32 +195,11 @@ export default function Landing() {
   const [estimatorProject, setEstimatorProject] = useState('pintar')
   const [estimatorArea, setEstimatorArea] = useState(30)
   const [estimatorBudget, setEstimatorBudget] = useState('medio')
-  const [quotedProducts, setQuotedProducts] = useState(() => {
-    try {
-      const stored = localStorage.getItem('quotedProducts')
-      return stored ? JSON.parse(stored) : []
-    } catch {
-      return []
-    }
-  })
   const searchTimerRef = useRef(null)
   // ...resto del código...
   // Definir variables derivadas necesarias para el render
   const featured = useMemo(() => productList.slice(0, 8), [productList])
 
-  // Cruzar productos cotizados con el catálogo
-  const quotedMatches = useMemo(() => {
-    if (!Array.isArray(quotedProducts) || quotedProducts.length === 0) return { found: [], notFound: [] };
-    const found = [];
-    const notFound = [];
-    quotedProducts.forEach(q => {
-      // Búsqueda simple: incluye si el nombre del producto del catálogo contiene el texto cotizado (case-insensitive)
-      const match = productList.find(p => p.name.toLowerCase().includes(q.toLowerCase()));
-      if (match) found.push(match);
-      else notFound.push(q);
-    });
-    return { found, notFound };
-  }, [quotedProducts, productList]);
   const activeTrack = useMemo(() => journeyTracks.find((t) => t.id === activeTrackId) || journeyTracks[0], [activeTrackId])
   const estimatorResult = useMemo(() => {
     const profile = ESTIMATOR_PROFILES[estimatorProject] || ESTIMATOR_PROFILES.pintar
@@ -309,44 +287,6 @@ export default function Landing() {
         {addProductSuccess && typeof getProducts === 'function' && getProducts()}
       <OxidaSpotlight />
 
-      {/* Cotizador grupal premium */}
-
-      <section className="section group-quote-section" id="cotizador-grupal">
-        <GroupQuoteWidget onSuccess={prods => {
-          if (prods && prods.length > 0) {
-            setQuotedProducts(prods)
-            try {
-              localStorage.setItem('quotedProducts', JSON.stringify(prods))
-            } catch {}
-          }
-        }} />
-      </section>
-
-      {/* Productos cotizados arriba de los destacados */}
-      {quotedProducts.length > 0 && (
-        <section className="section quoted-results-section" id="productos-cotizados" style={{maxWidth: 1120, width: '100%', margin: '0 auto 2.5rem auto', background: '#fff7ed', borderRadius: 18, border: '1.5px solid #fb923c', boxShadow: '0 2px 8px 0 rgba(251,146,60,0.07)', padding: '1.5rem 2rem'}}>
-          <h3 style={{color: '#fb923c', fontWeight: 800, fontSize: '1.3rem', marginBottom: 12, textAlign: 'center'}}>Productos cotizados</h3>
-          <>
-            {quotedMatches.found.length > 0 && (
-              <div className="products-grid" style={{marginBottom: 16}}>
-                {quotedMatches.found.map(product => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            )}
-            {quotedMatches.notFound.length > 0 && (
-              <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
-                {quotedMatches.notFound.map((prod, idx) => (
-                  <li key={prod + idx} style={{background: '#fff', borderRadius: 8, marginBottom: 8, padding: '0.7rem 1.1rem', color: '#b45309', fontWeight: 700, fontSize: '1.08em', boxShadow: '0 1px 4px 0 rgba(251,146,60,0.04)'}}>
-                    {prod} <span style={{color:'#e74c3c', fontWeight:400, fontSize:'0.97em'}}>(no disponible en catálogo)</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
-        </section>
-      )}
-
       {/* Productos destacados */}
       <section className="section featured-section" id="featured-results">
         <div className="catalog-section-heading">
@@ -370,7 +310,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Campos de obra destacados debajo del cotizador */}
+      {/* Formulario general de acompañamiento de obra */}
       <section className="section cta-section" id="contacto" ref={leadSectionRef}>
         <span className="eyebrow">Te acompañamos de verdad</span>
         <h2>Contanos tu proyecto y te armamos un plan claro.</h2>

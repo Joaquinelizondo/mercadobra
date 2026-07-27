@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import OxidaWordmark from '../components/OxidaWordmark'
+import OxidaQuoteBuilder from '../components/OxidaQuoteBuilder'
 import ProductCard from '../components/ProductCard'
 import { useProducts } from '../context/ProductContext'
-import { createLead } from '../lib/api'
 import camaImg from '../assets/oxida/cama-hierro.jpeg'
 import casaImg from '../assets/oxida/casa.jpeg'
 import entradaImg from '../assets/oxida/entrada.jpeg'
@@ -21,52 +21,14 @@ const projects = [
   { image: estanteriaImg, type: 'Colección', title: 'Metal, madera y proporción', number: '06', wide: true },
 ]
 
-const categories = ['Mobiliario', 'Escaleras y barandas', 'Fachadas y divisores', 'Estructuras', 'Otro']
-
 export default function OxidaStudio() {
   const { productList, loadingProducts } = useProducts()
-  const [sent, setSent] = useState(false)
-  const [sending, setSending] = useState(false)
-  const [formError, setFormError] = useState('')
   const shopProducts = useMemo(() => {
     const oxidaProducts = productList.filter((product) =>
       product.status === 'published' && String(product.company || '').toLowerCase().includes('oxida')
     )
     return (oxidaProducts.length ? oxidaProducts : productList).slice(0, 6)
   }, [productList])
-
-  async function handleSubmit(event) {
-    event.preventDefault()
-    if (sending) return
-
-    const form = event.currentTarget
-    const data = new FormData(form)
-    setSending(true)
-    setSent(false)
-    setFormError('')
-
-    try {
-      await createLead({
-        name: String(data.get('name') || '').trim(),
-        company: 'Consulta Oxida Studio',
-        email: String(data.get('email') || '').trim(),
-        phone: String(data.get('phone') || '').trim(),
-        zone: '',
-        plan: 'premium',
-        source: 'oxida-studio-form',
-        projectType: String(data.get('category') || 'Otro'),
-        budgetRange: 'A definir',
-        paymentPreference: 'A convenir',
-        message: String(data.get('message') || '').trim(),
-      })
-      setSent(true)
-      form.reset()
-    } catch (error) {
-      setFormError(error.message || 'No pudimos enviar la consulta. Intentá nuevamente.')
-    } finally {
-      setSending(false)
-    }
-  }
 
   return (
     <main className="oxida-site">
@@ -164,41 +126,14 @@ export default function OxidaStudio() {
         </div>
       </section>
 
-      <section className="oxida-quote" id="cotizar">
+      <section className="oxida-quote oxida-quote--builder" id="cotizar">
         <div className="oxida-quote-copy">
-          <p className="oxida-section-number">[ 05 — TU PROYECTO ]</p>
+          <p className="oxida-section-number">[ 05 — COTIZADOR ]</p>
           <h2>Hagamos algo<br /><span>que dure.</span></h2>
-          <p>Dejanos los datos básicos. Te contactamos para entender la idea y preparar el próximo paso.</p>
+          <p>Elegí el tipo de proyecto, definí sus detalles y compartí fotos o referencias. Todo en un único lugar.</p>
           <div className="oxida-response-time"><strong>48h</strong><span>respuesta inicial<br />estimada</span></div>
         </div>
-        <form className="oxida-form" onSubmit={handleSubmit}>
-          <label>
-            <span>Nombre</span>
-            <input name="name" type="text" placeholder="¿Cómo te llamás?" required />
-          </label>
-          <label>
-            <span>Email</span>
-            <input name="email" type="email" placeholder="tu@email.com" required />
-          </label>
-          <label>
-            <span>WhatsApp</span>
-            <input name="phone" type="tel" placeholder="+598 ..." required />
-          </label>
-          <label>
-            <span>¿Qué querés hacer?</span>
-            <select name="category" defaultValue="">
-              <option value="" disabled>Elegí una categoría</option>
-              {categories.map((category) => <option key={category}>{category}</option>)}
-            </select>
-          </label>
-          <label className="is-full">
-            <span>Contanos tu idea</span>
-            <textarea name="message" rows="3" placeholder="Medidas aproximadas, ubicación y cualquier detalle que tengas..." />
-          </label>
-          <button type="submit" disabled={sending}>{sending ? 'Enviando...' : 'Enviar proyecto'} <span>↗</span></button>
-          {sent && <p className="oxida-form-success" role="status">Recibimos tu idea. Te contactaremos para darle forma.</p>}
-          {formError && <p className="oxida-form-error" role="alert">{formError}</p>}
-        </form>
+        <OxidaQuoteBuilder />
       </section>
 
     </main>

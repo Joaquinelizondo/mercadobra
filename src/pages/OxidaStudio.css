@@ -95,6 +95,9 @@
 .oxida-quote h2 span { color:#eeeae0; }
 .oxida-quote-copy > p:not(.oxida-section-number) { max-width:420px; color:rgba(24,24,21,.72); line-height:1.65; }
 .oxida-quote .oxida-section-number { color:#2b2924; }
+.oxida-quote--builder { grid-template-columns:minmax(260px,.72fr) minmax(520px,1.28fr); gap:clamp(45px,7vw,110px); align-items:start; }
+.oxida-quote--builder .oxida-quote-copy { position:sticky; top:110px; }
+.oxida-quote--builder .oxida-builder { box-shadow:0 30px 80px rgba(48,22,12,.2); }
 .oxida-response-time { display:flex; align-items:center; gap:16px; border-top:1px solid rgba(24,24,21,.35); padding-top:25px; margin-top:55px; max-width:300px; }
 .oxida-response-time strong { font:500 2.4rem 'Manrope'; }
 .oxida-response-time span { font-size:.65rem; line-height:1.4; text-transform:uppercase; letter-spacing:.13em; }
@@ -152,7 +155,8 @@
   .oxida-process-list { grid-template-columns:1fr; }
   .oxida-process-list article,.oxida-process-list article:not(:first-child) { min-height:190px; padding:25px 5px; border-right:0; border-bottom:1px solid rgba(255,255,255,.16); }
   .oxida-process-list h3 { margin:35px 0 10px; }
-  .oxida-quote { grid-template-columns:1fr; padding:90px 24px; }
+  .oxida-quote,.oxida-quote--builder { grid-template-columns:1fr; padding:90px 24px; }
+  .oxida-quote--builder .oxida-quote-copy { position:static; }
   .oxida-form { grid-template-columns:1fr; }
   .oxida-form label,.oxida-form label.is-full,.oxida-form button { grid-column:1; }
   .oxida-footer { grid-template-columns:1fr; padding:60px 24px 30px; gap:25px; }

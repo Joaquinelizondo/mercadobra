@@ -1,0 +1,47 @@
+.oxida-builder { --qb-ink:#1d1d1a; --qb-rust:#b65d36; --qb-paper:#e9e5db; width:100%; background:var(--qb-paper); color:var(--qb-ink); font-family:'DM Sans',sans-serif; }
+.oxida-builder-top { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:18px; padding:18px 24px; border-bottom:1px solid rgba(29,29,26,.18); font-size:.62rem; letter-spacing:.13em; text-transform:uppercase; }
+.oxida-builder-top > div { height:2px; background:rgba(29,29,26,.15); }
+.oxida-builder-top i { display:block; height:100%; background:var(--qb-rust); transition:width .35s ease; }
+.oxida-builder-step { padding:clamp(30px,5vw,62px); }
+.oxida-builder-kicker { color:#9e5030; font-size:.63rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; }
+.oxida-builder h3 { margin:12px 0 35px; color:var(--qb-ink); font:500 clamp(2.5rem,5vw,5rem)/.95 'Manrope',sans-serif; letter-spacing:-.06em; }
+.oxida-builder h3 em { color:var(--qb-rust); font-family:Georgia,serif; font-weight:400; }
+.oxida-builder-types { display:grid; grid-template-columns:repeat(2,1fr); border-top:1px solid rgba(29,29,26,.2); }
+.oxida-builder-types button { position:relative; min-height:170px; padding:20px; border:0; border-right:1px solid rgba(29,29,26,.2); border-bottom:1px solid rgba(29,29,26,.2); background:transparent; color:inherit; text-align:left; cursor:pointer; transition:.2s; }
+.oxida-builder-types button:hover,.oxida-builder-types button.is-selected { background:#242420; color:#eee9df; }
+.oxida-builder-types span { color:#a85a38; font:600 .65rem monospace; }
+.oxida-builder-types strong { display:block; margin:22px 0 6px; font:500 1.2rem 'Manrope'; }
+.oxida-builder-types small { display:block; max-width:240px; color:#79736a; line-height:1.45; }
+.oxida-builder-types button:hover small,.oxida-builder-types button.is-selected small { color:#a6a199; }
+.oxida-builder-types b { position:absolute; right:18px; top:18px; color:#b65d36; }
+.oxida-builder-next { display:flex; justify-content:space-between; align-items:center; gap:45px; margin:28px 0 0 auto; padding:14px 18px; border:0; background:#242420; color:#eee9df; font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; }
+.oxida-builder-next:disabled { opacity:.35; cursor:not-allowed; }
+.oxida-builder-next span { color:#c76c43; font-size:1rem; }
+.oxida-builder-fields { display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+.oxida-builder-fields label { display:flex; flex-direction:column; gap:8px; }
+.oxida-builder-fields label.is-wide { grid-column:1/-1; }
+.oxida-builder-fields label > span { font-size:.58rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; }
+.oxida-builder-fields input,.oxida-builder-fields select,.oxida-builder-fields textarea { width:100%; padding:10px 0 13px; border:0; border-bottom:1px solid rgba(29,29,26,.35); border-radius:0; outline:0; background:transparent; color:var(--qb-ink); font:400 .88rem 'DM Sans'; }
+.oxida-builder-fields input:focus,.oxida-builder-fields select:focus,.oxida-builder-fields textarea:focus { border-color:var(--qb-rust); }
+.oxida-builder-nav { display:flex; justify-content:space-between; align-items:end; gap:20px; }
+.oxida-builder-nav > button:first-child { padding:12px 0; border:0; background:transparent; color:#777167; cursor:pointer; }
+.oxida-builder-upload { position:relative; display:grid; place-items:center; gap:5px; margin-top:24px; padding:25px; border:1px dashed #a95a37; text-align:center; cursor:pointer; }
+.oxida-builder-upload > span { color:#b65d36; font-size:1.5rem; }
+.oxida-builder-upload small { color:#777167; }
+.oxida-builder-upload input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+.oxida-builder-previews { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-top:10px; }
+.oxida-builder-previews img { width:100%; aspect-ratio:1; object-fit:cover; }
+.oxida-builder-error { margin-top:12px; color:#8f2f1c; font-size:.75rem; }
+.oxida-builder-success { min-height:540px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:45px; text-align:center; }
+.oxida-builder-success > span { display:grid; place-items:center; width:48px; height:48px; border:1px solid #b65d36; border-radius:50%; color:#b65d36; }
+.oxida-builder-success > p { margin-top:20px; color:#9e5030; font-size:.65rem; letter-spacing:.17em; text-transform:uppercase; }
+.oxida-builder-success h3 { margin:15px 0; }
+.oxida-builder-success small { max-width:420px; color:#746e64; }
+.oxida-builder-success button { margin-top:28px; padding:12px 16px; border:1px solid #292823; background:transparent; cursor:pointer; }
+@media(max-width:600px){
+  .oxida-builder-step { padding:30px 20px; }
+  .oxida-builder-types,.oxida-builder-fields { grid-template-columns:1fr; }
+  .oxida-builder-fields label.is-wide { grid-column:1; }
+  .oxida-builder-top small { display:none; }
+  .oxida-builder-previews { grid-template-columns:repeat(2,1fr); }
+}

@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useProducts } from '../context/ProductContext'
 import ProductCard from '../components/ProductCard'
-import GroupQuoteWidget from '../components/GroupQuoteWidget'
 import PublishModal from '../components/PublishModal'
 import EmptyState from '../components/EmptyState'
 import { SkeletonGrid } from '../components/Skeleton'
@@ -48,14 +47,8 @@ function parsePageParam(value) {
 
 export default function Catalog() {
   const { supplierUser, adminUser } = useAuth()
-  const { addToCart, setCartOpen, cartItems, clearCart } = useCart()
+  const { addToCart, setCartOpen } = useCart()
   const { productList, loadingProducts } = useProducts()
-    // Handler para enviar la cotización grupal (simulado)
-    const handleGroupQuoteSubmit = async (items) => {
-      // Aquí deberías enviar la cotización al backend o mostrar un modal de éxito
-      alert(`Cotización grupal enviada por ${items.length} productos. Pronto te contactaremos.`)
-      clearCart()
-    }
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [publishOpen, setPublishOpen] = useState(false)
@@ -230,10 +223,6 @@ export default function Catalog() {
 
   return (
     <>
-      {/* Cotizador libre premium (único) */}
-      <div style={{ marginBottom: '2.5rem' }}>
-        <GroupQuoteWidget />
-      </div>
       <section className="section catalog-section" id="explorar">
         <div className="catalog-section-heading">
           <div className="section-heading" style={{ flex: 1 }}>
