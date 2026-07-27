@@ -1,6 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
-import Landing from './pages/Landing'
 import Catalog from './pages/Catalog'
 import ProductDetail from './pages/ProductDetail'
 import Wishlist from './pages/Wishlist'
@@ -856,7 +855,7 @@ export default function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Storefront />} />
-        <Route path="/mercadobra" element={<Landing />} />
+        <Route path="/mercadobra" element={<Storefront />} />
         <Route path="/oxida" element={<OxidaStudio />} />
         <Route path="/explorar" element={<Catalog />} />
         <Route path="/producto/:id" element={<ProductDetail />} />

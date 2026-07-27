@@ -32,6 +32,16 @@ export default function OxidaStudio() {
 
   return (
     <main className="oxida-site">
+      <section className="oxida-quote oxida-quote--builder" id="cotizar">
+        <div className="oxida-quote-copy">
+          <p className="oxida-section-number">[ 01 — COTIZADOR ]</p>
+          <h2>Hagamos algo<br /><span>que dure.</span></h2>
+          <p>Elegí el tipo de proyecto, definí sus detalles y compartí fotos o referencias. Todo en un único lugar.</p>
+          <div className="oxida-response-time"><strong>48h</strong><span>respuesta inicial<br />estimada</span></div>
+        </div>
+        <OxidaQuoteBuilder />
+      </section>
+
       <section className="oxida-hero">
         <div className="oxida-hero-media">
           <img src={escaleraImg} alt="Escalera contemporánea de hierro y madera" />
@@ -124,16 +134,6 @@ export default function OxidaStudio() {
           <article><span>03</span><h3>Cotizamos</h3><p>Recibís un alcance claro, precio estimado y plazo de ejecución.</p></article>
           <article><span>04</span><h3>Fabricamos</h3><p>Coordinamos producción, control de calidad e instalación.</p></article>
         </div>
-      </section>
-
-      <section className="oxida-quote oxida-quote--builder" id="cotizar">
-        <div className="oxida-quote-copy">
-          <p className="oxida-section-number">[ 05 — COTIZADOR ]</p>
-          <h2>Hagamos algo<br /><span>que dure.</span></h2>
-          <p>Elegí el tipo de proyecto, definí sus detalles y compartí fotos o referencias. Todo en un único lugar.</p>
-          <div className="oxida-response-time"><strong>48h</strong><span>respuesta inicial<br />estimada</span></div>
-        </div>
-        <OxidaQuoteBuilder />
       </section>
 
     </main>
