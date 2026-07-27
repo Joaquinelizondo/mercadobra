@@ -5,13 +5,6 @@ import { createSearchContact } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import '../styles/MercadoQuoteFinder.css'
 
-const QUICK_IDEAS = [
-  'Estoy haciendo un baño',
-  'Necesito materiales para pintar',
-  'Quiero construir una pared',
-  'Busco herramientas para obra',
-]
-
 const INTENT_TERMS = {
   baño: ['baño', 'sanitario', 'grifería', 'porcelanato', 'revestimiento'],
   pintar: ['pintura', 'rodillo', 'pincel', 'terminaciones'],
@@ -19,6 +12,15 @@ const INTENT_TERMS = {
   techo: ['chapa', 'perfil', 'hierro', 'estructura'],
   herramientas: ['herramienta', 'taladro', 'amoladora', 'seguridad', 'epp'],
   piso: ['piso', 'porcelanato', 'revestimiento', 'adhesivo'],
+}
+
+const CATEGORY_SYMBOLS = {
+  Mobiliario: '▰',
+  Estructuras: '⌂',
+  'Fachadas y divisores': '▥',
+  'Escaleras y barandas': '╱',
+  Herramientas: '✦',
+  Terminaciones: '◫',
 }
 
 function normalize(value) {
@@ -134,14 +136,14 @@ export default function MercadoQuoteFinder() {
       </div>
 
       <form className="mqf-search" onSubmit={prepareQuote}>
-        <label htmlFor="mercado-quote-query">¿Qué estás haciendo?</label>
+        <label htmlFor="mercado-quote-query">Contanos con tus palabras</label>
         <div className="mqf-search-box">
           <textarea
             id="mercado-quote-query"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ej: Estoy renovando un baño de 4 m² y necesito revestimientos, grifería y materiales..."
-            rows="3"
+            placeholder="Ej: Necesito una escalera de hierro para un espacio chico..."
+            rows="2"
           />
           <button type="submit" disabled={loadingProducts}>
             {loadingProducts ? 'Cargando…' : 'Cotizar'} <span>→</span>
@@ -149,7 +151,7 @@ export default function MercadoQuoteFinder() {
         </div>
 
         <div className="mqf-options">
-          <span>O elegí opciones</span>
+          <span>Explorá por categoría</span>
           <div>
             {categories.map((category) => (
               <button
@@ -158,17 +160,12 @@ export default function MercadoQuoteFinder() {
                 className={activeCategories.includes(category) ? 'is-active' : ''}
                 onClick={() => toggleCategory(category)}
               >
-                {category}
+                <i aria-hidden="true">{CATEGORY_SYMBOLS[category] || '◇'}</i>
+                <strong>{category}</strong>
+                <small>{activeCategories.includes(category) ? 'Seleccionada ✓' : 'Elegir →'}</small>
               </button>
             ))}
           </div>
-        </div>
-
-        <div className="mqf-ideas">
-          <span>Ideas rápidas:</span>
-          {QUICK_IDEAS.map((idea) => (
-            <button key={idea} type="button" onClick={() => setQuery(idea)}>{idea}</button>
-          ))}
         </div>
       </form>
 
