@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: mercadobra
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci
+    preDeployCommand: npm run migrate && npm run db:check
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_ORIGIN
+        value: https://mercadobra.com,https://mercadobra.vercel.app
+      - key: FRONTEND_PUBLIC_URL
+        value: https://mercadobra.com
+      - key: BACKEND_PUBLIC_URL
+        value: https://mercadobra.onrender.com
+      - key: REQUIRE_DATABASE
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: MERCADOPAGO_ACCESS_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false

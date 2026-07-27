@@ -17,6 +17,7 @@ export const config = {
 
   // Database
   databaseUrl: env.DATABASE_URL || null,
+  requireDatabase: String(env.REQUIRE_DATABASE || 'false').toLowerCase() === 'true',
 
   // OpenAI (Chat)
   openaiApiKey: env.OPENAI_API_KEY || null,
@@ -84,6 +85,10 @@ export function validateEnvVars() {
         errors.push(`❌ ${critical.name}: obligatoria en producción. ${critical.reason}`)
       }
     })
+
+    if (config.requireDatabase && !config.databaseUrl) {
+      errors.push('❌ DATABASE_URL: obligatoria para persistencia segura en producción')
+    }
   }
 
   // Validaciones de integraciones OPCIONALES

@@ -10,6 +10,8 @@ const REQUIRED_TABLES = [
   'notification_logs',
   'leads',
   'quote_consultations',
+  'search_contacts',
+  'custom_requests',
   'migrations',
 ]
 

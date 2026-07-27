@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "start:production": "npm run migrate && npm run db:check && node src/server.js",
     "migrate": "node src/migrate.js",
     "seed": "node src/seed.js",
     "db:bootstrap": "npm run migrate && npm run seed",

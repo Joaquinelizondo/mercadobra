@@ -2,6 +2,7 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import { getRepository } from './repository.js'
+import { isPostgresEnabled } from './db.js'
 import { generateChatReply } from './chatService.js'
 import { notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifySearchRecommendations } from './notificationService.js'
 import {
@@ -134,7 +135,13 @@ const providerOnly = requireRoleOrAdmin('provider')
 const adminOnly = requireRoleOrAdmin('admin')
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, service: 'mercadobra-backend' })
+  res.json({
+    ok: true,
+    service: 'mercadobra-backend',
+    version: process.env.RENDER_GIT_COMMIT || process.env.APP_VERSION || 'local',
+    storage: isPostgresEnabled() ? 'postgresql' : 'json',
+    environment: config.nodeEnv,
+  })
 })
 
 app.get('/payments/mercadopago/config', (_req, res) => {
