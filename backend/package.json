@@ -10,7 +10,8 @@
     "migrate": "node src/migrate.js",
     "seed": "node src/seed.js",
     "db:bootstrap": "npm run migrate && npm run seed",
-    "db:check": "node src/dbCheck.js"
+    "db:check": "node src/dbCheck.js",
+    "admin:bootstrap": "node src/bootstrapAdmin.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

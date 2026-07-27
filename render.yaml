@@ -3,7 +3,7 @@ services:
     name: mercadobra
     runtime: node
     rootDir: backend
-    buildCommand: npm ci && npm run migrate && npm run db:check
+    buildCommand: npm ci && npm run migrate && npm run db:check && npm run admin:bootstrap
     startCommand: npm start
     healthCheckPath: /health
     autoDeployTrigger: commit
@@ -20,6 +20,12 @@ services:
         value: "true"
       - key: DATABASE_URL
         sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_COMPANY
+        value: Mercadobra
       - key: MERCADOPAGO_ACCESS_TOKEN
         sync: false
       - key: OPENAI_API_KEY
