@@ -20,7 +20,7 @@ export default function Topbar() {
       </div>
 
       <nav className="topbar-menu" aria-label="Navegación principal">
-        <a href={homeHash('cotizar')} className="topbar-quote-link">Cotizador Oxida</a>
+        <a href={homeHash('cotizar')} className="topbar-quote-link">Cotizador MercadoBra</a>
         <a href={homeHash('inicio')}>Inicio</a>
         <a href={homeHash('categorias')}>Categorías</a>
         <Link to="/explorar">Ver todo</Link>

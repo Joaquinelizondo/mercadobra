@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import OxidaWordmark from '../components/OxidaWordmark'
-import OxidaQuoteBuilder from '../components/OxidaQuoteBuilder'
+import MercadoQuoteFinder from '../components/MercadoQuoteFinder'
 import ProductCard from '../components/ProductCard'
 import { useProducts } from '../context/ProductContext'
 import camaImg from '../assets/oxida/cama-hierro.jpeg'
@@ -32,15 +32,7 @@ export default function OxidaStudio() {
 
   return (
     <main className="oxida-site">
-      <section className="oxida-quote oxida-quote--builder" id="cotizar">
-        <div className="oxida-quote-copy">
-          <p className="oxida-section-number">[ 01 — COTIZADOR ]</p>
-          <h2>Hagamos algo<br /><span>que dure.</span></h2>
-          <p>Elegí el tipo de proyecto, definí sus detalles y compartí fotos o referencias. Todo en un único lugar.</p>
-          <div className="oxida-response-time"><strong>48h</strong><span>respuesta inicial<br />estimada</span></div>
-        </div>
-        <OxidaQuoteBuilder />
-      </section>
+      <MercadoQuoteFinder />
 
       <section className="oxida-hero">
         <div className="oxida-hero-media">

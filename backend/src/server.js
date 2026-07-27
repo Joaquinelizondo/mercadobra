@@ -686,6 +686,9 @@ app.post('/search-contacts', async (req, res) => {
     email: String(body.email || '').trim(),
     phone: String(body.phone || '').trim(),
     source: String(body.source || 'featured-search').trim(),
+    selectedProductIds: Array.isArray(body.selectedProductIds)
+      ? body.selectedProductIds.map(Number).filter(Number.isFinite).slice(0, 5)
+      : [],
   }
 
   if (!payload.searchTerm) {
@@ -701,7 +704,11 @@ app.post('/search-contacts', async (req, res) => {
 
   const repo = await getRepository()
   const created = await repo.createSearchContact(payload)
-  const matchedProducts = await repo.getProducts({ q: payload.searchTerm, stock: 'in' })
+  const searchedProducts = await repo.getProducts({ q: payload.searchTerm, stock: 'in' })
+  const matchedProducts = payload.selectedProductIds.length
+    ? (await repo.getProducts({}))
+        .filter((product) => payload.selectedProductIds.includes(Number(product.id)))
+    : searchedProducts
 
   // Respond quickly so search UX never waits on external providers (SMTP/WhatsApp).
   void notifySearchRecommendations({

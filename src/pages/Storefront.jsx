@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { useProducts } from '../context/ProductContext'
 import ProductCard from '../components/ProductCard'
 import OxidaWordmark from '../components/OxidaWordmark'
-import OxidaQuoteBuilder from '../components/OxidaQuoteBuilder'
+import MercadoQuoteFinder from '../components/MercadoQuoteFinder'
 import heroImage from '../assets/oxida/escalera.jpeg'
 import mercadoBraLogo from '../assets/mercadobra.png'
 import './Storefront.css'
@@ -28,21 +28,7 @@ export default function Storefront() {
 
   return (
     <div className="storefront">
-      <section className="store-quote-first" id="cotizar">
-        <div className="store-quote-intro">
-          <span>[ COTIZADOR OXIDA ]</span>
-          <h1>Tu idea.<br /><em>Hecha a medida.</em></h1>
-          <p>
-            Elegí qué querés crear, definí medidas y terminaciones, y compartí
-            fotos del espacio. Te respondemos con el próximo paso.
-          </p>
-          <div className="store-quote-promise">
-            <strong>48h</strong>
-            <small>Respuesta inicial estimada</small>
-          </div>
-        </div>
-        <OxidaQuoteBuilder />
-      </section>
+      <MercadoQuoteFinder />
 
       <section className="store-hero" id="inicio">
         <div className="store-hero-copy">
