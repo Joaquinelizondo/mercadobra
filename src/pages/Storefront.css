@@ -1,4 +1,14 @@
 .storefront { display: flex; flex-direction: column; gap: 28px; color: #262621; }
+.store-quote-first { display:grid; grid-template-columns:minmax(270px,.72fr) minmax(540px,1.28fr); gap:clamp(40px,7vw,105px); align-items:start; padding:clamp(48px,7vw,92px); border-radius:28px; overflow:hidden; background:#b55c35; box-shadow:0 30px 70px rgba(49,30,20,.2); }
+.store-quote-intro { position:sticky; top:100px; padding-top:10px; }
+.store-quote-intro > span { color:#29251f; font-size:.66rem; font-weight:800; letter-spacing:.16em; }
+.store-quote-intro h1 { margin:24px 0 28px; color:#1d1d1a; font:500 clamp(2.8rem,5vw,5.7rem)/.94 'Manrope',sans-serif; letter-spacing:-.065em; }
+.store-quote-intro h1 em { color:#eeeae0; font-family:Georgia,serif; font-weight:400; }
+.store-quote-intro > p { max-width:430px; color:rgba(29,29,26,.72); line-height:1.7; }
+.store-quote-promise { display:flex; align-items:center; gap:15px; max-width:280px; margin-top:48px; padding-top:22px; border-top:1px solid rgba(29,29,26,.35); }
+.store-quote-promise strong { font:500 2.4rem 'Manrope',sans-serif; }
+.store-quote-promise small { max-width:120px; font-size:.62rem; line-height:1.45; letter-spacing:.12em; text-transform:uppercase; }
+.store-quote-first .oxida-builder { box-shadow:0 28px 70px rgba(54,24,12,.2); }
 .store-hero { min-height: 680px; display: grid; grid-template-columns: .9fr 1.1fr; overflow: hidden; border-radius: 28px; background: #f1ede3; box-shadow: 0 30px 70px rgba(49, 30, 20, .22); }
 .store-hero-copy { padding: clamp(44px, 6vw, 82px); display: flex; flex-direction: column; justify-content: center; }
 .store-kicker, .store-heading span { color: #9a4c2d; font-size: .72rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
@@ -44,6 +54,8 @@
 .store-custom a { color: #eee8dd; padding-bottom: 8px; border-bottom: 1px solid #c5764e; text-decoration: none; font-weight: 700; }
 .store-custom a span { color: #c5764e; margin-left: 12px; }
 @media (max-width: 900px) {
+  .store-quote-first { grid-template-columns:1fr; }
+  .store-quote-intro { position:static; }
   .store-hero { grid-template-columns: 1fr; }
   .store-hero-media { min-height: 520px; }
   .store-categories { grid-template-columns: repeat(2, 1fr); }
@@ -52,6 +64,9 @@
 }
 @media (max-width: 560px) {
   .storefront { gap: 16px; }
+  .store-quote-first { padding:42px 16px 16px; border-radius:18px; }
+  .store-quote-intro { padding:0 8px; }
+  .store-quote-promise { margin:30px 0 10px; }
   .store-hero, .store-section, .store-custom { border-radius: 18px; }
   .store-hero-copy, .store-section { padding: 30px 22px; }
   .store-brand-context img { width: 145px; }

@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { useProducts } from '../context/ProductContext'
 import ProductCard from '../components/ProductCard'
 import OxidaWordmark from '../components/OxidaWordmark'
+import OxidaQuoteBuilder from '../components/OxidaQuoteBuilder'
 import heroImage from '../assets/oxida/escalera.jpeg'
 import mercadoBraLogo from '../assets/mercadobra.png'
 import './Storefront.css'
@@ -27,6 +28,22 @@ export default function Storefront() {
 
   return (
     <div className="storefront">
+      <section className="store-quote-first" id="cotizar">
+        <div className="store-quote-intro">
+          <span>[ COTIZADOR OXIDA ]</span>
+          <h1>Tu idea.<br /><em>Hecha a medida.</em></h1>
+          <p>
+            Elegí qué querés crear, definí medidas y terminaciones, y compartí
+            fotos del espacio. Te respondemos con el próximo paso.
+          </p>
+          <div className="store-quote-promise">
+            <strong>48h</strong>
+            <small>Respuesta inicial estimada</small>
+          </div>
+        </div>
+        <OxidaQuoteBuilder />
+      </section>
+
       <section className="store-hero" id="inicio">
         <div className="store-hero-copy">
           <div className="store-brand-context">
@@ -42,7 +59,7 @@ export default function Storefront() {
           </p>
           <div className="store-hero-actions">
             <Link to="/explorar" className="store-button store-button--primary">Ver la colección</Link>
-            <Link to="/oxida#cotizar" className="store-button store-button--secondary">Hacer a medida</Link>
+            <a href="#cotizar" className="store-button store-button--secondary">Hacer a medida</a>
           </div>
           <div className="store-trust">
             <span>Compra segura</span><span>Fabricación local</span><span>Atención directa</span>
