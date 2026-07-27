@@ -126,6 +126,18 @@
   transform: translateY(-1px);
 }
 
+.topbar-menu .topbar-quote-link {
+  background:#b55c35;
+  border-color:#b55c35;
+  color:#fff;
+  font-weight:800;
+}
+
+.topbar-menu .topbar-quote-link:hover {
+  background:#8f4326;
+  border-color:#8f4326;
+}
+
 .topbar-menu .topbar-oxida-link {
   background: #20201d;
   color: #f2eee4;
