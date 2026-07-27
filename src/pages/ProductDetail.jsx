@@ -26,6 +26,7 @@ export default function ProductDetail() {
     finish: 'Pintura al horno',
   })
   const [customizerOpen, setCustomizerOpen] = useState(false)
+  const [selectedVariantId, setSelectedVariantId] = useState('')
 
   const product = useMemo(() => {
     return productList.find((p) => p.id === Number(id))
@@ -38,7 +39,12 @@ export default function ProductDetail() {
       .slice(0, 4)
   }, [product, productList])
 
-  const isOutOfStock = Number(product?.stock ?? 0) <= 0
+  const activeVariant = product?.variants?.find((variant) => variant.id === selectedVariantId)
+    || product?.variants?.[0]
+    || null
+  const effectiveStock = activeVariant ? Number(activeVariant.stock || 0) : Number(product?.stock ?? 0)
+  const effectivePrice = activeVariant ? Number(activeVariant.price || product?.price || 0) : Number(product?.price || 0)
+  const isOutOfStock = effectiveStock <= 0 || product?.status === 'out_of_stock'
 
   if (!product) {
     return (
@@ -74,8 +80,15 @@ export default function ProductDetail() {
   const delivery = product.deliveryDays || 3
 
   function handleAddToCart() {
+    const configuredProduct = {
+      ...product,
+      price: effectivePrice,
+      stock: effectiveStock,
+      cartLineId: activeVariant ? `${product.id}:${activeVariant.id}` : String(product.id),
+      selectedVariant: activeVariant,
+    }
     for (let i = 0; i < quantity; i++) {
-      addToCart(product)
+      addToCart(configuredProduct)
     }
     setCartOpen(true)
     setQuantity(1)
@@ -162,7 +175,7 @@ export default function ProductDetail() {
 
             <div className="product-detail-price-section">
               <div className="product-detail-price">
-                <span className="price-amount">{formatPrice(product.price, product.currency)}</span>
+                <span className="price-amount">{formatPrice(effectivePrice, product.currency)}</span>
                 <span className="price-unit">/ {product.unit}</span>
               </div>
             </div>
@@ -173,6 +186,32 @@ export default function ProductDetail() {
                 <span>El precio final puede variar según las opciones.</span>
               </div>
               <div className="product-option-grid">
+                {product.variants?.length > 0 && (
+                  <label>
+                    <span>Variante</span>
+                    <select
+                      value={activeVariant?.id || ''}
+                      onChange={(event) => {
+                        const variant = product.variants.find((item) => item.id === event.target.value)
+                        setSelectedVariantId(event.target.value)
+                        if (variant?.attributes) {
+                          setConfiguration((previous) => ({
+                            ...previous,
+                            size: variant.attributes.medida || previous.size,
+                            color: variant.attributes.color || previous.color,
+                            finish: variant.attributes.terminacion || previous.finish,
+                          }))
+                        }
+                      }}
+                    >
+                      {product.variants.map((variant) => (
+                        <option key={variant.id} value={variant.id}>
+                          {variant.name} · {formatPrice(variant.price, product.currency)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <label>
                   <span>Medida</span>
                   <select value={configuration.size} onChange={(event) => setConfiguration((previous) => ({ ...previous, size: event.target.value }))}>
@@ -221,7 +260,9 @@ export default function ProductDetail() {
               <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor" />
               </svg>
-              <span>Entrega en {delivery} día{delivery !== 1 ? 's' : ''}</span>
+              <span>
+                {product.productType === 'ready' ? 'Entrega' : 'Fabricación'} estimada en {product.leadTimeDays || delivery} día{Number(product.leadTimeDays || delivery) !== 1 ? 's' : ''}
+              </span>
             </div>
 
             {/* Quantity Selector */}

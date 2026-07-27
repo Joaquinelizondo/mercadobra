@@ -37,6 +37,11 @@ export default function ProductCard({
     event.stopPropagation()
     if (isAddingToCart) return
 
+    if (product.productType === 'custom_quote') {
+      navigate(`/producto/${product.id}`)
+      return
+    }
+
     if (Number(product.stock) > 0) {
       setIsAddingToCart(true)
       const feedbackIndex = Math.floor(Math.random() * ADD_FEEDBACK.length)
@@ -83,7 +88,11 @@ export default function ProductCard({
         <div className="product-tags-row">
           <span className="product-category-tag">{product.category}</span>
           <span className={`product-buy-tag${Number(product.stock) > 0 ? ' product-buy-tag--direct' : ''}`}>
-            {Number(product.stock) > 0 ? 'Compra directa' : 'Consultar proveedor'}
+            {product.productType === 'custom_quote'
+              ? 'A cotizar'
+              : product.productType === 'made_to_order'
+                ? 'Por encargo'
+                : Number(product.stock) > 0 ? 'Compra directa' : 'Consultar proveedor'}
           </span>
         </div>
         <button
@@ -160,7 +169,11 @@ export default function ProductCard({
                   : `Consultar a ${product.company} por ${product.name}`
               }
             >
-              {Number(product.stock) > 0 ? (isAddingToCart ? 'Agregado' : 'Comprar ahora') : 'Consultar stock'}
+              {product.productType === 'custom_quote'
+                ? 'Configurar y cotizar'
+                : Number(product.stock) > 0
+                  ? (isAddingToCart ? 'Agregado' : product.productType === 'made_to_order' ? 'Encargar ahora' : 'Comprar ahora')
+                  : 'Consultar stock'}
             </button>
           </div>
         </div>

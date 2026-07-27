@@ -80,7 +80,7 @@ export default function Catalog() {
   const normalizedSearch = normalizeText(searchQuery)
 
   const filteredProducts = useMemo(() => {
-    let result = [...productList]
+    let result = productList.filter((product) => product.status === 'published' || product.status === 'out_of_stock')
 
     if (normalizedSearch) {
       result = result.filter((product) => {

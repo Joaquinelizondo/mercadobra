@@ -333,7 +333,15 @@ app.post('/products', authMiddleware, (req, res, next) => {
     unit: body.unit,
     stock: Number(body.stock ?? 0),
     color: body.color || '#ea580c',
-    images: Array.isArray(body.images) ? body.images.slice(0, 5) : []
+    images: Array.isArray(body.images) ? body.images.slice(0, 5) : [],
+    sku: String(body.sku || '').trim(),
+    status: validateEnum(body.status ?? 'published', ['draft', 'published', 'out_of_stock', 'archived'], 'Estado'),
+    productType: validateEnum(body.productType ?? 'ready', ['ready', 'made_to_order', 'custom_quote'], 'Tipo de producto'),
+    leadTimeDays: validateNumber(body.leadTimeDays ?? 3, 'Plazo', 0, 365),
+    weightKg: body.weightKg === '' || body.weightKg == null ? null : validateNumber(body.weightKg, 'Peso', 0),
+    dimensions: body.dimensions && typeof body.dimensions === 'object' ? body.dimensions : {},
+    configurable: Boolean(body.configurable),
+    variants: Array.isArray(body.variants) ? body.variants.slice(0, 30) : [],
   })
 
   return res.status(201).json({
@@ -347,6 +355,12 @@ app.patch('/products/:id', authMiddleware, providerOnly, async (req, res) => {
   const updates = req.body || {}
   if (updates.currency !== undefined) {
     updates.currency = validateEnum(updates.currency, ['uyu', 'usd'], 'Moneda').toUpperCase()
+  }
+  if (updates.status !== undefined) {
+    updates.status = validateEnum(updates.status, ['draft', 'published', 'out_of_stock', 'archived'], 'Estado')
+  }
+  if (updates.productType !== undefined) {
+    updates.productType = validateEnum(updates.productType, ['ready', 'made_to_order', 'custom_quote'], 'Tipo de producto')
   }
   const repo = await getRepository()
   const existing = await repo.getProductById(id)

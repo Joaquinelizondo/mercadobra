@@ -4,7 +4,12 @@ import { useProducts } from '../context/ProductContext'
 import { companyInitials } from '../utils/format'
 import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../data/constants'
 
-const EMPTY_FORM = { name: '', category: 'Mobiliario', price: '', currency: 'UYU', unit: 'unidad', stock: '0', description: '', images: [] }
+const EMPTY_FORM = {
+  name: '', sku: '', category: 'Mobiliario', price: '', currency: 'UYU', unit: 'unidad',
+  stock: '0', status: 'published', productType: 'ready', leadTimeDays: '7', weightKg: '',
+  dimensions: { width: '', height: '', depth: '' }, configurable: false,
+  description: '', images: [], variants: [],
+}
 
 export default function PublishModal({ onClose, onPublished, initialFormData = null }) {
   const { supplierUser, token, adminUser, adminToken } = useAuth()
@@ -17,8 +22,41 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
   const publisherToken = supplierUser ? token : adminToken
 
   function handleChange(e) {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    const { name, value, type, checked } = e.target
+    setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+  }
+
+  function handleDimension(event) {
+    const { name, value } = event.target
+    setFormData((previous) => ({ ...previous, dimensions: { ...previous.dimensions, [name]: value } }))
+  }
+
+  function addVariant() {
+    setFormData((previous) => ({
+      ...previous,
+      variants: [...previous.variants, {
+        id: `variant-${Date.now()}`, name: '', sku: '', price: previous.price || '', stock: '0',
+        attributes: { medida: '', color: '', terminacion: '' },
+      }],
+    }))
+  }
+
+  function updateVariant(index, field, value) {
+    setFormData((previous) => ({
+      ...previous,
+      variants: previous.variants.map((variant, variantIndex) => {
+        if (variantIndex !== index) return variant
+        if (field.startsWith('attributes.')) {
+          const attribute = field.split('.')[1]
+          return { ...variant, attributes: { ...variant.attributes, [attribute]: value } }
+        }
+        return { ...variant, [field]: value }
+      }),
+    }))
+  }
+
+  function removeVariant(index) {
+    setFormData((previous) => ({ ...previous, variants: previous.variants.filter((_, variantIndex) => variantIndex !== index) }))
   }
 
   function handleImages(event) {
@@ -108,6 +146,22 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
 
             <div className="form-row form-row--2col">
               <div>
+                <label className="form-label" htmlFor="pub-sku">SKU</label>
+                <input id="pub-sku" className="form-input" name="sku" value={formData.sku} onChange={handleChange} placeholder="OX-MUE-001" />
+              </div>
+              <div>
+                <label className="form-label" htmlFor="pub-status">Estado</label>
+                <select id="pub-status" className="form-input" name="status" value={formData.status} onChange={handleChange}>
+                  <option value="published">Publicado</option>
+                  <option value="draft">Borrador</option>
+                  <option value="out_of_stock">Sin stock</option>
+                  <option value="archived">Archivado</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-row form-row--2col">
+              <div>
                 <label className="form-label" htmlFor="pub-category">Categoría</label>
                 <select id="pub-category" className="form-input" name="category" value={formData.category} onChange={handleChange}>
                   {CATEGORY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -163,6 +217,51 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
                 onChange={handleChange}
                 placeholder="Ej: 100"
               />
+            </div>
+
+            <div className="form-row form-row--2col">
+              <div>
+                <label className="form-label" htmlFor="pub-type">Tipo de venta</label>
+                <select id="pub-type" className="form-input" name="productType" value={formData.productType} onChange={handleChange}>
+                  <option value="ready">Compra directa</option>
+                  <option value="made_to_order">Fabricación por pedido</option>
+                  <option value="custom_quote">Requiere cotización</option>
+                </select>
+              </div>
+              <div>
+                <label className="form-label" htmlFor="pub-lead-time">Plazo estimado (días)</label>
+                <input id="pub-lead-time" className="form-input" name="leadTimeDays" type="number" min="0" value={formData.leadTimeDays} onChange={handleChange} />
+              </div>
+            </div>
+
+            <div className="form-row form-row--3col">
+              <div><label className="form-label">Ancho (cm)</label><input className="form-input" name="width" type="number" min="0" value={formData.dimensions?.width || ''} onChange={handleDimension} /></div>
+              <div><label className="form-label">Alto (cm)</label><input className="form-input" name="height" type="number" min="0" value={formData.dimensions?.height || ''} onChange={handleDimension} /></div>
+              <div><label className="form-label">Profundidad (cm)</label><input className="form-input" name="depth" type="number" min="0" value={formData.dimensions?.depth || ''} onChange={handleDimension} /></div>
+            </div>
+
+            <label className="product-configurable-check">
+              <input type="checkbox" name="configurable" checked={formData.configurable} onChange={handleChange} />
+              <span><strong>Producto personalizable</strong><small>Permite solicitar otras medidas, colores o terminaciones.</small></span>
+            </label>
+
+            <div className="product-variants-editor">
+              <div className="product-variants-head">
+                <div><strong>Variantes</strong><span>Precio y stock para cada combinación.</span></div>
+                <button type="button" onClick={addVariant}>＋ Agregar variante</button>
+              </div>
+              {formData.variants.map((variant, index) => (
+                <div className="product-variant-row" key={variant.id || index}>
+                  <input className="form-input" value={variant.name || ''} onChange={(event) => updateVariant(index, 'name', event.target.value)} placeholder="Nombre" />
+                  <input className="form-input" value={variant.sku || ''} onChange={(event) => updateVariant(index, 'sku', event.target.value)} placeholder="SKU" />
+                  <input className="form-input" type="number" value={variant.price ?? ''} onChange={(event) => updateVariant(index, 'price', Number(event.target.value))} placeholder="Precio" />
+                  <input className="form-input" type="number" value={variant.stock ?? ''} onChange={(event) => updateVariant(index, 'stock', Number(event.target.value))} placeholder="Stock" />
+                  <input className="form-input" value={variant.attributes?.medida || ''} onChange={(event) => updateVariant(index, 'attributes.medida', event.target.value)} placeholder="Medida" />
+                  <input className="form-input" value={variant.attributes?.color || ''} onChange={(event) => updateVariant(index, 'attributes.color', event.target.value)} placeholder="Color" />
+                  <input className="form-input" value={variant.attributes?.terminacion || ''} onChange={(event) => updateVariant(index, 'attributes.terminacion', event.target.value)} placeholder="Terminación" />
+                  <button type="button" className="product-variant-remove" onClick={() => removeVariant(index)} aria-label="Quitar variante">×</button>
+                </div>
+              ))}
             </div>
 
             <div className="form-row">

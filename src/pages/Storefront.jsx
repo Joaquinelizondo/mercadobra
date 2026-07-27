@@ -16,7 +16,10 @@ const categoryCopy = {
 
 export default function Storefront() {
   const { productList, loadingProducts } = useProducts()
-  const featured = useMemo(() => productList.slice(0, 8), [productList])
+  const featured = useMemo(
+    () => productList.filter((product) => product.status === 'published').slice(0, 8),
+    [productList]
+  )
   const categories = useMemo(
     () => [...new Set(productList.map((product) => product.category).filter(Boolean))].slice(0, 4),
     [productList]

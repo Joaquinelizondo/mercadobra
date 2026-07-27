@@ -30,7 +30,7 @@ export default function OxidaStudio() {
   const [formError, setFormError] = useState('')
   const shopProducts = useMemo(() => {
     const oxidaProducts = productList.filter((product) =>
-      String(product.company || '').toLowerCase().includes('oxida')
+      product.status === 'published' && String(product.company || '').toLowerCase().includes('oxida')
     )
     return (oxidaProducts.length ? oxidaProducts : productList).slice(0, 6)
   }, [productList])

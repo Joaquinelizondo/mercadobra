@@ -20,6 +20,14 @@ function normalizeProduct(product) {
       : product.image
         ? [{ url: product.image, alt: product.name }]
         : [],
+    sku: String(product.sku || ''),
+    status: product.status || 'published',
+    productType: product.productType || 'ready',
+    leadTimeDays: Number(product.leadTimeDays ?? product.deliveryDays ?? 3),
+    weightKg: product.weightKg == null ? '' : Number(product.weightKg),
+    dimensions: product.dimensions && typeof product.dimensions === 'object' ? product.dimensions : {},
+    configurable: Boolean(product.configurable),
+    variants: Array.isArray(product.variants) ? product.variants : [],
   }
 }
 
@@ -35,11 +43,18 @@ export function ProductProvider({ children }) {
     try {
       const products = await getProducts()
       const remoteProducts = products.map(normalizeProduct)
-      const remoteNames = new Set(remoteProducts.map((product) => product.name.trim().toLowerCase()))
+      const localByName = new Map(INITIAL_PRODUCTS.map((product) => [product.name.trim().toLowerCase(), product]))
+      const enrichedRemoteProducts = remoteProducts.map((product) => {
+        const localProduct = localByName.get(product.name.trim().toLowerCase())
+        return localProduct && product.images.length === 0
+          ? normalizeProduct({ ...product, images: localProduct.images })
+          : product
+      })
+      const remoteNames = new Set(enrichedRemoteProducts.map((product) => product.name.trim().toLowerCase()))
       const oxidaCollection = INITIAL_PRODUCTS
         .filter((product) => !remoteNames.has(product.name.trim().toLowerCase()))
         .map(normalizeProduct)
-      setProductList([...oxidaCollection, ...remoteProducts])
+      setProductList([...oxidaCollection, ...enrichedRemoteProducts])
       setUsingFallback(false)
     } catch (error) {
       setProductList(INITIAL_PRODUCTS.map(normalizeProduct))
@@ -72,6 +87,14 @@ export function ProductProvider({ children }) {
       unit: formData.unit,
       stock: Number(formData.stock ?? 0),
       images: Array.isArray(formData.images) ? formData.images : [],
+      sku: String(formData.sku || '').trim(),
+      status: formData.status || 'published',
+      productType: formData.productType || 'ready',
+      leadTimeDays: Number(formData.leadTimeDays ?? 3),
+      weightKg: formData.weightKg === '' ? null : Number(formData.weightKg),
+      dimensions: formData.dimensions || {},
+      configurable: Boolean(formData.configurable),
+      variants: Array.isArray(formData.variants) ? formData.variants : [],
       color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
     }
 
@@ -123,6 +146,14 @@ export function ProductProvider({ children }) {
       unit: formData.unit,
       stock: Number(formData.stock ?? 0),
       images: Array.isArray(formData.images) ? formData.images : [],
+      sku: String(formData.sku || '').trim(),
+      status: formData.status || 'published',
+      productType: formData.productType || 'ready',
+      leadTimeDays: Number(formData.leadTimeDays ?? 3),
+      weightKg: formData.weightKg === '' ? null : Number(formData.weightKg),
+      dimensions: formData.dimensions || {},
+      configurable: Boolean(formData.configurable),
+      variants: Array.isArray(formData.variants) ? formData.variants : [],
     }
 
     try {

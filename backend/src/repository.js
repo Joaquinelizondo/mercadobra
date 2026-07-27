@@ -17,6 +17,14 @@ function mapProductRow(row) {
     stock: Number(row.stock),
     color: row.color,
     images: Array.isArray(row.images) ? row.images : [],
+    sku: row.sku || '',
+    status: row.status || 'published',
+    productType: row.product_type ?? row.productType ?? 'ready',
+    leadTimeDays: Number(row.lead_time_days ?? row.leadTimeDays ?? 3),
+    weightKg: row.weight_kg ?? row.weightKg ? Number(row.weight_kg ?? row.weightKg) : null,
+    dimensions: row.dimensions && typeof row.dimensions === 'object' ? row.dimensions : {},
+    configurable: Boolean(row.configurable),
+    variants: Array.isArray(row.variants) ? row.variants : [],
   }
 }
 
@@ -542,10 +550,19 @@ async function getPgRepo() {
     },
     async createProduct(payload) {
       const { rows } = await pool.query(
-        `INSERT INTO products (name, description, category, company, provider_id, price, currency, unit, stock, color, images)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        `INSERT INTO products
+          (name, description, category, company, provider_id, price, currency, unit, stock, color, images,
+           sku, status, product_type, lead_time_days, weight_kg, dimensions, configurable, variants)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
          RETURNING *`,
-        [payload.name, payload.description, payload.category, payload.company, payload.providerId, payload.price, payload.currency || 'UYU', payload.unit, payload.stock, payload.color, JSON.stringify(payload.images || [])]
+        [
+          payload.name, payload.description, payload.category, payload.company, payload.providerId,
+          payload.price, payload.currency || 'UYU', payload.unit, payload.stock, payload.color,
+          JSON.stringify(payload.images || []), payload.sku || null, payload.status || 'published',
+          payload.productType || 'ready', payload.leadTimeDays || 3, payload.weightKg || null,
+          JSON.stringify(payload.dimensions || {}), Boolean(payload.configurable),
+          JSON.stringify(payload.variants || []),
+        ]
       )
       return mapProductRow(rows[0])
     },
@@ -555,10 +572,19 @@ async function getPgRepo() {
       const merged = { ...current, ...updates }
       const { rows } = await pool.query(
         `UPDATE products
-         SET name = $1, description = $2, category = $3, company = $4, provider_id = $5, price = $6, currency = $7, unit = $8, stock = $9, color = $10, images = $11
-         WHERE id = $12
+         SET name=$1, description=$2, category=$3, company=$4, provider_id=$5, price=$6, currency=$7,
+             unit=$8, stock=$9, color=$10, images=$11, sku=$12, status=$13, product_type=$14,
+             lead_time_days=$15, weight_kg=$16, dimensions=$17, configurable=$18, variants=$19
+         WHERE id=$20
          RETURNING *`,
-        [merged.name, merged.description, merged.category, merged.company, merged.providerId, merged.price, merged.currency || 'UYU', merged.unit, merged.stock, merged.color, JSON.stringify(merged.images || []), id]
+        [
+          merged.name, merged.description, merged.category, merged.company, merged.providerId,
+          merged.price, merged.currency || 'UYU', merged.unit, merged.stock, merged.color,
+          JSON.stringify(merged.images || []), merged.sku || null, merged.status || 'published',
+          merged.productType || 'ready', merged.leadTimeDays || 3, merged.weightKg || null,
+          JSON.stringify(merged.dimensions || {}), Boolean(merged.configurable),
+          JSON.stringify(merged.variants || []), id,
+        ]
       )
       return mapProductRow(rows[0])
     },
