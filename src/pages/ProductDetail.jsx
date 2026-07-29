@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useProducts } from '../context/ProductContext'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
@@ -122,17 +122,22 @@ export default function ProductDetail() {
 
         <div className="product-detail-grid">
           {/* Gallery */}
-          <div className="product-detail-gallery">
-            <div className="product-detail-main-image">
+          <div className="product-detail-gallery product-card">
+            <div className="product-detail-main-image product-img product-img--photo">
               <img
                 src={images[selectedImage].url}
                 alt={images[selectedImage].alt || product.name}
                 className="product-detail-img"
               />
-              <div className="product-detail-badges">
+              <div className="product-detail-badges product-tags-row">
                 <span className="product-category-tag">{product.category}</span>
-                {isOutOfStock && <span className="product-badge-stock">Sin stock</span>}
-                {!isOutOfStock && <span className="product-badge-available">En stock</span>}
+                <span className={`product-buy-tag${!isOutOfStock ? ' product-buy-tag--direct' : ''}`}>
+                  {product.productType === 'custom_quote'
+                    ? 'A cotizar'
+                    : product.productType === 'made_to_order'
+                      ? 'Por encargo'
+                      : !isOutOfStock ? 'Compra directa' : 'Consultar proveedor'}
+                </span>
               </div>
             </div>
 
@@ -153,8 +158,8 @@ export default function ProductDetail() {
           </div>
 
           {/* Info */}
-          <div className="product-detail-info">
-            <div className="company-badge">
+          <div className="product-detail-info product-card product-body">
+            <Link to={`/proveedor/${encodeURIComponent(product.company)}`} className="company-badge">
               <span className="company-avatar" style={{ '--company-color': product.color }}>
                 {companyInitials(product.company)}
               </span>
@@ -162,13 +167,13 @@ export default function ProductDetail() {
                 <span className="company-name">{product.company}</span>
                 {product.rating && <span className="product-rating">★ {product.rating}</span>}
               </div>
-            </div>
+            </Link>
 
-            <h1 className="product-detail-name">{product.name}</h1>
-            <p className="product-detail-description">{product.description}</p>
+            <h1 className="product-detail-name product-name">{product.name}</h1>
+            <p className="product-detail-description product-desc">{product.description}</p>
 
             <div className="product-detail-price-section">
-              <div className="product-detail-price">
+              <div className="product-detail-price product-price">
                 <span className="price-amount">{formatPrice(effectivePrice, product.currency)}</span>
                 <span className="price-unit">/ {product.unit}</span>
               </div>
@@ -294,7 +299,7 @@ export default function ProductDetail() {
             <div className="product-detail-actions">
               {!isOutOfStock && (
                 <button
-                  className="btn-primary"
+                  className="add-to-cart-btn product-detail-buy-button"
                   onClick={handleAddToCart}
                 >
                   <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -302,7 +307,9 @@ export default function ProductDetail() {
                     <circle cx="20" cy="21" r="1.5" fill="currentColor"/>
                     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
-                  Agregar al carrito
+                  {product.productType === 'custom_quote'
+                    ? 'Configurar y cotizar'
+                    : product.productType === 'made_to_order' ? 'Encargar ahora' : 'Comprar ahora'}
                 </button>
               )}
               <button
