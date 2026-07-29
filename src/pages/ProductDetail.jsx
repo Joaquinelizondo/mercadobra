@@ -5,7 +5,6 @@ import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { formatPrice, companyInitials } from '../utils/format'
 import ProductCard from '../components/ProductCard'
-import Breadcrumb from '../components/Breadcrumb'
 import EmptyState from '../components/EmptyState'
 import ProductCustomizer from '../components/ProductCustomizer'
 import '../styles/ProductDetail.css'
@@ -117,11 +116,6 @@ export default function ProductDetail() {
   return (
     <section className="section product-detail-section" id="product-detail">
       <div className="product-detail-container">
-        <Breadcrumb items={[
-          { href: '/explorar', label: 'Catálogo' },
-          { href: null, label: product.category },
-          { href: null, label: product.name }
-        ]} />
         <button className="product-detail-back" onClick={() => navigate(-1)}>
           ← Volver
         </button>
