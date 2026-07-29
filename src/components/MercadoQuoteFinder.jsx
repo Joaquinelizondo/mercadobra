@@ -115,7 +115,7 @@ export default function MercadoQuoteFinder() {
       </div>
 
       <form className="mqf-search" onSubmit={prepareQuote}>
-        <label className="mqf-visually-hidden" htmlFor="mercado-quote-query">Buscá productos para tu obra</label>
+        <label htmlFor="mercado-quote-query">Buscá productos para tu obra</label>
         <div className="mqf-search-box">
           <textarea
             id="mercado-quote-query"
