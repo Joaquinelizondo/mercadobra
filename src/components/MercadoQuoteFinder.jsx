@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useProducts } from '../context/ProductContext'
 import { createSearchContact } from '../lib/api'
@@ -133,12 +134,12 @@ export default function MercadoQuoteFinder() {
 
       {query.trim().length >= 2 && (
         <div className="mqf-results">
+          <div className="mqf-results-heading">
+            <div><h3>Resultados de búsqueda</h3><span>{results.length} {results.length === 1 ? 'producto encontrado' : 'productos encontrados'}</span></div>
+            {results.length > 0 && <button type="button" onClick={() => setModalOpen(true)}>Enviar selección</button>}
+          </div>
           {results.length > 0 ? (
             <>
-              <div className="mqf-results-heading">
-                <div><h3>Productos sugeridos</h3><span>{results.length} {results.length === 1 ? 'resultado' : 'resultados'}</span></div>
-                <button type="button" onClick={() => setModalOpen(true)}>Enviar selección</button>
-              </div>
               <div className="mqf-result-list">
                 {results.map((product, index) => (
                   <Link to={`/producto/${product.id}`} className="mqf-result" key={product.id}>
@@ -159,7 +160,7 @@ export default function MercadoQuoteFinder() {
         </div>
       )}
 
-      {modalOpen && (
+      {modalOpen && createPortal(
         <div className="mqf-modal-backdrop" role="presentation" onMouseDown={() => setModalOpen(false)}>
           <div className="mqf-modal" role="dialog" aria-modal="true" aria-labelledby="mqf-modal-title" onMouseDown={(event) => event.stopPropagation()}>
             <button className="mqf-modal-close" type="button" onClick={() => setModalOpen(false)} aria-label="Cerrar">×</button>
@@ -189,7 +190,8 @@ export default function MercadoQuoteFinder() {
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </section>
   )
