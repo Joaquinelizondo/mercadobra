@@ -14,15 +14,6 @@ const INTENT_TERMS = {
   piso: ['piso', 'porcelanato', 'revestimiento', 'adhesivo'],
 }
 
-const CATEGORY_SYMBOLS = {
-  Mobiliario: '▰',
-  Estructuras: '⌂',
-  'Fachadas y divisores': '▥',
-  'Escaleras y barandas': '╱',
-  Herramientas: '✦',
-  Terminaciones: '◫',
-}
-
 function normalize(value) {
   return String(value || '')
     .normalize('NFD')
@@ -40,62 +31,52 @@ function productSearchText(product) {
   ].join(' '))
 }
 
+function findMatchingProducts(products, query) {
+  const normalizedQuery = normalize(query).trim()
+  if (normalizedQuery.length < 2) return []
+
+  const words = normalizedQuery.split(/\s+/).filter((word) => word.length > 2)
+  const expandedTerms = [...words]
+
+  Object.entries(INTENT_TERMS).forEach(([intent, terms]) => {
+    if (normalizedQuery.includes(intent)) expandedTerms.push(...terms.map(normalize))
+  })
+
+  return products
+    .filter((product) => product.status === 'published')
+    .map((product) => {
+      const haystack = productSearchText(product)
+      const name = normalize(product.name)
+      const category = normalize(product.category)
+      const score = expandedTerms.reduce((total, term) => {
+        if (name.includes(term)) return total + 5
+        if (category.includes(term)) return total + 3
+        return total + (haystack.includes(term) ? 1 : 0)
+      }, 0)
+      return { product, score }
+    })
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5)
+    .map(({ product }) => product)
+}
+
 export default function MercadoQuoteFinder() {
   const { productList, loadingProducts } = useProducts()
   const [query, setQuery] = useState('')
-  const [activeCategories, setActiveCategories] = useState([])
-  const [results, setResults] = useState([])
-  const [hasQuoted, setHasQuoted] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [contact, setContact] = useState({ name: '', lastName: '', email: '', phone: '' })
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
 
-  const categories = useMemo(
-    () => [...new Set(productList.map((product) => product.category).filter(Boolean))].slice(0, 6),
-    [productList]
+  const results = useMemo(
+    () => findMatchingProducts(productList, query),
+    [productList, query]
   )
-
-  function toggleCategory(category) {
-    setActiveCategories((current) => (
-      current.includes(category)
-        ? current.filter((item) => item !== category)
-        : [...current, category]
-    ))
-  }
 
   function prepareQuote(event) {
     event?.preventDefault()
-    const normalizedQuery = normalize(query)
-    const words = normalizedQuery.split(/\s+/).filter((word) => word.length > 2)
-    const expandedTerms = [...words]
-
-    Object.entries(INTENT_TERMS).forEach(([intent, terms]) => {
-      if (normalizedQuery.includes(intent)) expandedTerms.push(...terms.map(normalize))
-    })
-
-    const ranked = productList
-      .filter((product) => product.status === 'published')
-      .map((product) => {
-        const haystack = productSearchText(product)
-        const categoryMatch = activeCategories.includes(product.category)
-        const termScore = expandedTerms.reduce(
-          (score, term) => score + (haystack.includes(term) ? 2 : 0),
-          0
-        )
-        return { product, score: termScore + (categoryMatch ? 6 : 0) }
-      })
-      .filter(({ score }) => score > 0 || (!normalizedQuery && activeCategories.length === 0))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5)
-      .map(({ product }) => product)
-
-    const fallback = productList
-      .filter((product) => product.status === 'published')
-      .slice(0, 5)
-    setResults(ranked.length ? ranked : fallback)
-    setHasQuoted(true)
     setError('')
     setSent(false)
     setModalOpen(true)
@@ -112,7 +93,7 @@ export default function MercadoQuoteFinder() {
     setError('')
     try {
       await createSearchContact({
-        searchTerm: query.trim() || activeCategories.join(', ') || 'Productos para mi obra',
+        searchTerm: query.trim(),
         name: [contact.name.trim(), contact.lastName.trim()].filter(Boolean).join(' '),
         email: contact.email.trim(),
         phone: contact.phone.trim(),
@@ -130,64 +111,51 @@ export default function MercadoQuoteFinder() {
   return (
     <section className="mqf" id="cotizar">
       <div className="mqf-heading">
-        <span className="mqf-kicker">Cotizador MercadoBra</span>
-        <h1>Decinos qué necesitás.<br /><em>Nosotros buscamos.</em></h1>
-        <p>Escribilo como te salga. Te mostramos opciones concretas para avanzar con tu obra.</p>
+        <h2>¿Qué necesitás para tu obra?</h2>
       </div>
 
       <form className="mqf-search" onSubmit={prepareQuote}>
-        <label htmlFor="mercado-quote-query">Contanos con tus palabras</label>
+        <label className="mqf-visually-hidden" htmlFor="mercado-quote-query">Buscá productos para tu obra</label>
         <div className="mqf-search-box">
           <textarea
             id="mercado-quote-query"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ej: Necesito una escalera de hierro para un espacio chico..."
-            rows="2"
+            placeholder="¿Qué estás buscando? Ej: escalera de hierro..."
+            rows="1"
           />
-          <button type="submit" disabled={loadingProducts}>
-            {loadingProducts ? 'Cargando…' : 'Cotizar'} <span>→</span>
+          <button type="submit" disabled={loadingProducts || results.length === 0}>
+            <span aria-hidden="true">⌕</span>
+            {loadingProducts ? 'Cargando…' : 'Cotizar'}
           </button>
-        </div>
-
-        <div className="mqf-options">
-          <span>Explorá por categoría</span>
-          <div>
-            {categories.map((category) => (
-              <button
-                key={category}
-                type="button"
-                className={activeCategories.includes(category) ? 'is-active' : ''}
-                onClick={() => toggleCategory(category)}
-              >
-                <i aria-hidden="true">{CATEGORY_SYMBOLS[category] || '◇'}</i>
-                <strong>{category}</strong>
-                <small>{activeCategories.includes(category) ? 'Seleccionada ✓' : 'Elegir →'}</small>
-              </button>
-            ))}
-          </div>
         </div>
       </form>
 
-      {hasQuoted && (
+      {query.trim().length >= 2 && (
         <div className="mqf-results">
-          <div className="mqf-results-heading">
-            <div><span>Selección sugerida</span><h2>{results.length} opciones para tu proyecto</h2></div>
-            <button type="button" onClick={() => setModalOpen(true)}>Enviar a mi email ↗</button>
-          </div>
-          <div className="mqf-result-list">
-            {results.map((product, index) => (
-              <Link to={`/producto/${product.id}`} className="mqf-result" key={product.id}>
-                <span>0{index + 1}</span>
-                <div>
-                  <small>{product.category} · {product.company}</small>
-                  <strong>{product.name}</strong>
-                </div>
-                <b>{formatPrice(product.price, product.currency)} <i>/ {product.unit}</i></b>
-                <em>↗</em>
-              </Link>
-            ))}
-          </div>
+          {results.length > 0 ? (
+            <>
+              <div className="mqf-results-heading">
+                <div><h3>Productos sugeridos</h3><span>{results.length} {results.length === 1 ? 'resultado' : 'resultados'}</span></div>
+                <button type="button" onClick={() => setModalOpen(true)}>Enviar selección</button>
+              </div>
+              <div className="mqf-result-list">
+                {results.map((product, index) => (
+                  <Link to={`/producto/${product.id}`} className="mqf-result" key={product.id}>
+                    <span>0{index + 1}</span>
+                    <div>
+                      <small>{product.category} · {product.company}</small>
+                      <strong>{product.name}</strong>
+                    </div>
+                    <b>{formatPrice(product.price, product.currency)} <i>/ {product.unit}</i></b>
+                    <em>↗</em>
+                  </Link>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="mqf-empty">Todavía no encontramos productos que coincidan. Probá describiéndolo con otras palabras.</p>
+          )}
         </div>
       )}
 
