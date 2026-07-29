@@ -168,6 +168,12 @@
   box-shadow: var(--shadow);
 }
 
+.product-detail-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
 .product-detail-name {
   font-size: clamp(25px, 3vw, 34px);
   font-weight: 700;
