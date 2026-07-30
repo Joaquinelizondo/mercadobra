@@ -220,6 +220,17 @@ export default function SupplierDashboard() {
                     {order.buyerName ? `Comprador: ${order.buyerName}` : 'Comprador sin nombre'}
                     {order.buyerPhone ? ` · ${order.buyerPhone}` : ''}
                   </p>
+                  {order.buyerEmail && (
+                    <p className="supplier-order-meta">Email: {order.buyerEmail}</p>
+                  )}
+                  <p className="supplier-order-meta">
+                    Entrega: {order.deliveryMethod === 'pickup'
+                      ? 'Retiro acordado'
+                      : [order.deliveryAddress, order.deliveryCity].filter(Boolean).join(', ') || 'A coordinar'}
+                  </p>
+                  {order.buyerNotes && (
+                    <p className="supplier-order-meta">Notas: {order.buyerNotes}</p>
+                  )}
                   <p className="supplier-order-meta">
                     Pago: {PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod || 'No informado'}
                   </p>

@@ -33,13 +33,23 @@ const PAYMENT_METHODS = [
   },
 ]
 
+const EMPTY_CHECKOUT_FORM = {
+  buyerName: '',
+  buyerEmail: '',
+  buyerPhone: '',
+  deliveryMethod: 'delivery',
+  deliveryAddress: '',
+  deliveryCity: '',
+  buyerNotes: '',
+}
+
 // steps: 'cart' | 'payment' | 'done'
 export default function Cart() {
   const { cartItems, cartCount, cartTotal, cartOpen, setCartOpen, changeQty, clearCart } = useCart()
   const { refreshProducts } = useProducts()
   const [step, setStep] = useState('cart')
   const [selectedPayment, setSelectedPayment] = useState(null)
-  const [checkoutForm, setCheckoutForm] = useState({ buyerName: '', buyerPhone: '' })
+  const [checkoutForm, setCheckoutForm] = useState(EMPTY_CHECKOUT_FORM)
   const [orderLoading, setOrderLoading] = useState(false)
   const [orderError, setOrderError] = useState('')
   const [createdOrder, setCreatedOrder] = useState(null)
@@ -47,9 +57,19 @@ export default function Cart() {
   const [mercadoPagoEnabled, setMercadoPagoEnabled] = useState(true)
 
   const normalizedBuyerName = checkoutForm.buyerName.trim()
+  const normalizedBuyerEmail = checkoutForm.buyerEmail.trim().toLowerCase()
   const normalizedBuyerPhone = checkoutForm.buyerPhone.trim()
   const buyerPhoneDigits = normalizedBuyerPhone.replace(/\D/g, '')
-  const isCheckoutFormValid = normalizedBuyerName.length >= 3 && buyerPhoneDigits.length >= 10 && buyerPhoneDigits.length <= 15
+  const normalizedDeliveryAddress = checkoutForm.deliveryAddress.trim()
+  const normalizedDeliveryCity = checkoutForm.deliveryCity.trim()
+  const hasValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedBuyerEmail)
+  const hasValidDelivery = checkoutForm.deliveryMethod === 'pickup'
+    || (normalizedDeliveryAddress.length >= 5 && normalizedDeliveryCity.length >= 2)
+  const isCheckoutFormValid = normalizedBuyerName.length >= 3
+    && hasValidEmail
+    && buyerPhoneDigits.length >= 8
+    && buyerPhoneDigits.length <= 15
+    && hasValidDelivery
   const cartCurrency = String(cartItems[0]?.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU'
 
   useEffect(() => {
@@ -76,7 +96,7 @@ export default function Cart() {
     setTimeout(() => {
       setStep('cart')
       setSelectedPayment(null)
-      setCheckoutForm({ buyerName: '', buyerPhone: '' })
+      setCheckoutForm(EMPTY_CHECKOUT_FORM)
       setOrderLoading(false)
       setOrderError('')
       setCreatedOrder(null)
@@ -100,7 +120,7 @@ export default function Cart() {
   async function handleConfirm() {
     if (!selectedPayment) return
     if (!isCheckoutFormValid) {
-      setOrderError('Completá nombre (mínimo 3 caracteres) y WhatsApp válido (entre 10 y 15 dígitos).')
+      setOrderError('Revisá tus datos de contacto y entrega antes de continuar.')
       return
     }
 
@@ -115,7 +135,12 @@ export default function Cart() {
       if (selectedPayment === 'mercadopago') {
         const checkout = await startMercadoPagoCheckout({
           buyerName: checkoutForm.buyerName.trim(),
+          buyerEmail: normalizedBuyerEmail,
           buyerPhone: checkoutForm.buyerPhone.trim(),
+          deliveryMethod: checkoutForm.deliveryMethod,
+          deliveryAddress: normalizedDeliveryAddress,
+          deliveryCity: normalizedDeliveryCity,
+          buyerNotes: checkoutForm.buyerNotes.trim(),
           paymentMethod: selectedPayment,
           items: cartItems.map((item) => ({
             productId: item.id,
@@ -141,7 +166,12 @@ export default function Cart() {
 
       const order = await createOrder({
         buyerName: normalizedBuyerName,
+        buyerEmail: normalizedBuyerEmail,
         buyerPhone: normalizedBuyerPhone,
+        deliveryMethod: checkoutForm.deliveryMethod,
+        deliveryAddress: normalizedDeliveryAddress,
+        deliveryCity: normalizedDeliveryCity,
+        buyerNotes: checkoutForm.buyerNotes.trim(),
         paymentMethod: selectedPayment,
         items: cartItems.map((item) => ({
           productId: item.id,
@@ -281,7 +311,7 @@ export default function Cart() {
         {step === 'payment' && (
           <>
             <div className="cart-payment-header">
-              <p>Completá tus datos y elegí cómo pagar.</p>
+              <p>Completá tus datos, elegí la entrega y confirmá el pago.</p>
             </div>
 
             <div className="cart-checkout-form">
@@ -297,6 +327,18 @@ export default function Cart() {
                 />
               </div>
               <div className="form-row">
+                <label className="form-label" htmlFor="cart-buyer-email">Email</label>
+                <input
+                  id="cart-buyer-email"
+                  className="form-input"
+                  type="email"
+                  value={checkoutForm.buyerEmail}
+                  onChange={(event) => setCheckoutForm((prev) => ({ ...prev, buyerEmail: event.target.value }))}
+                  placeholder="tu@email.com"
+                  autoComplete="email"
+                />
+              </div>
+              <div className="form-row">
                 <label className="form-label" htmlFor="cart-buyer-phone">WhatsApp</label>
                 <input
                   id="cart-buyer-phone"
@@ -304,14 +346,74 @@ export default function Cart() {
                   type="tel"
                   value={checkoutForm.buyerPhone}
                   onChange={(event) => setCheckoutForm((prev) => ({ ...prev, buyerPhone: event.target.value }))}
-                  placeholder="Ej: +54 9 11 1234 5678"
+                  placeholder="Ej: +598 99 123 456"
                   autoComplete="tel"
+                />
+              </div>
+              <fieldset className="checkout-delivery-options">
+                <legend>¿Cómo querés recibirlo?</legend>
+                <label className={checkoutForm.deliveryMethod === 'delivery' ? 'is-selected' : ''}>
+                  <input
+                    type="radio"
+                    name="delivery-method"
+                    value="delivery"
+                    checked={checkoutForm.deliveryMethod === 'delivery'}
+                    onChange={(event) => setCheckoutForm((prev) => ({ ...prev, deliveryMethod: event.target.value }))}
+                  />
+                  <span><strong>Entrega coordinada</strong><small>Costo y horario a confirmar con el proveedor</small></span>
+                </label>
+                <label className={checkoutForm.deliveryMethod === 'pickup' ? 'is-selected' : ''}>
+                  <input
+                    type="radio"
+                    name="delivery-method"
+                    value="pickup"
+                    checked={checkoutForm.deliveryMethod === 'pickup'}
+                    onChange={(event) => setCheckoutForm((prev) => ({ ...prev, deliveryMethod: event.target.value }))}
+                  />
+                  <span><strong>Retiro acordado</strong><small>Sin costo de envío</small></span>
+                </label>
+              </fieldset>
+              {checkoutForm.deliveryMethod === 'delivery' && (
+                <div className="checkout-address-grid">
+                  <div className="form-row">
+                    <label className="form-label" htmlFor="cart-delivery-address">Dirección</label>
+                    <input
+                      id="cart-delivery-address"
+                      className="form-input"
+                      value={checkoutForm.deliveryAddress}
+                      onChange={(event) => setCheckoutForm((prev) => ({ ...prev, deliveryAddress: event.target.value }))}
+                      placeholder="Calle, número y apartamento"
+                      autoComplete="street-address"
+                    />
+                  </div>
+                  <div className="form-row">
+                    <label className="form-label" htmlFor="cart-delivery-city">Localidad</label>
+                    <input
+                      id="cart-delivery-city"
+                      className="form-input"
+                      value={checkoutForm.deliveryCity}
+                      onChange={(event) => setCheckoutForm((prev) => ({ ...prev, deliveryCity: event.target.value }))}
+                      placeholder="Ciudad / departamento"
+                      autoComplete="address-level2"
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="form-row">
+                <label className="form-label" htmlFor="cart-buyer-notes">Notas <span>(opcional)</span></label>
+                <textarea
+                  id="cart-buyer-notes"
+                  className="form-input checkout-notes"
+                  value={checkoutForm.buyerNotes}
+                  onChange={(event) => setCheckoutForm((prev) => ({ ...prev, buyerNotes: event.target.value.slice(0, 500) }))}
+                  placeholder="Indicaciones de acceso, horarios u otra información"
+                  rows="2"
                 />
               </div>
             </div>
 
             {!isCheckoutFormValid && (checkoutForm.buyerName || checkoutForm.buyerPhone) && (
-              <p className="cart-order-error">Ingresá nombre y WhatsApp válidos (entre 10 y 15 dígitos).</p>
+              <p className="cart-order-error">Completá nombre, email, WhatsApp y los datos de entrega.</p>
             )}
 
             {!mercadoPagoEnabled && (
@@ -348,9 +450,13 @@ export default function Cart() {
               ))}
             </ul>
             <div className="cart-footer">
-              <div className="cart-total">
-                <span>Total final</span>
-                <strong>{formatPrice(cartTotal, cartCurrency)}</strong>
+              <div className="checkout-summary">
+                <div><span>Productos</span><strong>{formatPrice(cartTotal, cartCurrency)}</strong></div>
+                <div>
+                  <span>{checkoutForm.deliveryMethod === 'pickup' ? 'Retiro acordado' : 'Entrega coordinada'}</span>
+                  <strong>{checkoutForm.deliveryMethod === 'pickup' ? 'Sin costo' : 'A confirmar'}</strong>
+                </div>
+                <div className="checkout-summary-total"><span>Total a pagar ahora</span><strong>{formatPrice(cartTotal, cartCurrency)}</strong></div>
               </div>
               {orderError && <p className="cart-order-error">{orderError}</p>}
               <button

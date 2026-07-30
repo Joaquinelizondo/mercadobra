@@ -60,6 +60,30 @@ const allowedOrigins = FRONTEND_ORIGIN
   .map((origin) => origin.trim())
   .filter(Boolean)
 
+function validateCheckoutDetails(body = {}) {
+  const buyerName = validateStringLength(requireField(body.buyerName, 'Nombre'), 'Nombre', 3, 120)
+  const buyerPhone = validatePhone(body.buyerPhone)
+  const buyerEmail = validateEmail(body.buyerEmail)
+  const deliveryMethod = validateEnum(body.deliveryMethod || 'delivery', ['delivery', 'pickup'], 'Entrega')
+  const deliveryAddress = deliveryMethod === 'delivery'
+    ? validateStringLength(requireField(body.deliveryAddress, 'Dirección'), 'Dirección', 5, 180)
+    : ''
+  const deliveryCity = deliveryMethod === 'delivery'
+    ? validateStringLength(requireField(body.deliveryCity, 'Localidad'), 'Localidad', 2, 100)
+    : ''
+  const buyerNotes = validateStringLength(body.buyerNotes || '', 'Notas', 0, 500)
+
+  return {
+    buyerName,
+    buyerPhone,
+    buyerEmail,
+    deliveryMethod,
+    deliveryAddress,
+    deliveryCity,
+    buyerNotes,
+  }
+}
+
 // ============================================================================
 // SECURITY MIDDLEWARES (orden es importante)
 // ============================================================================
@@ -406,7 +430,7 @@ app.delete('/products/:id', authMiddleware, providerOnly, async (req, res) => {
 })
 
 app.post('/orders', asyncHandler(async (req, res) => {
-  const { items = [], buyerName = '', buyerPhone = '', paymentMethod = '' } = req.body || {}
+  const { items = [], paymentMethod = '' } = req.body || {}
 
   // Validar items
   validateArray(items, 'Carrito')
@@ -415,9 +439,7 @@ app.post('/orders', asyncHandler(async (req, res) => {
     quantity: validateQuantity(item.quantity),
   }))
 
-  // Validar buyer info
-  requireField(buyerName, 'Nombre')
-  const normalizedPhone = validatePhone(buyerPhone)
+  const checkoutDetails = validateCheckoutDetails(req.body)
 
   // Validar método de pago
   const normalizedPaymentMethod = validatePaymentMethod(paymentMethod)
@@ -425,8 +447,7 @@ app.post('/orders', asyncHandler(async (req, res) => {
   const repo = await getRepository()
   const order = await repo.createOrder({
     items: normalizedItems,
-    buyerName,
-    buyerPhone: normalizedPhone,
+    ...checkoutDetails,
     paymentMethod: normalizedPaymentMethod,
   })
 
@@ -443,7 +464,7 @@ app.post('/orders', asyncHandler(async (req, res) => {
 }))
 
 app.post('/payments/mercadopago/checkout', async (req, res) => {
-  const { items = [], buyerName = '', buyerPhone = '', paymentMethod = '' } = req.body || {}
+  const { items = [], paymentMethod = '' } = req.body || {}
   const normalizedPaymentMethod = String(paymentMethod || '').trim().toLowerCase()
 
   if (normalizedPaymentMethod !== 'mercadopago') {
@@ -473,6 +494,7 @@ app.post('/payments/mercadopago/checkout', async (req, res) => {
   let createdOrder = null
 
   try {
+    const checkoutDetails = validateCheckoutDetails(req.body)
     const productSnapshots = await Promise.all(
       normalizedItems.map(async (item) => {
         const product = await repo.getProductById(item.productId)
@@ -501,8 +523,7 @@ app.post('/payments/mercadopago/checkout', async (req, res) => {
 
     createdOrder = await repo.createOrder({
       items: normalizedItems,
-      buyerName,
-      buyerPhone,
+      ...checkoutDetails,
       paymentMethod: 'mercadopago',
     })
 
@@ -516,11 +537,14 @@ app.post('/payments/mercadopago/checkout', async (req, res) => {
         unit_price: item.price,
       })),
       payer: {
-        name: String(buyerName || '').trim() || 'Cliente MercadObra',
+        name: checkoutDetails.buyerName,
+        email: checkoutDetails.buyerEmail,
       },
       metadata: {
         order_id: createdOrder.id,
-        buyer_phone: String(buyerPhone || '').trim(),
+        buyer_phone: checkoutDetails.buyerPhone,
+        delivery_method: checkoutDetails.deliveryMethod,
+        delivery_city: checkoutDetails.deliveryCity,
       },
       notification_url: `${BACKEND_PUBLIC_URL}/payments/mercadopago/webhook`,
       back_urls: {

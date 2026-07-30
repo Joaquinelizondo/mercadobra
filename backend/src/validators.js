@@ -74,15 +74,15 @@ export function validateQuantity(quantity, fieldName = 'Cantidad') {
 }
 
 /**
- * Valida un teléfono (al menos 10 dígitos)
+ * Valida un teléfono (8 a 15 dígitos, con o sin código de país)
  */
 export function validatePhone(phone) {
   const normalized = String(phone ?? '').trim()
   const digitsOnly = normalized.replace(/\D/g, '')
 
-  if (digitsOnly.length < 10 || digitsOnly.length > 15) {
+  if (digitsOnly.length < 8 || digitsOnly.length > 15) {
     throw new ValidationError(
-      `Teléfono inválido: debe tener entre 10 y 15 dígitos. Tienes ${digitsOnly.length}.`
+      `Teléfono inválido: debe tener entre 8 y 15 dígitos. Tienes ${digitsOnly.length}.`
     )
   }
 
@@ -171,7 +171,7 @@ export function validateOrderStatus(status) {
  * Valida un método de pago
  */
 export function validatePaymentMethod(method) {
-  const validMethods = new Set(['transferencia', 'mercadopago', 'tarjeta_credito', 'tarjeta_debito'])
+  const validMethods = new Set(['transferencia', 'mercadopago'])
   return validateEnum(method, Array.from(validMethods), 'Método de pago')
 }
 

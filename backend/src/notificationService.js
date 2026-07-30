@@ -83,6 +83,17 @@ function formatOrderConfirmationMessage(order, items = []) {
     `*Medio de pago:* ${paymentLabel}`,
   ]
 
+  lines.push(`*Entrega:* ${order.deliveryMethod === 'pickup' ? 'Retiro acordado' : 'Entrega coordinada'}`)
+  if (order.deliveryMethod !== 'pickup' && (order.deliveryAddress || order.deliveryCity)) {
+    lines.push(`*Dirección:* ${[order.deliveryAddress, order.deliveryCity].filter(Boolean).join(', ')}`)
+  }
+  if (order.buyerEmail) {
+    lines.push(`*Email:* ${order.buyerEmail}`)
+  }
+  if (order.buyerNotes) {
+    lines.push(`*Notas:* ${order.buyerNotes}`)
+  }
+
   if (paymentLabel === 'Transferencia bancaria') {
     if (TRANSFER_ACCOUNT_NAME) {
       lines.push(`*Titular:* ${TRANSFER_ACCOUNT_NAME}`)

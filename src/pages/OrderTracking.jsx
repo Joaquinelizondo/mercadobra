@@ -107,6 +107,11 @@ export default function OrderTracking() {
             <p>Estado: <Badge variant={STATUS_VARIANTS[order.status] || 'default'}>{statusLabel}</Badge></p>
             <p>Pago: <strong>{PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod || 'No informado'}</strong></p>
             <p>Fecha: {new Date(order.createdAt).toLocaleString('es-AR')}</p>
+            <p>
+              Entrega: <strong>{order.deliveryMethod === 'pickup'
+                ? 'Retiro acordado'
+                : [order.deliveryAddress, order.deliveryCity].filter(Boolean).join(', ') || 'A coordinar'}</strong>
+            </p>
 
             <div className="tracking-timeline" aria-label="Linea de tiempo del pedido">
               {TRACKING_STEPS.map((status, index) => {

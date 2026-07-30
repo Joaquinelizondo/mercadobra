@@ -183,7 +183,17 @@ async function getJsonRepo() {
       writeDb(db)
       return true
     },
-    async createOrder({ items, buyerName, buyerPhone, paymentMethod = '' }) {
+    async createOrder({
+      items,
+      buyerName,
+      buyerPhone,
+      buyerEmail = '',
+      deliveryMethod = 'delivery',
+      deliveryAddress = '',
+      deliveryCity = '',
+      buyerNotes = '',
+      paymentMethod = '',
+    }) {
       const db = readDb()
       for (const item of items) {
         const product = db.products.find((p) => Number(p.id) === Number(item.productId))
@@ -199,6 +209,11 @@ async function getJsonRepo() {
         items,
         buyerName,
         buyerPhone,
+        buyerEmail,
+        deliveryMethod,
+        deliveryAddress,
+        deliveryCity,
+        buyerNotes,
         paymentMethod,
         paymentStatus: paymentMethod === 'mercadopago' ? 'pending' : 'not_required',
         paymentProvider: paymentMethod === 'mercadopago' ? 'mercadopago' : '',
@@ -592,7 +607,17 @@ async function getPgRepo() {
       const result = await pool.query('DELETE FROM products WHERE id = $1', [id])
       return result.rowCount > 0
     },
-    async createOrder({ items, buyerName, buyerPhone, paymentMethod = '' }) {
+    async createOrder({
+      items,
+      buyerName,
+      buyerPhone,
+      buyerEmail = '',
+      deliveryMethod = 'delivery',
+      deliveryAddress = '',
+      deliveryCity = '',
+      buyerNotes = '',
+      paymentMethod = '',
+    }) {
       const client = await pool.connect()
       try {
         await client.query('BEGIN')
@@ -603,12 +628,19 @@ async function getPgRepo() {
           if (Number(product.stock) < item.quantity) throw new Error(`Stock insuficiente para ${product.name}. Disponible: ${product.stock}`)
         }
         const orderResult = await client.query(
-          `INSERT INTO orders (buyer_name, buyer_phone, payment_method, payment_status, payment_provider, status, tracking_token)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
+          `INSERT INTO orders
+            (buyer_name, buyer_phone, buyer_email, delivery_method, delivery_address, delivery_city,
+             buyer_notes, payment_method, payment_status, payment_provider, status, tracking_token)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
            RETURNING *`,
           [
             buyerName,
             buyerPhone,
+            buyerEmail,
+            deliveryMethod,
+            deliveryAddress || null,
+            deliveryCity || null,
+            buyerNotes || null,
             paymentMethod,
             paymentMethod === 'mercadopago' ? 'pending' : 'not_required',
             paymentMethod === 'mercadopago' ? 'mercadopago' : null,
@@ -627,6 +659,11 @@ async function getPgRepo() {
           items,
           buyerName: order.buyer_name,
           buyerPhone: order.buyer_phone,
+          buyerEmail: order.buyer_email || '',
+          deliveryMethod: order.delivery_method || 'delivery',
+          deliveryAddress: order.delivery_address || '',
+          deliveryCity: order.delivery_city || '',
+          buyerNotes: order.buyer_notes || '',
           paymentMethod: order.payment_method,
           paymentStatus: order.payment_status || 'not_required',
           paymentProvider: order.payment_provider || '',
@@ -658,6 +695,11 @@ async function getPgRepo() {
           items: itemsResult.rows.map((item) => ({ productId: Number(item.product_id), quantity: Number(item.quantity) })),
           buyerName: row.buyer_name,
           buyerPhone: row.buyer_phone,
+          buyerEmail: row.buyer_email || '',
+          deliveryMethod: row.delivery_method || 'delivery',
+          deliveryAddress: row.delivery_address || '',
+          deliveryCity: row.delivery_city || '',
+          buyerNotes: row.buyer_notes || '',
           paymentMethod: row.payment_method,
           paymentStatus: row.payment_status || 'not_required',
           paymentProvider: row.payment_provider || '',
@@ -708,6 +750,11 @@ async function getPgRepo() {
         id: Number(row.id),
         buyerName: row.buyer_name,
         buyerPhone: row.buyer_phone,
+        buyerEmail: row.buyer_email || '',
+        deliveryMethod: row.delivery_method || 'delivery',
+        deliveryAddress: row.delivery_address || '',
+        deliveryCity: row.delivery_city || '',
+        buyerNotes: row.buyer_notes || '',
         paymentMethod: row.payment_method,
         paymentStatus: row.payment_status || 'not_required',
         paymentProvider: row.payment_provider || '',
@@ -727,6 +774,11 @@ async function getPgRepo() {
         id: Number(row.id),
         buyerName: row.buyer_name,
         buyerPhone: row.buyer_phone,
+        buyerEmail: row.buyer_email || '',
+        deliveryMethod: row.delivery_method || 'delivery',
+        deliveryAddress: row.delivery_address || '',
+        deliveryCity: row.delivery_city || '',
+        buyerNotes: row.buyer_notes || '',
         paymentMethod: row.payment_method,
         paymentStatus: row.payment_status || 'not_required',
         paymentProvider: row.payment_provider || '',
@@ -762,6 +814,11 @@ async function getPgRepo() {
         id: Number(row.id),
         buyerName: row.buyer_name,
         buyerPhone: row.buyer_phone,
+        buyerEmail: row.buyer_email || '',
+        deliveryMethod: row.delivery_method || 'delivery',
+        deliveryAddress: row.delivery_address || '',
+        deliveryCity: row.delivery_city || '',
+        buyerNotes: row.buyer_notes || '',
         paymentMethod: row.payment_method,
         paymentStatus: row.payment_status || 'not_required',
         paymentProvider: row.payment_provider || '',
@@ -808,6 +865,11 @@ async function getPgRepo() {
         })),
         buyerName: row.buyer_name,
         buyerPhone: row.buyer_phone,
+        buyerEmail: row.buyer_email || '',
+        deliveryMethod: row.delivery_method || 'delivery',
+        deliveryAddress: row.delivery_address || '',
+        deliveryCity: row.delivery_city || '',
+        buyerNotes: row.buyer_notes || '',
         paymentMethod: row.payment_method,
         paymentStatus: row.payment_status || 'not_required',
         paymentProvider: row.payment_provider || '',
