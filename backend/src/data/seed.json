@@ -33,7 +33,7 @@
       "category": "Materiales",
       "company": "Corralón La Obra",
       "providerId": 1,
-      "price": 10900,
+      "price": 1,
       "unit": "bolsa",
       "stock": 120,
       "color": "#ea580c"
@@ -45,7 +45,7 @@
       "category": "Materiales",
       "company": "Áridos del Sur",
       "providerId": 2,
-      "price": 28500,
+      "price": 1,
       "unit": "m³",
       "stock": 50,
       "color": "#f59e0b"
@@ -57,7 +57,7 @@
       "category": "Estructura",
       "company": "Estructura Total",
       "providerId": 3,
-      "price": 17800,
+      "price": 1,
       "unit": "barra",
       "stock": 0,
       "color": "#0284c7"
