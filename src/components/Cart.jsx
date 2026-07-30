@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext'
 import { useProducts } from '../context/ProductContext'
 import { createOrder, getMercadoPagoConfig, startMercadoPagoCheckout } from '../lib/api'
 import { formatPrice } from '../utils/format'
+import { savePendingMercadoPagoOrder } from '../utils/paymentReturn'
 
 const PAYMENT_METHODS = [
   {
@@ -27,33 +28,6 @@ const PAYMENT_METHODS = [
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
         <rect x="2" y="5" width="20" height="14" rx="3" stroke="currentColor" strokeWidth="2" fill="none"/>
         <path d="M2 10h20" stroke="currentColor" strokeWidth="2"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'tarjeta_credito',
-    label: 'Tarjeta de crédito',
-    detail: 'Visa, Mastercard, OCA. Posibles cuotas según banco.',
-    tag: 'Inmediato',
-    icon: (
-      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-        <rect x="2" y="5" width="20" height="14" rx="3" stroke="currentColor" strokeWidth="2" fill="none"/>
-        <path d="M2 10h20" stroke="currentColor" strokeWidth="2"/>
-        <rect x="5" y="14" width="4" height="2" rx="1" fill="currentColor"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'tarjeta_debito',
-    label: 'Tarjeta de débito',
-    detail: 'Débito inmediato desde tu cuenta bancaria.',
-    tag: 'Inmediato',
-    icon: (
-      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-        <rect x="2" y="5" width="20" height="14" rx="3" stroke="currentColor" strokeWidth="2" fill="none"/>
-        <path d="M2 10h20" stroke="currentColor" strokeWidth="2"/>
-        <rect x="5" y="14" width="3" height="2" rx="1" fill="currentColor"/>
-        <rect x="10" y="14" width="3" height="2" rx="1" fill="currentColor"/>
       </svg>
     ),
   },
@@ -149,11 +123,16 @@ export default function Cart() {
           })),
         })
 
-        const targetUrl = checkout.sandboxInitPoint || checkout.initPoint
+        const targetUrl = checkout.initPoint || checkout.sandboxInitPoint
         if (!targetUrl) {
           throw new Error('No se recibió un enlace de pago válido para Mercado Pago')
         }
 
+        savePendingMercadoPagoOrder({
+          orderId: checkout.orderId,
+          trackingToken: checkout.trackingToken,
+          buyerPhone: normalizedBuyerPhone,
+        })
         window.location.assign(targetUrl)
         return
       }
@@ -417,4 +396,3 @@ export default function Cart() {
     </>
   )
 }
-

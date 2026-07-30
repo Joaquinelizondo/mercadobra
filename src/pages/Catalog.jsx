@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useProducts } from '../context/ProductContext'
@@ -7,7 +7,12 @@ import ProductCard from '../components/ProductCard'
 import PublishModal from '../components/PublishModal'
 import EmptyState from '../components/EmptyState'
 import { SkeletonGrid } from '../components/Skeleton'
+import { getTrackedOrder } from '../lib/api'
 import { formatPrice } from '../utils/format'
+import {
+  clearPendingMercadoPagoOrder,
+  readPendingMercadoPagoOrder,
+} from '../utils/paymentReturn'
 
 const PAGE_SIZE = 12
 const MAX_COMPARE = 3
@@ -47,16 +52,19 @@ function parsePageParam(value) {
 
 export default function Catalog() {
   const { supplierUser, adminUser } = useAuth()
-  const { addToCart, setCartOpen } = useCart()
+  const { addToCart, clearCart, setCartOpen } = useCart()
   const { productList, loadingProducts } = useProducts()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [publishOpen, setPublishOpen] = useState(false)
   const [compareIds, setCompareIds] = useState([])
   const [comboFeedback, setComboFeedback] = useState('')
+  const [paymentReturn, setPaymentReturn] = useState(null)
   const infiniteSentinelRef = useRef(null)
 
   const searchQuery = searchParams.get('q')?.trim() ?? ''
+  const paymentStatus = searchParams.get('payment')?.trim().toLowerCase() || ''
+  const paymentOrderId = searchParams.get('orderId') || ''
 
   const categories = useMemo(
     () => ['todos', ...new Set(productList.map((product) => String(product.category || '').trim()).filter(Boolean))],
@@ -183,6 +191,62 @@ export default function Catalog() {
     observer.observe(infiniteSentinelRef.current)
     return () => observer.disconnect()
   }, [hasMoreInInfinite, currentPage, updateSearchParams])
+
+  useEffect(() => {
+    if (!['success', 'pending', 'failure'].includes(paymentStatus)) return
+
+    const pendingOrder = readPendingMercadoPagoOrder()
+    const orderId = paymentOrderId || pendingOrder?.orderId || ''
+    let cancelled = false
+
+    setPaymentReturn({
+      status: paymentStatus,
+      orderId,
+      trackingToken: pendingOrder?.trackingToken || '',
+      buyerPhone: pendingOrder?.buyerPhone || '',
+    })
+
+    if (pendingOrder?.trackingToken && pendingOrder?.buyerPhone) {
+      getTrackedOrder(pendingOrder.trackingToken, pendingOrder.buyerPhone)
+        .then((order) => {
+          if (cancelled) return
+
+          const backendPaymentStatus = String(order?.paymentStatus || '').toLowerCase()
+          const resolvedStatus = ['approved', 'authorized'].includes(backendPaymentStatus)
+            ? 'success'
+            : ['rejected', 'cancelled', 'refunded', 'charged_back', 'checkout_error'].includes(backendPaymentStatus)
+              ? 'failure'
+              : 'pending'
+
+          setPaymentReturn({
+            status: resolvedStatus,
+            orderId: order?.id || orderId,
+            trackingToken: pendingOrder.trackingToken,
+            buyerPhone: pendingOrder.buyerPhone,
+          })
+
+          if (resolvedStatus === 'success') clearCart()
+          if (resolvedStatus !== 'pending') clearPendingMercadoPagoOrder()
+        })
+        .catch(() => {
+          // Si el webhook todavía no actualizó la orden, conservamos el estado de retorno.
+        })
+    }
+
+    return () => {
+      cancelled = true
+    }
+  }, [paymentStatus, paymentOrderId, clearCart])
+
+  function closePaymentReturn() {
+    setPaymentReturn(null)
+    updateSearchParams({ payment: null, orderId: null }, { replace: true })
+  }
+
+  function retryPayment() {
+    closePaymentReturn()
+    setCartOpen(true)
+  }
 
   function handlePublishClick() {
     if (!supplierUser && !adminUser) {
@@ -404,6 +468,53 @@ export default function Catalog() {
           onClose={() => setPublishOpen(false)}
           onPublished={() => setPublishOpen(false)}
         />
+      )}
+
+      {paymentReturn && (
+        <div className="payment-return-backdrop" role="presentation" onMouseDown={closePaymentReturn}>
+          <section
+            className={`payment-return-card payment-return-card--${paymentReturn.status}`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="payment-return-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <span className="payment-return-icon" aria-hidden="true">
+              {paymentReturn.status === 'success' ? '✓' : paymentReturn.status === 'pending' ? '…' : '!'}
+            </span>
+            <h2 id="payment-return-title">
+              {paymentReturn.status === 'success'
+                ? 'Pago aprobado'
+                : paymentReturn.status === 'pending' ? 'Pago pendiente' : 'No se completó el pago'}
+            </h2>
+            <p>
+              {paymentReturn.status === 'success'
+                ? 'Tu compra quedó confirmada correctamente.'
+                : paymentReturn.status === 'pending'
+                  ? 'Mercado Pago todavía está procesando la operación. Te avisaremos cuando se confirme.'
+                  : 'No se realizó ningún cobro. Podés volver al carrito e intentarlo nuevamente.'}
+            </p>
+            {paymentReturn.orderId && <strong className="payment-return-order">Orden #{paymentReturn.orderId}</strong>}
+            <div className="payment-return-actions">
+              {paymentReturn.trackingToken && paymentReturn.buyerPhone && (
+                <Link
+                  to={`/seguimiento/${paymentReturn.trackingToken}?phone=${encodeURIComponent(paymentReturn.buyerPhone)}`}
+                  className="payment-return-primary"
+                >
+                  Ver seguimiento
+                </Link>
+              )}
+              {paymentReturn.status === 'failure' && (
+                <button type="button" className="payment-return-primary" onClick={retryPayment}>
+                  Volver al carrito
+                </button>
+              )}
+              <button type="button" className="payment-return-secondary" onClick={closePaymentReturn}>
+                Seguir explorando
+              </button>
+            </div>
+          </section>
+        </div>
       )}
     </>
   )
