@@ -123,7 +123,9 @@ export default function Cart() {
           })),
         })
 
-        const targetUrl = checkout.initPoint || checkout.sandboxInitPoint
+        const targetUrl = checkout.sandbox
+          ? checkout.sandboxInitPoint || checkout.initPoint
+          : checkout.initPoint || checkout.sandboxInitPoint
         if (!targetUrl) {
           throw new Error('No se recibió un enlace de pago válido para Mercado Pago')
         }

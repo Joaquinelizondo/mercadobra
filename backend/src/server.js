@@ -9,6 +9,7 @@ import {
   createMercadoPagoPreference,
   getMercadoPagoPayment,
   isMercadoPagoConfigured,
+  isMercadoPagoSandbox,
   mapMercadoPagoStatus,
 } from './paymentService.js'
 import { config, validateEnvVars } from './config.js'
@@ -145,7 +146,10 @@ app.get('/health', (_req, res) => {
 })
 
 app.get('/payments/mercadopago/config', (_req, res) => {
-  res.json({ enabled: isMercadoPagoConfigured() })
+  res.json({
+    enabled: isMercadoPagoConfigured(),
+    sandbox: isMercadoPagoSandbox(),
+  })
 })
 
 app.post('/auth/login', asyncHandler(async (req, res) => {
@@ -540,6 +544,7 @@ app.post('/payments/mercadopago/checkout', async (req, res) => {
       preferenceId: String(preference.id || ''),
       initPoint: preference.init_point,
       sandboxInitPoint: preference.sandbox_init_point,
+      sandbox: isMercadoPagoSandbox(),
     })
   } catch (error) {
     if (createdOrder?.id) {

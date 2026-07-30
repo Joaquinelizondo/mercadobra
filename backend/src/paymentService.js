@@ -61,3 +61,7 @@ export function mapMercadoPagoStatus(status) {
 export function isMercadoPagoConfigured() {
   return Boolean(MERCADOPAGO_ACCESS_TOKEN)
 }
+
+export function isMercadoPagoSandbox() {
+  return MERCADOPAGO_ACCESS_TOKEN.startsWith('TEST-')
+}
