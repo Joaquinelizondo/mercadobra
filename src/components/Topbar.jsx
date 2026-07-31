@@ -6,26 +6,24 @@ import { companyInitials } from '../utils/format'
 import logoImg from '../assets/mercadobra.png'
 
 export default function Topbar() {
-  const { supplierUser, logout, customerUser, logoutCustomer, adminUser } = useAuth()
+  const { supplierUser, logout, customerUser, logoutCustomer } = useAuth()
   const { cartCount, setCartOpen } = useCart()
   const { wishlist } = useWishlist()
-  const homeHash = (sectionId) => `${import.meta.env.BASE_URL}#${sectionId}`
+  const showQuoteFinder = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 
   return (
     <header className="topbar">
       <div className="brand-wrap">
-        <Link to="/" className="store-nav-brand" aria-label="MercadoBra, inicio">
+        <Link to="/" className="store-nav-brand" aria-label="MercadoBra, inicio" onClick={showQuoteFinder}>
           <img src={logoImg} className="brand-logo" alt="MercadoBra" />
         </Link>
       </div>
 
       <nav className="topbar-menu" aria-label="Navegación principal">
-        <a href={homeHash('inicio')}>Inicio</a>
-        <a href={homeHash('categorias')}>Categorías</a>
-        <Link to="/explorar">Ver todo</Link>
-        <Link to="/oxida" className="topbar-oxida-link"><span>Oxida</span><small>Studio</small></Link>
-        <a href={homeHash('como-funciona')}>Cómo funciona</a>
-        {adminUser && <Link to="/admin/productos">Administrar tienda</Link>}
+        <Link to="/" onClick={showQuoteFinder}>Inicio</Link>
+        <Link to="/quienes-somos" onClick={showQuoteFinder}>Quiénes somos</Link>
+        <Link to="/oxida" className="topbar-oxida-link" onClick={showQuoteFinder}><span>Oxida</span></Link>
+        <Link to="/contacto" onClick={showQuoteFinder}>Contáctenos</Link>
       </nav>
 
       <div className="topbar-actions">

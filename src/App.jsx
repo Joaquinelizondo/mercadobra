@@ -14,6 +14,8 @@ import AdminQuoteConsultations from './pages/AdminQuoteConsultations'
 import NotFound from './pages/NotFound'
 import OxidaStudio from './pages/OxidaStudio'
 import Storefront from './pages/Storefront'
+import About from './pages/About'
+import Contact from './pages/Contact'
 import AdminProducts from './pages/AdminProducts'
 import AdminCustomRequests from './pages/AdminCustomRequests'
 import './pages/AdminCustomRequests.css'
@@ -855,6 +857,8 @@ export default function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<Storefront />} />
         <Route path="/mercadobra" element={<Storefront />} />
+        <Route path="/quienes-somos" element={<About />} />
+        <Route path="/contacto" element={<Contact />} />
         <Route path="/oxida" element={<OxidaStudio />} />
         <Route path="/explorar" element={<Catalog />} />
         <Route path="/producto/:id" element={<ProductDetail />} />
