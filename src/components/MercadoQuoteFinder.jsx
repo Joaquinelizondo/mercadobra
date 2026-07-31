@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from 'react-router-dom'
 import { useProducts } from '../context/ProductContext'
 import { createSearchContact } from '../lib/api'
-import { formatPrice } from '../utils/format'
+import ProductCard from './ProductCard'
 import '../styles/MercadoQuoteFinder.css'
 
 const INTENT_TERMS = {
@@ -152,21 +151,11 @@ export default function MercadoQuoteFinder() {
             {results.length > 0 && <button type="button" onClick={() => setModalOpen(true)}>Enviar nuevamente</button>}
           </div>
           {results.length > 0 ? (
-            <>
-              <div className="mqf-result-list">
-                {results.map((product, index) => (
-                  <Link to={`/producto/${product.id}`} className="mqf-result" key={product.id}>
-                    <span>0{index + 1}</span>
-                    <div>
-                      <small>{product.category} · {product.company}</small>
-                      <strong>{product.name}</strong>
-                    </div>
-                    <b>{formatPrice(product.price, product.currency)} <i>/ {product.unit}</i></b>
-                    <em>↗</em>
-                  </Link>
-                ))}
-              </div>
-            </>
+            <div className="products-grid mqf-product-grid">
+              {results.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
           ) : (
             <p className="mqf-empty">Todavía no encontramos productos que coincidan. Probá describiéndolo con otras palabras.</p>
           )}
