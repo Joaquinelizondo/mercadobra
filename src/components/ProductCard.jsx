@@ -85,16 +85,6 @@ export default function ProductCard({
             {isCompared ? 'Comparando' : 'Comparar'}
           </button>
         )}
-        <div className="product-tags-row">
-          <span className="product-category-tag">{product.category}</span>
-          <span className={`product-buy-tag${Number(product.stock) > 0 ? ' product-buy-tag--direct' : ''}`}>
-            {product.productType === 'custom_quote'
-              ? 'A cotizar'
-              : product.productType === 'made_to_order'
-                ? 'Por encargo'
-                : Number(product.stock) > 0 ? 'Compra directa' : 'Consultar proveedor'}
-          </span>
-        </div>
         <button
           className={`product-wishlist-btn${inWishlist ? ' product-wishlist-btn--active' : ''}`}
           onClick={(e) => {
