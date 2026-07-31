@@ -43,10 +43,15 @@ export default function ProductCard({
     }
 
     if (Number(product.stock) > 0) {
+      const added = addToCart(product)
+      if (!added) {
+        setAddFeedback('Ya agregaste todo el stock disponible')
+        window.setTimeout(() => setAddFeedback(''), 1600)
+        return
+      }
       setIsAddingToCart(true)
       const feedbackIndex = Math.floor(Math.random() * ADD_FEEDBACK.length)
       setAddFeedback(ADD_FEEDBACK[feedbackIndex])
-      addToCart(product)
       setCartOpen(true)
       window.setTimeout(() => {
         setIsAddingToCart(false)
@@ -112,6 +117,9 @@ export default function ProductCard({
         </Link>
         <h3 className="product-name">{product.name}</h3>
         <p className="product-desc">{product.description}</p>
+        {Number(product.stock) > 0 && Number(product.stock) <= 3 && (
+          <p className="product-low-stock">Últimas {Number(product.stock)} unidades</p>
+        )}
         <div className="product-footer">
           <div className="product-price">
             <span className="price-amount">{formatPrice(product.price, product.currency)}</span>

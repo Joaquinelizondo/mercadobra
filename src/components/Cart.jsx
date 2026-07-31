@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useProducts } from '../context/ProductContext'
-import { createOrder, getMercadoPagoConfig, startMercadoPagoCheckout } from '../lib/api'
+import { createOrder, getMercadoPagoConfig, getProducts, startMercadoPagoCheckout } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import { savePendingMercadoPagoOrder } from '../utils/paymentReturn'
 
@@ -45,7 +45,7 @@ const EMPTY_CHECKOUT_FORM = {
 
 // steps: 'cart' | 'payment' | 'done'
 export default function Cart() {
-  const { cartItems, cartCount, cartTotal, cartOpen, setCartOpen, changeQty, clearCart } = useCart()
+  const { cartItems, cartCount, cartTotal, cartOpen, setCartOpen, changeQty, syncCartInventory, clearCart } = useCart()
   const { refreshProducts } = useProducts()
   const [step, setStep] = useState('cart')
   const [selectedPayment, setSelectedPayment] = useState(null)
@@ -128,6 +128,22 @@ export default function Cart() {
     setOrderError('')
 
     try {
+      const latestProducts = await getProducts()
+      const latestById = new Map(latestProducts.map((product) => [Number(product.id), product]))
+      const unavailableItem = cartItems.find((item) => {
+        const latest = latestById.get(Number(item.id))
+        return !latest || latest.status !== 'published' || Number(latest.stock) < Number(item.quantity)
+      })
+      syncCartInventory(latestProducts)
+      if (unavailableItem) {
+        const latestStock = Math.max(0, Number(latestById.get(Number(unavailableItem.id))?.stock) || 0)
+        throw new Error(
+          latestStock === 0
+            ? `“${unavailableItem.name}” se agotó antes de confirmar. Actualizamos tu carrito.`
+            : `El stock de “${unavailableItem.name}” cambió: quedan ${latestStock}. Actualizamos tu carrito.`
+        )
+      }
+
       if (selectedPayment === 'mercadopago' && !mercadoPagoEnabled) {
         throw new Error('Mercado Pago no está disponible en este entorno. Usá Transferencia bancaria.')
       }
@@ -280,11 +296,12 @@ export default function Cart() {
                       <div className="cart-item-info">
                         <p className="cart-item-name">{item.name}</p>
                         <p className="cart-item-company">{item.company}</p>
+                        {Number(item.stock) <= 3 && <p className="cart-item-stock">Quedan {Number(item.stock)}</p>}
                       </div>
                       <div className="cart-item-controls">
                         <button className="qty-btn" onClick={() => changeQty(item.id, -1)} aria-label="Quitar uno">−</button>
                         <span className="qty-value">{item.quantity}</span>
-                        <button className="qty-btn" onClick={() => changeQty(item.id, 1)} aria-label="Agregar uno">+</button>
+                        <button className="qty-btn" onClick={() => changeQty(item.id, 1)} disabled={item.quantity >= Number(item.stock)} aria-label="Agregar uno">+</button>
                       </div>
                       <p className="cart-item-subtotal">{formatPrice(item.price * item.quantity, item.currency)}</p>
                     </li>

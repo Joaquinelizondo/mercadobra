@@ -2715,6 +2715,10 @@
   flex: 1;
 }
 
+.product-low-stock { margin: 0; color: #b45309; font-size: .74rem; font-weight: 800; }
+.cart-item-stock { margin: 3px 0 0; color: #b45309; font-size: .68rem; font-weight: 800; }
+.qty-btn:disabled { opacity: .38; cursor: not-allowed; }
+
 .product-company {
   font-size: 0.78rem;
   color: var(--accent-strong);
