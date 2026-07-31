@@ -69,7 +69,7 @@ export default function MercadoQuoteFinder() {
   const [contact, setContact] = useState({ name: '', lastName: '', email: '', phone: '' })
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
-  const [sent, setSent] = useState(false)
+  const [resultsVisible, setResultsVisible] = useState(false)
 
   const results = useMemo(
     () => findMatchingProducts(productList, query),
@@ -79,8 +79,14 @@ export default function MercadoQuoteFinder() {
   function prepareQuote(event) {
     event?.preventDefault()
     setError('')
-    setSent(false)
     setModalOpen(true)
+  }
+
+  function updateQuery(event) {
+    setQuery(event.target.value)
+    setResultsVisible(false)
+    setModalOpen(false)
+    setError('')
   }
 
   async function sendQuote(event) {
@@ -101,7 +107,8 @@ export default function MercadoQuoteFinder() {
         source: 'mercadobra-quote-finder',
         selectedProductIds: results.map((product) => product.id),
       })
-      setSent(true)
+      setResultsVisible(true)
+      setModalOpen(false)
     } catch (requestError) {
       setError(requestError.message || 'No pudimos enviar el email. Intentá nuevamente.')
     } finally {
@@ -121,7 +128,7 @@ export default function MercadoQuoteFinder() {
           <textarea
             id="mercado-quote-query"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={updateQuery}
             placeholder="¿Qué estás buscando? Ej: escalera de hierro..."
             rows="1"
           />
@@ -132,11 +139,17 @@ export default function MercadoQuoteFinder() {
         </div>
       </form>
 
-      {query.trim().length >= 2 && (
+      {resultsVisible && query.trim().length >= 2 && (
         <div className="mqf-results">
           <div className="mqf-results-heading">
-            <div><h3>Resultados de búsqueda</h3><span>{results.length} {results.length === 1 ? 'producto encontrado' : 'productos encontrados'}</span></div>
-            {results.length > 0 && <button type="button" onClick={() => setModalOpen(true)}>Enviar selección</button>}
+            <div>
+              <span className="mqf-results-kicker">Selección personalizada</span>
+              <h3>Estos son los mejores artículos para tu búsqueda</h3>
+              <p>
+                Encontramos {results.length} {results.length === 1 ? 'opción' : 'opciones'} para “{query.trim()}”.
+              </p>
+            </div>
+            {results.length > 0 && <button type="button" onClick={() => setModalOpen(true)}>Enviar nuevamente</button>}
           </div>
           {results.length > 0 ? (
             <>
@@ -164,31 +177,20 @@ export default function MercadoQuoteFinder() {
         <div className="mqf-modal-backdrop" role="presentation" onMouseDown={() => setModalOpen(false)}>
           <div className="mqf-modal" role="dialog" aria-modal="true" aria-labelledby="mqf-modal-title" onMouseDown={(event) => event.stopPropagation()}>
             <button className="mqf-modal-close" type="button" onClick={() => setModalOpen(false)} aria-label="Cerrar">×</button>
-            {sent ? (
-              <div className="mqf-success">
-                <span>✓</span>
-                <h2 id="mqf-modal-title">¡Listo! Revisá tu correo.</h2>
-                <p>Te enviamos los productos recomendados y los enlaces para ver cada opción.</p>
-                <button type="button" onClick={() => setModalOpen(false)}>Seguir explorando</button>
+            <span className="mqf-modal-kicker">Encontramos {results.length} opciones para vos</span>
+            <h2 id="mqf-modal-title">Completá tus datos para ver la selección</h2>
+            <p>También enviaremos los productos a tu email. No necesitás crear una cuenta.</p>
+            <form onSubmit={sendQuote}>
+              <div className="mqf-modal-grid">
+                <label><span>Nombre <i>opcional</i></span><input value={contact.name} onChange={(event) => setContact({ ...contact, name: event.target.value })} autoComplete="given-name" /></label>
+                <label><span>Apellido <i>opcional</i></span><input value={contact.lastName} onChange={(event) => setContact({ ...contact, lastName: event.target.value })} autoComplete="family-name" /></label>
+                <label className="is-wide"><span>Email *</span><input type="email" required value={contact.email} onChange={(event) => setContact({ ...contact, email: event.target.value })} placeholder="tu@email.com" autoComplete="email" /></label>
+                <label className="is-wide"><span>Teléfono <i>opcional</i></span><input type="tel" value={contact.phone} onChange={(event) => setContact({ ...contact, phone: event.target.value })} placeholder="099 123 456" autoComplete="tel" /></label>
               </div>
-            ) : (
-              <>
-                <span className="mqf-modal-kicker">Tu selección está pronta</span>
-                <h2 id="mqf-modal-title">¿Dónde te la enviamos?</h2>
-                <p>Recibí las opciones en tu email. No necesitás crear una cuenta.</p>
-                <form onSubmit={sendQuote}>
-                  <div className="mqf-modal-grid">
-                    <label><span>Nombre <i>opcional</i></span><input value={contact.name} onChange={(event) => setContact({ ...contact, name: event.target.value })} autoComplete="given-name" /></label>
-                    <label><span>Apellido <i>opcional</i></span><input value={contact.lastName} onChange={(event) => setContact({ ...contact, lastName: event.target.value })} autoComplete="family-name" /></label>
-                    <label className="is-wide"><span>Email *</span><input type="email" required value={contact.email} onChange={(event) => setContact({ ...contact, email: event.target.value })} placeholder="tu@email.com" autoComplete="email" /></label>
-                    <label className="is-wide"><span>Teléfono <i>opcional</i></span><input type="tel" value={contact.phone} onChange={(event) => setContact({ ...contact, phone: event.target.value })} placeholder="099 123 456" autoComplete="tel" /></label>
-                  </div>
-                  {error && <p className="mqf-error" role="alert">{error}</p>}
-                  <button className="mqf-send" type="submit" disabled={sending}>{sending ? 'Enviando…' : 'Recibir productos por email'} <span>→</span></button>
-                  <small className="mqf-privacy">Solo usaremos tus datos para enviarte esta cotización.</small>
-                </form>
-              </>
-            )}
+              {error && <p className="mqf-error" role="alert">{error}</p>}
+              <button className="mqf-send" type="submit" disabled={sending}>{sending ? 'Preparando selección…' : 'Ver productos recomendados'} <span>→</span></button>
+              <small className="mqf-privacy">Solo usaremos tus datos para enviarte esta cotización.</small>
+            </form>
           </div>
         </div>,
         document.body
