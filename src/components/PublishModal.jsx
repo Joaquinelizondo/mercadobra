@@ -6,6 +6,7 @@ import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../data/constants'
 
 const EMPTY_FORM = {
   name: '', sku: '', category: 'Mobiliario', price: '', currency: 'UYU', unit: 'unidad',
+  company: '', providerId: '',
   stock: '0', status: 'published', productType: 'ready', leadTimeDays: '7', weightKg: '',
   dimensions: { width: '', height: '', depth: '' }, configurable: false,
   description: '', images: [], variants: [],
@@ -18,7 +19,7 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
   const [formSuccess, setFormSuccess] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const isEditMode = Boolean(initialFormData?.id)
-  const publisher = supplierUser || (adminUser ? { company: 'Oxida Studio', providerId: null } : null)
+  const publisher = supplierUser || null
   const publisherToken = supplierUser ? token : adminToken
 
   function handleChange(e) {
@@ -77,13 +78,20 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!formData.name.trim() || !formData.price) return
     setSubmitError('')
+    if (!formData.name.trim() || !formData.price || !formData.description.trim()) {
+      setSubmitError('Completá nombre, precio y descripción.')
+      return
+    }
+    if (adminUser && !String(formData.company || '').trim()) {
+      setSubmitError('Indicá la empresa proveedora del producto.')
+      return
+    }
 
     try {
       const savedProduct = isEditMode
-        ? await editProduct(initialFormData.id, { ...formData, company: publisher?.company }, publisher, publisherToken)
-        : await addProduct({ ...formData, company: publisher?.company }, publisher, publisherToken)
+        ? await editProduct(initialFormData.id, formData, publisher, publisherToken)
+        : await addProduct(formData, publisher, publisherToken)
       setFormSuccess(true)
       setTimeout(() => {
         setFormData(EMPTY_FORM)
@@ -120,16 +128,29 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
         ) : (
           <form className="publish-form" onSubmit={handleSubmit} noValidate>
             {submitError && <p className="login-error" role="alert">{submitError}</p>}
-            <div className="form-row">
-              <label className="form-label">Empresa proveedora</label>
-              <div className="form-locked">
-                <span className="form-locked-avatar">
-                  {publisher && companyInitials(publisher.company)}
-                </span>
-                <span className="form-locked-name">{publisher?.company}</span>
-                <span className="form-locked-tag">Tu cuenta</span>
+            {adminUser ? (
+              <div className="form-row form-row--2col">
+                <div>
+                  <label className="form-label" htmlFor="pub-company">Empresa proveedora *</label>
+                  <input id="pub-company" className="form-input" name="company" value={formData.company || ''} onChange={handleChange} placeholder="Ej: Oxida Studio" required />
+                </div>
+                <div>
+                  <label className="form-label" htmlFor="pub-provider-id">ID de proveedor</label>
+                  <input id="pub-provider-id" className="form-input" name="providerId" type="number" min="1" value={formData.providerId ?? ''} onChange={handleChange} placeholder="Opcional" />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="form-row">
+                <label className="form-label">Empresa proveedora</label>
+                <div className="form-locked">
+                  <span className="form-locked-avatar">
+                    {publisher && companyInitials(publisher.company)}
+                  </span>
+                  <span className="form-locked-name">{publisher?.company}</span>
+                  <span className="form-locked-tag">Tu cuenta</span>
+                </div>
+              </div>
+            )}
 
             <div className="form-row">
               <label className="form-label" htmlFor="pub-name">Nombre del producto *</label>
@@ -293,6 +314,7 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
                 onChange={handleChange}
                 placeholder="Describí el producto, condiciones, stock disponible..."
                 rows={3}
+                required
               />
             </div>
 
