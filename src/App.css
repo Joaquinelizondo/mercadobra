@@ -788,6 +788,44 @@
   white-space: nowrap;
 }
 
+.quoted-results-section .quoted-results-heading {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 7px;
+  margin: 0 0 24px;
+  padding: 20px 22px;
+  border-radius: 14px;
+  background: #fff;
+  color: #1f2937;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(124, 45, 18, 0.14);
+}
+
+.quoted-results-section .quoted-results-heading span {
+  color: #ea580c;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.quoted-results-section .quoted-results-heading h2 {
+  margin: 0;
+  color: #172033;
+  font-size: clamp(1.45rem, 3vw, 2.1rem);
+  font-weight: 900;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+
+.quoted-results-section .quoted-results-heading p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
 @media (max-width: 640px) {
   .whatsapp-float {
     right: 16px;

@@ -316,7 +316,11 @@ export default function Landing() {
 
       {/* Productos cotizados arriba de los destacados */}
       <section className="section quoted-results-section" id="productos-cotizados" style={{maxWidth: 820, margin: '0 auto 2.5rem auto', background: '#fff7ed', borderRadius: 18, border: '1.5px solid #fb923c', boxShadow: '0 2px 8px 0 rgba(251,146,60,0.07)', padding: '1.5rem 2rem'}}>
-        <h3 style={{color: '#fb923c', fontWeight: 800, fontSize: '1.3rem', marginBottom: 12}}>Productos cotizados</h3>
+        <header className="quoted-results-heading">
+          <span>Selección para tu obra</span>
+          <h2>Estos son los mejores artículos para tu búsqueda</h2>
+          <p>Elegimos las opciones del catálogo que mejor coinciden con tu cotización.</p>
+        </header>
         {quotedProducts.length === 0 ? (
           <div style={{color: '#b45309', fontWeight: 500, fontSize: '1.08em', padding: '0.7rem 0'}}>No hay productos similares en el catálogo. Te avisaremos cuando haya novedades.</div>
         ) : (
