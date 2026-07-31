@@ -553,6 +553,9 @@ app.post('/payments/mercadopago/checkout', async (req, res) => {
       },
       ...(HAS_PUBLIC_HTTPS_FRONTEND ? { auto_return: 'approved' } : {}),
       statement_descriptor: 'MERCADOBRA',
+      expires: true,
+      expiration_date_from: new Date().toISOString(),
+      expiration_date_to: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
     })
 
     await repo.updateOrderPayment(createdOrder.id, {
@@ -575,6 +578,7 @@ app.post('/payments/mercadopago/checkout', async (req, res) => {
         paymentStatus: 'checkout_error',
         paymentProvider: 'mercadopago',
       })
+      await repo.restoreOrderStock(createdOrder.id)
     }
 
     return res.status(400).json({ message: error.message || 'No se pudo iniciar el checkout de Mercado Pago' })
@@ -612,6 +616,10 @@ app.post('/payments/mercadopago/webhook', async (req, res) => {
       paymentProvider: 'mercadopago',
       paymentExternalId: String(payment.id || ''),
     })
+
+    if (['rejected', 'cancelled', 'refunded', 'charged_back'].includes(paymentStatus)) {
+      await repo.restoreOrderStock(orderId)
+    }
 
     if (paymentStatus === 'approved' || paymentStatus === 'authorized') {
       const currentOrder = await repo.getOrderById(orderId)
@@ -808,8 +816,9 @@ app.get('/orders/track/:trackingToken', async (req, res) => {
     return res.status(400).json({ message: 'Ingresá el teléfono asociado a la compra' })
   }
 
+  const normalizedBuyerPhone = validatePhone(buyerPhone)
   const repo = await getRepository()
-  const order = await repo.getOrderByTracking(trackingToken, buyerPhone)
+  const order = await repo.getOrderByTracking(trackingToken, normalizedBuyerPhone)
 
   if (!order) {
     return res.status(404).json({ message: 'No encontramos una orden con esos datos' })
@@ -825,7 +834,7 @@ app.patch('/orders/:id/status', authMiddleware, providerOnly, asyncHandler(async
   const repo = await getRepository()
   const [orders, providerProducts] = await Promise.all([
     repo.getOrders(),
-    repo.getProviderProducts(req.authUser.providerId),
+    req.authUser.role === 'admin' ? Promise.resolve([]) : repo.getProviderProducts(req.authUser.providerId),
   ])
 
   const order = orders.find((current) => Number(current.id) === orderId)
@@ -834,7 +843,8 @@ app.patch('/orders/:id/status', authMiddleware, providerOnly, asyncHandler(async
   }
 
   const providerProductIds = new Set(providerProducts.map((product) => Number(product.id)))
-  const canManageOrder = (order.items || []).some((item) => providerProductIds.has(Number(item.productId)))
+  const canManageOrder = req.authUser.role === 'admin'
+    || (order.items || []).some((item) => providerProductIds.has(Number(item.productId)))
 
   if (!canManageOrder) {
     throw new AuthorizationError('No podés cambiar el estado de esta orden')
@@ -843,6 +853,10 @@ app.patch('/orders/:id/status', authMiddleware, providerOnly, asyncHandler(async
   const updated = await repo.updateOrderStatus(orderId, nextStatus)
   if (!updated) {
     throw new NotFoundError('Orden')
+  }
+
+  if (nextStatus === 'cancelled') {
+    await repo.restoreOrderStock(orderId)
   }
 
   const notification = await notifyOrderStatusChanged(updated)
@@ -861,7 +875,7 @@ app.get('/orders/:id/notifications', authMiddleware, providerOnly, async (req, r
 
   const [orders, providerProducts] = await Promise.all([
     repo.getOrders(),
-    repo.getProviderProducts(req.authUser.providerId),
+    req.authUser.role === 'admin' ? Promise.resolve([]) : repo.getProviderProducts(req.authUser.providerId),
   ])
 
   const order = orders.find((current) => Number(current.id) === orderId)
@@ -870,7 +884,8 @@ app.get('/orders/:id/notifications', authMiddleware, providerOnly, async (req, r
   }
 
   const providerProductIds = new Set(providerProducts.map((product) => Number(product.id)))
-  const canManageOrder = (order.items || []).some((item) => providerProductIds.has(Number(item.productId)))
+  const canManageOrder = req.authUser.role === 'admin'
+    || (order.items || []).some((item) => providerProductIds.has(Number(item.productId)))
 
   if (!canManageOrder) {
     return res.status(403).json({ message: 'No podés ver notificaciones de esta orden' })

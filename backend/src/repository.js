@@ -314,6 +314,21 @@ async function getJsonRepo() {
       writeDb(db)
       return db.orders[index]
     },
+    async restoreOrderStock(id) {
+      const db = readDb()
+      const index = db.orders.findIndex((order) => Number(order.id) === Number(id))
+      if (index === -1 || db.orders[index].stockReleased) return false
+
+      for (const item of db.orders[index].items || []) {
+        const productIndex = db.products.findIndex((product) => Number(product.id) === Number(item.productId))
+        if (productIndex >= 0) {
+          db.products[productIndex].stock = Number(db.products[productIndex].stock || 0) + Number(item.quantity || 0)
+        }
+      }
+      db.orders[index].stockReleased = true
+      writeDb(db)
+      return true
+    },
     async getOrderByTracking(trackingToken, buyerPhone) {
       const db = readDb()
       const notificationLogs = Array.isArray(db.notificationLogs) ? db.notificationLogs : []
@@ -321,7 +336,7 @@ async function getJsonRepo() {
         db.orders.find(
           (current) =>
             String(current.trackingToken || '') === String(trackingToken || '') &&
-            String(current.buyerPhone || '').trim() === String(buyerPhone || '').trim()
+            String(current.buyerPhone || '').replace(/\D/g, '') === String(buyerPhone || '').replace(/\D/g, '')
         ) || null
 
       if (!order) return null
@@ -827,6 +842,39 @@ async function getPgRepo() {
         status: row.status,
         trackingToken: row.tracking_token,
         createdAt: row.created_at,
+      }
+    },
+    async restoreOrderStock(id) {
+      const client = await pool.connect()
+      try {
+        await client.query('BEGIN')
+        const orderResult = await client.query(
+          'SELECT stock_released FROM orders WHERE id = $1 FOR UPDATE',
+          [Number(id)]
+        )
+        if (!orderResult.rows[0] || orderResult.rows[0].stock_released) {
+          await client.query('ROLLBACK')
+          return false
+        }
+
+        const itemsResult = await client.query(
+          'SELECT product_id, quantity FROM order_items WHERE order_id = $1',
+          [Number(id)]
+        )
+        for (const item of itemsResult.rows) {
+          await client.query(
+            'UPDATE products SET stock = stock + $1 WHERE id = $2',
+            [Number(item.quantity), Number(item.product_id)]
+          )
+        }
+        await client.query('UPDATE orders SET stock_released = TRUE WHERE id = $1', [Number(id)])
+        await client.query('COMMIT')
+        return true
+      } catch (error) {
+        await client.query('ROLLBACK')
+        throw error
+      } finally {
+        client.release()
       }
     },
     async getOrderByTracking(trackingToken, buyerPhone) {
