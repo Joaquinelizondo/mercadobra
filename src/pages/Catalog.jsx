@@ -199,6 +199,7 @@ export default function Catalog() {
     const orderId = paymentOrderId || pendingOrder?.orderId || ''
     let cancelled = false
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPaymentReturn({
       status: paymentStatus,
       orderId,

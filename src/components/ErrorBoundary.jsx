@@ -24,7 +24,7 @@ export default class ErrorBoundary extends Component {
               <p className="error-boundary-message">
                 Lo sentimos, ocurrió un error inesperado. Por favor, intenta actualizar la página.
               </p>
-              {process.env.NODE_ENV === 'development' && (
+              {import.meta.env.DEV && (
                 <details className="error-details">
                   <summary>Detalles del error (desarrollo)</summary>
                   <pre>{this.state.error?.toString()}</pre>

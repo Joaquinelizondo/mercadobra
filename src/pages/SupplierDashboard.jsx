@@ -49,9 +49,11 @@ export default function SupplierDashboard() {
   const [ordersError, setOrdersError] = useState('')
   const [updatingOrderId, setUpdatingOrderId] = useState(null)
 
-  if (!supplierUser) return <Navigate to="/proveedor/login" replace />
-
-  const myProducts = productList.filter((p) => p.company === supplierUser.company)
+  const supplierCompany = supplierUser?.company || ''
+  const myProducts = useMemo(
+    () => productList.filter((product) => product.company === supplierCompany),
+    [productList, supplierCompany]
+  )
   const totalValue = myProducts.reduce((sum, p) => sum + p.price, 0)
   const categories = [...new Set(myProducts.map((p) => p.category))]
   const myProductIdSet = useMemo(
@@ -80,6 +82,7 @@ export default function SupplierDashboard() {
     let active = true
 
     async function loadOrders() {
+      if (!supplierUser || !token) return
       setOrdersLoading(true)
       setOrdersError('')
       try {
@@ -98,7 +101,9 @@ export default function SupplierDashboard() {
     return () => {
       active = false
     }
-  }, [token, myProducts.length])
+  }, [token, supplierUser])
+
+  if (!supplierUser) return <Navigate to="/proveedor/login" replace />
 
   async function handleOrderStatusChange(orderId, status) {
     setUpdatingOrderId(orderId)

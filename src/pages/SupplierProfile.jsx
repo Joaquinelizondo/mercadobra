@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useProducts } from '../context/ProductContext'
-import { formatPrice, companyInitials } from '../utils/format'
+import { companyInitials } from '../utils/format'
 import ProductCard from '../components/ProductCard'
 import Breadcrumb from '../components/Breadcrumb'
 import EmptyState from '../components/EmptyState'

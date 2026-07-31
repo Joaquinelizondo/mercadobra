@@ -32,6 +32,7 @@ export default function Wishlist() {
 
     ids.forEach((id) => addToWishlist(id))
     if (ids.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShareStatus(`Se importaron ${ids.length} favorito${ids.length === 1 ? '' : 's'} desde el link.`)
       window.setTimeout(() => setShareStatus(''), 2600)
     }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { INITIAL_PRODUCTS, CARD_COLORS } from '../data/products'
 import { createProduct, getProducts, removeProduct, updateProduct } from '../lib/api'
 
@@ -174,8 +174,7 @@ export function ProductProvider({ children }) {
     }
   }
 
-  const value = useMemo(
-    () => ({
+  const value = {
       productList,
       addProduct,
       deleteProduct,
@@ -184,9 +183,7 @@ export function ProductProvider({ children }) {
       loadingProducts,
       productError,
       usingFallback,
-    }),
-    [productList, loadingProducts, productError, usingFallback]
-  )
+  }
 
   return (
     <ProductContext.Provider value={value}>

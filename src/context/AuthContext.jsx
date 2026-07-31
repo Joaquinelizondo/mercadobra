@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 import { loginAdmin, loginCustomer, loginSupplier, registerCustomer } from '../lib/api'
 
 const AuthContext = createContext(null)
@@ -139,8 +139,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(ADMIN_SESSION_KEY)
   }
 
-  const value = useMemo(
-    () => ({
+  const value = {
       supplierUser,
       token,
       login,
@@ -160,22 +159,7 @@ export function AuthProvider({ children }) {
       adminAuthLoading,
       loginAdmin: loginAdminAccount,
       logoutAdmin,
-    }),
-    [
-      supplierUser,
-      token,
-      authError,
-      authLoading,
-      customerUser,
-      customerToken,
-      customerAuthError,
-      customerAuthLoading,
-      adminUser,
-      adminToken,
-      adminAuthError,
-      adminAuthLoading,
-    ]
-  )
+  }
 
   return (
     <AuthContext.Provider value={value}>

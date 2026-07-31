@@ -202,7 +202,6 @@ const SUPPLIER_ACCOUNTS = [
 
 const EMPTY_FORM = { name: '', category: 'Hormigón', price: '', unit: 'bolsa', description: '' }
 
-// eslint-disable-next-line no-unused-vars
 function AppLegacy() {
   const year = new Date().getFullYear()
   const [activeCategory, setActiveCategory] = useState('Todos')

@@ -29,7 +29,6 @@ import {
   validatePhone,
   validateEnum,
   validateArray,
-  validateRequiredFields,
   validateStringLength,
   validateOrderStatus,
   validatePaymentMethod,

@@ -1,59 +1,53 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useCallback, useContext, useState, useEffect } from 'react'
 
 const WishlistContext = createContext(null)
 const WISHLIST_KEY = 'mercadobra-wishlist'
 
 export function WishlistProvider({ children }) {
-  const [wishlist, setWishlist] = useState([])
-
-  // Load from localStorage on mount
-  useEffect(() => {
+  const [wishlist, setWishlist] = useState(() => {
     try {
       const stored = localStorage.getItem(WISHLIST_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed)) {
-          setWishlist(parsed)
-        }
-      }
+      if (!stored) return []
+      const parsed = JSON.parse(stored)
+      return Array.isArray(parsed) ? parsed : []
     } catch {
-      setWishlist([])
+      return []
     }
-  }, [])
+  })
 
   // Save to localStorage whenever wishlist changes
   useEffect(() => {
     localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist))
   }, [wishlist])
 
-  function addToWishlist(productId) {
+  const addToWishlist = useCallback((productId) => {
     setWishlist((prev) => {
       if (!prev.includes(productId)) {
         return [...prev, productId]
       }
       return prev
     })
-  }
+  }, [])
 
-  function removeFromWishlist(productId) {
+  const removeFromWishlist = useCallback((productId) => {
     setWishlist((prev) => prev.filter((id) => id !== productId))
-  }
+  }, [])
 
-  function toggleWishlist(productId) {
-    if (wishlist.includes(productId)) {
-      removeFromWishlist(productId)
-    } else {
-      addToWishlist(productId)
-    }
-  }
+  const toggleWishlist = useCallback((productId) => {
+    setWishlist((prev) => (
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    ))
+  }, [])
 
   function isInWishlist(productId) {
     return wishlist.includes(productId)
   }
 
-  function clearWishlist() {
+  const clearWishlist = useCallback(() => {
     setWishlist([])
-  }
+  }, [])
 
   return (
     <WishlistContext.Provider

@@ -41,7 +41,7 @@ function detectCategoryHint(text = '') {
 
 function extractBudget(text = '') {
   const lower = text.toLowerCase()
-  const match = lower.match(/(\d[\d\.,]*)\s*(pesos|ars|\$|usd|u\$s|dolares|dólares)?/)
+  const match = lower.match(/(\d[\d.,]*)\s*(pesos|ars|\$|usd|u\$s|dolares|dólares)?/)
   if (!match) return null
 
   const amountRaw = match[1].replace(/\./g, '').replace(',', '.')
