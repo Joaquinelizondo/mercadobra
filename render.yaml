@@ -21,7 +21,7 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: ADMIN_EMAIL
-        sync: false
+        value: contacto@mercadobra.com
       - key: ADMIN_PASSWORD
         sync: false
       - key: ADMIN_COMPANY
