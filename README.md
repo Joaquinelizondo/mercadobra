@@ -2,6 +2,9 @@
 
 Frontend en React + Vite y backend MVP en Express.
 
+El estado funcional, las prioridades y el registro de mejoras se mantienen en
+[docs/ESTADO_WEB.md](docs/ESTADO_WEB.md).
+
 ## Frontend
 
 ```bash
