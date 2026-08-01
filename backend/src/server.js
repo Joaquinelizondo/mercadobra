@@ -42,6 +42,12 @@ import {
   ServiceUnavailableError,
   ValidationError,
 } from './errors.js'
+import {
+  createSessionCredentials,
+  hashPassword,
+  hashSessionToken,
+  verifyPassword,
+} from './authService.js'
 
 // Validar env vars antes de iniciar la app
 validateEnvVars()
@@ -127,20 +133,43 @@ async function authMiddleware(req, res, next) {
   const header = req.headers.authorization || ''
   const token = header.startsWith('Bearer ') ? header.slice(7) : ''
 
-  if (!token.startsWith('mock-token-')) {
+  if (!token) {
     throw new AuthenticationError('Token inválido o ausente')
   }
 
-  const userId = Number(token.replace('mock-token-', ''))
   const repo = await getRepository()
-  const user = await repo.findUserById(userId)
+  const tokenHash = hashSessionToken(token)
+  const user = await repo.findUserBySessionTokenHash(tokenHash)
 
   if (!user) {
     throw new AuthenticationError('Sesión inválida')
   }
 
   req.authUser = user
+  req.authTokenHash = tokenHash
   next()
+}
+
+async function authenticateUser(repo, email, password) {
+  const user = await repo.findUserByEmail(email)
+  if (!user) return null
+
+  const verification = verifyPassword(password, user.password)
+  if (!verification.valid) return null
+  if (verification.needsUpgrade) {
+    await repo.updateUserPassword(user.id, hashPassword(password))
+  }
+  return user
+}
+
+async function issueSession(repo, userId) {
+  const session = createSessionCredentials()
+  await repo.createAuthSession({
+    userId,
+    tokenHash: session.tokenHash,
+    expiresAt: session.expiresAt,
+  })
+  return session.token
 }
 
 
@@ -182,7 +211,7 @@ app.post('/auth/login', asyncHandler(async (req, res) => {
   validatePassword(password)
 
   const repo = await getRepository()
-  const user = await repo.findUserByCredentials(normalizedEmail, password)
+  const user = await authenticateUser(repo, normalizedEmail, password)
 
   if (!user) {
     throw new AuthenticationError('Credenciales inválidas')
@@ -192,7 +221,7 @@ app.post('/auth/login', asyncHandler(async (req, res) => {
     throw new AuthorizationError('Esta cuenta no pertenece a un proveedor')
   }
 
-  const token = `mock-token-${user.id}`
+  const token = await issueSession(repo, user.id)
 
   return res.json({
     token,
@@ -222,13 +251,13 @@ app.post('/auth/customer/register', asyncHandler(async (req, res) => {
 
   const created = await repo.createUser({
     email: normalizedEmail,
-    password: normalizedPassword,
+    password: hashPassword(normalizedPassword),
     role: 'customer',
     providerId: null,
     company: normalizedName,
   })
 
-  const token = `mock-token-${created.id}`
+  const token = await issueSession(repo, created.id)
 
   return res.status(201).json({
     token,
@@ -249,13 +278,13 @@ app.post('/auth/customer/login', asyncHandler(async (req, res) => {
   validatePassword(password)
 
   const repo = await getRepository()
-  const user = await repo.findUserByCredentials(normalizedEmail, password)
+  const user = await authenticateUser(repo, normalizedEmail, password)
 
   if (!user || user.role !== 'customer') {
     throw new AuthenticationError('Credenciales inválidas')
   }
 
-  const token = `mock-token-${user.id}`
+  const token = await issueSession(repo, user.id)
 
   return res.json({
     token,
@@ -276,13 +305,13 @@ app.post('/auth/admin/login', asyncHandler(async (req, res) => {
   validatePassword(password)
 
   const repo = await getRepository()
-  const user = await repo.findUserByCredentials(normalizedEmail, password)
+  const user = await authenticateUser(repo, normalizedEmail, password)
 
   if (!user || user.role !== 'admin') {
     throw new AuthenticationError('Credenciales de administrador inválidas')
   }
 
-  const token = `mock-token-${user.id}`
+  const token = await issueSession(repo, user.id)
 
   return res.json({
     token,
@@ -293,6 +322,12 @@ app.post('/auth/admin/login', asyncHandler(async (req, res) => {
       company: user.company,
     },
   })
+}))
+
+app.post('/auth/logout', authMiddleware, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  await repo.deleteAuthSession(req.authTokenHash)
+  return res.status(204).send()
 }))
 
 app.get('/providers', async (_req, res) => {

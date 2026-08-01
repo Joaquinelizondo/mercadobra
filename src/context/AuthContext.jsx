@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from 'react'
-import { loginAdmin, loginCustomer, loginSupplier, registerCustomer } from '../lib/api'
+import { loginAdmin, loginCustomer, loginSupplier, logoutSession, registerCustomer } from '../lib/api'
 
 const AuthContext = createContext(null)
 const SUPPLIER_SESSION_KEY = 'mercadobra-supplier-session'
@@ -68,6 +68,7 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    void logoutSession(token).catch(() => {})
     setSupplierUser(null)
     setToken('')
     setAuthError('')
@@ -109,6 +110,7 @@ export function AuthProvider({ children }) {
   }
 
   function logoutCustomer() {
+    void logoutSession(customerToken).catch(() => {})
     setCustomerUser(null)
     setCustomerToken('')
     setCustomerAuthError('')
@@ -133,6 +135,7 @@ export function AuthProvider({ children }) {
   }
 
   function logoutAdmin() {
+    void logoutSession(adminToken).catch(() => {})
     setAdminUser(null)
     setAdminToken('')
     setAdminAuthError('')

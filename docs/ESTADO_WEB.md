@@ -24,7 +24,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | Mercado Pago | Activo | Está configurado en modo real. |
 | Administración | Funcional | Permite crear, editar, publicar y borrar productos. |
 | Pedidos | Funcional | Guarda órdenes, descuenta stock y permite seguimiento. |
-| Seguridad | Insuficiente | Autenticación temporal y contraseñas sin cifrado. |
+| Seguridad | Mejorada | Contraseñas cifradas y sesiones revocables; queda como mejora futura migrar la sesión del navegador a cookies HttpOnly. |
 | SEO | Muy básico | Falta metadata, títulos por página, sitemap y contenido indexable. |
 | Pruebas | Insuficiente | Compila y pasa lint, pero no hay pruebas automatizadas. |
 | Producción | Operativa | Frontend y backend responden, pero falta terminar la integración bajo un único dominio. |
@@ -36,7 +36,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | Punto | Estado | Criterio para darlo por terminado |
 | --- | --- | --- |
 | Evitar cobros de productos con precio simbólico | Pendiente | Ningún producto con precio de prueba puede iniciar un pago real; se cargan precios definitivos o se muestra “Consultar precio”. |
-| Reemplazar autenticación temporal | Pendiente | Contraseñas cifradas, sesiones no predecibles, expiración y cierre de sesión efectivo. |
+| Reemplazar autenticación temporal | Terminado | Contraseñas cifradas, sesiones no predecibles, expiración y cierre de sesión efectivo. |
 | Crear entorno de pruebas de compra | Pendiente | Backend, base de datos y Mercado Pago sandbox separados de producción. |
 | Probar compra completa | Pendiente | Pago aprobado, pendiente, rechazado y abandonado verificados; stock y notificaciones consistentes. |
 
@@ -86,6 +86,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | Fecha | Cambio | Estado/resultados | Commit |
 | --- | --- | --- | --- |
 | 2026-08-01 | Creación del documento de estado y plan de mejoras. | Se documentó la línea base y se ordenaron pendientes P0–P3. | Documentación inicial |
+| 2026-08-01 | Seguridad de autenticación. | Contraseñas con scrypt, migración automática de credenciales antiguas, sesiones aleatorias de siete días y revocación al cerrar sesión. | Este cambio |
 
 ## Forma de trabajo
 

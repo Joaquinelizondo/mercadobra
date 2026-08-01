@@ -130,6 +130,14 @@ export function loginAdmin(email, password) {
   })
 }
 
+export function logoutSession(token) {
+  if (!token) return Promise.resolve()
+  return request('/auth/logout', {
+    method: 'POST',
+    token,
+  })
+}
+
 export function registerCustomer(payload) {
   return request('/auth/customer/register', {
     method: 'POST',

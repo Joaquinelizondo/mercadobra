@@ -106,11 +106,6 @@ function mapLeadRow(row) {
 
 async function getJsonRepo() {
   return {
-    async findUserByCredentials(email, password) {
-      const db = readDb()
-      const user = db.users.find((u) => u.email === email && u.password === password)
-      return user || null
-    },
     async findUserByEmail(email) {
       const db = readDb()
       return db.users.find((u) => u.email === email) || null
@@ -118,6 +113,33 @@ async function getJsonRepo() {
     async findUserById(id) {
       const db = readDb()
       return db.users.find((u) => Number(u.id) === Number(id)) || null
+    },
+    async updateUserPassword(id, password) {
+      const db = readDb()
+      const user = db.users.find((item) => Number(item.id) === Number(id))
+      if (!user) return false
+      user.password = password
+      writeDb(db)
+      return true
+    },
+    async createAuthSession({ userId, tokenHash, expiresAt }) {
+      const db = readDb()
+      if (!Array.isArray(db.authSessions)) db.authSessions = []
+      db.authSessions = db.authSessions.filter((session) => new Date(session.expiresAt).getTime() > Date.now())
+      db.authSessions.push({ userId: Number(userId), tokenHash, expiresAt })
+      writeDb(db)
+    },
+    async findUserBySessionTokenHash(tokenHash) {
+      const db = readDb()
+      const session = (db.authSessions || []).find(
+        (item) => item.tokenHash === tokenHash && new Date(item.expiresAt).getTime() > Date.now()
+      )
+      return session ? db.users.find((user) => Number(user.id) === Number(session.userId)) || null : null
+    },
+    async deleteAuthSession(tokenHash) {
+      const db = readDb()
+      db.authSessions = (db.authSessions || []).filter((session) => session.tokenHash !== tokenHash)
+      writeDb(db)
     },
     async createUser(payload) {
       const db = readDb()
@@ -518,10 +540,6 @@ async function getJsonRepo() {
 async function getPgRepo() {
   const pool = getPool()
   return {
-    async findUserByCredentials(email, password) {
-      const { rows } = await pool.query('SELECT * FROM users WHERE email = $1 AND password = $2 LIMIT 1', [email, password])
-      return rows[0] ? mapUserRow(rows[0]) : null
-    },
     async findUserByEmail(email) {
       const { rows } = await pool.query('SELECT * FROM users WHERE email = $1 LIMIT 1', [email])
       return rows[0] ? mapUserRow(rows[0]) : null
@@ -529,6 +547,30 @@ async function getPgRepo() {
     async findUserById(id) {
       const { rows } = await pool.query('SELECT * FROM users WHERE id = $1 LIMIT 1', [id])
       return rows[0] ? mapUserRow(rows[0]) : null
+    },
+    async updateUserPassword(id, password) {
+      const result = await pool.query('UPDATE users SET password = $1 WHERE id = $2', [password, id])
+      return result.rowCount > 0
+    },
+    async createAuthSession({ userId, tokenHash, expiresAt }) {
+      await pool.query('DELETE FROM auth_sessions WHERE expires_at <= NOW()')
+      await pool.query(
+        'INSERT INTO auth_sessions (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
+        [userId, tokenHash, expiresAt]
+      )
+    },
+    async findUserBySessionTokenHash(tokenHash) {
+      const { rows } = await pool.query(
+        `SELECT users.* FROM auth_sessions
+         JOIN users ON users.id = auth_sessions.user_id
+         WHERE auth_sessions.token_hash = $1 AND auth_sessions.expires_at > NOW()
+         LIMIT 1`,
+        [tokenHash]
+      )
+      return rows[0] ? mapUserRow(rows[0]) : null
+    },
+    async deleteAuthSession(tokenHash) {
+      await pool.query('DELETE FROM auth_sessions WHERE token_hash = $1', [tokenHash])
     },
     async createUser(payload) {
       const { rows } = await pool.query(

@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { getPool, isPostgresEnabled } from './db.js'
+import { hashPassword } from './authService.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -51,7 +52,7 @@ async function run() {
              role = EXCLUDED.role,
              provider_id = EXCLUDED.provider_id,
              company = EXCLUDED.company`,
-        [user.id, user.email, user.password, user.role, user.providerId, user.company]
+        [user.id, user.email, hashPassword(user.password), user.role, user.providerId, user.company]
       )
     }
 

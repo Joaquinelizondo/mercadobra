@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { getPool, isPostgresEnabled } from './db.js'
+import { hashPassword } from './authService.js'
 
 async function run() {
   if (!isPostgresEnabled()) {
@@ -28,7 +29,7 @@ async function run() {
            role = 'admin',
            provider_id = NULL,
            company = EXCLUDED.company`,
-      [email, password, company]
+      [email, hashPassword(password), company]
     )
     console.log('Usuario administrador verificado.')
   } finally {

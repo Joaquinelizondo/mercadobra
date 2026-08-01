@@ -12,6 +12,7 @@ const REQUIRED_TABLES = [
   'quote_consultations',
   'search_contacts',
   'custom_requests',
+  'auth_sessions',
   'migrations',
 ]
 
