@@ -45,7 +45,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | Punto | Estado | Criterio para darlo por terminado |
 | --- | --- | --- |
 | Fotografías reales por producto | Pendiente | Cada producto publicado tiene portada, galería, texto alternativo y almacenamiento externo. |
-| Ficha de producto completa | Pendiente | Galería, medidas, variantes, stock, plazo, entrega, proveedor y acción de compra/cotización. |
+| Ficha de producto completa | Terminado | Galería, medidas, variantes, stock, plazo, entrega, proveedor y acción de compra/cotización implementados. |
 | Stock por variante/SKU | Pendiente | El carrito, backend, pedido y administración trabajan con la variante seleccionada y su stock real. |
 | Persistencia del carrito | Pendiente | El carrito sobrevive recargas y vuelve a validar stock y precio antes del checkout. |
 | Resumen final y entrega | Pendiente | El comprador ve productos, variante, envío, plazo, moneda y total antes de pagar. |
@@ -87,6 +87,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | --- | --- | --- | --- |
 | 2026-08-01 | Creación del documento de estado y plan de mejoras. | Se documentó la línea base y se ordenaron pendientes P0–P3. | Documentación inicial |
 | 2026-08-01 | Seguridad de autenticación. | Contraseñas con scrypt, migración automática de credenciales antiguas, sesiones aleatorias de siete días y revocación al cerrar sesión. Despliegue confirmado; los tokens antiguos son rechazados. | 60990bc |
+| 2026-08-01 | Ficha profesional de producto. | Se agregó galería, variantes, disponibilidad, información comercial, compra/cotización, especificaciones y productos relacionados. | Este cambio |
 
 ## Forma de trabajo
 

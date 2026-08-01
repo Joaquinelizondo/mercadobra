@@ -26,6 +26,8 @@ export default function OxidaQuoteBuilder({ product = null, initialConfiguration
   const [sending, setSending] = useState(false)
 
   const progress = useMemo(() => (step / 4) * 100, [step])
+  const colorOptions = [...new Set(['Negro mate', 'Blanco cálido', 'Óxido natural', details.color, 'A definir'].filter(Boolean))]
+  const finishOptions = [...new Set(['Pintura al horno', 'Metal natural protegido', 'Texturada', details.finish, 'A definir'].filter(Boolean))]
 
   function updateDetails(event) {
     const { name, value } = event.target
@@ -131,8 +133,8 @@ export default function OxidaQuoteBuilder({ product = null, initialConfiguration
           <h3>Dale forma a<br /><em>tu proyecto.</em></h3>
           <div className="oxida-builder-fields">
             <label className="is-wide"><span>Medida aproximada *</span><input name="size" value={details.size} onChange={updateDetails} placeholder="Ej: 180 × 90 × 75 cm" /></label>
-            <label><span>Color</span><select name="color" value={details.color} onChange={updateDetails}><option>Negro mate</option><option>Blanco cálido</option><option>Óxido natural</option><option>A definir</option></select></label>
-            <label><span>Terminación</span><select name="finish" value={details.finish} onChange={updateDetails}><option>Pintura al horno</option><option>Metal natural protegido</option><option>Texturada</option><option>A definir</option></select></label>
+            <label><span>Color</span><select name="color" value={details.color} onChange={updateDetails}>{colorOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+            <label><span>Terminación</span><select name="finish" value={details.finish} onChange={updateDetails}>{finishOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
             <label><span>Presupuesto</span><select name="budget" value={details.budget} onChange={updateDetails}><option value="">A definir</option><option>Hasta $20.000</option><option>$20.000–$50.000</option><option>Más de $50.000</option></select></label>
             <label><span>¿Para cuándo?</span><select name="timeline" value={details.timeline} onChange={updateDetails}><option value="">Sin fecha definida</option><option>Este mes</option><option>En 1–3 meses</option><option>Más adelante</option></select></label>
             <label className="is-wide"><span>Detalles</span><textarea name="message" value={details.message} onChange={updateDetails} rows="3" placeholder="Contanos cómo imaginás la pieza y dónde va a ir..." /></label>
