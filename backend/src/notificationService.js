@@ -111,8 +111,15 @@ function formatOrderConfirmationMessage(order, items = []) {
       const quantity = Number(item.quantity || 1)
       const name = item.name || `Producto ${item.productId || index + 1}`
       const company = item.company ? ` · ${item.company}` : ''
-      lines.push(`• ${name}${company} x${quantity}`)
+      const amount = Number(item.subtotal ?? (Number(item.price || 0) * quantity))
+      const price = Number.isFinite(amount) && amount > 0
+        ? ` · ${new Intl.NumberFormat('es-UY', { style: 'currency', currency: item.currency || order.currency || 'UYU', maximumFractionDigits: 0 }).format(amount)}`
+        : ''
+      lines.push(`• ${name}${company} x${quantity}${price}`)
     })
+    if (Number(order.total) > 0) {
+      lines.push(`*Total:* ${new Intl.NumberFormat('es-UY', { style: 'currency', currency: order.currency || 'UYU', maximumFractionDigits: 0 }).format(Number(order.total))}`)
+    }
   }
 
   if (order.trackingToken && order.buyerPhone) {

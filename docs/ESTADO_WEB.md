@@ -49,7 +49,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | Stock por variante/SKU | Postergado | Por ahora los productos de hierro no tendrán variantes públicas; medida, color y terminación se definen en la cotización. |
 | Persistencia del carrito | Terminado | El carrito sobrevive recargas, se recupera de forma segura y revalida stock, precio y publicación al abrirse y antes del checkout. |
 | Resumen final y entrega | Pendiente | El comprador ve productos, envío, plazo, moneda y total antes de pagar. |
-| Snapshot de precios en órdenes | Pendiente | Cada orden conserva nombre, SKU, precio, moneda, cantidad y subtotal históricos. |
+| Snapshot de precios en órdenes | Terminado | Cada orden conserva nombre, empresa, SKU, unidad, precio, moneda, cantidad, subtotal, plazo y total históricos. |
 
 ### P2 — Operación administrativa
 
@@ -89,7 +89,8 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | 2026-08-01 | Seguridad de autenticación. | Contraseñas con scrypt, migración automática de credenciales antiguas, sesiones aleatorias de siete días y revocación al cerrar sesión. Despliegue confirmado; los tokens antiguos son rechazados. | 60990bc |
 | 2026-08-01 | Ficha profesional de producto. | Se agregó galería, disponibilidad, información comercial, compra/cotización, especificaciones y productos relacionados. | 7fbf9fc |
 | 2026-08-01 | Simplificación de productos de hierro. | Se retiraron las variantes de la ficha pública; medidas, colores y terminaciones quedan dentro del cotizador a medida. | 13ebc24 |
-| 2026-08-01 | Persistencia segura del carrito. | El carrito se guarda localmente, se recupera tras recargar y se sincroniza con precio, stock y estado actuales. | Este cambio |
+| 2026-08-01 | Persistencia segura del carrito. | El carrito se guarda localmente, se recupera tras recargar y se sincroniza con precio, stock y estado actuales. | 294f449 |
+| 2026-08-01 | Snapshot comercial de pedidos. | Cada compra conserva los datos comerciales del momento y los reutiliza en seguimiento y notificaciones. | Este cambio |
 
 ## Forma de trabajo
 

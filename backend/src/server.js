@@ -485,7 +485,7 @@ app.post('/orders', asyncHandler(async (req, res) => {
     paymentMethod: normalizedPaymentMethod,
   })
 
-  void notifyOrderCreated(order, normalizedItems)
+  void notifyOrderCreated(order, order.items)
     .then(async (notification) => {
       const storedRepo = await getRepository()
       await storedRepo.recordOrderNotification(order.id, notification)

@@ -140,6 +140,11 @@ export default function OrderTracking() {
                 </li>
               ))}
             </ul>
+            {Number(order.total) > 0 && (
+              <p className="tracking-order-total">
+                Total registrado: <strong>{formatPrice(order.total, order.currency)}</strong>
+              </p>
+            )}
           </div>
         )}
 

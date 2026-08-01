@@ -79,6 +79,23 @@ function generateTrackingToken() {
   return randomBytes(16).toString('hex')
 }
 
+function mapOrderItemRow(item) {
+  const unitPrice = Number(item.unit_price ?? item.unitPrice ?? item.price ?? 0)
+  const quantity = Number(item.quantity)
+  return {
+    productId: Number(item.product_id ?? item.productId),
+    quantity,
+    name: item.product_name ?? item.productName ?? item.name ?? '',
+    company: item.company || '',
+    sku: item.sku || '',
+    unit: item.unit || 'unidad',
+    price: unitPrice,
+    currency: String(item.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
+    leadTimeDays: Number(item.lead_time_days ?? item.leadTimeDays ?? 0),
+    subtotal: unitPrice * quantity,
+  }
+}
+
 function mapNotificationLogRow(row) {
   return {
     id: Number(row.id),
@@ -217,18 +234,22 @@ async function getJsonRepo() {
       paymentMethod = '',
     }) {
       const db = readDb()
-      for (const item of items) {
+      const snapshotItems = items.map((item) => {
         const product = db.products.find((p) => Number(p.id) === Number(item.productId))
         if (!product) throw new Error(`Producto inexistente: ${item.productId}`)
         if (Number(product.stock) < item.quantity) throw new Error(`Stock insuficiente para ${product.name}. Disponible: ${product.stock}`)
-      }
+        return mapOrderItemRow({ ...product, productId: product.id, quantity: item.quantity })
+      })
+      const currencies = [...new Set(snapshotItems.map((item) => item.currency))]
+      if (currencies.length > 1) throw new Error('No se pueden combinar monedas diferentes en un pedido')
+      const subtotal = snapshotItems.reduce((sum, item) => sum + item.subtotal, 0)
       for (const item of items) {
         const idx = db.products.findIndex((p) => Number(p.id) === Number(item.productId))
         db.products[idx].stock = Number(db.products[idx].stock) - item.quantity
       }
       const order = {
         id: nextId(db.orders),
-        items,
+        items: snapshotItems,
         buyerName,
         buyerPhone,
         buyerEmail,
@@ -243,6 +264,10 @@ async function getJsonRepo() {
         paymentPreferenceId: '',
         status: 'pending',
         trackingToken: generateTrackingToken(),
+        subtotal,
+        deliveryCost: null,
+        total: subtotal,
+        currency: currencies[0] || 'UYU',
         createdAt: new Date().toISOString(),
       }
       db.orders.push(order)
@@ -678,17 +703,23 @@ async function getPgRepo() {
       const client = await pool.connect()
       try {
         await client.query('BEGIN')
+        const snapshots = []
         for (const item of items) {
           const { rows } = await client.query('SELECT * FROM products WHERE id = $1 FOR UPDATE', [item.productId])
           const product = rows[0]
           if (!product) throw new Error(`Producto inexistente: ${item.productId}`)
           if (Number(product.stock) < item.quantity) throw new Error(`Stock insuficiente para ${product.name}. Disponible: ${product.stock}`)
+          snapshots.push(mapOrderItemRow({ ...product, productId: product.id, quantity: item.quantity }))
         }
+        const currencies = [...new Set(snapshots.map((item) => item.currency))]
+        if (currencies.length > 1) throw new Error('No se pueden combinar monedas diferentes en un pedido')
+        const subtotal = snapshots.reduce((sum, item) => sum + item.subtotal, 0)
         const orderResult = await client.query(
           `INSERT INTO orders
             (buyer_name, buyer_phone, buyer_email, delivery_method, delivery_address, delivery_city,
-             buyer_notes, payment_method, payment_status, payment_provider, status, tracking_token)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+             buyer_notes, payment_method, payment_status, payment_provider, status, tracking_token,
+             subtotal, delivery_cost, total, currency)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
            RETURNING *`,
           [
             buyerName,
@@ -703,17 +734,26 @@ async function getPgRepo() {
             paymentMethod === 'mercadopago' ? 'mercadopago' : null,
             'pending',
             generateTrackingToken(),
+            subtotal,
+            null,
+            subtotal,
+            currencies[0] || 'UYU',
           ]
         )
         const order = orderResult.rows[0]
-        for (const item of items) {
-          await client.query('INSERT INTO order_items (order_id, product_id, quantity) VALUES ($1, $2, $3)', [order.id, item.productId, item.quantity])
+        for (const item of snapshots) {
+          await client.query(
+            `INSERT INTO order_items
+              (order_id, product_id, quantity, product_name, company, sku, unit, unit_price, currency, lead_time_days)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+            [order.id, item.productId, item.quantity, item.name, item.company, item.sku || null, item.unit, item.price, item.currency, item.leadTimeDays]
+          )
           await client.query('UPDATE products SET stock = stock - $1 WHERE id = $2', [item.quantity, item.productId])
         }
         await client.query('COMMIT')
         return {
           id: Number(order.id),
-          items,
+          items: snapshots,
           buyerName: order.buyer_name,
           buyerPhone: order.buyer_phone,
           buyerEmail: order.buyer_email || '',
@@ -729,6 +769,10 @@ async function getPgRepo() {
           status: order.status,
           trackingToken: order.tracking_token,
           createdAt: order.created_at,
+          subtotal: Number(order.subtotal),
+          deliveryCost: order.delivery_cost == null ? null : Number(order.delivery_cost),
+          total: Number(order.total),
+          currency: order.currency || currencies[0] || 'UYU',
         }
       } catch (error) {
         await client.query('ROLLBACK')
@@ -741,7 +785,7 @@ async function getPgRepo() {
       const { rows } = await pool.query('SELECT * FROM orders ORDER BY created_at DESC')
       const results = []
       for (const row of rows) {
-        const itemsResult = await pool.query('SELECT product_id, quantity FROM order_items WHERE order_id = $1 ORDER BY id ASC', [row.id])
+        const itemsResult = await pool.query('SELECT * FROM order_items WHERE order_id = $1 ORDER BY id ASC', [row.id])
         const latestNotificationResult = await pool.query(
           'SELECT * FROM notification_logs WHERE order_id = $1 ORDER BY created_at DESC LIMIT 1',
           [row.id]
@@ -749,7 +793,7 @@ async function getPgRepo() {
 
         results.push({
           id: Number(row.id),
-          items: itemsResult.rows.map((item) => ({ productId: Number(item.product_id), quantity: Number(item.quantity) })),
+          items: itemsResult.rows.map(mapOrderItemRow),
           buyerName: row.buyer_name,
           buyerPhone: row.buyer_phone,
           buyerEmail: row.buyer_email || '',
@@ -765,6 +809,10 @@ async function getPgRepo() {
           status: row.status,
           trackingToken: row.tracking_token,
           createdAt: row.created_at,
+          subtotal: Number(row.subtotal || 0),
+          deliveryCost: row.delivery_cost == null ? null : Number(row.delivery_cost),
+          total: Number(row.total || row.subtotal || 0),
+          currency: row.currency || 'UYU',
           latestNotification: latestNotificationResult.rows[0]
             ? mapNotificationLogRow(latestNotificationResult.rows[0])
             : null,
@@ -929,9 +977,8 @@ async function getPgRepo() {
       if (!row) return null
 
       const itemsResult = await pool.query(
-        `SELECT oi.product_id, oi.quantity, p.name, p.company, p.unit, p.price, p.currency
+        `SELECT oi.*
          FROM order_items oi
-         JOIN products p ON p.id = oi.product_id
          WHERE oi.order_id = $1
          ORDER BY oi.id ASC`,
         [row.id]
@@ -944,15 +991,7 @@ async function getPgRepo() {
 
       return {
         id: Number(row.id),
-        items: itemsResult.rows.map((item) => ({
-          productId: Number(item.product_id),
-          quantity: Number(item.quantity),
-          name: item.name,
-          company: item.company,
-          unit: item.unit,
-          price: Number(item.price),
-          currency: String(item.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
-        })),
+        items: itemsResult.rows.map(mapOrderItemRow),
         buyerName: row.buyer_name,
         buyerPhone: row.buyer_phone,
         buyerEmail: row.buyer_email || '',
@@ -968,6 +1007,10 @@ async function getPgRepo() {
         status: row.status,
         trackingToken: row.tracking_token,
         createdAt: row.created_at,
+        subtotal: Number(row.subtotal || 0),
+        deliveryCost: row.delivery_cost == null ? null : Number(row.delivery_cost),
+        total: Number(row.total || row.subtotal || 0),
+        currency: row.currency || 'UYU',
         latestNotification: latestNotificationResult.rows[0]
           ? mapNotificationLogRow(latestNotificationResult.rows[0])
           : null,
