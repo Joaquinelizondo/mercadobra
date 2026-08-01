@@ -22,15 +22,6 @@
 .product-detail-price { display:flex; align-items:end; gap:10px; padding:23px 0; border-block:1px solid #cec7ba; }
 .product-detail-price strong { font-size:clamp(2rem,3.4vw,3.3rem); letter-spacing:-.05em; }
 .product-detail-price span { padding-bottom:7px; color:#77736a; }
-.product-variant-picker { margin:25px 0 0; padding:0; border:0; }
-.product-variant-picker legend { margin-bottom:11px; font-size:.73rem; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
-.product-variant-picker > div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-.product-variant-picker label { padding:13px; border:1px solid #c7c0b4; cursor:pointer; }
-.product-variant-picker label.is-selected { border-color:#22241f; background:#e7e0d4; }
-.product-variant-picker input { position:absolute; opacity:0; pointer-events:none; }
-.product-variant-picker span,.product-variant-picker b,.product-variant-picker small { display:block; }
-.product-variant-picker b { font-size:.86rem; }
-.product-variant-picker small { margin-top:4px; color:#77736a; }
 .product-purchase-actions { display:grid; grid-template-columns:1fr; gap:9px; margin-top:25px; }
 .product-purchase-actions button,.product-purchase-actions a { min-height:56px; display:grid; place-items:center; padding:14px 20px; border:1px solid #22241f; font-size:.76rem; font-weight:900; letter-spacing:.08em; text-align:center; text-decoration:none; text-transform:uppercase; cursor:pointer; }
 .product-purchase-actions button { background:#22241f; color:#f4f0e7; }
@@ -71,7 +62,7 @@
   .product-detail-page { padding:20px 14px 48px; border-radius:18px; }
   .product-gallery-main { aspect-ratio:.88; }
   .product-buy-panel h1 { font-size:2.65rem; }
-  .product-variant-picker > div,.product-specification-grid { grid-template-columns:1fr; }
+  .product-specification-grid { grid-template-columns:1fr; }
   .product-specification-grid article:nth-child(even) { padding-left:0; border-left:0; }
   .product-related-heading { align-items:flex-start; flex-direction:column; }
 }

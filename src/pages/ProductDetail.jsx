@@ -26,7 +26,6 @@ export default function ProductDetail() {
   const { productList, loadingProducts } = useProducts()
   const { addToCart, setCartOpen } = useCart()
   const [activeImage, setActiveImage] = useState(0)
-  const [selectedVariantId, setSelectedVariantId] = useState('')
   const [customizerOpen, setCustomizerOpen] = useState(false)
   const [feedback, setFeedback] = useState('')
 
@@ -42,10 +41,8 @@ export default function ProductDetail() {
       .slice(0, 3)
   }, [product, productList])
 
-  const variants = product?.variants || []
-  const selectedVariant = variants.find((variant) => String(variant.id) === selectedVariantId) || variants[0] || null
-  const displayPrice = Number(selectedVariant?.price ?? product?.price ?? 0)
-  const displayStock = Number(selectedVariant?.stock ?? product?.stock ?? 0)
+  const displayPrice = Number(product?.price ?? 0)
+  const displayStock = Number(product?.stock ?? 0)
   const images = product?.images?.length ? product.images : []
   const visibleImageIndex = Math.min(activeImage, Math.max(0, images.length - 1))
   const dimensions = dimensionEntries(product?.dimensions)
@@ -65,16 +62,7 @@ export default function ProductDetail() {
     }
 
     if (!canBuy) return
-    const cartProduct = selectedVariant
-      ? {
-          ...product,
-          price: displayPrice,
-          stock: displayStock,
-          selectedVariant,
-          name: `${product.name} · ${selectedVariant.name}`,
-        }
-      : product
-    const added = addToCart(cartProduct)
+    const added = addToCart(product)
     setFeedback(added ? 'Producto agregado al carrito.' : 'Ya agregaste todo el stock disponible.')
     if (added) setCartOpen(true)
     window.setTimeout(() => setFeedback(''), 2200)
@@ -104,7 +92,7 @@ export default function ProductDetail() {
     source: 'ficha-producto',
     data: {
       route: `/producto/${product.id}`,
-      message: `Quiero consultar por ${product.name}${selectedVariant ? `, variante ${selectedVariant.name}` : ''}.`,
+      message: `Quiero consultar por ${product.name}.`,
     },
   })
 
@@ -151,20 +139,6 @@ export default function ProductDetail() {
             <span>por {product.unit}</span>
           </div>
 
-          {variants.length > 0 && (
-            <fieldset className="product-variant-picker">
-              <legend>Elegí una variante</legend>
-              <div>
-                {variants.map((variant) => (
-                  <label key={variant.id} className={String(variant.id) === String(selectedVariant?.id) ? 'is-selected' : ''}>
-                    <input type="radio" name="product-variant" value={variant.id} checked={String(variant.id) === String(selectedVariant?.id)} onChange={(event) => setSelectedVariantId(event.target.value)} />
-                    <span><b>{variant.name}</b><small>{Number(variant.stock) > 0 ? `${variant.stock} disponibles` : 'Sin stock'}</small></span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          )}
-
           <div className="product-purchase-actions">
             <button type="button" onClick={handlePrimaryAction} disabled={!canBuy && !isCustomQuote && !product.configurable}>
               {isCustomQuote || product.configurable ? 'Configurar y cotizar' : canBuy ? 'Agregar al carrito' : 'Sin stock'}
@@ -187,7 +161,7 @@ export default function ProductDetail() {
           <h2>Todo lo importante,<br />antes de decidir.</h2>
         </div>
         <div className="product-specification-grid">
-          <article><small>SKU</small><strong>{selectedVariant?.sku || product.sku || 'A definir'}</strong></article>
+          <article><small>SKU</small><strong>{product.sku || 'A definir'}</strong></article>
           <article><small>Disponibilidad</small><strong>{displayStock > 0 ? `${displayStock} ${displayStock === 1 ? 'unidad' : 'unidades'}` : 'A consultar'}</strong></article>
           <article><small>Plazo estimado</small><strong>{product.leadTimeDays > 0 ? `${product.leadTimeDays} días` : 'A coordinar'}</strong></article>
           <article><small>Tipo</small><strong>{PRODUCT_TYPE_LABELS[product.productType] || 'Producto'}</strong></article>
@@ -210,11 +184,7 @@ export default function ProductDetail() {
       {customizerOpen && (
         <ProductCustomizer
           product={product}
-          configuration={{
-            size: selectedVariant?.attributes?.medida || '',
-            color: selectedVariant?.attributes?.color || '',
-            finish: selectedVariant?.attributes?.terminacion || '',
-          }}
+          configuration={{ size: '', color: '', finish: '' }}
           onClose={() => setCustomizerOpen(false)}
         />
       )}
