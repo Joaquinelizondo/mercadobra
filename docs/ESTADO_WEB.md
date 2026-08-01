@@ -36,7 +36,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | Punto | Estado | Criterio para darlo por terminado |
 | --- | --- | --- |
 | Evitar cobros de productos con precio simbólico | Pendiente | Ningún producto con precio de prueba puede iniciar un pago real; se cargan precios definitivos o se muestra “Consultar precio”. |
-| Reemplazar autenticación temporal | Terminado | Contraseñas cifradas, sesiones no predecibles, expiración y cierre de sesión efectivo. |
+| Reemplazar autenticación temporal | En curso | Implementado y verificado localmente; falta confirmar que Render complete el despliegue de la migración. |
 | Crear entorno de pruebas de compra | Pendiente | Backend, base de datos y Mercado Pago sandbox separados de producción. |
 | Probar compra completa | Pendiente | Pago aprobado, pendiente, rechazado y abandonado verificados; stock y notificaciones consistentes. |
 
@@ -86,7 +86,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | Fecha | Cambio | Estado/resultados | Commit |
 | --- | --- | --- | --- |
 | 2026-08-01 | Creación del documento de estado y plan de mejoras. | Se documentó la línea base y se ordenaron pendientes P0–P3. | Documentación inicial |
-| 2026-08-01 | Seguridad de autenticación. | Contraseñas con scrypt, migración automática de credenciales antiguas, sesiones aleatorias de siete días y revocación al cerrar sesión. | Este cambio |
+| 2026-08-01 | Seguridad de autenticación. | Contraseñas con scrypt, migración automática de credenciales antiguas, sesiones aleatorias de siete días y revocación al cerrar sesión. Despliegue pendiente de confirmación. | 60990bc |
 
 ## Forma de trabajo
 
