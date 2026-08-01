@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useProducts } from '../context/ProductContext'
@@ -55,6 +55,9 @@ export default function Cart() {
   const [createdOrder, setCreatedOrder] = useState(null)
   const [copyMessage, setCopyMessage] = useState('')
   const [mercadoPagoEnabled, setMercadoPagoEnabled] = useState(true)
+  const [inventoryNotice, setInventoryNotice] = useState('')
+  const cartItemsRef = useRef(cartItems)
+  cartItemsRef.current = cartItems
 
   const normalizedBuyerName = checkoutForm.buyerName.trim()
   const normalizedBuyerEmail = checkoutForm.buyerEmail.trim().toLowerCase()
@@ -90,6 +93,43 @@ export default function Cart() {
     }
   }, [])
 
+  useEffect(() => {
+    const openingCartItems = cartItemsRef.current
+    if (!cartOpen || openingCartItems.length === 0) return
+    let mounted = true
+
+    getProducts()
+      .then((latestProducts) => {
+        if (!mounted) return
+        const latestById = new Map(latestProducts.map((product) => [Number(product.id), product]))
+        const removed = openingCartItems.filter((item) => {
+          const latest = latestById.get(Number(item.id))
+          return !latest || latest.status !== 'published' || Number(latest.stock) <= 0
+        })
+        const adjusted = openingCartItems.filter((item) => {
+          const latest = latestById.get(Number(item.id))
+          return latest && latest.status === 'published' && (
+            Number(latest.price) !== Number(item.price)
+            || Number(latest.stock) < Number(item.quantity)
+          )
+        })
+
+        syncCartInventory(latestProducts)
+        if (removed.length > 0) {
+          setInventoryNotice('Retiramos productos que ya no están disponibles y actualizamos tu carrito.')
+        } else if (adjusted.length > 0) {
+          setInventoryNotice('Actualizamos precio o cantidad según la disponibilidad actual.')
+        } else {
+          setInventoryNotice('Carrito verificado con precio y stock actuales.')
+        }
+      })
+      .catch(() => {
+        if (mounted) setInventoryNotice('No pudimos verificar el stock ahora. Lo revisaremos antes de confirmar.')
+      })
+
+    return () => { mounted = false }
+  }, [cartOpen, syncCartInventory])
+
   function handleClose() {
     setCartOpen(false)
     // reset after close animation
@@ -101,6 +141,7 @@ export default function Cart() {
       setOrderError('')
       setCreatedOrder(null)
       setCopyMessage('')
+      setInventoryNotice('')
     }, 300)
   }
 
@@ -277,6 +318,10 @@ export default function Cart() {
               <span>3</span> Listo
             </div>
           </div>
+        )}
+
+        {step === 'cart' && inventoryNotice && (
+          <p className="cart-inventory-notice" role="status">{inventoryNotice}</p>
         )}
 
         {/* ── STEP: CART ── */}

@@ -3640,6 +3640,17 @@
   border-radius: 1px;
 }
 
+.cart-inventory-notice {
+  margin: 7px 18px 0;
+  padding: 10px 12px;
+  border: 1px solid #d7cbbd;
+  border-radius: 10px;
+  background: #f6f1e9;
+  color: #625b52;
+  font-size: .76rem;
+  line-height: 1.45;
+}
+
 /* Payment list */
 .payment-list {
   list-style: none;
