@@ -839,6 +839,55 @@ app.get('/admin/quote-consultations', authMiddleware, adminOnly, asyncHandler(as
   })
 }))
 
+app.post('/admin/orders', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const body = req.body || {}
+  validateArray(body.items, 'Productos')
+  const itemQuantities = new Map()
+  body.items.forEach((item) => {
+    const productId = validateNumber(item.productId, 'Producto ID', 1)
+    const quantity = validateQuantity(item.quantity)
+    itemQuantities.set(productId, Number(itemQuantities.get(productId) || 0) + quantity)
+  })
+  const items = [...itemQuantities.entries()].map(([productId, quantity]) => ({ productId, quantity }))
+  const buyerName = validateStringLength(requireField(body.buyerName, 'Nombre'), 'Nombre', 3, 120)
+  const buyerPhone = validatePhone(body.buyerPhone)
+  const buyerEmail = String(body.buyerEmail || '').trim()
+    ? validateEmail(body.buyerEmail)
+    : ''
+  const deliveryMethod = validateEnum(body.deliveryMethod || 'pickup', ['delivery', 'pickup'], 'Entrega')
+  const deliveryAddress = deliveryMethod === 'delivery'
+    ? validateStringLength(requireField(body.deliveryAddress, 'Dirección'), 'Dirección', 5, 180)
+    : ''
+  const deliveryCity = deliveryMethod === 'delivery'
+    ? validateStringLength(requireField(body.deliveryCity, 'Localidad'), 'Localidad', 2, 100)
+    : ''
+  const source = validateEnum(body.source || 'whatsapp', ['whatsapp', 'phone', 'instagram', 'presencial', 'other'], 'Origen')
+  const paymentMethod = validateEnum(body.paymentMethod || 'transferencia', ['transferencia'], 'Método de pago manual')
+  const buyerNotes = validateStringLength(body.buyerNotes || '', 'Notas', 0, 500)
+
+  const repo = await getRepository()
+  const order = await repo.createOrder({
+    items,
+    buyerName,
+    buyerPhone,
+    buyerEmail,
+    deliveryMethod,
+    deliveryAddress,
+    deliveryCity,
+    buyerNotes,
+    paymentMethod,
+    source,
+  })
+
+  let notification = null
+  if (body.sendNotification === true) {
+    notification = await notifyOrderCreated(order, order.items)
+    await repo.recordOrderNotification(order.id, notification)
+  }
+
+  return res.status(201).json({ ...order, notification })
+}))
+
 app.get('/orders/track/:trackingToken', async (req, res) => {
   const trackingToken = String(req.params.trackingToken || '').trim()
   const buyerPhone = String(req.query.phone || '').trim()

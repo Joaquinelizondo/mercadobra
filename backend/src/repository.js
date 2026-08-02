@@ -232,6 +232,7 @@ async function getJsonRepo() {
       deliveryCity = '',
       buyerNotes = '',
       paymentMethod = '',
+      source = 'web',
     }) {
       const db = readDb()
       const snapshotItems = items.map((item) => {
@@ -258,6 +259,7 @@ async function getJsonRepo() {
         deliveryCity,
         buyerNotes,
         paymentMethod,
+        source,
         paymentStatus: paymentMethod === 'mercadopago' ? 'pending' : 'not_required',
         paymentProvider: paymentMethod === 'mercadopago' ? 'mercadopago' : '',
         paymentExternalId: '',
@@ -699,6 +701,7 @@ async function getPgRepo() {
       deliveryCity = '',
       buyerNotes = '',
       paymentMethod = '',
+      source = 'web',
     }) {
       const client = await pool.connect()
       try {
@@ -718,8 +721,8 @@ async function getPgRepo() {
           `INSERT INTO orders
             (buyer_name, buyer_phone, buyer_email, delivery_method, delivery_address, delivery_city,
              buyer_notes, payment_method, payment_status, payment_provider, status, tracking_token,
-             subtotal, delivery_cost, total, currency)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+             subtotal, delivery_cost, total, currency, source)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
            RETURNING *`,
           [
             buyerName,
@@ -738,6 +741,7 @@ async function getPgRepo() {
             null,
             subtotal,
             currencies[0] || 'UYU',
+            source,
           ]
         )
         const order = orderResult.rows[0]
@@ -773,6 +777,7 @@ async function getPgRepo() {
           deliveryCost: order.delivery_cost == null ? null : Number(order.delivery_cost),
           total: Number(order.total),
           currency: order.currency || currencies[0] || 'UYU',
+          source: order.source || source,
         }
       } catch (error) {
         await client.query('ROLLBACK')
@@ -813,6 +818,7 @@ async function getPgRepo() {
           deliveryCost: row.delivery_cost == null ? null : Number(row.delivery_cost),
           total: Number(row.total || row.subtotal || 0),
           currency: row.currency || 'UYU',
+          source: row.source || 'web',
           latestNotification: latestNotificationResult.rows[0]
             ? mapNotificationLogRow(latestNotificationResult.rows[0])
             : null,
@@ -1011,6 +1017,7 @@ async function getPgRepo() {
         deliveryCost: row.delivery_cost == null ? null : Number(row.delivery_cost),
         total: Number(row.total || row.subtotal || 0),
         currency: row.currency || 'UYU',
+        source: row.source || 'web',
         latestNotification: latestNotificationResult.rows[0]
           ? mapNotificationLogRow(latestNotificationResult.rows[0])
           : null,

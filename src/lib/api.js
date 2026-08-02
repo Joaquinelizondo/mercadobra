@@ -212,6 +212,14 @@ export function getOrders(token) {
   })
 }
 
+export function createAdminOrder(payload, token) {
+  return request('/admin/orders', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
 export function getTrackedOrder(trackingToken, buyerPhone) {
   const params = new URLSearchParams({ phone: buyerPhone })
   return request(`/orders/track/${encodeURIComponent(trackingToken)}?${params.toString()}`)
