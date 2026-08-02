@@ -93,7 +93,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | 2026-08-01 | Simplificación de productos de hierro. | Se retiraron las variantes de la ficha pública; medidas, colores y terminaciones quedan dentro del cotizador a medida. | 13ebc24 |
 | 2026-08-01 | Persistencia segura del carrito. | El carrito se guarda localmente, se recupera tras recargar y se sincroniza con precio, stock y estado actuales. | 294f449 |
 | 2026-08-02 | Snapshot comercial de pedidos. | Cada compra conserva los datos comerciales del momento y los reutiliza en seguimiento y notificaciones. Despliegue confirmado en producción. | 285549a |
-| 2026-08-02 | Gestión administrativa de pedidos. | Consola central para pedidos web y alta manual desde WhatsApp, teléfono, Instagram o venta presencial, conectada con stock y seguimiento. | Este cambio |
+| 2026-08-02 | Gestión administrativa de pedidos. | Consola central para pedidos web y alta manual desde WhatsApp, teléfono, Instagram o venta presencial, conectada con stock y seguimiento. | `14c83c0` |
 
 ## Forma de trabajo
 
