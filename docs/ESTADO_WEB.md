@@ -57,7 +57,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 
 | Punto | Estado | Criterio para darlo por terminado |
 | --- | --- | --- |
-| Gestión administrativa de pedidos | En curso | Consola, filtros, estados y alta manual multicanal implementados; falta desplegar y verificar en producción. |
+| Gestión administrativa de pedidos | Terminado | Consola, filtros, estados y alta manual multicanal desplegados y verificados en producción. |
 | Alertas de stock | Pendiente | Productos sin stock o con stock bajo son visibles y notificables. |
 | Archivo seguro de productos | Pendiente | Productos con historial se archivan y no se eliminan físicamente. |
 | Exportación e historial | Pendiente | Pedidos/consultas exportables y cambios administrativos auditables. |
@@ -93,7 +93,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | 2026-08-01 | Simplificación de productos de hierro. | Se retiraron las variantes de la ficha pública; medidas, colores y terminaciones quedan dentro del cotizador a medida. | 13ebc24 |
 | 2026-08-01 | Persistencia segura del carrito. | El carrito se guarda localmente, se recupera tras recargar y se sincroniza con precio, stock y estado actuales. | 294f449 |
 | 2026-08-02 | Snapshot comercial de pedidos. | Cada compra conserva los datos comerciales del momento y los reutiliza en seguimiento y notificaciones. Despliegue confirmado en producción. | 285549a |
-| 2026-08-02 | Gestión administrativa de pedidos. | Consola central para pedidos web y alta manual desde WhatsApp, teléfono, Instagram o venta presencial, conectada con stock y seguimiento. | `14c83c0` |
+| 2026-08-02 | Gestión administrativa de pedidos. | Consola central para pedidos web y alta manual desde WhatsApp, teléfono, Instagram o venta presencial, conectada con stock y seguimiento. Despliegue confirmado en producción. | `14c83c0` |
 
 ## Forma de trabajo
 
