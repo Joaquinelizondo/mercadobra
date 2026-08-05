@@ -94,6 +94,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | 2026-08-01 | Persistencia segura del carrito. | El carrito se guarda localmente, se recupera tras recargar y se sincroniza con precio, stock y estado actuales. | 294f449 |
 | 2026-08-02 | Snapshot comercial de pedidos. | Cada compra conserva los datos comerciales del momento y los reutiliza en seguimiento y notificaciones. Despliegue confirmado en producción. | 285549a |
 | 2026-08-02 | Gestión administrativa de pedidos. | Consola central para pedidos web y alta manual desde WhatsApp, teléfono, Instagram o venta presencial, conectada con stock y seguimiento. Despliegue confirmado en producción. | `14c83c0` |
+| 2026-08-05 | Identidad en navegación. | El enlace de la marca en el encabezado muestra el nombre completo “Oxida Studio”. | Este cambio |
 
 ## Forma de trabajo
 
