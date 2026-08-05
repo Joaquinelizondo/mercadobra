@@ -524,7 +524,7 @@ function AppLegacy() {
           Empezá a construir tu catálogo online y prepará tu negocio para recibir nuevas oportunidades comerciales.
         </p>
         <div className="hero-actions centered-actions">
-          <a href="mailto:hola@mercadobra.com" className="primary-link large-link">
+          <a href="mailto:contacto@mercadobra.com" className="primary-link large-link">
             Contactar a MercadObra
           </a>
         </div>
@@ -604,7 +604,7 @@ function AppLegacy() {
               </li>
               <li>
                 <a
-                  href="https://wa.me/5491100000000"
+                  href="https://wa.me/59899213300"
                   target="_blank"
                   rel="noreferrer"
                   className="social-link"
@@ -623,12 +623,12 @@ function AppLegacy() {
             <h3>Contacto</h3>
             <ul>
               <li>
-                <a href="mailto:hola@mercadobra.com">hola@mercadobra.com</a>
+                <a href="mailto:contacto@mercadobra.com">contacto@mercadobra.com</a>
               </li>
               <li>
-                <a href="tel:+5491100000000">+54 9 11 0000 0000</a>
+                <a href="tel:+59899213300">+598 99 213 300</a>
               </li>
-              <li>Buenos Aires, Argentina</li>
+              <li>Uruguay</li>
             </ul>
           </section>
         </div>

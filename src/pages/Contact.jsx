@@ -17,7 +17,7 @@ export default function Contact() {
         </p>
         <div className="info-page-actions">
           <a href="mailto:contacto@mercadobra.com">contacto@mercadobra.com</a>
-          <a href={whatsappLink} target="_blank" rel="noreferrer">Hablar por WhatsApp</a>
+          <a href={whatsappLink} target="_blank" rel="noreferrer">+598 99 213 300 · Uruguay</a>
         </div>
       </section>
     </div>
