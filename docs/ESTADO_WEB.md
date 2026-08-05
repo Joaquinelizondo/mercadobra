@@ -96,6 +96,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | 2026-08-02 | Gestión administrativa de pedidos. | Consola central para pedidos web y alta manual desde WhatsApp, teléfono, Instagram o venta presencial, conectada con stock y seguimiento. Despliegue confirmado en producción. | `14c83c0` |
 | 2026-08-05 | Identidad en navegación. | El enlace de la marca en el encabezado muestra el nombre completo “Oxida Studio”. | Este cambio |
 | 2026-08-05 | Datos públicos de contacto. | Se unificaron email, teléfono, WhatsApp y país con los datos comerciales de MercadoBra en Uruguay. | Este cambio |
+| 2026-08-05 | Red social de Oxida Studio. | Los accesos de Instagram apuntan al perfil oficial `@oxidastudio`. | Este cambio |
 
 ## Forma de trabajo
 
