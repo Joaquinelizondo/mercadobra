@@ -49,6 +49,7 @@ export default function AdminCustomRequests() {
         <nav>
           <Link to="/admin/productos">Productos</Link>
           <Link to="/admin/pedidos">Pedidos</Link>
+          <Link to="/admin/clientes">Clientes</Link>
           <Link to="/admin/cotizaciones">Consultas generales</Link>
           <Link to="/">Ver tienda ↗</Link>
         </nav>

@@ -86,6 +86,7 @@ export default function AdminQuoteConsultations() {
           >
             Cerrar sesion admin
           </button>
+          <Link to="/admin/clientes" className="ghost-link">Clientes</Link>
           <Link to="/" className="ghost-link">Volver home</Link>
         </div>
       </div>

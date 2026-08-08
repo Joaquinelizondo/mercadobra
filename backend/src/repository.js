@@ -72,6 +72,26 @@ function mapUserRow(row) {
         ? null
         : Number(rawProviderId),
     company: row.company,
+    accountStatus: row.account_status ?? row.accountStatus ?? 'active',
+  }
+}
+
+function mapAdminCustomerRow(row) {
+  return {
+    id: Number(row.id),
+    name: row.name ?? row.company ?? '',
+    email: row.email || '',
+    phone: row.phone || '',
+    companyName: row.company_name ?? row.companyName ?? '',
+    address: row.address || '',
+    city: row.city || '',
+    department: row.department || '',
+    status: row.status || 'active',
+    internalNotes: row.internal_notes ?? row.internalNotes ?? '',
+    createdAt: row.created_at ?? row.createdAt ?? null,
+    updatedAt: row.updated_at ?? row.updatedAt ?? null,
+    orderCount: Number(row.order_count ?? row.orderCount ?? 0),
+    lastOrderAt: row.last_order_at ?? row.lastOrderAt ?? null,
   }
 }
 
@@ -125,7 +145,10 @@ async function getJsonRepo() {
   return {
     async findUserByEmail(email) {
       const db = readDb()
-      return db.users.find((u) => u.email === email) || null
+      const user = db.users.find((u) => u.email === email) || null
+      if (!user) return null
+      const profile = (db.customerProfiles || []).find((item) => Number(item.userId) === Number(user.id))
+      return { ...user, accountStatus: profile?.status || 'active' }
     },
     async findUserById(id) {
       const db = readDb()
@@ -171,6 +194,57 @@ async function getJsonRepo() {
       db.users.push(created)
       writeDb(db)
       return created
+    },
+    async getAdminCustomers({ q = '', status = '' } = {}) {
+      const db = readDb()
+      const profiles = Array.isArray(db.customerProfiles) ? db.customerProfiles : []
+      const term = String(q).trim().toLowerCase()
+      return db.users
+        .filter((user) => user.role === 'customer')
+        .map((user) => {
+          const profile = profiles.find((item) => Number(item.userId) === Number(user.id)) || {}
+          const orders = (db.orders || []).filter((order) => String(order.buyerEmail || '').toLowerCase() === String(user.email).toLowerCase())
+          return mapAdminCustomerRow({
+            ...profile,
+            id: user.id,
+            name: user.company || '',
+            email: user.email,
+            status: profile.status || 'active',
+            orderCount: orders.length,
+            lastOrderAt: orders.map((order) => order.createdAt).filter(Boolean).sort().at(-1) || null,
+          })
+        })
+        .filter((customer) => (!status || customer.status === status)
+          && (!term || [customer.name, customer.email, customer.phone, customer.companyName, customer.city, customer.department]
+            .some((value) => String(value || '').toLowerCase().includes(term))))
+    },
+    async updateAdminCustomer(id, payload) {
+      const db = readDb()
+      const user = db.users.find((item) => Number(item.id) === Number(id) && item.role === 'customer')
+      if (!user) return null
+      user.email = payload.email
+      user.company = payload.name
+      if (!Array.isArray(db.customerProfiles)) db.customerProfiles = []
+      const index = db.customerProfiles.findIndex((item) => Number(item.userId) === Number(id))
+      const profile = {
+        ...(index >= 0 ? db.customerProfiles[index] : {}),
+        userId: Number(id),
+        phone: payload.phone,
+        companyName: payload.companyName,
+        address: payload.address,
+        city: payload.city,
+        department: payload.department,
+        status: payload.status,
+        internalNotes: payload.internalNotes,
+        updatedAt: new Date().toISOString(),
+      }
+      if (index >= 0) db.customerProfiles[index] = profile
+      else db.customerProfiles.push(profile)
+      if (payload.status === 'blocked') {
+        db.authSessions = (db.authSessions || []).filter((session) => Number(session.userId) !== Number(id))
+      }
+      writeDb(db)
+      return mapAdminCustomerRow({ ...profile, id: user.id, name: user.company, email: user.email })
     },
     async getProviders() {
       return readDb().providers
@@ -568,7 +642,12 @@ async function getPgRepo() {
   const pool = getPool()
   return {
     async findUserByEmail(email) {
-      const { rows } = await pool.query('SELECT * FROM users WHERE email = $1 LIMIT 1', [email])
+      const { rows } = await pool.query(
+        `SELECT users.*, COALESCE(customer_profiles.status, 'active') AS account_status
+         FROM users LEFT JOIN customer_profiles ON customer_profiles.user_id = users.id
+         WHERE users.email = $1 LIMIT 1`,
+        [email]
+      )
       return rows[0] ? mapUserRow(rows[0]) : null
     },
     async findUserById(id) {
@@ -613,6 +692,76 @@ async function getPgRepo() {
         ]
       )
       return mapUserRow(rows[0])
+    },
+    async getAdminCustomers({ q = '', status = '' } = {}) {
+      const values = []
+      const clauses = ["users.role = 'customer'"]
+      if (q) {
+        values.push(`%${String(q).trim().toLowerCase()}%`)
+        clauses.push(`LOWER(CONCAT_WS(' ', users.company, users.email, customer_profiles.phone, customer_profiles.company_name, customer_profiles.city, customer_profiles.department)) LIKE $${values.length}`)
+      }
+      if (status) {
+        values.push(status)
+        clauses.push(`COALESCE(customer_profiles.status, 'active') = $${values.length}`)
+      }
+      const { rows } = await pool.query(
+        `SELECT users.id, users.company AS name, users.email, users.created_at,
+                customer_profiles.phone, customer_profiles.company_name, customer_profiles.address,
+                customer_profiles.city, customer_profiles.department,
+                COALESCE(customer_profiles.status, 'active') AS status,
+                customer_profiles.internal_notes, customer_profiles.updated_at,
+                COALESCE(order_summary.order_count, 0)::int AS order_count,
+                order_summary.last_order_at
+         FROM users
+         LEFT JOIN customer_profiles ON customer_profiles.user_id = users.id
+         LEFT JOIN (
+           SELECT LOWER(buyer_email) AS email_key, COUNT(*) AS order_count, MAX(created_at) AS last_order_at
+           FROM orders
+           WHERE buyer_email IS NOT NULL AND buyer_email <> ''
+           GROUP BY LOWER(buyer_email)
+         ) AS order_summary ON order_summary.email_key = LOWER(users.email)
+         WHERE ${clauses.join(' AND ')}
+         ORDER BY users.created_at DESC, users.id DESC`,
+        values
+      )
+      return rows.map(mapAdminCustomerRow)
+    },
+    async updateAdminCustomer(id, payload) {
+      const client = await pool.connect()
+      try {
+        await client.query('BEGIN')
+        const { rows: users } = await client.query(
+          `UPDATE users SET email = $1, company = $2
+           WHERE id = $3 AND role = 'customer'
+           RETURNING id, email, company AS name, created_at`,
+          [payload.email, payload.name, id]
+        )
+        if (!users[0]) {
+          await client.query('ROLLBACK')
+          return null
+        }
+        const { rows: profiles } = await client.query(
+          `INSERT INTO customer_profiles
+             (user_id, phone, company_name, address, city, department, status, internal_notes, updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
+           ON CONFLICT (user_id) DO UPDATE SET
+             phone=EXCLUDED.phone, company_name=EXCLUDED.company_name, address=EXCLUDED.address,
+             city=EXCLUDED.city, department=EXCLUDED.department, status=EXCLUDED.status,
+             internal_notes=EXCLUDED.internal_notes, updated_at=NOW()
+           RETURNING *`,
+          [id, payload.phone, payload.companyName, payload.address, payload.city, payload.department, payload.status, payload.internalNotes]
+        )
+        if (payload.status === 'blocked') {
+          await client.query('DELETE FROM auth_sessions WHERE user_id = $1', [id])
+        }
+        await client.query('COMMIT')
+        return mapAdminCustomerRow({ ...users[0], ...profiles[0] })
+      } catch (error) {
+        await client.query('ROLLBACK')
+        throw error
+      } finally {
+        client.release()
+      }
     },
     async getProviders() {
       const { rows } = await pool.query('SELECT * FROM providers ORDER BY name ASC')

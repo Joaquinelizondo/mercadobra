@@ -109,6 +109,22 @@ export function updateProduct(id, payload, token) {
   })
 }
 
+export function getAdminCustomers(filters = {}, token) {
+  const params = new URLSearchParams()
+  if (filters.q) params.set('q', filters.q)
+  if (filters.status && filters.status !== 'all') params.set('status', filters.status)
+  const query = params.toString()
+  return request(`/admin/customers${query ? `?${query}` : ''}`, { token })
+}
+
+export function updateAdminCustomer(id, payload, token) {
+  return request(`/admin/customers/${id}`, {
+    method: 'PATCH',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
 export function loginSupplier(email, password) {
   return request('/auth/login', {
     method: 'POST',

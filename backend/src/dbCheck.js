@@ -13,6 +13,7 @@ const REQUIRED_TABLES = [
   'search_contacts',
   'custom_requests',
   'auth_sessions',
+  'customer_profiles',
   'migrations',
 ]
 

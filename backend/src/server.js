@@ -153,6 +153,7 @@ async function authMiddleware(req, res, next) {
 async function authenticateUser(repo, email, password) {
   const user = await repo.findUserByEmail(email)
   if (!user) return null
+  if (user.role === 'customer' && user.accountStatus !== 'active') return null
 
   const verification = verifyPassword(password, user.password)
   if (!verification.valid) return null
@@ -322,6 +323,41 @@ app.post('/auth/admin/login', asyncHandler(async (req, res) => {
       company: user.company,
     },
   })
+}))
+
+app.get('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const status = req.query.status
+    ? validateEnum(req.query.status, ['active', 'inactive', 'blocked'], 'Estado')
+    : ''
+  const repo = await getRepository()
+  const rows = await repo.getAdminCustomers({ q: req.query.q || '', status })
+  return res.json({ rows, total: rows.length })
+}))
+
+app.patch('/admin/customers/:id', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const id = validateNumber(req.params.id, 'Cliente ID', 1)
+  const body = req.body || {}
+  const email = validateEmail(body.email)
+  const name = validateStringLength(requireField(body.name, 'Nombre'), 'Nombre', 2, 120)
+  const status = validateEnum(body.status || 'active', ['active', 'inactive', 'blocked'], 'Estado')
+  const repo = await getRepository()
+  const emailOwner = await repo.findUserByEmail(email)
+  if (emailOwner && Number(emailOwner.id) !== Number(id)) {
+    throw new ConflictError('Ya existe una cuenta con ese correo')
+  }
+  const updated = await repo.updateAdminCustomer(id, {
+    email,
+    name,
+    status,
+    phone: validateStringLength(body.phone || '', 'Teléfono', 0, 40),
+    companyName: validateStringLength(body.companyName || '', 'Empresa', 0, 120),
+    address: validateStringLength(body.address || '', 'Dirección', 0, 180),
+    city: validateStringLength(body.city || '', 'Localidad', 0, 100),
+    department: validateStringLength(body.department || '', 'Departamento', 0, 100),
+    internalNotes: validateStringLength(body.internalNotes || '', 'Notas internas', 0, 1000),
+  })
+  if (!updated) throw new NotFoundError('Cliente')
+  return res.json(updated)
 }))
 
 app.post('/auth/logout', authMiddleware, asyncHandler(async (req, res) => {

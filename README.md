@@ -24,7 +24,7 @@ La plataforma se encuentra operativa con:
 - Autenticación con contraseñas cifradas y sesiones revocables.
 - Integración de Mercado Pago y servicios opcionales de notificaciones.
 
-En agosto de 2026 se reemplazó una instancia PostgreSQL que quedó atrapada en un ciclo de reinicio. La base activa nueva recibió correctamente las 19 migraciones, verificó todas las tablas y recreó la cuenta administrativa mediante `admin:bootstrap`. La instancia anterior debe conservarse suspendida mientras exista interés en recuperar información histórica.
+En agosto de 2026 se reemplazó una instancia PostgreSQL que quedó atrapada en un ciclo de reinicio. La base activa nueva recibió correctamente las migraciones, verificó todas las tablas y recreó la cuenta administrativa mediante `admin:bootstrap`. La instancia anterior debe conservarse suspendida mientras exista interés en recuperar información histórica.
 
 ## Accesos de la plataforma
 
@@ -96,9 +96,9 @@ MercadoBra debe evolucionar como una plataforma modular, no como una suma de pan
 
 ## Módulo administrativo de clientes — definición
 
-**Estado:** definido, pendiente de implementación.
+**Estado:** primera versión implementada; auditoría, paginación de servidor y restablecimiento de contraseña quedan para etapas posteriores.
 
-**Ruta propuesta:** `/admin/clientes`
+**Ruta:** `/admin/clientes`
 
 **Objetivo:** permitir que un administrador encuentre, consulte y actualice datos de clientes sin acceder directamente a PostgreSQL, conservando seguridad, trazabilidad y capacidad de crecimiento.
 
@@ -188,7 +188,7 @@ Todas las rutas requieren sesión administrativa. El listado debe devolver metad
 
 ### Implementación por etapas
 
-1. **Base operativa:** migración de perfiles, listado, búsqueda, detalle y edición básica.
+1. **Base operativa — implementada:** migración de perfiles, listado, búsqueda, detalle y edición básica.
 2. **Seguridad:** estados de cuenta, revocación de sesiones y auditoría.
 3. **Visión comercial:** pedidos, consultas, gasto y última actividad.
 4. **Escala:** filtros avanzados, paginación de servidor, exportación y permisos administrativos granulares.
@@ -261,7 +261,7 @@ docs/                 Estado y planificación
 
 ## Base de datos
 
-Las migraciones `001` a `019` crean y evolucionan el esquema. Las tablas verificadas actualmente son:
+Las migraciones `001` a `020` crean y evolucionan el esquema. Las tablas de dominio incluyen:
 
 - `providers`
 - `users`
@@ -274,6 +274,7 @@ Las migraciones `001` a `019` crean y evolucionan el esquema. Las tablas verific
 - `search_contacts`
 - `custom_requests`
 - `auth_sessions`
+- `customer_profiles`
 - `migrations`
 
 El catálogo inicial de Oxida se carga mediante la migración `013_oxida_catalog.sql`. La cuenta administrativa se inserta o actualiza mediante `backend/src/bootstrapAdmin.js`.
@@ -506,13 +507,14 @@ backend/.env.example → backend/.env
 - Autenticación segura y sesiones revocables.
 - Accesos separados para clientes, proveedores y administradores.
 - Acceso administrativo discreto en el pie de página.
-- Producción conectada a una nueva instancia PostgreSQL con 19 migraciones.
+- Producción conectada a una nueva instancia PostgreSQL y esquema versionado.
+- Primera versión administrativa de clientes con perfiles editables y estados de cuenta.
 - CORS habilitado para dominio principal, variante `www` y Vercel.
 
 ## Próximas prioridades
 
 1. Mostrar correctamente los errores `429` y tiempos de espera en los formularios de login.
-2. Implementar la primera etapa del módulo administrativo de clientes definido en este README.
+2. Completar auditoría, paginación y restablecimiento seguro del módulo administrativo de clientes.
 3. Migrar fotografías a almacenamiento externo y agregar reordenamiento/eliminación.
 4. Incorporar características técnicas flexibles por producto.
 5. Configurar backups y un plan PostgreSQL apto para producción.
