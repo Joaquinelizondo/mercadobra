@@ -334,6 +334,27 @@ app.get('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req, 
   return res.json({ rows, total: rows.length })
 }))
 
+app.post('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const body = req.body || {}
+  const email = validateEmail(body.email)
+  const name = validateStringLength(requireField(body.name, 'Nombre'), 'Nombre', 2, 120)
+  const repo = await getRepository()
+  if (await repo.findUserByEmail(email)) throw new ConflictError('Ya existe una cuenta con ese correo')
+  const generatedSecret = createSessionCredentials().token
+  const created = await repo.createAdminCustomer({
+    email,
+    name,
+    password: hashPassword(generatedSecret),
+    phone: validateStringLength(body.phone || '', 'Teléfono', 0, 40),
+    companyName: validateStringLength(body.companyName || '', 'Empresa', 0, 120),
+    address: validateStringLength(body.address || '', 'Dirección', 0, 180),
+    city: validateStringLength(body.city || '', 'Localidad', 0, 100),
+    department: validateStringLength(body.department || '', 'Departamento', 0, 100),
+    internalNotes: validateStringLength(body.internalNotes || '', 'Notas internas', 0, 1000),
+  })
+  return res.status(201).json(created)
+}))
+
 app.patch('/admin/customers/:id', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const id = validateNumber(req.params.id, 'Cliente ID', 1)
   const body = req.body || {}

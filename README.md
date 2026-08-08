@@ -188,7 +188,7 @@ Todas las rutas requieren sesión administrativa. El listado debe devolver metad
 
 ### Implementación por etapas
 
-1. **Base operativa — implementada:** migración de perfiles, listado, búsqueda, detalle y edición básica.
+1. **Base operativa — implementada:** migración de perfiles, alta administrativa inactiva, listado, búsqueda, detalle y edición básica.
 2. **Seguridad:** estados de cuenta, revocación de sesiones y auditoría.
 3. **Visión comercial:** pedidos, consultas, gasto y última actividad.
 4. **Escala:** filtros avanzados, paginación de servidor, exportación y permisos administrativos granulares.

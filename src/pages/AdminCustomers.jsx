@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getAdminCustomers, updateAdminCustomer } from '../lib/api'
+import { createAdminCustomer, getAdminCustomers, updateAdminCustomer } from '../lib/api'
 import './AdminCustomers.css'
 
 const EMPTY_FORM = {
@@ -19,6 +19,7 @@ export default function AdminCustomers() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [editing, setEditing] = useState(null)
+  const [creating, setCreating] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState('')
@@ -57,6 +58,19 @@ export default function AdminCustomers() {
     setSuccess('')
   }
 
+  function openCreate() {
+    setCreating(true)
+    setEditing(null)
+    setForm(EMPTY_FORM)
+    setError('')
+    setSuccess('')
+  }
+
+  function closeEditor() {
+    setEditing(null)
+    setCreating(false)
+  }
+
   function handleChange(event) {
     const { name, value } = event.target
     setForm((previous) => ({ ...previous, [name]: value }))
@@ -68,10 +82,16 @@ export default function AdminCustomers() {
     setError('')
     setSuccess('')
     try {
-      const updated = await updateAdminCustomer(editing.id, form, adminToken)
-      setCustomers((previous) => previous.map((customer) => customer.id === updated.id ? { ...customer, ...updated } : customer))
-      setEditing(null)
-      setSuccess('Datos del cliente actualizados.')
+      if (creating) {
+        const created = await createAdminCustomer(form, adminToken)
+        setCustomers((previous) => [created, ...previous])
+        setSuccess('Cliente agregado como perfil inactivo.')
+      } else {
+        const updated = await updateAdminCustomer(editing.id, form, adminToken)
+        setCustomers((previous) => previous.map((customer) => customer.id === updated.id ? { ...customer, ...updated } : customer))
+        setSuccess('Datos del cliente actualizados.')
+      }
+      closeEditor()
     } catch (requestError) {
       setError(requestError.message || 'No se pudieron guardar los cambios.')
     } finally {
@@ -86,12 +106,12 @@ export default function AdminCustomers() {
         <nav><Link to="/admin/productos">Productos</Link><Link to="/admin/pedidos">Pedidos</Link><Link to="/admin/cotizaciones">Consultas</Link><Link to="/admin/personalizaciones">Personalizaciones</Link><Link to="/">Ver tienda ↗</Link></nav>
       </header>
 
-      <div className="admin-customers-metrics" aria-label="Resumen de clientes">
+      <div className="admin-customers-title-row"><div className="admin-customers-metrics" aria-label="Resumen de clientes">
         <div><strong>{metrics.total}</strong><span>Total</span></div>
         <div><strong>{metrics.active}</strong><span>Activos</span></div>
         <div><strong>{metrics.withOrders}</strong><span>Con pedidos</span></div>
         <div><strong>{metrics.blocked}</strong><span>Bloqueados</span></div>
-      </div>
+      </div><button type="button" onClick={openCreate}>＋ Nuevo cliente</button></div>
 
       <div className="admin-customers-toolbar">
         <label><span>Buscar clientes</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, email, teléfono, localidad…" /></label>
@@ -116,10 +136,10 @@ export default function AdminCustomers() {
         </div>
       )}
 
-      {editing && <><div className="modal-overlay" onClick={() => setEditing(null)} aria-hidden="true" /><aside className="admin-customer-editor" role="dialog" aria-modal="true" aria-labelledby="customer-editor-title"><header><div><span>Perfil de cliente</span><h2 id="customer-editor-title">Editar datos</h2></div><button type="button" onClick={() => setEditing(null)} aria-label="Cerrar">×</button></header><form onSubmit={handleSubmit}>
+      {(editing || creating) && <><div className="modal-overlay" onClick={closeEditor} aria-hidden="true" /><aside className="admin-customer-editor" role="dialog" aria-modal="true" aria-labelledby="customer-editor-title"><header><div><span>Perfil de cliente</span><h2 id="customer-editor-title">{creating ? 'Nuevo cliente' : 'Editar datos'}</h2></div><button type="button" onClick={closeEditor} aria-label="Cerrar">×</button></header><form onSubmit={handleSubmit}>
         <div className="admin-customer-form-grid"><label><span>Nombre completo *</span><input name="name" value={form.name} onChange={handleChange} required /></label><label><span>Email *</span><input type="email" name="email" value={form.email} onChange={handleChange} required /></label><label><span>Teléfono</span><input name="phone" value={form.phone} onChange={handleChange} /></label><label><span>Empresa</span><input name="companyName" value={form.companyName} onChange={handleChange} /></label><label className="is-wide"><span>Dirección</span><input name="address" value={form.address} onChange={handleChange} /></label><label><span>Localidad</span><input name="city" value={form.city} onChange={handleChange} /></label><label><span>Departamento</span><input name="department" value={form.department} onChange={handleChange} /></label><label><span>Estado</span><select name="status" value={form.status} onChange={handleChange}><option value="active">Activo</option><option value="inactive">Inactivo</option><option value="blocked">Bloqueado</option></select></label><label className="is-wide"><span>Notas internas</span><textarea name="internalNotes" value={form.internalNotes} onChange={handleChange} rows="4" placeholder="Solo visibles para administración" /></label></div>
-        <p className="admin-customer-editor-note">Las contraseñas nunca son visibles desde este panel. Bloquear una cuenta cerrará sus sesiones activas.</p>
-        <button className="admin-customer-save" type="submit" disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</button>
+        <p className="admin-customer-editor-note">{creating ? 'El perfil se crea inactivo y sin acceso hasta implementar la invitación segura. Sus datos ya podrán usarse para la gestión comercial.' : 'Las contraseñas nunca son visibles desde este panel. Bloquear una cuenta cerrará sus sesiones activas.'}</p>
+        <button className="admin-customer-save" type="submit" disabled={saving}>{saving ? 'Guardando…' : creating ? 'Agregar cliente' : 'Guardar cambios'}</button>
       </form></aside></>}
     </section>
   )

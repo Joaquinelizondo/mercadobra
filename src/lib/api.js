@@ -117,6 +117,14 @@ export function getAdminCustomers(filters = {}, token) {
   return request(`/admin/customers${query ? `?${query}` : ''}`, { token })
 }
 
+export function createAdminCustomer(payload, token) {
+  return request('/admin/customers', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
 export function updateAdminCustomer(id, payload, token) {
   return request(`/admin/customers/${id}`, {
     method: 'PATCH',

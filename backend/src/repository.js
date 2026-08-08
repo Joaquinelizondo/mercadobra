@@ -246,6 +246,23 @@ async function getJsonRepo() {
       writeDb(db)
       return mapAdminCustomerRow({ ...profile, id: user.id, name: user.company, email: user.email })
     },
+    async createAdminCustomer(payload) {
+      const db = readDb()
+      const user = {
+        id: nextId(db.users), email: payload.email, password: payload.password,
+        role: 'customer', providerId: null, company: payload.name,
+      }
+      db.users.push(user)
+      if (!Array.isArray(db.customerProfiles)) db.customerProfiles = []
+      const profile = {
+        userId: user.id, phone: payload.phone, companyName: payload.companyName,
+        address: payload.address, city: payload.city, department: payload.department,
+        status: 'inactive', internalNotes: payload.internalNotes, updatedAt: new Date().toISOString(),
+      }
+      db.customerProfiles.push(profile)
+      writeDb(db)
+      return mapAdminCustomerRow({ ...profile, id: user.id, name: user.company, email: user.email })
+    },
     async getProviders() {
       return readDb().providers
     },
@@ -754,6 +771,32 @@ async function getPgRepo() {
         if (payload.status === 'blocked') {
           await client.query('DELETE FROM auth_sessions WHERE user_id = $1', [id])
         }
+        await client.query('COMMIT')
+        return mapAdminCustomerRow({ ...users[0], ...profiles[0] })
+      } catch (error) {
+        await client.query('ROLLBACK')
+        throw error
+      } finally {
+        client.release()
+      }
+    },
+    async createAdminCustomer(payload) {
+      const client = await pool.connect()
+      try {
+        await client.query('BEGIN')
+        const { rows: users } = await client.query(
+          `INSERT INTO users (email, password, role, provider_id, company)
+           VALUES ($1, $2, 'customer', NULL, $3)
+           RETURNING id, email, company AS name, created_at`,
+          [payload.email, payload.password, payload.name]
+        )
+        const { rows: profiles } = await client.query(
+          `INSERT INTO customer_profiles
+             (user_id, phone, company_name, address, city, department, status, internal_notes)
+           VALUES ($1,$2,$3,$4,$5,$6,'inactive',$7)
+           RETURNING *`,
+          [users[0].id, payload.phone, payload.companyName, payload.address, payload.city, payload.department, payload.internalNotes]
+        )
         await client.query('COMMIT')
         return mapAdminCustomerRow({ ...users[0], ...profiles[0] })
       } catch (error) {
