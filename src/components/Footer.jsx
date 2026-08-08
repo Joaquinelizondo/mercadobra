@@ -135,6 +135,12 @@ export default function Footer() {
         <p className="footer-bottom-payment-title">Medios de pago</p>
         <PaymentLogosRow />
         <p>© {year} MercadObra. Hecho para que tu obra avance.</p>
+        <Link to="/admin/login" className="footer-admin-link" aria-label="Acceso administrativo">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7.5 10V7.5a4.5 4.5 0 0 1 9 0V10m-10 0h11a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5v-7A1.5 1.5 0 0 1 6.5 10Z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <span>Administración</span>
+        </Link>
       </div>
     </footer>
   )

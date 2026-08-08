@@ -1279,6 +1279,30 @@
   margin: 0;
 }
 
+.footer .footer-admin-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.footer .footer-admin-link svg {
+  width: 12px;
+  height: 12px;
+}
+
+.footer .footer-admin-link:hover,
+.footer .footer-admin-link:focus-visible {
+  color: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.06);
+}
+
 @media (min-width: 901px) {
   .payment-methods-logos--bottom {
     margin-bottom: 0;
