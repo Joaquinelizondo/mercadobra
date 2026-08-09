@@ -45,7 +45,7 @@ Los accesos públicos **Mi cuenta** y **Soy proveedor** se encuentran temporalme
 
 - La marca principal se escribe siempre **Mercadobra**, sin mayúscula interna.
 - La unidad técnica y productiva se presenta editorialmente como **Óxida Studio**.
-- Los nombres de sus cuatro unidades son **Óxida Projects**, **Óxida Pro**, **Óxida Custom Works** y **Óxida Care**.
+- Los nombres de sus cinco unidades son **Óxida Projects**, **Óxida Pro**, **Óxida Custom Works**, **Óxida Collection** y **Óxida Care**.
 - Los nombres internos históricos de proveedor o migraciones pueden conservar `Oxida Studio` sin tilde para no romper relaciones de datos; la interfaz pública utiliza la escritura editorial.
 
 ### Encabezado y navegación
@@ -57,7 +57,7 @@ El menú principal mantiene siempre las rutas esenciales:
 - **Óxida Studio**
 - **Contáctenos**
 
-En **Inicio** y en `/oxida` aparece además una barra editorial oscura titulada **Nuestras unidades**. Utiliza numeración `01–04`, separadores sutiles y el naranja Óxida para destacar `Projects`, `Pro`, `Custom Works` y `Care`. Desde Inicio cada enlace abre la sección correspondiente de Óxida; dentro de `/oxida` funciona como navegación interna.
+En **Inicio** y en `/oxida` aparece además una barra editorial oscura titulada **Nuestras unidades**. Utiliza numeración `01–05`, separadores sutiles y el naranja Óxida para destacar `Projects`, `Pro`, `Custom Works`, `Collection` y `Care`. Desde Inicio cada enlace abre la sección correspondiente de Óxida; dentro de `/oxida` funciona como navegación interna.
 
 ### Posicionamiento comercial
 
@@ -79,9 +79,12 @@ La página **Quiénes somos** presenta a Mercadobra como una plataforma que cone
 | **Óxida Projects** | Desarrollo integral, diseño, ejecución de arquitectura, coordinación y dirección de obra representando al cliente. |
 | **Óxida Pro** | Soluciones para estudios, constructoras y desarrolladores: cálculo estructural, memoria de estructura, visitas y asesoramiento técnico. |
 | **Óxida Custom Works** | Fabricación especializada, estructuras, parrilleros y soluciones completamente a medida. |
+| **Óxida Collection** | Muebles y objetos de diseño de edición propia, presentados y comercializados mediante ecommerce. |
 | **Óxida Care** | Mantenimiento de estructuras y parrilleros, restauración y servicio de posventa. |
 
 El sistema visual de Óxida utiliza fondo grafito, superficies cálidas, tipografía editorial y naranja óxido como acento. La navegación de unidades debe conservar esa jerarquía sin reemplazar el menú principal de Mercadobra.
+
+**Óxida Collection** concentra la oferta estandarizable y comprable: muebles, objetos y modelos base con precio, fotografías, medidas, variantes y disponibilidad. Puede admitir opciones controladas de color, terminación o medida, pero su flujo principal es ecommerce. Los trabajos que necesitan relevamiento, ingeniería o una definición completamente nueva permanecen en **Óxida Custom Works** y utilizan el flujo de cotización.
 
 ## Roles y alcance
 
@@ -744,7 +747,7 @@ backend/.env.example → backend/.env
 - Primera versión administrativa de clientes con perfiles editables y estados de cuenta.
 - Detalle comercial por cliente con primera etapa de cotizaciones, montos, monedas, fechas y estados.
 - CORS habilitado para dominio principal, variante `www` y Vercel.
-- Óxida presenta Projects, Pro, Custom Works y Care como un sistema editorial de capacidades integrado a su identidad visual.
+- Óxida presenta Projects, Pro, Custom Works, Collection y Care como un sistema editorial de capacidades integrado a su identidad visual.
 - Las capacidades de Óxida incluyen diseño y dirección de obra, ingeniería estructural, ejecución y fabricación especializada, además de mantenimiento de estructuras y parrilleros.
 - Inicio y Óxida comparten una barra editorial de unidades con anclas directas a cada segmento.
 - Buscador/cotizador reposicionado alrededor de productos y soluciones en hierro con el mensaje “Lo que imaginás, en hierro”.

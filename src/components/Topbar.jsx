@@ -99,7 +99,8 @@ export default function Topbar() {
           <a href={`${isOxida ? '' : '/oxida'}#oxida-projects`}><small>01</small>Óxida <strong>Projects</strong></a>
           <a href={`${isOxida ? '' : '/oxida'}#oxida-pro`}><small>02</small>Óxida <strong>Pro</strong></a>
           <a href={`${isOxida ? '' : '/oxida'}#oxida-custom-works`}><small>03</small>Óxida <strong>Custom Works</strong></a>
-          <a href={`${isOxida ? '' : '/oxida'}#oxida-care`}><small>04</small>Óxida <strong>Care</strong></a>
+          <a href={`${isOxida ? '' : '/oxida'}#oxida-collection`}><small>04</small>Óxida <strong>Collection</strong></a>
+          <a href={`${isOxida ? '' : '/oxida'}#oxida-care`}><small>05</small>Óxida <strong>Care</strong></a>
         </nav>
       )}
     </header>

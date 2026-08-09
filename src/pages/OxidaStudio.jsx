@@ -41,7 +41,13 @@ const capabilities = [
     services: ['Ejecución de estructuras', 'Fabricación de parrilleros', 'Piezas y soluciones especiales'],
   },
   {
-    number: '04', id: 'oxida-care',
+    number: '04', id: 'oxida-collection',
+    name: 'Óxida Collection',
+    description: 'Muebles y objetos de diseño creados para descubrir, elegir y comprar online.',
+    services: ['Muebles y objetos de diseño', 'Colecciones de edición propia', 'Compra online', 'Opciones de medida, color y terminación'],
+  },
+  {
+    number: '05', id: 'oxida-care',
     name: 'Óxida Care',
     description: 'Mantenimiento, restauración y servicio de posventa.',
     services: ['Mantenimiento de estructuras', 'Mantenimiento de parrilleros', 'Restauración y puesta a punto', 'Servicio de posventa'],
@@ -94,7 +100,7 @@ export default function OxidaStudio() {
       <section className="oxida-capabilities" aria-labelledby="oxida-capabilities-title">
         <div className="oxida-capabilities-heading">
           <p className="oxida-section-number">[ 02 — CAPACIDADES ]</p>
-          <h2 id="oxida-capabilities-title">Una empresa.<br /><span>Cuatro formas de hacer.</span></h2>
+          <h2 id="oxida-capabilities-title">Una empresa.<br /><span>Cinco formas de hacer.</span></h2>
           <p>Distintas escalas y necesidades, bajo una misma dirección de diseño, fabricación y ejecución.</p>
         </div>
         <div className="oxida-capabilities-list">
@@ -117,7 +123,7 @@ export default function OxidaStudio() {
       <section className="oxida-shop" id="tienda">
         <div className="oxida-shop-heading">
           <div>
-            <p className="oxida-section-number">[ 03 — TIENDA ]</p>
+            <p className="oxida-section-number">[ 03 — ÓXIDA COLLECTION ]</p>
             <h2>Diseños para<br /><span>hacerlos tuyos.</span></h2>
           </div>
           <div>
