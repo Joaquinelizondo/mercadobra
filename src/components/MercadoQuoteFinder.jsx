@@ -122,7 +122,7 @@ export default function MercadoQuoteFinder() {
       </div>
 
       <form className="mqf-search" onSubmit={prepareQuote}>
-        <label htmlFor="mercado-quote-query">Describí tu proyecto y encontrá opciones</label>
+        <label htmlFor="mercado-quote-query">Tu idea. Una cotización a medida.</label>
         <div className="mqf-search-box">
           <textarea
             id="mercado-quote-query"
@@ -133,7 +133,7 @@ export default function MercadoQuoteFinder() {
           />
           <button type="submit" disabled={loadingProducts || results.length === 0}>
             <span aria-hidden="true">⌕</span>
-            {loadingProducts ? 'Cargando…' : 'Buscar opciones'}
+            {loadingProducts ? 'Cargando…' : 'Cotizar ahora'}
           </button>
         </div>
       </form>
