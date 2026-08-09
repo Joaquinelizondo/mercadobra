@@ -95,6 +95,25 @@ function mapAdminCustomerRow(row) {
   }
 }
 
+function mapCustomerQuoteRow(row) {
+  return {
+    id: Number(row.id),
+    customerId: Number(row.customer_user_id ?? row.customerId),
+    referenceNumber: row.reference_number ?? row.referenceNumber,
+    title: row.title,
+    description: row.description || '',
+    status: row.status || 'in_progress',
+    totalAmount: Number(row.total_amount ?? row.totalAmount ?? 0),
+    currency: String(row.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
+    sentAt: row.sent_at ?? row.sentAt ?? null,
+    estimatedStartAt: row.estimated_start_at ?? row.estimatedStartAt ?? null,
+    estimatedEndAt: row.estimated_end_at ?? row.estimatedEndAt ?? null,
+    internalNotes: row.internal_notes ?? row.internalNotes ?? '',
+    createdAt: row.created_at ?? row.createdAt ?? null,
+    updatedAt: row.updated_at ?? row.updatedAt ?? null,
+  }
+}
+
 function generateTrackingToken() {
   return randomBytes(16).toString('hex')
 }
@@ -262,6 +281,41 @@ async function getJsonRepo() {
       db.customerProfiles.push(profile)
       writeDb(db)
       return mapAdminCustomerRow({ ...profile, id: user.id, name: user.company, email: user.email })
+    },
+    async getAdminCustomerById(id) {
+      const customers = await this.getAdminCustomers()
+      return customers.find((customer) => customer.id === Number(id)) || null
+    },
+    async getCustomerQuotes(customerId) {
+      const db = readDb()
+      return (db.customerQuotes || [])
+        .filter((quote) => Number(quote.customerId) === Number(customerId))
+        .map(mapCustomerQuoteRow)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    },
+    async createCustomerQuote(payload) {
+      const db = readDb()
+      if (!Array.isArray(db.customerQuotes)) db.customerQuotes = []
+      const created = {
+        ...payload,
+        id: nextId(db.customerQuotes),
+        sentAt: payload.status === 'sent' ? new Date().toISOString() : null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      db.customerQuotes.push(created)
+      writeDb(db)
+      return mapCustomerQuoteRow(created)
+    },
+    async updateCustomerQuoteStatus(id, status) {
+      const db = readDb()
+      const quote = (db.customerQuotes || []).find((item) => Number(item.id) === Number(id))
+      if (!quote) return null
+      quote.status = status
+      if (status === 'sent' && !quote.sentAt) quote.sentAt = new Date().toISOString()
+      quote.updatedAt = new Date().toISOString()
+      writeDb(db)
+      return mapCustomerQuoteRow(quote)
     },
     async getProviders() {
       return readDb().providers
@@ -805,6 +859,61 @@ async function getPgRepo() {
       } finally {
         client.release()
       }
+    },
+    async getAdminCustomerById(id) {
+      const { rows } = await pool.query(
+        `SELECT users.id, users.company AS name, users.email, users.created_at,
+                customer_profiles.phone, customer_profiles.company_name, customer_profiles.address,
+                customer_profiles.city, customer_profiles.department,
+                COALESCE(customer_profiles.status, 'active') AS status,
+                customer_profiles.internal_notes, customer_profiles.updated_at,
+                COALESCE(order_summary.order_count, 0)::int AS order_count,
+                order_summary.last_order_at
+         FROM users
+         LEFT JOIN customer_profiles ON customer_profiles.user_id = users.id
+         LEFT JOIN (
+           SELECT LOWER(buyer_email) AS email_key, COUNT(*) AS order_count, MAX(created_at) AS last_order_at
+           FROM orders WHERE buyer_email IS NOT NULL AND buyer_email <> '' GROUP BY LOWER(buyer_email)
+         ) AS order_summary ON order_summary.email_key = LOWER(users.email)
+         WHERE users.id = $1 AND users.role = 'customer' LIMIT 1`,
+        [id]
+      )
+      return rows[0] ? mapAdminCustomerRow(rows[0]) : null
+    },
+    async getCustomerQuotes(customerId) {
+      const { rows } = await pool.query(
+        'SELECT * FROM customer_quotes WHERE customer_user_id = $1 ORDER BY created_at DESC, id DESC',
+        [customerId]
+      )
+      return rows.map(mapCustomerQuoteRow)
+    },
+    async createCustomerQuote(payload) {
+      const { rows } = await pool.query(
+        `INSERT INTO customer_quotes
+           (customer_user_id, reference_number, title, description, status, total_amount, currency,
+            sent_at, estimated_start_at, estimated_end_at, internal_notes, created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         RETURNING *`,
+        [
+          payload.customerId, payload.referenceNumber, payload.title, payload.description,
+          payload.status, payload.totalAmount, payload.currency,
+          payload.status === 'sent' ? new Date() : null,
+          payload.estimatedStartAt || null, payload.estimatedEndAt || null,
+          payload.internalNotes, payload.createdBy,
+        ]
+      )
+      return mapCustomerQuoteRow(rows[0])
+    },
+    async updateCustomerQuoteStatus(id, status) {
+      const { rows } = await pool.query(
+        `UPDATE customer_quotes
+         SET status = $1,
+             sent_at = CASE WHEN $1 = 'sent' AND sent_at IS NULL THEN NOW() ELSE sent_at END,
+             updated_at = NOW()
+         WHERE id = $2 RETURNING *`,
+        [status, id]
+      )
+      return rows[0] ? mapCustomerQuoteRow(rows[0]) : null
     },
     async getProviders() {
       const { rows } = await pool.query('SELECT * FROM providers ORDER BY name ASC')

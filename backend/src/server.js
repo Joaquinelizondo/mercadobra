@@ -58,6 +58,7 @@ const FRONTEND_ORIGIN = config.frontendOrigin
 const FRONTEND_PUBLIC_URL = config.frontendPublicUrl
 const BACKEND_PUBLIC_URL = config.backendPublicUrl
 const ALLOWED_PAYMENT_METHODS = new Set(['transferencia', 'mercadopago'])
+const CUSTOMER_QUOTE_STATUSES = ['in_progress', 'sent', 'accepted', 'project_in_progress', 'completed', 'rejected', 'cancelled']
 const HAS_PUBLIC_HTTPS_FRONTEND = /^https:\/\//.test(FRONTEND_PUBLIC_URL)
 
 const allowedOrigins = FRONTEND_ORIGIN
@@ -378,6 +379,52 @@ app.patch('/admin/customers/:id', authMiddleware, adminOnly, asyncHandler(async 
     internalNotes: validateStringLength(body.internalNotes || '', 'Notas internas', 0, 1000),
   })
   if (!updated) throw new NotFoundError('Cliente')
+  return res.json(updated)
+}))
+
+app.get('/admin/customers/:id', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const id = validateNumber(req.params.id, 'Cliente ID', 1)
+  const repo = await getRepository()
+  const customer = await repo.getAdminCustomerById(id)
+  if (!customer) throw new NotFoundError('Cliente')
+  return res.json(customer)
+}))
+
+app.get('/admin/customers/:customerId/quotes', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const customerId = validateNumber(req.params.customerId, 'Cliente ID', 1)
+  const repo = await getRepository()
+  if (!await repo.getAdminCustomerById(customerId)) throw new NotFoundError('Cliente')
+  const rows = await repo.getCustomerQuotes(customerId)
+  return res.json({ rows, total: rows.length })
+}))
+
+app.post('/admin/customers/:customerId/quotes', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const customerId = validateNumber(req.params.customerId, 'Cliente ID', 1)
+  const body = req.body || {}
+  const repo = await getRepository()
+  if (!await repo.getAdminCustomerById(customerId)) throw new NotFoundError('Cliente')
+  const created = await repo.createCustomerQuote({
+    customerId,
+    referenceNumber: `COT-${Date.now().toString(36).toUpperCase()}`,
+    title: validateStringLength(requireField(body.title, 'Título'), 'Título', 2, 160),
+    description: validateStringLength(body.description || '', 'Descripción', 0, 2000),
+    status: validateEnum(body.status || 'in_progress', CUSTOMER_QUOTE_STATUSES, 'Estado'),
+    totalAmount: validateNumber(body.totalAmount ?? 0, 'Monto total', 0, 999999999999),
+    currency: validateEnum(body.currency || 'UYU', ['uyu', 'usd'], 'Moneda').toUpperCase(),
+    estimatedStartAt: body.estimatedStartAt || null,
+    estimatedEndAt: body.estimatedEndAt || null,
+    internalNotes: validateStringLength(body.internalNotes || '', 'Notas internas', 0, 1000),
+    createdBy: req.authUser.id,
+  })
+  return res.status(201).json(created)
+}))
+
+app.patch('/admin/quotes/:quoteId/status', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1)
+  const status = validateEnum(req.body?.status, CUSTOMER_QUOTE_STATUSES, 'Estado')
+  const repo = await getRepository()
+  const updated = await repo.updateCustomerQuoteStatus(quoteId, status)
+  if (!updated) throw new NotFoundError('Cotización')
   return res.json(updated)
 }))
 

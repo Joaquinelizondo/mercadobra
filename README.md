@@ -206,6 +206,190 @@ Todas las rutas requieren sesión administrativa. El listado debe devolver metad
 - Existen estados de carga, vacío, éxito y error.
 - Las operaciones críticas tienen pruebas automatizadas.
 
+## Cotizaciones, proyectos y pagos por cliente — definición
+
+**Estado:** primera etapa implementada; pagos, documentos, trazabilidad y portal quedan pendientes.
+
+**Ubicación propuesta:** dentro del detalle de `/admin/clientes/:id`, en una pestaña **Cotizaciones y trabajos**.
+
+**Objetivo:** conservar en un solo historial comercial todas las cotizaciones enviadas a un cliente, sus archivos, evolución a proyecto y calendario real de cobros.
+
+### Relación principal
+
+```text
+Cliente
+  └── Cotización / trabajo
+        ├── Estado comercial y operativo
+        ├── Archivos adjuntos
+        ├── Monto y moneda
+        └── Entregas de pago
+```
+
+Un cliente puede tener múltiples cotizaciones. Cada cotización conserva sus propios documentos, monto, estado y pagos; nunca se suman o mezclan entregas entre trabajos diferentes.
+
+### Datos de cada cotización o trabajo
+
+- Número interno consecutivo.
+- Título breve del trabajo.
+- Descripción y alcance.
+- Fecha de creación.
+- Fecha de envío al cliente.
+- Fecha estimada de inicio y finalización.
+- Monto total.
+- Moneda (`UYU` o `USD`).
+- Estado actual.
+- Notas internas.
+- Responsable administrativo, preparado para futuros equipos.
+- Fecha de última actualización.
+
+### Estados
+
+La primera versión utiliza un flujo único y ordenado:
+
+| Estado | Significado |
+| --- | --- |
+| `in_progress` | Cotización en proceso de preparación. |
+| `sent` | Cotización enviada al cliente. |
+| `accepted` | Cotización aceptada. |
+| `project_in_progress` | Proyecto o trabajo en desarrollo. |
+| `completed` | Proyecto o trabajo terminado. |
+| `rejected` | Cotización rechazada. |
+| `cancelled` | Cotización o proyecto cancelado. |
+
+La interfaz mostrará etiquetas en español: **En proceso**, **Enviada**, **Aceptada**, **Proyecto en desarrollo**, **Terminado**, **Rechazada** y **Cancelada**.
+
+Cada cambio de estado debe registrar fecha, administrador responsable y estado anterior. Los estados `rejected` y `cancelled` requieren una nota breve. Un trabajo terminado no se elimina; permanece en el historial del cliente.
+
+### Archivos adjuntos
+
+Cada cotización puede incluir varios documentos:
+
+- Cotización en PDF.
+- Planos o imágenes.
+- Memoria descriptiva.
+- Orden de compra.
+- Comprobante de pago.
+- Contrato u otro documento comercial.
+
+Metadatos mínimos por archivo:
+
+- Nombre visible.
+- Tipo de documento.
+- URL privada o firmada.
+- Tipo MIME y tamaño.
+- Fecha de carga.
+- Administrador que lo cargó.
+
+Los archivos no deben guardarse como base64 dentro de PostgreSQL. Se almacenarán en un servicio de objetos —por ejemplo S3, Cloudinary o Supabase Storage— y la base guardará únicamente metadatos y una referencia segura. La descarga debe exigir autorización administrativa; más adelante podrá habilitarse un portal de cliente con enlaces temporales.
+
+### Plan y registro de pagos
+
+Cada cotización aceptada puede tener múltiples entregas. Cada entrega registra:
+
+- Nombre o concepto: seña, avance, saldo, adicional, etc.
+- Porcentaje editable de la cotización.
+- Monto correspondiente.
+- Fecha prevista de pago.
+- Fecha real de pago.
+- Estado: pendiente, pagado, vencido o anulado.
+- Medio de pago.
+- Referencia o comprobante.
+- Notas internas.
+
+Reglas:
+
+- La suma de entregas activas no puede superar el 100 %.
+- El importe sugerido se calcula como `monto total × porcentaje / 100`.
+- El administrador puede ajustar el monto por redondeos o adicionales, dejando registro del cambio.
+- Cambiar el monto total debe advertir si existen entregas ya pagadas.
+- Un pago confirmado conserva el monto y porcentaje históricos aunque luego cambie la cotización.
+- El sistema muestra **cobrado**, **pendiente**, **vencido** y **saldo restante**.
+- Registrar pagos no equivale a emitir documentación fiscal; facturación e impuestos quedan fuera de esta primera etapa.
+
+Ejemplo:
+
+| Entrega | Porcentaje | Fecha prevista | Estado |
+| --- | ---: | --- | --- |
+| Seña | 40 % | Al aceptar | Pagado |
+| Avance de obra | 30 % | Inicio de fabricación | Pendiente |
+| Saldo | 30 % | Entrega final | Pendiente |
+
+### Experiencia dentro del cliente
+
+El perfil tendrá una línea de tiempo con tarjetas de cotización. Cada tarjeta mostrará:
+
+- Número, título y estado.
+- Monto total y moneda.
+- Progreso de cobro en porcentaje y monto.
+- Próxima entrega y fecha.
+- Cantidad de documentos.
+- Acción **Abrir cotización**.
+
+Dentro de la cotización habrá cuatro bloques: **Resumen**, **Documentos**, **Pagos** e **Historial**. En móvil se apilan verticalmente; en escritorio el resumen y el estado permanecen visibles mientras se revisan documentos o pagos.
+
+### Modelo de datos propuesto
+
+```text
+customer_quotes
+  id, customer_user_id, reference_number, title, description,
+  status, total_amount, currency, sent_at,
+  estimated_start_at, estimated_end_at,
+  internal_notes, created_by, created_at, updated_at
+
+customer_quote_files
+  id, quote_id, file_name, document_type,
+  storage_key, mime_type, file_size,
+  uploaded_by, created_at
+
+customer_quote_payments
+  id, quote_id, concept, percentage, amount,
+  due_date, paid_at, status, payment_method,
+  reference, receipt_storage_key, internal_notes,
+  created_by, created_at, updated_at
+
+customer_quote_status_history
+  id, quote_id, previous_status, next_status,
+  note, changed_by, created_at
+```
+
+Los importes deben almacenarse como `NUMERIC`, nunca como números flotantes. La moneda pertenece a la cotización y todas sus entregas deben utilizar la misma.
+
+### API propuesta
+
+- `GET /admin/customers/:customerId/quotes`
+- `POST /admin/customers/:customerId/quotes`
+- `GET /admin/quotes/:quoteId`
+- `PATCH /admin/quotes/:quoteId`
+- `PATCH /admin/quotes/:quoteId/status`
+- `POST /admin/quotes/:quoteId/files`
+- `DELETE /admin/quotes/:quoteId/files/:fileId`
+- `POST /admin/quotes/:quoteId/payments`
+- `PATCH /admin/quotes/:quoteId/payments/:paymentId`
+- `DELETE /admin/quotes/:quoteId/payments/:paymentId`
+- `GET /admin/quotes/:quoteId/history`
+
+Todas las rutas requieren sesión administrativa y validan que la cotización, archivo o pago pertenezca al cliente esperado.
+
+### Implementación por etapas
+
+1. **Cotizaciones — implementada:** tabla, alta, monto, moneda, fechas estimadas y estados.
+2. **Pagos:** entregas porcentuales, fechas, estados y resumen cobrado/pendiente.
+3. **Documentos:** integración con almacenamiento externo y adjuntos autorizados.
+4. **Trazabilidad:** historial de estados, cambios de monto y pagos.
+5. **Portal del cliente:** visualización autorizada de cotizaciones, documentos y vencimientos.
+
+### Criterios de aceptación iniciales
+
+- Desde un cliente se puede crear más de una cotización.
+- Cada cotización mantiene monto, moneda y estado independientes.
+- Se puede cambiar el estado siguiendo el flujo definido.
+- Se pueden crear entregas con porcentaje, monto y fechas.
+- La suma de porcentajes no supera el 100 %.
+- Se visualiza el total cobrado y el saldo pendiente.
+- Los cambios persisten después de recargar.
+- Ningún archivo o dato financiero queda expuesto públicamente.
+- Las operaciones sensibles quedan preparadas para auditoría.
+
 ## Gestión de productos
 
 El flujo de alta se encuentra en **Administración → Productos → Nuevo producto**.
@@ -261,7 +445,7 @@ docs/                 Estado y planificación
 
 ## Base de datos
 
-Las migraciones `001` a `020` crean y evolucionan el esquema. Las tablas de dominio incluyen:
+Las migraciones `001` a `021` crean y evolucionan el esquema. Las tablas de dominio incluyen:
 
 - `providers`
 - `users`
@@ -275,6 +459,7 @@ Las migraciones `001` a `020` crean y evolucionan el esquema. Las tablas de domi
 - `custom_requests`
 - `auth_sessions`
 - `customer_profiles`
+- `customer_quotes`
 - `migrations`
 
 El catálogo inicial de Oxida se carga mediante la migración `013_oxida_catalog.sql`. La cuenta administrativa se inserta o actualiza mediante `backend/src/bootstrapAdmin.js`.
@@ -514,15 +699,15 @@ backend/.env.example → backend/.env
 ## Próximas prioridades
 
 1. Mostrar correctamente los errores `429` y tiempos de espera en los formularios de login.
-2. Completar auditoría, paginación y restablecimiento seguro del módulo administrativo de clientes.
-3. Migrar fotografías a almacenamiento externo y agregar reordenamiento/eliminación.
-4. Incorporar características técnicas flexibles por producto.
-5. Configurar backups y un plan PostgreSQL apto para producción.
-6. Eliminar el falso éxito del modo offline en operaciones administrativas.
-7. Agregar pruebas automatizadas para autenticación, productos, stock, pedidos y pagos.
-8. Completar SEO, analytics, textos legales y monitoreo.
-9. Separar sandbox y producción para Mercado Pago.
-10. Confirmar precios, monedas, entrega y condiciones comerciales definitivas.
+2. Implementar cotizaciones, proyectos y entregas de pago dentro del perfil de cada cliente.
+3. Completar auditoría, paginación y restablecimiento seguro del módulo administrativo de clientes.
+4. Definir e integrar almacenamiento externo para adjuntos de cotizaciones y fotografías de productos.
+5. Incorporar características técnicas flexibles por producto.
+6. Configurar backups y un plan PostgreSQL apto para producción.
+7. Eliminar el falso éxito del modo offline en operaciones administrativas.
+8. Agregar pruebas automatizadas para autenticación, clientes, cotizaciones, stock, pedidos y pagos.
+9. Completar SEO, analytics, textos legales y monitoreo.
+10. Separar sandbox y producción para Mercado Pago y confirmar condiciones comerciales definitivas.
 
 ## Verificación antes de publicar
 

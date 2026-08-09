@@ -133,6 +133,26 @@ export function updateAdminCustomer(id, payload, token) {
   })
 }
 
+export function getAdminCustomer(id, token) {
+  return request(`/admin/customers/${id}`, { token })
+}
+
+export function getCustomerQuotes(customerId, token) {
+  return request(`/admin/customers/${customerId}/quotes`, { token })
+}
+
+export function createCustomerQuote(customerId, payload, token) {
+  return request(`/admin/customers/${customerId}/quotes`, {
+    method: 'POST', token, body: JSON.stringify(payload),
+  })
+}
+
+export function updateCustomerQuoteStatus(quoteId, status, token) {
+  return request(`/admin/quotes/${quoteId}/status`, {
+    method: 'PATCH', token, body: JSON.stringify({ status }),
+  })
+}
+
 export function loginSupplier(email, password) {
   return request('/auth/login', {
     method: 'POST',

@@ -20,6 +20,7 @@ import AdminProducts from './pages/AdminProducts'
 import AdminCustomRequests from './pages/AdminCustomRequests'
 import AdminOrders from './pages/AdminOrders'
 import AdminCustomers from './pages/AdminCustomers'
+import AdminCustomerDetail from './pages/AdminCustomerDetail'
 import './pages/AdminCustomRequests.css'
 import { useState } from 'react'
 import heroImg from './assets/hero.png'
@@ -871,6 +872,7 @@ export default function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/productos" element={<AdminProducts />} />
         <Route path="/admin/clientes" element={<AdminCustomers />} />
+        <Route path="/admin/clientes/:id" element={<AdminCustomerDetail />} />
         <Route path="/admin/pedidos" element={<AdminOrders />} />
         <Route path="/admin/personalizaciones" element={<AdminCustomRequests />} />
         <Route path="/proveedor/login" element={<SupplierLogin />} />

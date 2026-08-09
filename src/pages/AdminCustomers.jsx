@@ -130,7 +130,7 @@ export default function AdminCustomers() {
               <div className="admin-customer-avatar" aria-hidden="true">{String(customer.name || customer.email || 'C').trim().charAt(0).toUpperCase()}</div>
               <div className="admin-customer-main"><div><h2>{customer.name || 'Cliente sin nombre'}</h2><span className={`admin-customer-status is-${customer.status}`}>{STATUS_LABELS[customer.status]}</span></div><a href={`mailto:${customer.email}`}>{customer.email}</a><p>{[customer.phone, customer.city, customer.department].filter(Boolean).join(' · ') || 'Contacto pendiente de completar'}</p></div>
               <div className="admin-customer-activity"><strong>{customer.orderCount || 0}</strong><span>pedido{Number(customer.orderCount) === 1 ? '' : 's'}</span>{customer.lastOrderAt && <small>Último: {new Date(customer.lastOrderAt).toLocaleDateString('es-UY')}</small>}</div>
-              <button type="button" onClick={() => openEditor(customer)}>Editar datos</button>
+              <div className="admin-customer-actions"><Link to={`/admin/clientes/${customer.id}`}>Abrir cliente</Link><button type="button" onClick={() => openEditor(customer)}>Editar datos</button></div>
             </article>
           ))}
         </div>
