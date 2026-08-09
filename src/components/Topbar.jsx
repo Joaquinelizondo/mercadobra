@@ -82,14 +82,14 @@ export default function Topbar() {
             </button>
           </div>
         ) : (
-          <>
+          <div className="topbar-access-links is-temporarily-hidden" aria-hidden="true">
             <Link to="/cliente/login" className="topbar-user-login-btn">
               Mi cuenta
             </Link>
             <Link to="/proveedor/login" className="topbar-login-btn">
               Soy proveedor
             </Link>
-          </>
+          </div>
         ))}
       </div>
 

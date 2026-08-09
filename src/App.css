@@ -405,6 +405,16 @@
   gap: 12px;
 }
 
+.topbar-access-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-access-links.is-temporarily-hidden {
+  display: none;
+}
+
 .primary-link,
 .ghost-link {
   display: inline-flex;
