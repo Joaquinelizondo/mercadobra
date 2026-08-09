@@ -44,8 +44,8 @@ export default function Wishlist() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Mi wishlist de MercadObra',
-          text: 'Mira estos productos que guarde en MercadObra.',
+          title: 'Mis favoritos de Mercadobra',
+          text: 'Mirá estos productos que guardé en Mercadobra.',
           url: shareLink,
         })
         setShareStatus('Wishlist compartida.')

@@ -42,7 +42,7 @@ export default function AdminCustomRequests() {
     <section className="admin-custom-page">
       <header>
         <div>
-          <span>Oxida Studio · Mercadobra</span>
+          <span>Óxida Studio · Mercadobra</span>
           <h1>Solicitudes personalizadas</h1>
           <p>{requests.length} consulta{requests.length === 1 ? '' : 's'} recibida{requests.length === 1 ? '' : 's'}</p>
         </div>

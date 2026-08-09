@@ -1104,7 +1104,7 @@ app.post('/chat', asyncHandler(async (req, res) => {
 app.use(globalErrorHandler)
 
 const server = app.listen(PORT, () => {
-  console.log(`✅ MercadObra backend listening on http://localhost:${PORT}`)
+  console.log(`✅ Mercadobra backend listening on http://localhost:${PORT}`)
 })
 
 server.on('error', (err) => {

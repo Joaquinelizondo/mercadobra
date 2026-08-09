@@ -18,7 +18,7 @@ export default function OxidaSpotlight() {
           <Link to="/oxida#cotizar" className="oxida-spotlight-secondary">Cotizá tu idea →</Link>
         </div>
       </div>
-      <Link to="/oxida" className="oxida-spotlight-visual" aria-label="Descubrir Oxida Studio">
+      <Link to="/oxida" className="oxida-spotlight-visual" aria-label="Descubrir Óxida Studio">
         <img src={oxidaFeature} alt="Escalera de hierro y madera diseñada a medida" />
         <span className="oxida-spotlight-index">01 — Diseño & fabricación</span>
       </Link>

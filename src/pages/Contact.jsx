@@ -10,10 +10,10 @@ export default function Contact() {
       <MercadoQuoteFinder />
       <section className="info-page-card">
         <p className="info-page-kicker">Contáctenos</p>
-        <h1>Estamos para ayudarte con tu compra o proyecto.</h1>
+        <h1>Hablemos de lo que querés hacer en hierro.</h1>
         <p>
-          Escribinos para consultar por productos, cotizaciones, pedidos especiales
-          o para publicar tu catálogo como proveedor.
+          Escribinos para consultar por productos, cotizaciones, estructuras,
+          fabricación a medida o acompañamiento técnico para tu proyecto.
         </p>
         <div className="info-page-actions">
           <a href="mailto:contacto@mercadobra.com">contacto@mercadobra.com</a>

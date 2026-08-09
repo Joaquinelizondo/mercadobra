@@ -6,7 +6,7 @@ Plataforma uruguaya para descubrir, cotizar y comprar productos para obra, con e
 
 **Backend:** <https://mercadobra.onrender.com>
 
-**Última actualización:** 8 de agosto de 2026
+**Última actualización:** 9 de agosto de 2026
 
 El estado funcional detallado y las prioridades se mantienen también en [docs/ESTADO_WEB.md](docs/ESTADO_WEB.md).
 
@@ -36,6 +36,52 @@ En agosto de 2026 se reemplazó una instancia PostgreSQL que quedó atrapada en 
 | Administrador | `/admin/login` | Productos, pedidos, consultas y personalizaciones. |
 
 El pie de página incluye un acceso administrativo discreto y minimalista con un pequeño candado. La seguridad del panel no depende de ocultar la URL, sino de la autenticación y autorización del backend.
+
+Los accesos públicos **Mi cuenta** y **Soy proveedor** se encuentran temporalmente ocultos en el encabezado. No fueron eliminados: las rutas, pantallas y lógica de autenticación continúan activas para reintroducirlas cuando el producto lo requiera. Si existe una sesión iniciada, sus controles permanecen disponibles.
+
+## Experiencia pública e identidad vigente
+
+### Escritura de marca
+
+- La marca principal se escribe siempre **Mercadobra**, sin mayúscula interna.
+- La unidad técnica y productiva se presenta editorialmente como **Óxida Studio**.
+- Los nombres de sus cuatro unidades son **Óxida Projects**, **Óxida Pro**, **Óxida Custom Works** y **Óxida Care**.
+- Los nombres internos históricos de proveedor o migraciones pueden conservar `Oxida Studio` sin tilde para no romper relaciones de datos; la interfaz pública utiliza la escritura editorial.
+
+### Encabezado y navegación
+
+El menú principal mantiene siempre las rutas esenciales:
+
+- **Inicio**
+- **Quiénes somos**
+- **Óxida Studio**
+- **Contáctenos**
+
+En **Inicio** y en `/oxida` aparece además una barra editorial oscura titulada **Nuestras unidades**. Utiliza numeración `01–04`, separadores sutiles y el naranja Óxida para destacar `Projects`, `Pro`, `Custom Works` y `Care`. Desde Inicio cada enlace abre la sección correspondiente de Óxida; dentro de `/oxida` funciona como navegación interna.
+
+### Posicionamiento comercial
+
+El buscador/cotizador público se especializa en hierro y soluciones a medida. Su mensaje vigente es:
+
+```text
+Lo que imaginás, en hierro.
+Tu idea. Una cotización a medida.
+```
+
+El campo propone ejemplos concretos —escalera, parrillero, estructura o pieza a medida— y la acción principal es **Cotizar ahora**. El objetivo es iniciar una búsqueda comercial y presentar alternativas relevantes antes de solicitar los datos de contacto.
+
+La página **Quiénes somos** presenta a Mercadobra como una plataforma que conecta proyecto, producto y ejecución. Explica el crecimiento incremental de catálogo, clientes, proveedores, cotizaciones, proyectos y seguimiento comercial, y posiciona a Óxida Studio como la capacidad técnica y productiva del ecosistema.
+
+### Sistema de unidades Óxida
+
+| Unidad | Enfoque |
+| --- | --- |
+| **Óxida Projects** | Desarrollo integral, diseño, ejecución de arquitectura, coordinación y dirección de obra representando al cliente. |
+| **Óxida Pro** | Soluciones para estudios, constructoras y desarrolladores: cálculo estructural, memoria de estructura, visitas y asesoramiento técnico. |
+| **Óxida Custom Works** | Fabricación especializada, estructuras, parrilleros y soluciones completamente a medida. |
+| **Óxida Care** | Mantenimiento de estructuras y parrilleros, restauración y servicio de posventa. |
+
+El sistema visual de Óxida utiliza fondo grafito, superficies cálidas, tipografía editorial y naranja óxido como acento. La navegación de unidades debe conservar esa jerarquía sin reemplazar el menú principal de Mercadobra.
 
 ## Roles y alcance
 
@@ -106,12 +152,12 @@ Mercadobra debe evolucionar como una plataforma modular, no como una suma de pan
 
 La pantalla mantiene el lenguaje visual del panel de productos:
 
-- Encabezado “Clientes” con cantidad total y acción secundaria de exportación futura.
-- Métricas compactas: total, activos, nuevos del mes y clientes con pedidos.
+- Encabezado “Clientes” y acción **Nuevo cliente**.
+- Métricas compactas: total, activos, clientes con pedidos y bloqueados.
 - Búsqueda por nombre, email, teléfono o documento.
-- Filtros por estado, fecha de alta, localidad y actividad comercial.
-- Tabla en escritorio y tarjetas compactas en móvil.
-- Paginación preparada para trabajar con grandes volúmenes.
+- Filtro actual por estado; fecha, localidad y actividad comercial quedan como ampliaciones futuras.
+- Tarjetas operativas adaptadas para escritorio y móvil.
+- La paginación de servidor queda pendiente para una etapa de mayor volumen.
 
 Columnas iniciales:
 
@@ -210,7 +256,7 @@ Todas las rutas requieren sesión administrativa. El listado debe devolver metad
 
 **Estado:** primera etapa implementada; pagos, documentos, trazabilidad y portal quedan pendientes.
 
-**Ubicación propuesta:** dentro del detalle de `/admin/clientes/:id`, en una pestaña **Cotizaciones y trabajos**.
+**Ubicación actual:** dentro del detalle de `/admin/clientes/:id`, en el bloque **Cotizaciones y trabajos**.
 
 **Objetivo:** conservar en un solo historial comercial todas las cotizaciones enviadas a un cliente, sus archivos, evolución a proyecto y calendario real de cobros.
 
@@ -462,7 +508,7 @@ Las migraciones `001` a `021` crean y evolucionan el esquema. Las tablas de domi
 - `customer_quotes`
 - `migrations`
 
-El catálogo inicial de Oxida se carga mediante la migración `013_oxida_catalog.sql`. La cuenta administrativa se inserta o actualiza mediante `backend/src/bootstrapAdmin.js`.
+El catálogo inicial de Óxida se carga mediante la migración `013_oxida_catalog.sql`. La cuenta administrativa se inserta o actualiza mediante `backend/src/bootstrapAdmin.js`.
 
 Una base nueva recibe la estructura y datos iniciales al ejecutar:
 
@@ -565,7 +611,7 @@ Señales de un inicio correcto:
 ```text
 DB OK. Tablas verificadas: ...
 Usuario administrador verificado.
-MercadObra backend listening on http://localhost:10000
+Mercadobra backend listening on http://localhost:10000
 ```
 
 Endpoints de diagnóstico:
@@ -692,17 +738,22 @@ backend/.env.example → backend/.env
 - Autenticación segura y sesiones revocables.
 - Accesos separados para clientes, proveedores y administradores.
 - Acceso administrativo discreto en el pie de página.
+- Menú principal restaurado y estable con Inicio, Quiénes somos, Óxida Studio y Contáctenos.
+- Accesos públicos de cliente y proveedor preservados, pero temporalmente ocultos en el encabezado.
 - Producción conectada a una nueva instancia PostgreSQL y esquema versionado.
 - Primera versión administrativa de clientes con perfiles editables y estados de cuenta.
+- Detalle comercial por cliente con primera etapa de cotizaciones, montos, monedas, fechas y estados.
 - CORS habilitado para dominio principal, variante `www` y Vercel.
 - Óxida presenta Projects, Pro, Custom Works y Care como un sistema editorial de capacidades integrado a su identidad visual.
 - Las capacidades de Óxida incluyen diseño y dirección de obra, ingeniería estructural, ejecución y fabricación especializada, además de mantenimiento de estructuras y parrilleros.
-- En la página de Óxida, el header prioriza sus cuatro segmentos y oculta visualmente los accesos generales de cliente y proveedor sin eliminar sus rutas.
+- Inicio y Óxida comparten una barra editorial de unidades con anclas directas a cada segmento.
+- Buscador/cotizador reposicionado alrededor de productos y soluciones en hierro con el mensaje “Lo que imaginás, en hierro”.
+- Escritura de marca normalizada como Mercadobra y Óxida Studio en textos públicos, comunicaciones y documentación.
 
 ## Próximas prioridades
 
 1. Mostrar correctamente los errores `429` y tiempos de espera en los formularios de login.
-2. Implementar cotizaciones, proyectos y entregas de pago dentro del perfil de cada cliente.
+2. Completar pagos, documentos e historial de las cotizaciones dentro del perfil de cada cliente.
 3. Completar auditoría, paginación y restablecimiento seguro del módulo administrativo de clientes.
 4. Definir e integrar almacenamiento externo para adjuntos de cotizaciones y fotografías de productos.
 5. Incorporar características técnicas flexibles por producto.

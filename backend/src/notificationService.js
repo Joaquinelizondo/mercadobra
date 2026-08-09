@@ -20,7 +20,7 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
 const CONFIGURED_RESEND_FROM = process.env.RESEND_FROM || SMTP_FROM || ''
 const RESEND_FROM = CONFIGURED_RESEND_FROM && !/@resend\.dev\b/i.test(CONFIGURED_RESEND_FROM)
   ? CONFIGURED_RESEND_FROM
-  : 'Oxida Studio <formularios@send.mercadobra.com>'
+  : 'Óxida Studio <formularios@send.mercadobra.com>'
 const EMAIL_SEND_TIMEOUT_MS = Number(process.env.EMAIL_SEND_TIMEOUT_MS || 12000)
 const LEADS_NOTIFICATION_EMAIL = process.env.LEADS_NOTIFICATION_EMAIL || 'contacto@mercadobra.com'
 const WHATSAPP_SEND_TIMEOUT_MS = Number(process.env.WHATSAPP_SEND_TIMEOUT_MS || 12000)
@@ -55,7 +55,7 @@ function formatMessage(order) {
     ? `${FRONTEND_PUBLIC_URL}/seguimiento/${order.trackingToken}?phone=${encodeURIComponent(order.buyerPhone || '')}`
     : ''
 
-  const lines = [`MercadObra · Orden #${order.id}`, `Nuevo estado: ${statusLabel}`]
+  const lines = [`Mercadobra · Orden #${order.id}`, `Nuevo estado: ${statusLabel}`]
 
   if (trackingUrl) {
     lines.push(`Seguimiento: ${trackingUrl}`)
@@ -75,7 +75,7 @@ function formatOrderConfirmationMessage(order, items = []) {
   const paymentLabel = paymentLabels[paymentKey] || String(order.paymentMethod || '').trim() || 'No informado'
 
   const lines = [
-    '*MercadObra*',
+    '*Mercadobra*',
     `*Pedido recibido #${order.id}*`,
     '',
     'Tu pedido fue realizado correctamente ✅',
@@ -322,7 +322,7 @@ function buildRecommendationEmailContent(searchTerm, items) {
 
   textLines.push('')
   textLines.push(`Ver resultados: ${exploreUrl}`)
-  textLines.push('Equipo MercadObra')
+  textLines.push('Equipo Mercadobra')
 
   const htmlItems = hasMatches
     ? items
@@ -365,7 +365,7 @@ function buildRecommendationEmailContent(searchTerm, items) {
             </tr>
             <tr>
               <td style="background:#111827;padding:20px;font-family:Arial,sans-serif;color:#ffffff;">
-                <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">MercadObra</div>
+                <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Mercadobra</div>
                 <div style="font-size:26px;font-weight:700;line-height:1.2;padding-top:8px;">Estas son las mejores opciones para ti</div>
                 <div style="font-size:14px;line-height:1.4;padding-top:8px;">Busqueda: <strong>${safeSearchTerm}</strong></div>
               </td>
@@ -376,7 +376,7 @@ function buildRecommendationEmailContent(searchTerm, items) {
                   ${htmlItems}
                   <tr>
                     <td style="padding-top:8px;font-family:Arial,sans-serif;">
-                      <a href="${exploreUrl}" style="font-size:14px;font-weight:700;color:#ffffff;background:#ea580c;text-decoration:none;padding:10px 14px;display:inline-block;">Ver mas opciones en MercadObra</a>
+                      <a href="${exploreUrl}" style="font-size:14px;font-weight:700;color:#ffffff;background:#ea580c;text-decoration:none;padding:10px 14px;display:inline-block;">Ver más opciones en Mercadobra</a>
                     </td>
                   </tr>
                 </table>
@@ -386,7 +386,7 @@ function buildRecommendationEmailContent(searchTerm, items) {
           <table role="presentation" width="620" cellspacing="0" cellpadding="0" border="0" style="width:620px;max-width:620px;">
             <tr>
               <td style="padding:10px 0 0 0;font-family:Arial,sans-serif;font-size:12px;line-height:1.4;color:#6b7280;">
-                Recibiste este mail porque solicitaste recomendaciones desde MercadObra.
+                Recibiste este mail porque solicitaste recomendaciones desde Mercadobra.
               </td>
             </tr>
           </table>
@@ -443,7 +443,7 @@ function escapeEmailHtml(value) {
 
 export async function notifyLeadCreated(lead) {
   const destination = LEADS_NOTIFICATION_EMAIL
-  const subject = `Oxida Studio · Nueva consulta de ${lead.name}`
+  const subject = `Óxida Studio · Nueva consulta de ${lead.name}`
   const fields = [
     ['Nombre', lead.name],
     ['Email', lead.email],
@@ -456,7 +456,7 @@ export async function notifyLeadCreated(lead) {
   ].filter(([, value]) => value)
 
   const text = [
-    'Nueva consulta desde Oxida Studio',
+    'Nueva consulta desde Óxida Studio',
     '',
     ...fields.map(([label, value]) => `${label}: ${value}`),
     '',
@@ -473,7 +473,7 @@ export async function notifyLeadCreated(lead) {
   const html = `
     <div style="max-width:620px;margin:auto;background:#f4f1e9;font-family:Arial,sans-serif;color:#1c1917;">
       <div style="background:#1c1c19;padding:24px;color:#fff;border-top:6px solid #ae552e;">
-        <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#d47b50;">Oxida Studio · by Mercadobra</div>
+        <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#d47b50;">Óxida Studio · by Mercadobra</div>
         <h1 style="font-size:26px;margin:10px 0 0;">Nueva consulta de proyecto</h1>
       </div>
       <div style="padding:20px;">
@@ -511,7 +511,7 @@ async function sendRecommendationEmail(email, searchTerm, products) {
   }
 
   const items = formatRecommendationItems(products)
-  const subject = `MercadObra: opciones para "${searchTerm}"`
+  const subject = `Mercadobra: opciones para "${searchTerm}"`
   const { text, html } = buildRecommendationEmailContent(searchTerm, items)
 
   if (RESEND_API_KEY && RESEND_FROM) {
@@ -547,7 +547,7 @@ async function sendRecommendationWhatsapp(phone, searchTerm, products) {
 
   const items = formatRecommendationItems(products)
   const message = [
-    `MercadObra · opciones para "${searchTerm}"`,
+    `Mercadobra · opciones para "${searchTerm}"`,
     '',
     ...items.map((item) => item.text),
     '',

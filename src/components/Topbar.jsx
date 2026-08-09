@@ -25,7 +25,7 @@ export default function Topbar() {
       <nav className="topbar-menu" aria-label="Navegación principal">
         <Link to="/" onClick={showQuoteFinder}>Inicio</Link>
         <Link to="/quienes-somos" onClick={showQuoteFinder}>Quiénes somos</Link>
-        <Link to="/oxida" className="topbar-oxida-link" onClick={showQuoteFinder}><span>Oxida Studio</span></Link>
+        <Link to="/oxida" className="topbar-oxida-link" onClick={showQuoteFinder}><span>Óxida Studio</span></Link>
         <Link to="/contacto" onClick={showQuoteFinder}>Contáctenos</Link>
       </nav>
 

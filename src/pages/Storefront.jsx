@@ -35,12 +35,12 @@ export default function Storefront() {
           <div className="store-brand-context">
             <img src={mercadoBraLogo} alt="Mercadobra" />
             <span>presenta</span>
-            <strong>Oxida Studio</strong>
+            <strong>Óxida Studio</strong>
           </div>
           <p className="store-kicker">Primera colección · Diseño · Fabricación · Envíos en Uruguay</p>
           <h1>Objetos firmes.<br /><em>Espacios propios.</em></h1>
           <p className="store-hero-text">
-            Mercadobra abre su primera colección junto a Oxida Studio: piezas esenciales
+            Mercadobra abre su primera colección junto a Óxida Studio: piezas esenciales
             en hierro y madera, listas para comprar o adaptar a tu espacio.
           </p>
           <div className="store-hero-actions">
@@ -52,7 +52,7 @@ export default function Storefront() {
           </div>
         </div>
         <div className="store-hero-media">
-          <img src={heroImage} alt="Escalera de hierro y madera diseñada por Oxida Studio" />
+          <img src={heroImage} alt="Escalera de hierro y madera diseñada por Óxida Studio" />
           <div className="store-hero-mark"><OxidaWordmark showByline /></div>
           <span className="store-hero-note">Colección 01 — 2026</span>
         </div>
@@ -81,7 +81,7 @@ export default function Storefront() {
           <h2>Todo para transformar tu espacio, en un solo lugar.</h2>
         </div>
         <p>
-          Empezamos con la colección Oxida y seguimos ampliando el catálogo con
+          Empezamos con la colección Óxida y seguimos ampliando el catálogo con
           productos, talleres y proveedores seleccionados.
         </p>
         <Link to="/explorar">Explorar Mercadobra ↗</Link>
@@ -89,7 +89,7 @@ export default function Storefront() {
 
       <section className="store-section" id="coleccion">
         <div className="store-heading">
-          <div><span>Selección Oxida</span><h2>Diseños listos para comprar.</h2></div>
+          <div><span>Selección Óxida</span><h2>Diseños listos para comprar.</h2></div>
           <p>Elegí un modelo base. Después definimos contigo medidas, color y terminación.</p>
         </div>
         {loadingProducts ? (

@@ -183,7 +183,7 @@ export async function generateChatReply({ message, history = [] }) {
   }))
 
   const systemPrompt = [
-    'Sos el asistente comercial de MercadObra.',
+    'Sos el asistente comercial de Mercadobra.',
     'Objetivo: ayudar a elegir materiales de construcción usando SOLO datos del catálogo entregado.',
     'Reglas:',
     '- Respondé en español rioplatense, breve y útil.',

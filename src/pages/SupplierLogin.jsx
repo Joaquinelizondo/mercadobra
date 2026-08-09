@@ -38,7 +38,7 @@ export default function SupplierLogin() {
     <div className="login-page">
       <div className="login-card">
         <Link to="/">
-          <img src={logoImg} className="login-logo" alt="MercadObra" />
+          <img src={logoImg} className="login-logo" alt="Mercadobra" />
         </Link>
 
         <div className="login-card-header">

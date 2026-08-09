@@ -57,7 +57,7 @@ export default function Footer() {
         </div>
         <div className="footer-subbrands">
           <span className="footer-brand-label">Nuestras marcas</span>
-          <Link to="/oxida" className="footer-subbrand-card" aria-label="Conocer Oxida Studio, una marca de Mercadobra">
+          <Link to="/oxida" className="footer-subbrand-card" aria-label="Conocer Óxida Studio, una marca de Mercadobra">
             <OxidaWordmark className="footer-subbrand-logo" />
           </Link>
         </div>
@@ -67,7 +67,7 @@ export default function Footer() {
         <section className="footer-about">
           <h3>Mercadobra</h3>
           <p>
-            Tu lugar para encontrar materiales y proveedores de construcción, rápido y sin vueltas.
+            Productos, proyectos y soluciones en hierro, desde una idea hasta su ejecución.
           </p>
         </section>
 
@@ -75,10 +75,11 @@ export default function Footer() {
           <h3>Enlaces</h3>
           <ul>
             <li><a href={homeHash('inicio')}>Inicio</a></li>
-            <li><a href={homeHash('categorias')}>Categorías</a></li>
-            <li><Link to="/oxida">Oxida Studio</Link></li>
+            <li><Link to="/quienes-somos">Quiénes somos</Link></li>
+            <li><Link to="/explorar">Productos</Link></li>
+            <li><Link to="/oxida">Óxida Studio</Link></li>
             <li><a href={homeHash('como-funciona')}>Cómo funciona</a></li>
-            <li><a href={homeHash('contacto')}>Contacto</a></li>
+            <li><Link to="/contacto">Contáctenos</Link></li>
           </ul>
         </section>
 
@@ -87,7 +88,7 @@ export default function Footer() {
           <ul className="social-links-list">
             <li>
               <a href="https://www.instagram.com/oxidastudio/" target="_blank" rel="noreferrer"
-                className="social-link" aria-label="Instagram de Oxida Studio" title="Instagram de Oxida Studio">
+                className="social-link" aria-label="Instagram de Óxida Studio" title="Instagram de Óxida Studio">
                 <svg viewBox="0 0 24 24" className="social-icon" aria-hidden="true">
                   <path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2Zm0 1.8A3.95 3.95 0 0 0 3.8 7.75v8.5a3.95 3.95 0 0 0 3.95 3.95h8.5a3.95 3.95 0 0 0 3.95-3.95v-8.5a3.95 3.95 0 0 0-3.95-3.95h-8.5Zm8.85 1.35a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4Z" fill="currentColor"/>
                 </svg>
@@ -134,7 +135,7 @@ export default function Footer() {
       <div className="footer-bottom">
         <p className="footer-bottom-payment-title">Medios de pago</p>
         <PaymentLogosRow />
-        <p>© {year} MercadObra. Hecho para que tu obra avance.</p>
+        <p>© {year} Mercadobra. Hecho para que tu obra avance.</p>
         <Link to="/admin/login" className="footer-admin-link" aria-label="Acceso administrativo">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M7.5 10V7.5a4.5 4.5 0 0 1 9 0V10m-10 0h11a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5v-7A1.5 1.5 0 0 1 6.5 10Z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />

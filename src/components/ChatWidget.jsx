@@ -4,7 +4,7 @@ import { pingBackend, sendChatMessage } from '../lib/api'
 const WELCOME_MESSAGE = {
   role: 'assistant',
   content:
-    'Hola, soy el asistente de MercadObra. Te ayudo a elegir materiales por categoría, precio y stock. ¿Qué necesitás para tu obra?',
+    'Hola, soy el asistente de Mercadobra. Te ayudo a encontrar productos y soluciones en hierro según tu proyecto, presupuesto y disponibilidad. ¿Qué tenés en mente?',
 }
 
 export default function ChatWidget() {
@@ -69,7 +69,7 @@ export default function ChatWidget() {
         <section className="chat-widget" aria-label="Chat inteligente">
           <header className="chat-widget-header">
             <div>
-              <h3>Asistente MercadObra</h3>
+              <h3>Asistente Mercadobra</h3>
               <p>Recomendaciones con catálogo y stock</p>
             </div>
             <button

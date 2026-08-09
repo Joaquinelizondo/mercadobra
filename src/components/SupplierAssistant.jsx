@@ -168,7 +168,7 @@ export default function SupplierAssistant({ supplierUser, myProducts = [], onApp
 
   async function handleGenerateDraft() {
     const draftRequest = [
-      'Generá un borrador de producto para publicar en MercadObra.',
+      'Generá un borrador de producto para publicar en Mercadobra.',
       'Respondé solo JSON válido con este formato exacto:',
       '{"name":"","category":"Hormigón|Hierro|Terminaciones|Herramientas","price":0,"unit":"","stock":0,"description":""}',
       'No agregues explicación, solo el JSON.',

@@ -320,7 +320,7 @@ function AppLegacy() {
     <main className="page" id="inicio">
       <header className="topbar">
         <div className="brand-wrap">
-          <img src={logoImg} className="brand-logo" alt="MercadObra" />
+          <img src={logoImg} className="brand-logo" alt="Mercadobra" />
         </div>
         <nav className="topbar-menu" aria-label="Navegación principal">
           <a href="#inicio">Inicio</a>
@@ -349,7 +349,7 @@ function AppLegacy() {
           <span className="eyebrow">Tu empresa, visible para toda la obra</span>
           <h1>La vitrina digital donde barracas y empresas venden materiales de construcción.</h1>
           <p className="hero-text">
-            MercadObra conecta proveedores con clientes del rubro para que puedan
+            Mercadobra conecta proveedores con clientes del rubro para que puedan
             descubrir, comparar y consultar productos de forma simple, rápida y profesional.
           </p>
 
@@ -374,7 +374,7 @@ function AppLegacy() {
 
         <div className="hero-card">
           <div className="hero-card-badge">Nueva plataforma</div>
-          <img src={logoImg} className="hero-logo" alt="Logo MercadObra" />
+          <img src={logoImg} className="hero-logo" alt="Logo Mercadobra" />
           <img src={heroImg} alt="Ilustración de materiales y herramientas de obra" />
           <div className="hero-card-content">
             <p className="card-kicker">Pensado para el sector</p>
@@ -388,7 +388,7 @@ function AppLegacy() {
 
       <section className="info-strip">
         <p>
-          MercadObra nace para impulsar la venta digital de materiales, herramientas y soluciones para la construcción.
+          Mercadobra nace para impulsar la venta digital de materiales, herramientas y soluciones para la construcción.
         </p>
       </section>
 
@@ -435,7 +435,7 @@ function AppLegacy() {
 
       <section className="section benefits-section">
         <div className="section-heading narrow-left">
-          <span className="eyebrow">Por qué MercadObra</span>
+          <span className="eyebrow">Por qué Mercadobra</span>
           <h2>Una plataforma creada para tu empresa y para el ritmo del rubro.</h2>
         </div>
 
@@ -450,7 +450,7 @@ function AppLegacy() {
             <p className="card-kicker">Ideal para</p>
             <h3>Barracas, corralones, importadores, fabricantes y distribuidores.</h3>
             <p>
-              Si vendés productos para la construcción, MercadObra te ayuda a mostrar tu oferta de manera clara y profesional.
+              Si vendés productos para la construcción, Mercadobra te ayuda a mostrar tu oferta de manera clara y profesional.
             </p>
           </aside>
         </div>
@@ -521,13 +521,13 @@ function AppLegacy() {
 
       <section className="section cta-section" id="contacto">
         <span className="eyebrow">Sumate desde el inicio</span>
-        <h2>Hacé que MercadObra sea la cara digital de tu empresa.</h2>
+        <h2>Hacé que Mercadobra sea la cara digital de tu empresa.</h2>
         <p>
           Empezá a construir tu catálogo online y prepará tu negocio para recibir nuevas oportunidades comerciales.
         </p>
         <div className="hero-actions centered-actions">
           <a href="mailto:contacto@mercadobra.com" className="primary-link large-link">
-            Contactar a MercadObra
+            Contactar a Mercadobra
           </a>
         </div>
       </section>
@@ -535,7 +535,7 @@ function AppLegacy() {
       <footer className="footer">
         <div className="footer-grid">
           <section>
-            <h3>MercadObra</h3>
+            <h3>Mercadobra</h3>
             <p>
               Marketplace para empresas, barracas y distribuidores de productos para construcción.
             </p>
@@ -568,8 +568,8 @@ function AppLegacy() {
                   target="_blank"
                   rel="noreferrer"
                   className="social-link"
-                  aria-label="Instagram de Oxida Studio"
-                  title="Instagram de Oxida Studio"
+                  aria-label="Instagram de Óxida Studio"
+                  title="Instagram de Óxida Studio"
                 >
                   <svg viewBox="0 0 24 24" className="social-icon" aria-hidden="true">
                     <path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2Zm0 1.8A3.95 3.95 0 0 0 3.8 7.75v8.5a3.95 3.95 0 0 0 3.95 3.95h8.5a3.95 3.95 0 0 0 3.95-3.95v-8.5a3.95 3.95 0 0 0-3.95-3.95h-8.5Zm8.85 1.35a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4Z" fill="currentColor"/>
@@ -636,7 +636,7 @@ function AppLegacy() {
         </div>
 
         <div className="footer-bottom">
-          <p>© {year} MercadObra. Todos los derechos reservados.</p>
+          <p>© {year} Mercadobra. Todos los derechos reservados.</p>
         </div>
       </footer>
       {/* ── LOGIN MODAL ── */}
@@ -654,7 +654,7 @@ function AppLegacy() {
             </button>
           </div>
           <form className="publish-form" onSubmit={handleLogin} noValidate>
-            <p className="login-intro">Esta sección es exclusiva para empresas con cuenta en MercadObra. Ingresá con tus credenciales para publicar productos.</p>
+            <p className="login-intro">Esta sección es exclusiva para empresas con cuenta en Mercadobra. Ingresá con tus credenciales para publicar productos.</p>
             {loginError && <p className="login-error" role="alert">{loginError}</p>}
             <div className="form-row">
               <label className="form-label" htmlFor="login-email">Correo electrónico</label>

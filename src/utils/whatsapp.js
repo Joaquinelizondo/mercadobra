@@ -10,7 +10,7 @@ export function getWhatsAppEndpoint() {
 }
 
 export function buildWhatsAppMessage({ intent = 'consulta', source = 'site', data = {} } = {}) {
-  const lines = ['Hola MercadObra, vengo desde la web.']
+  const lines = ['Hola Mercadobra, vengo desde la web.']
 
   if (intent === 'cotizar') {
     lines.push('Quiero cotizar productos para mi obra.')
