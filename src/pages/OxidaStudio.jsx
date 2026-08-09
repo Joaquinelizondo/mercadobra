@@ -21,6 +21,13 @@ const projects = [
   { image: estanteriaImg, type: 'Colección', title: 'Metal, madera y proporción', number: '06', wide: true },
 ]
 
+const capabilities = [
+  { number: '01', name: 'Óxida Projects', description: 'Desarrollo integral de proyectos: diseño, fabricación y ejecución.' },
+  { number: '02', name: 'Óxida Pro', description: 'Soluciones técnicas para estudios de arquitectura, constructoras y desarrolladores.' },
+  { number: '03', name: 'Óxida Custom Works', description: 'Fabricación especializada y soluciones completamente a medida.' },
+  { number: '04', name: 'Óxida Care', description: 'Mantenimiento, restauración y servicio de posventa.' },
+]
+
 export default function OxidaStudio() {
   const { productList, loadingProducts } = useProducts()
   const shopProducts = useMemo(() => {
@@ -64,10 +71,28 @@ export default function OxidaStudio() {
         </p>
       </section>
 
+      <section className="oxida-capabilities" aria-labelledby="oxida-capabilities-title">
+        <div className="oxida-capabilities-heading">
+          <p className="oxida-section-number">[ 02 — CAPACIDADES ]</p>
+          <h2 id="oxida-capabilities-title">Una empresa.<br /><span>Cuatro formas de hacer.</span></h2>
+          <p>Distintas escalas y necesidades, bajo una misma dirección de diseño, fabricación y ejecución.</p>
+        </div>
+        <div className="oxida-capabilities-list">
+          {capabilities.map((capability) => (
+            <article key={capability.number}>
+              <span>{capability.number}</span>
+              <h3>{capability.name}</h3>
+              <p>{capability.description}</p>
+              <i aria-hidden="true">↗</i>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="oxida-shop" id="tienda">
         <div className="oxida-shop-heading">
           <div>
-            <p className="oxida-section-number">[ 02 — TIENDA ]</p>
+            <p className="oxida-section-number">[ 03 — TIENDA ]</p>
             <h2>Diseños para<br /><span>hacerlos tuyos.</span></h2>
           </div>
           <div>
@@ -91,7 +116,7 @@ export default function OxidaStudio() {
       <section className="oxida-projects" id="proyectos">
         <div className="oxida-section-heading">
           <div>
-            <p className="oxida-section-number">[ 03 — PROYECTOS ]</p>
+            <p className="oxida-section-number">[ 04 — PROYECTOS ]</p>
             <h2>Hecho para<br /><span>quedarse.</span></h2>
           </div>
           <p>Una selección de posibilidades para imaginar qué podemos construir juntos.</p>
@@ -115,7 +140,7 @@ export default function OxidaStudio() {
       <section className="oxida-process" id="proceso">
         <div className="oxida-section-heading oxida-process-heading">
           <div>
-            <p className="oxida-section-number">[ 04 — PROCESO ]</p>
+            <p className="oxida-section-number">[ 05 — PROCESO ]</p>
             <h2>De tu idea<br />a la <span>realidad.</span></h2>
           </div>
           <p>Un método simple para que diseñar a medida deje de ser complicado.</p>

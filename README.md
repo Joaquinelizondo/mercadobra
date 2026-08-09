@@ -695,6 +695,7 @@ backend/.env.example → backend/.env
 - Producción conectada a una nueva instancia PostgreSQL y esquema versionado.
 - Primera versión administrativa de clientes con perfiles editables y estados de cuenta.
 - CORS habilitado para dominio principal, variante `www` y Vercel.
+- Óxida presenta Projects, Pro, Custom Works y Care como un sistema editorial de capacidades integrado a su identidad visual.
 
 ## Próximas prioridades
 
