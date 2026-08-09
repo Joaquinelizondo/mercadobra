@@ -21,10 +21,13 @@ export default function About() {
           preparado para crecer junto con el negocio.
         </p>
         <p>
-          Óxida Studio aporta la capacidad técnica y productiva. Sus unidades
-          Projects, Pro, Custom Works y Care reúnen diseño, ingeniería, fabricación,
-          ejecución y mantenimiento para transformar cada necesidad en una solución
-          concreta y sostenible en el tiempo.
+          Óxida Studio aporta la capacidad técnica y productiva. Sus unidades{' '}
+          <span className="info-page-oxida-unit">Projects</span>,{' '}
+          <span className="info-page-oxida-unit">Pro</span>,{' '}
+          <span className="info-page-oxida-unit">Custom Works</span> y{' '}
+          <span className="info-page-oxida-unit">Care</span> reúnen diseño, ingeniería,
+          fabricación, ejecución y mantenimiento para transformar cada necesidad en
+          una solución concreta y sostenible en el tiempo.
         </p>
         <div className="info-page-actions">
           <Link to="/explorar">Explorar productos</Link>

@@ -39,6 +39,11 @@
   color: #3f4650;
 }
 
+.info-page-oxida-unit {
+  color: #ae552e;
+  font-weight: 800;
+}
+
 .info-page-actions {
   display: flex;
   flex-wrap: wrap;
