@@ -95,10 +95,10 @@ export default function Topbar() {
       {isOxida && (
         <nav className="oxida-segment-nav" aria-label="Unidades de Óxida Studio">
           <span className="oxida-segment-nav-label">Nuestras unidades</span>
-          <a href="#oxida-projects"><small>01</small>Óxida Projects</a>
-          <a href="#oxida-pro"><small>02</small>Óxida Pro</a>
-          <a href="#oxida-custom-works"><small>03</small>Óxida Custom Works</a>
-          <a href="#oxida-care"><small>04</small>Óxida Care</a>
+          <a href="#oxida-projects"><small>01</small>Óxida <strong>Projects</strong></a>
+          <a href="#oxida-pro"><small>02</small>Óxida <strong>Pro</strong></a>
+          <a href="#oxida-custom-works"><small>03</small>Óxida <strong>Custom Works</strong></a>
+          <a href="#oxida-care"><small>04</small>Óxida <strong>Care</strong></a>
         </nav>
       )}
     </header>

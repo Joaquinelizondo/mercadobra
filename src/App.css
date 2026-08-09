@@ -171,6 +171,11 @@
   transition: color .2s ease;
 }
 
+.oxida-segment-nav a strong {
+  color: #c96d43;
+  font-weight: 700;
+}
+
 .oxida-segment-nav a:hover {
   color: #fff;
   background: rgba(255, 255, 255, .055);
@@ -178,6 +183,10 @@
 
 .oxida-segment-nav a:hover small {
   color: #bd6741;
+}
+
+.oxida-segment-nav a:hover strong {
+  color: #e07b4c;
 }
 
 .topbar-menu .topbar-quote-link {
