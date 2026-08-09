@@ -8,6 +8,7 @@ import logoImg from '../assets/mercadobra.png'
 export default function Topbar() {
   const location = useLocation()
   const isOxida = location.pathname === '/oxida'
+  const showOxidaUnits = isOxida || location.pathname === '/'
   const { supplierUser, logout, customerUser, logoutCustomer } = useAuth()
   const { cartCount, setCartOpen } = useCart()
   const { wishlist } = useWishlist()
@@ -92,13 +93,13 @@ export default function Topbar() {
         ))}
       </div>
 
-      {isOxida && (
+      {showOxidaUnits && (
         <nav className="oxida-segment-nav" aria-label="Unidades de Óxida Studio">
           <span className="oxida-segment-nav-label">Nuestras unidades</span>
-          <a href="#oxida-projects"><small>01</small>Óxida <strong>Projects</strong></a>
-          <a href="#oxida-pro"><small>02</small>Óxida <strong>Pro</strong></a>
-          <a href="#oxida-custom-works"><small>03</small>Óxida <strong>Custom Works</strong></a>
-          <a href="#oxida-care"><small>04</small>Óxida <strong>Care</strong></a>
+          <a href={`${isOxida ? '' : '/oxida'}#oxida-projects`}><small>01</small>Óxida <strong>Projects</strong></a>
+          <a href={`${isOxida ? '' : '/oxida'}#oxida-pro`}><small>02</small>Óxida <strong>Pro</strong></a>
+          <a href={`${isOxida ? '' : '/oxida'}#oxida-custom-works`}><small>03</small>Óxida <strong>Custom Works</strong></a>
+          <a href={`${isOxida ? '' : '/oxida'}#oxida-care`}><small>04</small>Óxida <strong>Care</strong></a>
         </nav>
       )}
     </header>
