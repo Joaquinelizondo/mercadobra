@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
@@ -6,6 +6,8 @@ import { companyInitials } from '../utils/format'
 import logoImg from '../assets/mercadobra.png'
 
 export default function Topbar() {
+  const location = useLocation()
+  const isOxida = location.pathname === '/oxida'
   const { supplierUser, logout, customerUser, logoutCustomer } = useAuth()
   const { cartCount, setCartOpen } = useCart()
   const { wishlist } = useWishlist()
@@ -20,10 +22,21 @@ export default function Topbar() {
       </div>
 
       <nav className="topbar-menu" aria-label="Navegación principal">
-        <Link to="/" onClick={showQuoteFinder}>Inicio</Link>
-        <Link to="/quienes-somos" onClick={showQuoteFinder}>Quiénes somos</Link>
-        <Link to="/oxida" className="topbar-oxida-link" onClick={showQuoteFinder}><span>Oxida Studio</span></Link>
-        <Link to="/contacto" onClick={showQuoteFinder}>Contáctenos</Link>
+        {isOxida ? (
+          <>
+            <a href="#oxida-projects" className="topbar-segment-link">Óxida Projects</a>
+            <a href="#oxida-pro" className="topbar-segment-link">Óxida Pro</a>
+            <a href="#oxida-custom-works" className="topbar-segment-link">Óxida Custom Works</a>
+            <a href="#oxida-care" className="topbar-segment-link">Óxida Care</a>
+          </>
+        ) : (
+          <>
+            <Link to="/" onClick={showQuoteFinder}>Inicio</Link>
+            <Link to="/quienes-somos" onClick={showQuoteFinder}>Quiénes somos</Link>
+            <Link to="/oxida" className="topbar-oxida-link" onClick={showQuoteFinder}><span>Oxida Studio</span></Link>
+            <Link to="/contacto" onClick={showQuoteFinder}>Contáctenos</Link>
+          </>
+        )}
       </nav>
 
       <div className="topbar-actions">
@@ -54,7 +67,7 @@ export default function Topbar() {
           {cartCount > 0 && <span className="wishlist-badge">{cartCount}</span>}
         </button>
 
-        {supplierUser ? (
+        {!isOxida && (supplierUser ? (
           <div className="supplier-session">
             <span className="supplier-session-avatar">
               {companyInitials(supplierUser.company)}
@@ -87,7 +100,7 @@ export default function Topbar() {
               Soy proveedor
             </Link>
           </>
-        )}
+        ))}
       </div>
     </header>
   )

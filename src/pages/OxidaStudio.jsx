@@ -23,25 +23,25 @@ const projects = [
 
 const capabilities = [
   {
-    number: '01',
+    number: '01', id: 'oxida-projects',
     name: 'Óxida Projects',
     description: 'Desarrollo integral de proyectos: diseño, coordinación y ejecución.',
     services: ['Diseño y ejecución de obras de arquitectura', 'Dirección de obra representando al cliente', 'Coordinación integral de proyecto'],
   },
   {
-    number: '02',
+    number: '02', id: 'oxida-pro',
     name: 'Óxida Pro',
     description: 'Soluciones técnicas para estudios de arquitectura, constructoras y desarrolladores.',
     services: ['Cálculo estructural', 'Memoria de estructura', 'Visitas técnicas a obra', 'Asesoramiento profesional'],
   },
   {
-    number: '03',
+    number: '03', id: 'oxida-custom-works',
     name: 'Óxida Custom Works',
     description: 'Fabricación especializada y soluciones completamente a medida.',
     services: ['Ejecución de estructuras', 'Fabricación de parrilleros', 'Piezas y soluciones especiales'],
   },
   {
-    number: '04',
+    number: '04', id: 'oxida-care',
     name: 'Óxida Care',
     description: 'Mantenimiento, restauración y servicio de posventa.',
     services: ['Mantenimiento de estructuras', 'Mantenimiento de parrilleros', 'Restauración y puesta a punto', 'Servicio de posventa'],
@@ -99,7 +99,7 @@ export default function OxidaStudio() {
         </div>
         <div className="oxida-capabilities-list">
           {capabilities.map((capability) => (
-            <article key={capability.number}>
+            <article id={capability.id} key={capability.number}>
               <span>{capability.number}</span>
               <h3>{capability.name}</h3>
               <div className="oxida-capability-copy">

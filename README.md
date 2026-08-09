@@ -697,6 +697,7 @@ backend/.env.example → backend/.env
 - CORS habilitado para dominio principal, variante `www` y Vercel.
 - Óxida presenta Projects, Pro, Custom Works y Care como un sistema editorial de capacidades integrado a su identidad visual.
 - Las capacidades de Óxida incluyen diseño y dirección de obra, ingeniería estructural, ejecución y fabricación especializada, además de mantenimiento de estructuras y parrilleros.
+- En la página de Óxida, el header prioriza sus cuatro segmentos y oculta visualmente los accesos generales de cliente y proveedor sin eliminar sus rutas.
 
 ## Próximas prioridades
 

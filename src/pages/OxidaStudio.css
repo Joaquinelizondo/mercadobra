@@ -49,6 +49,7 @@
 .oxida-capabilities-heading > p:last-child { max-width:390px; color:#8f8e88; font-size:.88rem; line-height:1.7; }
 .oxida-capabilities-list { border-top:1px solid rgba(255,255,255,.2); }
 .oxida-capabilities-list article { min-height:190px; padding:30px 2px; display:grid; grid-template-columns:45px minmax(190px,.75fr) minmax(280px,1fr) 24px; align-items:center; gap:20px; border-bottom:1px solid rgba(255,255,255,.16); transition:padding .25s ease,background .25s ease; }
+.oxida-capabilities-list article[id] { scroll-margin-top:120px; }
 .oxida-capabilities-list article:hover { padding-left:14px; padding-right:14px; background:rgba(255,255,255,.035); }
 .oxida-capabilities-list article > span { color:#a95a37; font-size:.62rem; letter-spacing:.14em; }
 .oxida-capabilities-list h3 { margin:0; color:#eeeae0; font:500 clamp(1.35rem,2.1vw,2.15rem)/1.05 'Manrope',sans-serif; letter-spacing:-.035em; }
