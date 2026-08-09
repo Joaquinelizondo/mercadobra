@@ -48,11 +48,13 @@
 .oxida-capabilities-heading h2 span { color:#bf6a43; font-family:Georgia,serif; font-weight:400; font-style:italic; }
 .oxida-capabilities-heading > p:last-child { max-width:390px; color:#8f8e88; font-size:.88rem; line-height:1.7; }
 .oxida-capabilities-list { border-top:1px solid rgba(255,255,255,.2); }
-.oxida-capabilities-list article { min-height:150px; padding:27px 2px; display:grid; grid-template-columns:45px minmax(190px,.75fr) minmax(250px,1fr) 24px; align-items:center; gap:20px; border-bottom:1px solid rgba(255,255,255,.16); transition:padding .25s ease,background .25s ease; }
+.oxida-capabilities-list article { min-height:190px; padding:30px 2px; display:grid; grid-template-columns:45px minmax(190px,.75fr) minmax(280px,1fr) 24px; align-items:center; gap:20px; border-bottom:1px solid rgba(255,255,255,.16); transition:padding .25s ease,background .25s ease; }
 .oxida-capabilities-list article:hover { padding-left:14px; padding-right:14px; background:rgba(255,255,255,.035); }
 .oxida-capabilities-list article > span { color:#a95a37; font-size:.62rem; letter-spacing:.14em; }
 .oxida-capabilities-list h3 { margin:0; color:#eeeae0; font:500 clamp(1.35rem,2.1vw,2.15rem)/1.05 'Manrope',sans-serif; letter-spacing:-.035em; }
-.oxida-capabilities-list p { margin:0; max-width:390px; color:#929089; font-size:.82rem; line-height:1.65; }
+.oxida-capabilities-list p { margin:0; max-width:430px; color:#aaa79f; font-size:.82rem; line-height:1.65; }
+.oxida-capability-copy ul { display:flex; flex-wrap:wrap; gap:7px 9px; margin:17px 0 0; padding:0; list-style:none; }
+.oxida-capability-copy li { padding:5px 8px; border:1px solid rgba(255,255,255,.13); color:#7f7d77; font-size:.57rem; line-height:1.25; letter-spacing:.055em; text-transform:uppercase; }
 .oxida-capabilities-list i { color:#b85d35; font:400 1.15rem 'DM Sans',sans-serif; transition:transform .25s ease; }
 .oxida-capabilities-list article:hover i { transform:translate(3px,-3px); }
 
@@ -161,7 +163,7 @@
   .oxida-capabilities-heading { position:static; }
   .oxida-capabilities-list article { grid-template-columns:35px 1fr 20px; min-height:0; padding:25px 2px; }
   .oxida-capabilities-list article h3 { grid-column:2; }
-  .oxida-capabilities-list article p { grid-column:2; margin-top:-8px; }
+  .oxida-capabilities-list article .oxida-capability-copy { grid-column:2; margin-top:-8px; }
   .oxida-capabilities-list article i { grid-column:3; grid-row:1 / span 2; }
   .oxida-shop { padding:90px 20px; }
   .oxida-shop-heading { grid-template-columns:1fr; margin-bottom:45px; }
