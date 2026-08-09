@@ -10,7 +10,7 @@ export default function About() {
         <p className="info-page-kicker">Quiénes somos</p>
         <h1>Conectamos proyecto, producto y ejecución en un mismo lugar.</h1>
         <p>
-          MercadoBra es una plataforma que conecta clientes, profesionales y empresas
+          Mercadobra es una plataforma que conecta clientes, profesionales y empresas
           para resolver necesidades reales de obra. Permite descubrir productos,
           solicitar cotizaciones, comparar alternativas y acompañar cada proyecto desde
           la primera idea hasta su concreción.

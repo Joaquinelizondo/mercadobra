@@ -16,8 +16,8 @@ export default function Topbar() {
   return (
     <header className={`topbar${isOxida ? ' topbar--oxida' : ''}`}>
       <div className="brand-wrap">
-        <Link to="/" className="store-nav-brand" aria-label="MercadoBra, inicio" onClick={showQuoteFinder}>
-          <img src={logoImg} className="brand-logo" alt="MercadoBra" />
+        <Link to="/" className="store-nav-brand" aria-label="Mercadobra, inicio" onClick={showQuoteFinder}>
+          <img src={logoImg} className="brand-logo" alt="Mercadobra" />
         </Link>
       </div>
 

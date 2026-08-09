@@ -51,8 +51,8 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (!product) return
-    document.title = `${product.name} | MercadoBra`
-    return () => { document.title = 'MercadoBra' }
+    document.title = `${product.name} | Mercadobra`
+    return () => { document.title = 'Mercadobra' }
   }, [product])
 
   function handlePrimaryAction() {
@@ -150,7 +150,7 @@ export default function ProductDetail() {
           <div className="product-purchase-assurances">
             <div><span>01</span><p><b>{PRODUCT_TYPE_LABELS[product.productType] || 'Producto disponible'}</b><small>Modalidad informada antes de confirmar.</small></p></div>
             <div><span>02</span><p><b>{product.leadTimeDays > 0 ? `${product.leadTimeDays} días estimados` : 'Entrega a coordinar'}</b><small>Confirmamos fecha y disponibilidad contigo.</small></p></div>
-            <div><span>03</span><p><b>Atención directa</b><small>Acompañamiento de MercadoBra y el proveedor.</small></p></div>
+            <div><span>03</span><p><b>Atención directa</b><small>Acompañamiento de Mercadobra y el proveedor.</small></p></div>
           </div>
         </section>
       </main>

@@ -33,14 +33,14 @@ export default function Storefront() {
       <section className="store-hero" id="inicio">
         <div className="store-hero-copy">
           <div className="store-brand-context">
-            <img src={mercadoBraLogo} alt="MercadoBra" />
+            <img src={mercadoBraLogo} alt="Mercadobra" />
             <span>presenta</span>
             <strong>Oxida Studio</strong>
           </div>
           <p className="store-kicker">Primera colección · Diseño · Fabricación · Envíos en Uruguay</p>
           <h1>Objetos firmes.<br /><em>Espacios propios.</em></h1>
           <p className="store-hero-text">
-            MercadoBra abre su primera colección junto a Oxida Studio: piezas esenciales
+            Mercadobra abre su primera colección junto a Oxida Studio: piezas esenciales
             en hierro y madera, listas para comprar o adaptar a tu espacio.
           </p>
           <div className="store-hero-actions">
@@ -77,14 +77,14 @@ export default function Storefront() {
 
       <section className="store-mercadobra-note">
         <div>
-          <span>MercadoBra</span>
+          <span>Mercadobra</span>
           <h2>Todo para transformar tu espacio, en un solo lugar.</h2>
         </div>
         <p>
           Empezamos con la colección Oxida y seguimos ampliando el catálogo con
           productos, talleres y proveedores seleccionados.
         </p>
-        <Link to="/explorar">Explorar MercadoBra ↗</Link>
+        <Link to="/explorar">Explorar Mercadobra ↗</Link>
       </section>
 
       <section className="store-section" id="coleccion">

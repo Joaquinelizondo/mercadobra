@@ -1,4 +1,4 @@
-# Estado y plan de mejoras de MercadoBra
+# Estado y plan de mejoras de Mercadobra
 
 Documento vivo para registrar el estado de la web, ordenar los pendientes y actualizar el avance en cada implementación.
 
@@ -19,7 +19,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 
 | Área | Estado | Evaluación |
 | --- | --- | --- |
-| Diseño e identidad | Bueno | La propuesta MercadoBra + Oxida tiene una identidad clara. |
+| Diseño e identidad | Bueno | La propuesta Mercadobra + Oxida tiene una identidad clara. |
 | Catálogo | Funcional, incompleto | Productos, stock y estados están conectados; las opciones a medida se cotizan sin variantes públicas. |
 | Cotizador | Funcional | Busca productos y captura datos del cliente. |
 | Carrito | Funcional | Cantidades limitadas por stock y checkout completo. |
@@ -95,7 +95,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | 2026-08-02 | Snapshot comercial de pedidos. | Cada compra conserva los datos comerciales del momento y los reutiliza en seguimiento y notificaciones. Despliegue confirmado en producción. | 285549a |
 | 2026-08-02 | Gestión administrativa de pedidos. | Consola central para pedidos web y alta manual desde WhatsApp, teléfono, Instagram o venta presencial, conectada con stock y seguimiento. Despliegue confirmado en producción. | `14c83c0` |
 | 2026-08-05 | Identidad en navegación. | El enlace de la marca en el encabezado muestra el nombre completo “Oxida Studio”. | Este cambio |
-| 2026-08-05 | Datos públicos de contacto. | Se unificaron email, teléfono, WhatsApp y país con los datos comerciales de MercadoBra en Uruguay. | Este cambio |
+| 2026-08-05 | Datos públicos de contacto. | Se unificaron email, teléfono, WhatsApp y país con los datos comerciales de Mercadobra en Uruguay. | Este cambio |
 | 2026-08-05 | Red social de Oxida Studio. | Los accesos de Instagram apuntan al perfil oficial `@oxidastudio`. | Este cambio |
 
 ## Forma de trabajo

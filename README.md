@@ -1,4 +1,4 @@
-# MercadoBra
+# Mercadobra
 
 Plataforma uruguaya para descubrir, cotizar y comprar productos para obra, con experiencias separadas para clientes, proveedores y administradores.
 
@@ -63,7 +63,7 @@ El pie de página incluye un acceso administrativo discreto y minimalista con un
 
 ## Dirección de producto y estilo de plataforma
 
-MercadoBra debe evolucionar como una plataforma modular, no como una suma de pantallas aisladas. Cada módulo administrativo comparte navegación, jerarquía visual, estados, filtros, formularios y patrones de confirmación.
+Mercadobra debe evolucionar como una plataforma modular, no como una suma de pantallas aisladas. Cada módulo administrativo comparte navegación, jerarquía visual, estados, filtros, formularios y patrones de confirmación.
 
 ### Principios visuales
 
