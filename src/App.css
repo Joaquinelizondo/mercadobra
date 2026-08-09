@@ -126,15 +126,39 @@
   transform: translateY(-1px);
 }
 
-.topbar-menu .topbar-segment-link {
+.oxida-segment-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  width: 100%;
+  padding-top: 8px;
+  border-top: 1px solid rgba(32, 32, 29, .1);
+}
+
+.oxida-segment-nav span {
+  margin-right: auto;
+  color: #8a8177;
+  font-size: .63rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.oxida-segment-nav a {
+  padding: 5px 9px;
+  border-radius: 999px;
   color: #5f554c;
   font-size: .68rem;
   font-weight: 800;
-  letter-spacing: .075em;
+  letter-spacing: .055em;
+  text-decoration: none;
+  transition: color .16s ease, background .16s ease;
 }
 
-.topbar-menu .topbar-segment-link:hover {
+.oxida-segment-nav a:hover {
   color: #a8522e;
+  background: rgba(168, 82, 46, .08);
 }
 
 .topbar-menu .topbar-quote-link {
@@ -4341,6 +4365,23 @@
   .topbar-menu a {
     white-space: nowrap;
     flex: 0 0 auto;
+  }
+
+  .oxida-segment-nav {
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .oxida-segment-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .oxida-segment-nav span,
+  .oxida-segment-nav a {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .topbar-actions {

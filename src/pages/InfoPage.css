@@ -35,6 +35,10 @@
   line-height: 1.65;
 }
 
+.info-page-card > p:nth-of-type(2) {
+  color: #3f4650;
+}
+
 .info-page-actions {
   display: flex;
   flex-wrap: wrap;

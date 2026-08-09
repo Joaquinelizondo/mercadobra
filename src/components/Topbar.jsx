@@ -14,7 +14,7 @@ export default function Topbar() {
   const showQuoteFinder = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 
   return (
-    <header className="topbar">
+    <header className={`topbar${isOxida ? ' topbar--oxida' : ''}`}>
       <div className="brand-wrap">
         <Link to="/" className="store-nav-brand" aria-label="MercadoBra, inicio" onClick={showQuoteFinder}>
           <img src={logoImg} className="brand-logo" alt="MercadoBra" />
@@ -22,21 +22,10 @@ export default function Topbar() {
       </div>
 
       <nav className="topbar-menu" aria-label="Navegación principal">
-        {isOxida ? (
-          <>
-            <a href="#oxida-projects" className="topbar-segment-link">Óxida Projects</a>
-            <a href="#oxida-pro" className="topbar-segment-link">Óxida Pro</a>
-            <a href="#oxida-custom-works" className="topbar-segment-link">Óxida Custom Works</a>
-            <a href="#oxida-care" className="topbar-segment-link">Óxida Care</a>
-          </>
-        ) : (
-          <>
-            <Link to="/" onClick={showQuoteFinder}>Inicio</Link>
-            <Link to="/quienes-somos" onClick={showQuoteFinder}>Quiénes somos</Link>
-            <Link to="/oxida" className="topbar-oxida-link" onClick={showQuoteFinder}><span>Oxida Studio</span></Link>
-            <Link to="/contacto" onClick={showQuoteFinder}>Contáctenos</Link>
-          </>
-        )}
+        <Link to="/" onClick={showQuoteFinder}>Inicio</Link>
+        <Link to="/quienes-somos" onClick={showQuoteFinder}>Quiénes somos</Link>
+        <Link to="/oxida" className="topbar-oxida-link" onClick={showQuoteFinder}><span>Oxida Studio</span></Link>
+        <Link to="/contacto" onClick={showQuoteFinder}>Contáctenos</Link>
       </nav>
 
       <div className="topbar-actions">
@@ -102,6 +91,16 @@ export default function Topbar() {
           </>
         ))}
       </div>
+
+      {isOxida && (
+        <nav className="oxida-segment-nav" aria-label="Unidades de Óxida Studio">
+          <span>Nuestras unidades</span>
+          <a href="#oxida-projects">Óxida Projects</a>
+          <a href="#oxida-pro">Óxida Pro</a>
+          <a href="#oxida-custom-works">Óxida Custom Works</a>
+          <a href="#oxida-care">Óxida Care</a>
+        </nav>
+      )}
     </header>
   )
 }
