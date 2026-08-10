@@ -801,6 +801,7 @@ backend/.env.example → backend/.env
 - Cuando hay una sesión administrativa, las tarjetas de `/explorar` muestran acciones directas para editar y eliminar cada producto, además de las disponibles en `/admin/productos`.
 - Escritura de marca normalizada como Mercadobra y Óxida Studio en textos públicos, comunicaciones y documentación.
 - Portada simplificada: se retiraron los bloques redundantes “Comprar por categoría” y “Todo para transformar tu espacio”.
+- Página de contacto ampliada con formulario de nombre, email, teléfono, empresa, motivo y comentarios; registra la consulta comercial y notifica al equipo mediante el flujo existente de leads.
 
 ## Próximas prioridades
 
