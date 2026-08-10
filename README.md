@@ -660,6 +660,8 @@ Endpoints de diagnóstico:
 - `GET https://mercadobra.onrender.com/health`
 - `GET https://mercadobra.onrender.com/products`
 
+El backend configura `trust proxy = 1` en producción antes de instalar los limitadores de solicitudes. Render entrega el tráfico mediante un proxy inverso y agrega `X-Forwarded-For`; confiar únicamente en el salto más cercano permite que Express y `express-rate-limit` identifiquen la IP del cliente sin aceptar una cadena de proxies de forma irrestricta. No se debe desactivar la validación `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR`.
+
 ### Frontend en Vercel
 
 1. Configurar `VITE_API_BASE_URL` para Production, Preview y Development.

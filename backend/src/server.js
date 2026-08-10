@@ -53,6 +53,14 @@ import {
 validateEnvVars()
 
 const app = express()
+
+// Render terminates public traffic at its reverse proxy before forwarding it
+// to this Express process. Trust only that nearest hop so req.ip and the rate
+// limiters use the client address supplied by the platform.
+if (config.nodeEnv === 'production') {
+  app.set('trust proxy', 1)
+}
+
 const PORT = config.port
 const FRONTEND_ORIGIN = config.frontendOrigin
 const FRONTEND_PUBLIC_URL = config.frontendPublicUrl
