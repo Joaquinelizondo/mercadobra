@@ -8,24 +8,12 @@ import heroImage from '../assets/oxida/escalera.jpeg'
 import mercadoBraLogo from '../assets/mercadobra.png'
 import './Storefront.css'
 
-const categoryCopy = {
-  Mobiliario: 'Piezas funcionales en hierro y madera.',
-  'Escaleras y barandas': 'Soluciones seguras con carácter.',
-  'Fachadas y divisores': 'Privacidad, ritmo y materialidad.',
-  Estructuras: 'Sistemas firmes hechos para durar.',
-}
-
 export default function Storefront() {
   const { productList, loadingProducts } = useProducts()
   const featured = useMemo(
     () => productList.filter((product) => product.status === 'published').slice(0, 8),
     [productList]
   )
-  const categories = useMemo(
-    () => [...new Set(productList.map((product) => product.category).filter(Boolean))].slice(0, 4),
-    [productList]
-  )
-
   return (
     <div className="storefront">
       <MercadoQuoteFinder />
@@ -56,35 +44,6 @@ export default function Storefront() {
           <div className="store-hero-mark"><OxidaWordmark showByline /></div>
           <span className="store-hero-note">Colección 01 — 2026</span>
         </div>
-      </section>
-
-      <section className="store-section" id="categorias">
-        <div className="store-heading">
-          <div><span>Comprar por categoría</span><h2>Encontrá la pieza para tu espacio.</h2></div>
-          <Link to="/explorar">Ver todo ↗</Link>
-        </div>
-        <div className="store-categories">
-          {categories.map((category, index) => (
-            <Link key={category} to={`/explorar?category=${encodeURIComponent(category)}`} className="store-category">
-              <span>0{index + 1}</span>
-              <h3>{category}</h3>
-              <p>{categoryCopy[category] || 'Diseño y fabricación con terminaciones a elección.'}</p>
-              <b>Explorar →</b>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="store-mercadobra-note">
-        <div>
-          <span>Mercadobra</span>
-          <h2>Todo para transformar tu espacio, en un solo lugar.</h2>
-        </div>
-        <p>
-          Empezamos con Óxida Collection y seguimos ampliando el catálogo con
-          productos, talleres y proveedores seleccionados.
-        </p>
-        <Link to="/explorar">Explorar Mercadobra ↗</Link>
       </section>
 
       <section className="store-section" id="coleccion">

@@ -800,6 +800,7 @@ backend/.env.example → backend/.env
 - El catálogo local `INITIAL_PRODUCTS` se utiliza únicamente si falla toda la API. Cuando la API responde, su lista es la fuente de verdad y los productos locales faltantes no se reinsertan.
 - Cuando hay una sesión administrativa, las tarjetas de `/explorar` muestran acciones directas para editar y eliminar cada producto, además de las disponibles en `/admin/productos`.
 - Escritura de marca normalizada como Mercadobra y Óxida Studio en textos públicos, comunicaciones y documentación.
+- Portada simplificada: se retiraron los bloques redundantes “Comprar por categoría” y “Todo para transformar tu espacio”.
 
 ## Próximas prioridades
 
