@@ -464,7 +464,7 @@ app.get('/products/:id', asyncHandler(async (req, res) => {
   const repo = await getRepository()
   const product = await repo.getProductById(id)
 
-  if (!product) {
+  if (!product || product.status === 'archived') {
     throw new NotFoundError('Producto')
   }
 

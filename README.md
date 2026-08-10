@@ -796,6 +796,7 @@ backend/.env.example → backend/.env
 - Listones promocionales diagonales configurables por producto desde el panel administrativo.
 - Edición administrativa priorizando siempre la sesión de administrador aunque exista además una sesión de proveedor.
 - Baja segura de productos mediante archivado, conservando referencias e historial de pedidos.
+- Los productos archivados se excluyen de las respuestas públicas del catálogo y no reaparecen al recargar la web.
 - Escritura de marca normalizada como Mercadobra y Óxida Studio en textos públicos, comunicaciones y documentación.
 
 ## Próximas prioridades

@@ -323,11 +323,11 @@ async function getJsonRepo() {
       return readDb().providers
     },
     async getProviderProducts(providerId) {
-      return readDb().products.filter((p) => Number(p.providerId) === Number(providerId))
+      return readDb().products.filter((p) => Number(p.providerId) === Number(providerId) && p.status !== 'archived')
     },
     async getProducts(filters = {}) {
       const db = readDb()
-      let items = [...db.products]
+      let items = db.products.filter((product) => product.status !== 'archived')
       const { q, category, providerId, stock } = filters
       if (q) {
         const term = String(q).trim().toLowerCase()
@@ -922,12 +922,17 @@ async function getPgRepo() {
       return rows.map(mapProviderRow)
     },
     async getProviderProducts(providerId) {
-      const { rows } = await pool.query('SELECT * FROM products WHERE provider_id = $1 ORDER BY id DESC', [providerId])
+      const { rows } = await pool.query(
+        `SELECT * FROM products
+         WHERE provider_id = $1 AND status <> 'archived'
+         ORDER BY id DESC`,
+        [providerId]
+      )
       return rows.map(mapProductRow)
     },
     async getProducts(filters = {}) {
       const values = []
-      const clauses = []
+      const clauses = [`status <> 'archived'`]
       if (filters.q) {
         values.push(`%${String(filters.q).trim().toLowerCase()}%`)
         clauses.push(`LOWER(CONCAT(name, ' ', description, ' ', category, ' ', company)) LIKE $${values.length}`)
