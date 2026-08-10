@@ -51,12 +51,13 @@ function parsePageParam(value) {
 }
 
 export default function Catalog() {
-  const { supplierUser, adminUser } = useAuth()
+  const { supplierUser, adminUser, adminToken } = useAuth()
   const { addToCart, clearCart, setCartOpen } = useCart()
-  const { productList, loadingProducts } = useProducts()
+  const { productList, loadingProducts, deleteProduct } = useProducts()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [publishOpen, setPublishOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState(null)
   const [compareIds, setCompareIds] = useState([])
   const [comboFeedback, setComboFeedback] = useState('')
   const [paymentReturn, setPaymentReturn] = useState(null)
@@ -257,6 +258,26 @@ export default function Catalog() {
     }
   }
 
+  function handleAdminEdit(product) {
+    setEditingProduct(product)
+    setPublishOpen(true)
+  }
+
+  async function handleAdminDelete(productId) {
+    const product = productList.find((item) => item.id === productId)
+    if (!window.confirm(`¿Eliminar "${product?.name || 'este producto'}" del catálogo?`)) return
+    try {
+      await deleteProduct(productId, adminToken)
+    } catch (error) {
+      window.alert(error.message || 'No se pudo eliminar el producto.')
+    }
+  }
+
+  function closePublishModal() {
+    setPublishOpen(false)
+    setEditingProduct(null)
+  }
+
   function toggleCompare(productId) {
     setCompareIds((previous) => {
       if (previous.includes(productId)) {
@@ -427,6 +448,8 @@ export default function Catalog() {
                   <ProductCard
                     key={product.id}
                     product={product}
+                    onEdit={adminUser ? handleAdminEdit : undefined}
+                    onDelete={adminUser ? handleAdminDelete : undefined}
                     onToggleCompare={toggleCompare}
                     isCompared={compareIds.includes(product.id)}
                     compareDisabled={!compareIds.includes(product.id) && compareIds.length >= MAX_COMPARE}
@@ -466,8 +489,10 @@ export default function Catalog() {
 
       {publishOpen && (
         <PublishModal
-          onClose={() => setPublishOpen(false)}
-          onPublished={() => setPublishOpen(false)}
+          key={editingProduct?.id || 'new-product'}
+          initialFormData={editingProduct}
+          onClose={closePublishModal}
+          onPublished={closePublishModal}
         />
       )}
 
