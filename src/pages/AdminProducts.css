@@ -15,8 +15,14 @@
 .admin-store-create span { color: #c7764e; font-size: 1.2rem; }
 .admin-store-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .admin-product-entry { min-width: 0; }
-.admin-product-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 28px; margin-bottom: 8px; color: #746c61; font-size: .68rem; font-weight: 700; }
-.admin-product-meta > span { padding: 5px 8px; border-radius: 999px; background: #e5ded2; }
+.admin-product-meta { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:34px; margin-bottom:8px; color:#746c61; font-size:.68rem; font-weight:700; }
+.admin-product-meta-info { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.admin-product-meta-info > span { padding:5px 8px; border-radius:999px; background:#e5ded2; }
+.admin-product-row-actions { display:flex; gap:6px; flex-shrink:0; }
+.admin-product-row-actions button { min-height:32px; padding:6px 10px; border:1px solid #aaa093; border-radius:4px; background:#faf7f0; color:#39342e; font:800 .68rem inherit; cursor:pointer; }
+.admin-product-row-actions button:hover { border-color:#6f675c; background:#fff; }
+.admin-product-row-actions button.is-danger { border-color:#d8a39a; color:#9b3828; }
+.admin-product-row-actions button.is-danger:hover { border-color:#b54835; background:#fff1ee; }
 .admin-product-meta .admin-product-status { color: #fff; }
 .admin-product-status--published { background: #287a4b !important; }
 .admin-product-status--draft { background: #897f70 !important; }
@@ -43,6 +49,7 @@
   .admin-store-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 560px) {
+  .admin-product-meta { align-items:flex-start; flex-direction:column; }
   .admin-store { padding: 24px 18px; border-radius: 18px; }
   .admin-store-brand > span { display: none; }
   .admin-store-metrics { grid-template-columns: 1fr 1fr; }

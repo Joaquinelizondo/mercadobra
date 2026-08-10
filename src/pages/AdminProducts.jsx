@@ -147,19 +147,23 @@ export default function AdminProducts() {
           {filteredProducts.map((product) => (
             <div className="admin-product-entry" key={product.id}>
               <div className="admin-product-meta">
-                <span className={`admin-product-status admin-product-status--${product.status}`}>
-                  {product.status === 'published' ? 'Publicado'
-                    : product.status === 'draft' ? 'Borrador'
-                      : product.status === 'out_of_stock' ? 'Sin stock' : 'Archivado'}
-                </span>
-                <span>Stock: {Number(product.stock) || 0}</span>
-                {product.sku && <span>SKU: {product.sku}</span>}
+                <div className="admin-product-meta-info">
+                  <span className={`admin-product-status admin-product-status--${product.status}`}>
+                    {product.status === 'published' ? 'Publicado'
+                      : product.status === 'draft' ? 'Borrador'
+                        : product.status === 'out_of_stock' ? 'Sin stock' : 'Archivado'}
+                  </span>
+                  <span>Stock: {Number(product.stock) || 0}</span>
+                  {product.sku && <span>SKU: {product.sku}</span>}
+                </div>
+                <div className="admin-product-row-actions">
+                  <button type="button" onClick={() => openEdit(product)}>Editar</button>
+                  {product.status !== 'archived' && (
+                    <button type="button" className="is-danger" onClick={() => handleDelete(product.id)}>Quitar</button>
+                  )}
+                </div>
               </div>
-              <ProductCard
-                product={product}
-                onEdit={openEdit}
-                onDelete={product.status === 'archived' ? undefined : handleDelete}
-              />
+              <ProductCard product={product} />
             </div>
           ))}
         </div>
