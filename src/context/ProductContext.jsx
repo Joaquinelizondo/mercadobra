@@ -52,11 +52,9 @@ export function ProductProvider({ children }) {
           ? normalizeProduct({ ...product, images: localProduct.images })
           : product
       })
-      const remoteNames = new Set(enrichedRemoteProducts.map((product) => product.name.trim().toLowerCase()))
-      const oxidaCollection = INITIAL_PRODUCTS
-        .filter((product) => !remoteNames.has(product.name.trim().toLowerCase()))
-        .map(normalizeProduct)
-      setProductList([...oxidaCollection, ...enrichedRemoteProducts])
+      // Once the API responds, it is the source of truth. Do not append missing
+      // seed products: an absent product may have been intentionally removed.
+      setProductList(enrichedRemoteProducts)
       setUsingFallback(false)
     } catch (error) {
       setProductList(INITIAL_PRODUCTS.map(normalizeProduct))
