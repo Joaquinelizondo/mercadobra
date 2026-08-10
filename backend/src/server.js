@@ -566,7 +566,10 @@ app.delete('/products/:id', authMiddleware, providerOnly, async (req, res) => {
     return res.status(403).json({ message: 'No podés eliminar productos de otro proveedor' })
   }
 
-  await repo.deleteProduct(id)
+  const removed = await repo.deleteProduct(id)
+  if (!removed) {
+    return res.status(409).json({ message: 'El producto ya fue quitado del catálogo' })
+  }
 
   return res.status(204).send()
 })

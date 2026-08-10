@@ -20,8 +20,10 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
   const [formSuccess, setFormSuccess] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const isEditMode = Boolean(initialFormData?.id)
-  const publisher = supplierUser || null
-  const publisherToken = supplierUser ? token : adminToken
+  // Admin and supplier sessions may coexist in localStorage. Inside the admin
+  // catalog, always use the admin identity instead of a stale supplier session.
+  const publisher = adminUser ? null : supplierUser
+  const publisherToken = adminUser ? adminToken : token
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target

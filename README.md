@@ -792,6 +792,8 @@ backend/.env.example → backend/.env
 - Buscador/cotizador reposicionado alrededor de productos y soluciones en hierro con el mensaje “Lo que imaginás, en hierro”.
 - Correos del cotizador convertidos en fichas directas con fotografía, descripción, precio y acción sobre el producto exacto.
 - Listones promocionales diagonales configurables por producto desde el panel administrativo.
+- Edición administrativa priorizando siempre la sesión de administrador aunque exista además una sesión de proveedor.
+- Baja segura de productos mediante archivado, conservando referencias e historial de pedidos.
 - Escritura de marca normalizada como Mercadobra y Óxida Studio en textos públicos, comunicaciones y documentación.
 
 ## Próximas prioridades

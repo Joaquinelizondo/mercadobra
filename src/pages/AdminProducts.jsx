@@ -53,7 +53,7 @@ export default function AdminProducts() {
 
   async function handleDelete(productId) {
     const product = productList.find((item) => item.id === productId)
-    if (!window.confirm(`¿Quitar "${product?.name || 'este producto'}" de la tienda?`)) return
+    if (!window.confirm(`¿Quitar "${product?.name || 'este producto'}" del catálogo? Se conservará su historial de pedidos.`)) return
 
     setActionError('')
     try {
@@ -158,7 +158,7 @@ export default function AdminProducts() {
               <ProductCard
                 product={product}
                 onEdit={openEdit}
-                onDelete={handleDelete}
+                onDelete={product.status === 'archived' ? undefined : handleDelete}
               />
             </div>
           ))}

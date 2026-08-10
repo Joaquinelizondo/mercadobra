@@ -131,6 +131,7 @@ export default function ProductCard({
           <div className="product-actions">
             {onEdit && (
               <button
+                type="button"
                 className="product-delete-btn"
                 onClick={(e) => {
                   e.stopPropagation()
@@ -147,6 +148,7 @@ export default function ProductCard({
             )}
             {onDelete && (
               <button
+                type="button"
                 className="product-delete-btn"
                 onClick={(e) => {
                   e.stopPropagation()

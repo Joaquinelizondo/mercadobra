@@ -994,7 +994,15 @@ async function getPgRepo() {
       return mapProductRow(rows[0])
     },
     async deleteProduct(id) {
-      const result = await pool.query('DELETE FROM products WHERE id = $1', [id])
+      // Products can be referenced by historical order items. Removing them
+      // physically would violate that relationship, so deletion from the catalog
+      // is implemented as a safe archival operation.
+      const result = await pool.query(
+        `UPDATE products
+         SET status = 'archived', stock = 0
+         WHERE id = $1 AND status <> 'archived'`,
+        [id]
+      )
       return result.rowCount > 0
     },
     async createOrder({
