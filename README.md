@@ -6,7 +6,7 @@ Plataforma uruguaya para descubrir, cotizar y comprar productos para obra, con e
 
 **Backend:** <https://mercadobra.onrender.com>
 
-**Última actualización:** 9 de agosto de 2026
+**Última actualización:** 10 de agosto de 2026
 
 El estado funcional detallado y las prioridades se mantienen también en [docs/ESTADO_WEB.md](docs/ESTADO_WEB.md).
 
@@ -456,8 +456,46 @@ Cada producto admite:
 - Variantes con nombre, SKU, precio, stock, medida, color y terminación.
 - Descripción comercial.
 - Hasta cinco imágenes JPG, PNG o WEBP de hasta 2 MB cada una.
+- Listón promocional opcional con texto libre de hasta 24 caracteres.
 
 La primera imagen funciona como portada. Actualmente las imágenes se convierten a Data URL y se guardan en la columna JSONB `images`. Para escalar, se recomienda subir los archivos a Cloudinary, S3, Supabase Storage o un servicio equivalente y guardar únicamente sus URLs.
+
+### Listones promocionales
+
+Cada producto puede mostrar un listón diagonal sobre su fotografía. Se configura al crear o editar el producto mediante los campos **Mostrar listón promocional** y **Texto del listón**.
+
+- La activación es individual por producto.
+- El texto es libre y admite hasta 24 caracteres.
+- Ejemplos previstos: `50% OFF`, `Exclusivo`, `Nuevo` y `Destacado`.
+- El listón aparece en la tarjeta del catálogo y en la galería de la ficha del producto.
+- La presentación utiliza el color terracota de la marca, texto en mayúsculas y una inclinación diagonal consistente.
+- Si está desactivado o no tiene texto, no se renderiza ningún elemento sobre la imagen.
+
+Los valores se guardan en `products.ribbon_enabled` y `products.ribbon_text`, incorporados por la migración `022_product_ribbons.sql`.
+
+## Buscador, cotización y correo de productos
+
+El cotizador de Mercadobra busca hasta cinco productos relevantes y, después de recibir los datos de contacto, registra la consulta mediante `POST /search-contacts`. Cuando el cliente indica un correo, el backend envía una selección comercial con fichas de producto completas.
+
+Cada ficha del correo incluye:
+
+- Fotografía de portada.
+- Nombre del producto y proveedor.
+- Descripción breve.
+- Precio y unidad de venta.
+- Acción directa vinculada al ID exacto del producto.
+
+La etiqueta de la acción depende del tipo y disponibilidad:
+
+| Condición | Acción del correo |
+| --- | --- |
+| Producto disponible para compra | **Comprar ahora** |
+| Proyecto o producto a medida | **Ver y solicitar a medida** |
+| Producto sin disponibilidad directa | **Ver producto** |
+
+El frontend envía `selectedProductIds` y una referencia de la imagen de cada resultado. El backend vuelve a resolver los productos por sus IDs, conserva la imagen de portada enriquecida por el catálogo y construye cada URL como `/producto/:id` sobre `FRONTEND_PUBLIC_URL`. Esto evita que una ficha lleve a una búsqueda general o a un artículo diferente.
+
+Las rutas relativas de imágenes se convierten en URLs públicas absolutas antes de generar el HTML del correo. Por eso `FRONTEND_PUBLIC_URL` debe apuntar al dominio público real y no a `localhost` en producción.
 
 Limitaciones conocidas del editor:
 
@@ -719,6 +757,7 @@ backend/.env.example → backend/.env
 - `PATCH /orders/:id/status`
 - `GET /orders/:id/notifications`
 - `POST /leads`
+- `POST /search-contacts`
 - `POST /chat`
 
 ### Pagos
@@ -751,6 +790,8 @@ backend/.env.example → backend/.env
 - Las capacidades de Óxida incluyen diseño y dirección de obra, ingeniería estructural, ejecución y fabricación especializada, además de mantenimiento de estructuras y parrilleros.
 - Inicio y Óxida comparten una barra editorial de unidades con anclas directas a cada segmento.
 - Buscador/cotizador reposicionado alrededor de productos y soluciones en hierro con el mensaje “Lo que imaginás, en hierro”.
+- Correos del cotizador convertidos en fichas directas con fotografía, descripción, precio y acción sobre el producto exacto.
+- Listones promocionales diagonales configurables por producto desde el panel administrativo.
 - Escritura de marca normalizada como Mercadobra y Óxida Studio en textos públicos, comunicaciones y documentación.
 
 ## Próximas prioridades
