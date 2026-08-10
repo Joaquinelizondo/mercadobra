@@ -507,6 +507,8 @@ app.post('/products', authMiddleware, (req, res, next) => {
     weightKg: body.weightKg === '' || body.weightKg == null ? null : validateNumber(body.weightKg, 'Peso', 0),
     dimensions: body.dimensions && typeof body.dimensions === 'object' ? body.dimensions : {},
     configurable: Boolean(body.configurable),
+    ribbonEnabled: Boolean(body.ribbonEnabled),
+    ribbonText: String(body.ribbonText || '').trim().slice(0, 24),
     variants: Array.isArray(body.variants) ? body.variants.slice(0, 30) : [],
   })
 
@@ -528,6 +530,8 @@ app.patch('/products/:id', authMiddleware, providerOnly, async (req, res) => {
   if (updates.productType !== undefined) {
     updates.productType = validateEnum(updates.productType, ['ready', 'made_to_order', 'custom_quote'], 'Tipo de producto')
   }
+  if (updates.ribbonEnabled !== undefined) updates.ribbonEnabled = Boolean(updates.ribbonEnabled)
+  if (updates.ribbonText !== undefined) updates.ribbonText = String(updates.ribbonText || '').trim().slice(0, 24)
   const repo = await getRepository()
   const existing = await repo.getProductById(id)
 
@@ -864,6 +868,12 @@ app.post('/search-contacts', async (req, res) => {
     selectedProductIds: Array.isArray(body.selectedProductIds)
       ? body.selectedProductIds.map(Number).filter(Number.isFinite).slice(0, 5)
       : [],
+    selectedProducts: Array.isArray(body.selectedProducts)
+      ? body.selectedProducts.slice(0, 5).map((product) => ({
+          id: Number(product?.id),
+          imageUrl: String(product?.imageUrl || '').trim(),
+        }))
+      : [],
   }
 
   if (!payload.searchTerm) {
@@ -880,10 +890,22 @@ app.post('/search-contacts', async (req, res) => {
   const repo = await getRepository()
   const created = await repo.createSearchContact(payload)
   const searchedProducts = await repo.getProducts({ q: payload.searchTerm, stock: 'in' })
-  const matchedProducts = payload.selectedProductIds.length
+  let matchedProducts = payload.selectedProductIds.length
     ? (await repo.getProducts({}))
         .filter((product) => payload.selectedProductIds.includes(Number(product.id)))
     : searchedProducts
+
+  // The frontend can enrich database products with bundled catalog images. Preserve
+  // that exact image when emailing the products selected by the customer.
+  const selectedImages = new Map(
+    payload.selectedProducts
+      .filter((product) => Number.isFinite(product.id) && product.imageUrl)
+      .map((product) => [product.id, product.imageUrl])
+  )
+  matchedProducts = matchedProducts.map((product) => {
+    const selectedImage = selectedImages.get(Number(product.id))
+    return selectedImage ? { ...product, images: [{ url: selectedImage, alt: product.name }] } : product
+  })
 
   // Respond quickly so search UX never waits on external providers (SMTP/WhatsApp).
   void notifySearchRecommendations({

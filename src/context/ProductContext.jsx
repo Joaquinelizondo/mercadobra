@@ -27,6 +27,8 @@ function normalizeProduct(product) {
     weightKg: product.weightKg == null ? '' : Number(product.weightKg),
     dimensions: product.dimensions && typeof product.dimensions === 'object' ? product.dimensions : {},
     configurable: Boolean(product.configurable),
+    ribbonEnabled: Boolean(product.ribbonEnabled),
+    ribbonText: String(product.ribbonText || ''),
     variants: Array.isArray(product.variants) ? product.variants : [],
   }
 }
@@ -94,6 +96,8 @@ export function ProductProvider({ children }) {
       weightKg: formData.weightKg === '' ? null : Number(formData.weightKg),
       dimensions: formData.dimensions || {},
       configurable: Boolean(formData.configurable),
+      ribbonEnabled: Boolean(formData.ribbonEnabled),
+      ribbonText: String(formData.ribbonText || '').trim(),
       variants: Array.isArray(formData.variants) ? formData.variants : [],
       color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
     }
@@ -153,6 +157,8 @@ export function ProductProvider({ children }) {
       weightKg: formData.weightKg === '' ? null : Number(formData.weightKg),
       dimensions: formData.dimensions || {},
       configurable: Boolean(formData.configurable),
+      ribbonEnabled: Boolean(formData.ribbonEnabled),
+      ribbonText: String(formData.ribbonText || '').trim(),
       variants: Array.isArray(formData.variants) ? formData.variants : [],
     }
 

@@ -105,6 +105,10 @@ export default function MercadoQuoteFinder() {
         phone: contact.phone.trim(),
         source: 'mercadobra-quote-finder',
         selectedProductIds: results.map((product) => product.id),
+        selectedProducts: results.map((product) => ({
+          id: product.id,
+          imageUrl: product.images?.[0]?.url || '',
+        })),
       })
       setResultsVisible(true)
       setModalOpen(false)

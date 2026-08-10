@@ -9,6 +9,7 @@ const EMPTY_FORM = {
   company: '', providerId: '',
   stock: '0', status: 'published', productType: 'ready', leadTimeDays: '7', weightKg: '',
   dimensions: { width: '', height: '', depth: '' }, configurable: false,
+  ribbonEnabled: false, ribbonText: '',
   description: '', images: [], variants: [],
 }
 
@@ -265,6 +266,19 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
               <input type="checkbox" name="configurable" checked={formData.configurable} onChange={handleChange} />
               <span><strong>Producto personalizable</strong><small>Permite solicitar otras medidas, colores o terminaciones.</small></span>
             </label>
+
+            <div className="product-ribbon-editor">
+              <label className="product-configurable-check">
+                <input type="checkbox" name="ribbonEnabled" checked={formData.ribbonEnabled} onChange={handleChange} />
+                <span><strong>Mostrar listón promocional</strong><small>Aparece cruzado sobre la foto del producto.</small></span>
+              </label>
+              {formData.ribbonEnabled && (
+                <div>
+                  <label className="form-label" htmlFor="pub-ribbon-text">Texto del listón</label>
+                  <input id="pub-ribbon-text" className="form-input" name="ribbonText" value={formData.ribbonText} onChange={handleChange} maxLength="24" placeholder="Ej: 50% OFF, Nuevo, Exclusivo" />
+                </div>
+              )}
+            </div>
 
             <div className="product-variants-editor">
               <div className="product-variants-head">

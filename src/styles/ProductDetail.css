@@ -4,6 +4,7 @@
 .product-gallery { min-width:0; }
 .product-gallery-main { position:relative; aspect-ratio:1.06; overflow:hidden; background:#ded8cd; }
 .product-gallery-main img { width:100%; height:100%; object-fit:cover; display:block; }
+.product-gallery-main .product-ribbon--detail { top:32px; left:-42px; width:210px; padding:11px 14px; font-size:.75rem; }
 .product-gallery-main.is-placeholder { display:grid; place-items:center; color:#fff; background:var(--product-color,#a8522e); }
 .product-gallery-main.is-placeholder > span:first-child { font-size:clamp(4rem,10vw,9rem); font-weight:900; opacity:.8; }
 .product-gallery-count { position:absolute; right:16px; bottom:16px; padding:8px 11px; background:rgba(245,241,232,.9); font-size:.68rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }

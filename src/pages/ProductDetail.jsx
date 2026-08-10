@@ -112,6 +112,9 @@ export default function ProductDetail() {
             ) : (
               <span>{companyInitials(product.company)}</span>
             )}
+            {product.ribbonEnabled && product.ribbonText && (
+              <span className="product-ribbon product-ribbon--detail">{product.ribbonText}</span>
+            )}
             <span className="product-gallery-count">{images.length ? `${visibleImageIndex + 1} / ${images.length}` : 'Imagen próximamente'}</span>
           </div>
           {images.length > 1 && (

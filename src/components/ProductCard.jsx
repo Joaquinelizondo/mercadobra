@@ -75,6 +75,9 @@ export default function ProductCard({
     >
       <div className={`product-img${coverImage ? ' product-img--photo' : ''}`} style={{ '--product-color': product.color }}>
         {coverImage && <img src={coverImage} alt={product.images?.[0]?.alt || product.name} />}
+        {product.ribbonEnabled && product.ribbonText && (
+          <span className="product-ribbon">{product.ribbonText}</span>
+        )}
         {onToggleCompare && (
           <button
             type="button"

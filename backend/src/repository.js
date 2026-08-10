@@ -24,6 +24,8 @@ function mapProductRow(row) {
     weightKg: row.weight_kg ?? row.weightKg ? Number(row.weight_kg ?? row.weightKg) : null,
     dimensions: row.dimensions && typeof row.dimensions === 'object' ? row.dimensions : {},
     configurable: Boolean(row.configurable),
+    ribbonEnabled: Boolean(row.ribbon_enabled ?? row.ribbonEnabled),
+    ribbonText: String(row.ribbon_text ?? row.ribbonText ?? ''),
     variants: Array.isArray(row.variants) ? row.variants : [],
   }
 }
@@ -952,8 +954,9 @@ async function getPgRepo() {
       const { rows } = await pool.query(
         `INSERT INTO products
           (name, description, category, company, provider_id, price, currency, unit, stock, color, images,
-           sku, status, product_type, lead_time_days, weight_kg, dimensions, configurable, variants)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+           sku, status, product_type, lead_time_days, weight_kg, dimensions, configurable, variants,
+           ribbon_enabled, ribbon_text)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
          RETURNING *`,
         [
           payload.name, payload.description, payload.category, payload.company, payload.providerId,
@@ -962,6 +965,7 @@ async function getPgRepo() {
           payload.productType || 'ready', payload.leadTimeDays || 3, payload.weightKg || null,
           JSON.stringify(payload.dimensions || {}), Boolean(payload.configurable),
           JSON.stringify(payload.variants || []),
+          Boolean(payload.ribbonEnabled), payload.ribbonText || '',
         ]
       )
       return mapProductRow(rows[0])
@@ -974,8 +978,9 @@ async function getPgRepo() {
         `UPDATE products
          SET name=$1, description=$2, category=$3, company=$4, provider_id=$5, price=$6, currency=$7,
              unit=$8, stock=$9, color=$10, images=$11, sku=$12, status=$13, product_type=$14,
-             lead_time_days=$15, weight_kg=$16, dimensions=$17, configurable=$18, variants=$19
-         WHERE id=$20
+             lead_time_days=$15, weight_kg=$16, dimensions=$17, configurable=$18, variants=$19,
+             ribbon_enabled=$20, ribbon_text=$21
+         WHERE id=$22
          RETURNING *`,
         [
           merged.name, merged.description, merged.category, merged.company, merged.providerId,
@@ -983,7 +988,7 @@ async function getPgRepo() {
           JSON.stringify(merged.images || []), merged.sku || null, merged.status || 'published',
           merged.productType || 'ready', merged.leadTimeDays || 3, merged.weightKg || null,
           JSON.stringify(merged.dimensions || {}), Boolean(merged.configurable),
-          JSON.stringify(merged.variants || []), id,
+          JSON.stringify(merged.variants || []), Boolean(merged.ribbonEnabled), merged.ribbonText || '', id,
         ]
       )
       return mapProductRow(rows[0])

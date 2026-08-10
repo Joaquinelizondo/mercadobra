@@ -280,12 +280,31 @@ function getTransporter() {
 
 function formatRecommendationItems(products = []) {
   return products.slice(0, 5).map((product, index) => {
-    const detailUrl = `${FRONTEND_PUBLIC_URL}/producto/${product.id}`
+    const publicBaseUrl = FRONTEND_PUBLIC_URL.replace(/\/+$/, '')
+    const detailUrl = `${publicBaseUrl}/producto/${encodeURIComponent(product.id)}`
+    const rawImage = Array.isArray(product.images) ? product.images[0] : null
+    const rawImageUrl = typeof rawImage === 'string' ? rawImage : rawImage?.url
+    let imageUrl = ''
+    if (rawImageUrl) {
+      try {
+        imageUrl = new URL(rawImageUrl, `${publicBaseUrl}/`).href
+      } catch {
+        imageUrl = ''
+      }
+    }
     return {
       name: product.name,
       company: product.company,
       priceLabel: `$${Number(product.price || 0).toLocaleString('es-AR')}`,
       detailUrl,
+      imageUrl,
+      description: String(product.description || '').trim(),
+      unit: String(product.unit || '').trim(),
+      actionLabel: product.productType === 'custom_quote'
+        ? 'Ver y solicitar a medida'
+        : Number(product.stock || 0) > 0
+          ? 'Comprar ahora'
+          : 'Ver producto',
       text: `${index + 1}. ${product.name} · ${product.company} · $${Number(product.price || 0).toLocaleString('es-AR')} · ${detailUrl}`,
       html: `
         <div style="border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin:0 0 10px;background:#ffffff;">
@@ -332,12 +351,14 @@ function buildRecommendationEmailContent(searchTerm, items) {
               <td style="padding:0 0 12px 0;">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #e5e7eb;">
                   <tr>
+                    ${item.imageUrl ? `<td width="180" valign="top" style="width:180px;padding:14px 0 14px 14px;"><a href="${item.detailUrl}"><img src="${item.imageUrl}" alt="${item.name}" width="166" style="display:block;width:166px;height:125px;object-fit:cover;border:0;" /></a></td>` : ''}
                     <td style="padding:14px;font-family:Arial,sans-serif;color:#111827;">
                       <div style="font-size:16px;font-weight:700;line-height:1.3;">${item.name}</div>
                       <div style="font-size:13px;color:#6b7280;line-height:1.4;padding-top:4px;">Proveedor: ${item.company}</div>
-                      <div style="font-size:15px;font-weight:700;color:#ea580c;line-height:1.4;padding-top:6px;">${item.priceLabel}</div>
+                      ${item.description ? `<div style="font-size:13px;color:#374151;line-height:1.45;padding-top:7px;">${item.description}</div>` : ''}
+                      <div style="font-size:15px;font-weight:700;color:#ea580c;line-height:1.4;padding-top:7px;">${item.priceLabel}${item.unit ? ` <span style="font-size:12px;font-weight:400;color:#6b7280;">/ ${item.unit}</span>` : ''}</div>
                       <div style="padding-top:10px;">
-                        <a href="${item.detailUrl}" style="font-size:13px;font-weight:700;color:#ffffff;background:#111827;text-decoration:none;padding:8px 12px;display:inline-block;">Ver producto</a>
+                        <a href="${item.detailUrl}" style="font-size:13px;font-weight:700;color:#ffffff;background:#111827;text-decoration:none;padding:8px 12px;display:inline-block;">${item.actionLabel}</a>
                       </div>
                     </td>
                   </tr>
