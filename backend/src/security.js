@@ -133,9 +133,21 @@ export function globalErrorHandler(err, req, res, _next) {
   if (err.code && err.code.startsWith('23')) {
     // Integrity constraint violations
     logErrorIfNeeded(err, req, isProduction)
+    const constraintMessages = {
+      products_sku_unique: 'Ese SKU ya está asignado a otro producto. Ingresá un SKU diferente.',
+      products_provider_id_fkey: 'El proveedor seleccionado no existe. Dejá el ID vacío o elegí un proveedor válido.',
+      products_currency_check: 'La moneda del producto debe ser UYU o USD.',
+      products_status_check: 'El estado seleccionado no es válido.',
+      products_type_check: 'El tipo de venta seleccionado no es válido.',
+    }
     return res.status(409).json({
-      message: 'Los datos violan restricciones de la base de datos',
+      message: constraintMessages[err.constraint] || 'Los datos violan restricciones de la base de datos',
       code: 'DB_CONSTRAINT_VIOLATION',
+      field: err.constraint === 'products_sku_unique'
+        ? 'sku'
+        : err.constraint === 'products_provider_id_fkey'
+          ? 'providerId'
+          : undefined,
     })
   }
 

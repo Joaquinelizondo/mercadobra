@@ -139,7 +139,7 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
                 </div>
                 <div>
                   <label className="form-label" htmlFor="pub-provider-id">ID de proveedor</label>
-                  <input id="pub-provider-id" className="form-input" name="providerId" type="number" min="1" value={formData.providerId ?? ''} onChange={handleChange} placeholder="Opcional" />
+                  <input id="pub-provider-id" className="form-input" name="providerId" type="number" min="1" value={Number.isFinite(Number(formData.providerId)) && Number(formData.providerId) > 0 ? formData.providerId : ''} onChange={handleChange} placeholder="Opcional · Oxida Studio: 10" />
                 </div>
               </div>
             ) : (
@@ -171,7 +171,7 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
             <div className="form-row form-row--2col">
               <div>
                 <label className="form-label" htmlFor="pub-sku">SKU</label>
-                <input id="pub-sku" className="form-input" name="sku" value={formData.sku} onChange={handleChange} placeholder="OX-MUE-001" />
+                <input id="pub-sku" className="form-input" name="sku" value={formData.sku} onChange={handleChange} placeholder="Ej: OX-CAVA-001" />
               </div>
               <div>
                 <label className="form-label" htmlFor="pub-status">Estado</label>
