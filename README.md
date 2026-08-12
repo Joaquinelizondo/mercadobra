@@ -807,6 +807,7 @@ backend/.env.example → backend/.env
 - Portada editorial configurable desde cada producto: hasta cuatro diapositivas automáticas debajo del cotizador, usando la foto de portada y mostrando únicamente un título de impacto y un subtítulo.
 - El carrusel editorial avanza continuamente cada 4,8 segundos y ofrece flechas laterales y navegación inferior; no se detiene por dejar el cursor sobre la imagen.
 - La acción principal **Ver la colección** abre `/explorar#catalog-results`, directamente en el listado de productos.
+- El catálogo `/explorar` se simplificó para mostrar directamente los productos, sin filtros de categoría, ordenamiento, combos ni comparador.
 
 ## Próximas prioridades
 
