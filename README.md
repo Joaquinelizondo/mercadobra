@@ -809,6 +809,7 @@ backend/.env.example → backend/.env
 - La acción principal **Ver la colección** abre `/explorar#catalog-results`, directamente en el listado de productos.
 - El catálogo `/explorar` se simplificó para mostrar directamente los productos, sin filtros de categoría, ordenamiento, combos ni comparador.
 - Los cuatro pasos del proceso Óxida comparten una grilla vertical para alinear números, títulos y descripciones independientemente de la extensión del texto.
+- La acción **Contanos tu idea** abre `/contacto#formulario-contacto` y desplaza la vista directamente al formulario.
 
 ## Próximas prioridades
 

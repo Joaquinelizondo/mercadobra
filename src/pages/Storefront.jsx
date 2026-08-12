@@ -65,7 +65,7 @@ export default function Storefront() {
       <section className="store-custom" id="como-funciona">
         <p>¿No encontraste exactamente lo que buscabas?</p>
         <h2>Tomamos un diseño base<br />y lo hacemos tuyo.</h2>
-        <Link to="/oxida#cotizar">Contanos tu idea <span>↗</span></Link>
+        <Link to="/contacto#formulario-contacto">Contanos tu idea <span>↗</span></Link>
       </section>
     </div>
   )

@@ -1,14 +1,24 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import MercadoQuoteFinder from '../components/MercadoQuoteFinder'
 import { createLead } from '../lib/api'
 import { createWhatsAppLink } from '../utils/whatsapp'
 import './InfoPage.css'
 
 export default function Contact() {
+  const location = useLocation()
   const whatsappLink = createWhatsAppLink({ intent: 'consulta', source: 'pagina-contacto' })
   const [form, setForm] = useState({ name: '', email: '', phone: '', company: '', subject: 'Producto o compra', message: '' })
   const [sending, setSending] = useState(false)
   const [feedback, setFeedback] = useState({ type: '', message: '' })
+
+  useEffect(() => {
+    if (location.hash !== '#formulario-contacto') return
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById('formulario-contacto')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [location.hash])
 
   function handleChange(event) {
     const { name, value } = event.target
@@ -54,7 +64,7 @@ export default function Contact() {
             <a href={whatsappLink} target="_blank" rel="noreferrer">+598 99 213 300 · Uruguay</a>
           </div>
         </div>
-        <form className="contact-form" onSubmit={handleSubmit}>
+        <form className="contact-form" id="formulario-contacto" onSubmit={handleSubmit}>
           <div className="contact-form-heading"><span>Tu consulta</span><h2>Contanos sobre tu proyecto.</h2></div>
           <div className="contact-form-grid">
             <label><span>Nombre *</span><input name="name" value={form.name} onChange={handleChange} required autoComplete="name" /></label>
