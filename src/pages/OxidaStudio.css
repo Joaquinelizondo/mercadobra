@@ -100,12 +100,12 @@
 .oxida-process { background:#1d1d1a; padding:clamp(90px,11vw,170px) clamp(24px,6vw,90px); color:#e8e5dc; border-top:1px solid rgba(255,255,255,.08); }
 .oxida-process-heading { margin-bottom:75px; }
 .oxida-process-list { border-top:1px solid rgba(255,255,255,.18); display:grid; grid-template-columns:repeat(4,1fr); }
-.oxida-process-list article { min-height:300px; padding:28px 28px 35px 0; border-right:1px solid rgba(255,255,255,.18); display:flex; flex-direction:column; }
+.oxida-process-list article { box-sizing:border-box; min-height:300px; padding:28px 28px 35px 0; border-right:1px solid rgba(255,255,255,.18); display:grid; grid-template-rows:auto 1fr auto minmax(4.8em,auto); align-items:start; }
 .oxida-process-list article:not(:first-child) { padding-left:28px; }
 .oxida-process-list article:last-child { border-right:0; }
 .oxida-process-list span { color:#b85d35; font-size:.7rem; }
-.oxida-process-list h3 { margin:auto 0 16px; font:500 1.55rem 'Manrope',sans-serif; color:#e8e5dc; }
-.oxida-process-list p { color:#8f8e88; line-height:1.6; font-size:.8rem; }
+.oxida-process-list h3 { margin:0 0 16px; font:500 1.55rem 'Manrope',sans-serif; color:#e8e5dc; }
+.oxida-process-list p { margin:0; color:#8f8e88; line-height:1.6; font-size:.8rem; }
 
 .oxida-quote { background:#b55c35; padding:clamp(90px,11vw,170px) clamp(24px,7vw,110px); display:grid; grid-template-columns:1fr 1.05fr; gap:clamp(50px,9vw,150px); }
 .oxida-quote h2 { color:#181815; margin:25px 0 35px; }
@@ -176,7 +176,7 @@
   .oxida-project-card,.oxida-project-card:nth-child(2),.oxida-project-card:nth-child(5) { margin:0 0 58px; }
   .oxida-project-card .oxida-project-image { aspect-ratio:4/5; }
   .oxida-process-list { grid-template-columns:1fr; }
-  .oxida-process-list article,.oxida-process-list article:not(:first-child) { min-height:190px; padding:25px 5px; border-right:0; border-bottom:1px solid rgba(255,255,255,.16); }
+  .oxida-process-list article,.oxida-process-list article:not(:first-child) { min-height:190px; padding:25px 5px; border-right:0; border-bottom:1px solid rgba(255,255,255,.16); grid-template-rows:auto 1fr auto auto; }
   .oxida-process-list h3 { margin:35px 0 10px; }
   .oxida-quote,.oxida-quote--builder { grid-template-columns:1fr; padding:90px 24px; }
   .oxida-quote--builder .oxida-quote-copy { position:static; }
