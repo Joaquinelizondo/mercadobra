@@ -31,6 +31,13 @@ const PAYMENT_METHODS = [
       </svg>
     ),
   },
+  {
+    id: 'pago_al_coordinar',
+    label: 'Confirmar envío antes de pagar',
+    detail: 'Recibimos el pedido, cotizamos la entrega y te enviamos el total final antes de cobrar.',
+    tag: 'Sin cobro ahora',
+    icon: <span aria-hidden="true">↗</span>,
+  },
 ]
 
 const EMPTY_CHECKOUT_FORM = {
@@ -129,6 +136,10 @@ export default function Cart() {
 
     return () => { mounted = false }
   }, [cartOpen, syncCartInventory])
+
+  useEffect(() => {
+    setSelectedPayment(checkoutForm.deliveryMethod === 'delivery' ? 'pago_al_coordinar' : null)
+  }, [checkoutForm.deliveryMethod])
 
   function handleClose() {
     setCartOpen(false)
@@ -249,7 +260,9 @@ export default function Cart() {
 
   const stepLabel = step === 'payment' ? 'Pago y datos' : step === 'done' ? 'Pedido enviado' : 'Mi pedido'
   const availablePaymentMethods = PAYMENT_METHODS.filter(
-    (method) => method.id !== 'mercadopago' || mercadoPagoEnabled
+    (method) => checkoutForm.deliveryMethod === 'delivery'
+      ? method.id === 'pago_al_coordinar'
+      : method.id !== 'pago_al_coordinar' && (method.id !== 'mercadopago' || mercadoPagoEnabled)
   )
 
   return (
@@ -422,7 +435,7 @@ export default function Cart() {
                     checked={checkoutForm.deliveryMethod === 'delivery'}
                     onChange={(event) => setCheckoutForm((prev) => ({ ...prev, deliveryMethod: event.target.value }))}
                   />
-                  <span><strong>Entrega coordinada</strong><small>Costo y horario a confirmar con el proveedor</small></span>
+                  <span><strong>Entrega coordinada</strong><small>Confirmamos costo, horario y total final antes de cobrar.</small></span>
                 </label>
                 <label className={checkoutForm.deliveryMethod === 'pickup' ? 'is-selected' : ''}>
                   <input
@@ -518,7 +531,11 @@ export default function Cart() {
                   <span>{checkoutForm.deliveryMethod === 'pickup' ? 'Retiro acordado' : 'Entrega coordinada'}</span>
                   <strong>{checkoutForm.deliveryMethod === 'pickup' ? 'Sin costo' : 'A confirmar'}</strong>
                 </div>
-                <div className="checkout-summary-total"><span>Total a pagar ahora</span><strong>{formatPrice(cartTotal, cartCurrency)}</strong></div>
+                <div className="checkout-summary-total">
+                  <span>{checkoutForm.deliveryMethod === 'pickup' ? 'Total a pagar ahora' : 'Subtotal de productos'}</span>
+                  <strong>{formatPrice(cartTotal, cartCurrency)}</strong>
+                </div>
+                {checkoutForm.deliveryMethod === 'delivery' && <p className="checkout-delivery-pending">El costo de entrega y el total final se confirman antes de solicitar el pago.</p>}
               </div>
               {orderError && <p className="cart-order-error">{orderError}</p>}
               <button
@@ -526,7 +543,7 @@ export default function Cart() {
                 disabled={!selectedPayment || orderLoading || !isCheckoutFormValid}
                 onClick={handleConfirm}
               >
-                {orderLoading ? 'Enviando…' : 'Confirmar y enviar'}
+                {orderLoading ? 'Enviando…' : checkoutForm.deliveryMethod === 'delivery' ? 'Enviar pedido para coordinar' : 'Confirmar y pagar'}
               </button>
             </div>
           </>

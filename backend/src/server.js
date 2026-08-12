@@ -65,7 +65,6 @@ const PORT = config.port
 const FRONTEND_ORIGIN = config.frontendOrigin
 const FRONTEND_PUBLIC_URL = config.frontendPublicUrl
 const BACKEND_PUBLIC_URL = config.backendPublicUrl
-const ALLOWED_PAYMENT_METHODS = new Set(['transferencia', 'mercadopago'])
 const CUSTOMER_QUOTE_STATUSES = ['in_progress', 'sent', 'accepted', 'project_in_progress', 'completed', 'rejected', 'cancelled']
 const HAS_PUBLIC_HTTPS_FRONTEND = /^https:\/\//.test(FRONTEND_PUBLIC_URL)
 
@@ -604,6 +603,12 @@ app.post('/orders', asyncHandler(async (req, res) => {
 
   // Validar método de pago
   const normalizedPaymentMethod = validatePaymentMethod(paymentMethod)
+  if (checkoutDetails.deliveryMethod === 'delivery' && normalizedPaymentMethod !== 'pago_al_coordinar') {
+    throw new ValidationError('La entrega a domicilio se confirma y cobra después de cotizar el envío')
+  }
+  if (checkoutDetails.deliveryMethod === 'pickup' && normalizedPaymentMethod === 'pago_al_coordinar') {
+    throw new ValidationError('Para retiro elegí transferencia o Mercado Pago')
+  }
 
   const repo = await getRepository()
   const order = await repo.createOrder({
@@ -656,6 +661,11 @@ app.post('/payments/mercadopago/checkout', async (req, res) => {
 
   try {
     const checkoutDetails = validateCheckoutDetails(req.body)
+    if (checkoutDetails.deliveryMethod !== 'pickup') {
+      return res.status(400).json({
+        message: 'Mercado Pago está disponible solo para retiro hasta definir la tarifa de entrega.',
+      })
+    }
     const productSnapshots = await Promise.all(
       normalizedItems.map(async (item) => {
         const product = await repo.getProductById(item.productId)

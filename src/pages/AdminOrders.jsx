@@ -134,7 +134,7 @@ export default function AdminOrders() {
                 <div className="admin-order-contact"><a href={`tel:${order.buyerPhone}`}>{order.buyerPhone}</a>{order.buyerEmail && <a href={`mailto:${order.buyerEmail}`}>{order.buyerEmail}</a>}<span>{order.deliveryMethod === 'pickup' ? 'Retiro acordado' : [order.deliveryAddress, order.deliveryCity].filter(Boolean).join(', ')}</span>{order.buyerNotes && <p>{order.buyerNotes}</p>}</div>
                 <ul>{(order.items || []).map((item, index) => <li key={`${order.id}-${item.productId}-${index}`}><span>{item.name || `Producto #${item.productId}`} × {item.quantity}</span><strong>{formatPrice(item.subtotal ?? item.price * item.quantity, item.currency)}</strong></li>)}</ul>
               </div>
-              <footer><span>Pago: {order.paymentMethod === 'mercadopago' ? 'Mercado Pago' : 'Transferencia'}</span><strong>Total: {formatPrice(order.total || 0, order.currency)}</strong>{order.trackingToken && <Link to={`/seguimiento/${order.trackingToken}?phone=${encodeURIComponent(order.buyerPhone || '')}`}>Ver seguimiento ↗</Link>}</footer>
+              <footer><span>Pago: {order.paymentMethod === 'mercadopago' ? 'Mercado Pago' : order.paymentMethod === 'pago_al_coordinar' ? 'Después de cotizar envío' : 'Transferencia'}</span><strong>{order.paymentMethod === 'pago_al_coordinar' ? 'Subtotal' : 'Total'}: {formatPrice(order.total || 0, order.currency)}</strong>{order.trackingToken && <Link to={`/seguimiento/${order.trackingToken}?phone=${encodeURIComponent(order.buyerPhone || '')}`}>Ver seguimiento ↗</Link>}</footer>
             </article>
           ))}
         </div>

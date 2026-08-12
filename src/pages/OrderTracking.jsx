@@ -16,6 +16,7 @@ const STATUS_LABELS = {
 const PAYMENT_LABELS = {
   transferencia: 'Transferencia bancaria',
   mercadopago: 'MercadoPago',
+  pago_al_coordinar: 'Pago después de confirmar el envío',
   tarjeta_credito: 'Tarjeta de crédito',
   tarjeta_debito: 'Tarjeta de débito',
 }

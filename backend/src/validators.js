@@ -171,7 +171,7 @@ export function validateOrderStatus(status) {
  * Valida un método de pago
  */
 export function validatePaymentMethod(method) {
-  const validMethods = new Set(['transferencia', 'mercadopago'])
+  const validMethods = new Set(['transferencia', 'mercadopago', 'pago_al_coordinar'])
   return validateEnum(method, Array.from(validMethods), 'Método de pago')
 }
 

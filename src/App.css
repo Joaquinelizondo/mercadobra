@@ -3888,6 +3888,7 @@
   color: var(--accent-strong);
   font-size: 1.15rem;
 }
+.checkout-delivery-pending { margin:10px 0 0; padding:11px 12px; background:#fff4e8; color:#7a4428; font-size:.76rem; line-height:1.5; }
 
 .cart-payment-header {
   margin: 6px 16px 0;

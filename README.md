@@ -829,6 +829,14 @@ backend/.env.example → backend/.env
 | Indexación | El HTML inicial contiene solo el contenedor React; no hay metadata comercial completa, sitemap, robots ni datos estructurados. |
 | Calidad automatizada | No existen pruebas unitarias, de integración o end-to-end configuradas en el repositorio. |
 
+### Regla transitoria de entrega — implementada mientras no existan tarifas
+
+- **Retiro acordado:** permite transferencia o Mercado Pago porque el total es conocido antes de cobrar.
+- **Entrega a domicilio:** registra el pedido sin cobrar; Mercadobra cotiza el envío y comunica el total final antes de solicitar el pago.
+- El checkout denomina el importe como **Subtotal de productos**, muestra que el envío está pendiente y utiliza **Pago después de confirmar el envío**.
+- El backend impide pagar por Mercado Pago una entrega cuyo costo todavía no está definido, aunque se intente llamar directamente a la API.
+- Esta solución evita cobrar un total incompleto; cuando existan tarifas deberá reemplazarse por reglas de zona, cobertura y costo administrables.
+
 ### Fortalezas actuales
 
 - Identidad visual propia y consistente entre Mercadobra y Óxida Studio.
