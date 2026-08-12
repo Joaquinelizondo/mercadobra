@@ -804,6 +804,7 @@ backend/.env.example → backend/.env
 - Página de contacto ampliada con formulario de nombre, email, teléfono, empresa, motivo y comentarios; registra la consulta comercial y notifica al equipo mediante el flujo existente de leads.
 - Las consultas enviadas desde `/contacto` llegan a `contacto@mercadobra.com`; el correo usa la dirección del cliente como `Reply-To` para responder directamente.
 - El editor de productos informa específicamente cuando un SKU ya existe o cuando el ID de proveedor no corresponde a un proveedor registrado; los SKU archivados permanecen reservados para conservar el historial.
+- Portada editorial configurable desde cada producto: hasta cuatro diapositivas automáticas debajo del cotizador, usando la foto de portada y mostrando únicamente un título de impacto y un subtítulo.
 
 ## Próximas prioridades
 

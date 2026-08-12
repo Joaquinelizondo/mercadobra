@@ -517,6 +517,10 @@ app.post('/products', authMiddleware, (req, res, next) => {
     configurable: Boolean(body.configurable),
     ribbonEnabled: Boolean(body.ribbonEnabled),
     ribbonText: String(body.ribbonText || '').trim().slice(0, 24),
+    slideEnabled: Boolean(body.slideEnabled),
+    slideTitle: String(body.slideTitle || '').trim().slice(0, 80),
+    slideSubtitle: String(body.slideSubtitle || '').trim().slice(0, 180),
+    slideOrder: Number(body.slideOrder || 0),
     variants: Array.isArray(body.variants) ? body.variants.slice(0, 30) : [],
   })
 
@@ -540,6 +544,10 @@ app.patch('/products/:id', authMiddleware, providerOnly, async (req, res) => {
   }
   if (updates.ribbonEnabled !== undefined) updates.ribbonEnabled = Boolean(updates.ribbonEnabled)
   if (updates.ribbonText !== undefined) updates.ribbonText = String(updates.ribbonText || '').trim().slice(0, 24)
+  if (updates.slideEnabled !== undefined) updates.slideEnabled = Boolean(updates.slideEnabled)
+  if (updates.slideTitle !== undefined) updates.slideTitle = String(updates.slideTitle || '').trim().slice(0, 80)
+  if (updates.slideSubtitle !== undefined) updates.slideSubtitle = String(updates.slideSubtitle || '').trim().slice(0, 180)
+  if (updates.slideOrder !== undefined) updates.slideOrder = validateNumber(updates.slideOrder || 0, 'Orden de diapositiva', 0, 999)
   const repo = await getRepository()
   const existing = await repo.getProductById(id)
 

@@ -29,6 +29,10 @@ function normalizeProduct(product) {
     configurable: Boolean(product.configurable),
     ribbonEnabled: Boolean(product.ribbonEnabled),
     ribbonText: String(product.ribbonText || ''),
+    slideEnabled: Boolean(product.slideEnabled),
+    slideTitle: String(product.slideTitle || ''),
+    slideSubtitle: String(product.slideSubtitle || ''),
+    slideOrder: Number(product.slideOrder || 0),
     variants: Array.isArray(product.variants) ? product.variants : [],
   }
 }
@@ -96,6 +100,10 @@ export function ProductProvider({ children }) {
       configurable: Boolean(formData.configurable),
       ribbonEnabled: Boolean(formData.ribbonEnabled),
       ribbonText: String(formData.ribbonText || '').trim(),
+      slideEnabled: Boolean(formData.slideEnabled),
+      slideTitle: String(formData.slideTitle || '').trim(),
+      slideSubtitle: String(formData.slideSubtitle || '').trim(),
+      slideOrder: Number(formData.slideOrder || 0),
       variants: Array.isArray(formData.variants) ? formData.variants : [],
       color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
     }
@@ -157,6 +165,10 @@ export function ProductProvider({ children }) {
       configurable: Boolean(formData.configurable),
       ribbonEnabled: Boolean(formData.ribbonEnabled),
       ribbonText: String(formData.ribbonText || '').trim(),
+      slideEnabled: Boolean(formData.slideEnabled),
+      slideTitle: String(formData.slideTitle || '').trim(),
+      slideSubtitle: String(formData.slideSubtitle || '').trim(),
+      slideOrder: Number(formData.slideOrder || 0),
       variants: Array.isArray(formData.variants) ? formData.variants : [],
     }
 

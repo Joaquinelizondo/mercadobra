@@ -4,6 +4,7 @@ import { useProducts } from '../context/ProductContext'
 import ProductCard from '../components/ProductCard'
 import OxidaWordmark from '../components/OxidaWordmark'
 import MercadoQuoteFinder from '../components/MercadoQuoteFinder'
+import EditorialProductSlider from '../components/EditorialProductSlider'
 import heroImage from '../assets/oxida/escalera.jpeg'
 import mercadoBraLogo from '../assets/mercadobra.png'
 import './Storefront.css'
@@ -17,6 +18,7 @@ export default function Storefront() {
   return (
     <div className="storefront">
       <MercadoQuoteFinder />
+      <EditorialProductSlider products={productList} />
 
       <section className="store-hero" id="inicio">
         <div className="store-hero-copy">

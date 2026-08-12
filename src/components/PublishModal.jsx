@@ -10,6 +10,7 @@ const EMPTY_FORM = {
   stock: '0', status: 'published', productType: 'ready', leadTimeDays: '7', weightKg: '',
   dimensions: { width: '', height: '', depth: '' }, configurable: false,
   ribbonEnabled: false, ribbonText: '',
+  slideEnabled: false, slideTitle: '', slideSubtitle: '', slideOrder: '0',
   description: '', images: [], variants: [],
 }
 
@@ -280,6 +281,21 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
                   <input id="pub-ribbon-text" className="form-input" name="ribbonText" value={formData.ribbonText} onChange={handleChange} maxLength="24" placeholder="Ej: 50% OFF, Nuevo, Exclusivo" />
                 </div>
               )}
+            </div>
+
+            <div className="product-ribbon-editor product-slide-editor">
+              <label className="product-configurable-check">
+                <input type="checkbox" name="slideEnabled" checked={formData.slideEnabled} onChange={handleChange} />
+                <span><strong>Mostrar en portada editorial</strong><small>Usa la primera foto como diapositiva debajo del cotizador.</small></span>
+              </label>
+              {formData.slideEnabled && <div className="form-row">
+                <label className="form-label" htmlFor="pub-slide-title">Título de impacto</label>
+                <input id="pub-slide-title" className="form-input" name="slideTitle" value={formData.slideTitle} onChange={handleChange} maxLength="80" placeholder="Ej: El arte de guardar bien." required />
+                <label className="form-label" htmlFor="pub-slide-subtitle">Subtítulo</label>
+                <textarea id="pub-slide-subtitle" className="form-input form-textarea" name="slideSubtitle" value={formData.slideSubtitle} onChange={handleChange} maxLength="180" rows="2" placeholder="Una frase breve, precisa y elegante." required />
+                <label className="form-label" htmlFor="pub-slide-order">Orden</label>
+                <input id="pub-slide-order" className="form-input" type="number" min="0" max="999" name="slideOrder" value={formData.slideOrder} onChange={handleChange} />
+              </div>}
             </div>
 
             <div className="product-variants-editor">
