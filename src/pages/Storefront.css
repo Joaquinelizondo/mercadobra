@@ -12,6 +12,9 @@
 .editorial-slider-nav { position:absolute; z-index:3; left:clamp(28px,7vw,110px); bottom:28px; display:flex; gap:9px; }
 .editorial-slider-nav button { width:38px; height:3px; padding:0; border:0; background:rgba(255,255,255,.35); cursor:pointer; transition:width .3s,background .3s; }
 .editorial-slider-nav button.is-active { width:70px; background:#c36b43; }
+.editorial-slider-arrows { position:absolute; z-index:3; right:clamp(28px,5vw,76px); bottom:24px; display:flex; gap:8px; }
+.editorial-slider-arrows button { display:grid; place-items:center; width:44px; height:44px; border:1px solid rgba(255,255,255,.42); border-radius:50%; background:rgba(20,18,15,.24); color:#fffaf0; font-size:1.1rem; cursor:pointer; backdrop-filter:blur(8px); transition:background .2s,border-color .2s,transform .2s; }
+.editorial-slider-arrows button:hover { background:#a8522e; border-color:#a8522e; transform:translateY(-2px); }
 .store-quote-first { display:grid; grid-template-columns:minmax(270px,.72fr) minmax(540px,1.28fr); gap:clamp(40px,7vw,105px); align-items:start; padding:clamp(48px,7vw,92px); border-radius:28px; overflow:hidden; background:#b55c35; box-shadow:0 30px 70px rgba(49,30,20,.2); }
 .store-quote-intro { position:sticky; top:100px; padding-top:10px; }
 .store-quote-intro > span { color:#29251f; font-size:.66rem; font-weight:800; letter-spacing:.16em; }
@@ -85,6 +88,8 @@
   .editorial-slider { border-radius:18px; }
   .editorial-slider-stage { min-height:580px; }
   .editorial-slide-copy { bottom:82px; }
+  .editorial-slider-arrows { right:20px; bottom:20px; }
+  .editorial-slider-arrows button { width:40px; height:40px; }
   .store-hero-copy, .store-section { padding: 30px 22px; }
   .store-brand-context img { width: 145px; }
   .store-hero-media { min-height: 430px; }
