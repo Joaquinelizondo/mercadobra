@@ -806,6 +806,7 @@ backend/.env.example → backend/.env
 - El editor de productos informa específicamente cuando un SKU ya existe o cuando el ID de proveedor no corresponde a un proveedor registrado; los SKU archivados permanecen reservados para conservar el historial.
 - Portada editorial configurable desde cada producto: hasta cuatro diapositivas automáticas debajo del cotizador, usando la foto de portada y mostrando únicamente un título de impacto y un subtítulo.
 - El carrusel editorial avanza continuamente cada 4,8 segundos y ofrece flechas laterales y navegación inferior; no se detiene por dejar el cursor sobre la imagen.
+- La acción principal **Ver la colección** abre `/explorar#catalog-results`, directamente en el listado de productos.
 
 ## Próximas prioridades
 

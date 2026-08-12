@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useProducts } from '../context/ProductContext'
@@ -55,6 +55,7 @@ export default function Catalog() {
   const { addToCart, clearCart, setCartOpen } = useCart()
   const { productList, loadingProducts, deleteProduct } = useProducts()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [publishOpen, setPublishOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
@@ -62,6 +63,14 @@ export default function Catalog() {
   const [comboFeedback, setComboFeedback] = useState('')
   const [paymentReturn, setPaymentReturn] = useState(null)
   const infiniteSentinelRef = useRef(null)
+
+  useEffect(() => {
+    if (location.hash !== '#catalog-results') return
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById('catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [location.hash])
 
   const searchQuery = searchParams.get('q')?.trim() ?? ''
   const paymentStatus = searchParams.get('payment')?.trim().toLowerCase() || ''

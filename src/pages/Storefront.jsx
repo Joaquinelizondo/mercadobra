@@ -34,7 +34,7 @@ export default function Storefront() {
             en hierro y madera, listos para comprar o adaptar a tu espacio.
           </p>
           <div className="store-hero-actions">
-            <Link to="/explorar" className="store-button store-button--primary">Ver la colección</Link>
+            <Link to="/explorar#catalog-results" className="store-button store-button--primary">Ver la colección</Link>
             <a href="#cotizar" className="store-button store-button--secondary">Hacer a medida</a>
           </div>
           <div className="store-trust">
