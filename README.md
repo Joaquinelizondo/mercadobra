@@ -811,18 +811,189 @@ backend/.env.example → backend/.env
 - Los cuatro pasos del proceso Óxida comparten una grilla vertical para alinear números, títulos y descripciones independientemente de la extensión del texto.
 - La acción **Contanos tu idea** abre `/contacto#formulario-contacto` y desplaza la vista directamente al formulario.
 
-## Próximas prioridades
+## Auditoría integral de ecommerce — 12 de agosto de 2026
 
-1. Mostrar correctamente los errores `429` y tiempos de espera en los formularios de login.
-2. Completar pagos, documentos e historial de las cotizaciones dentro del perfil de cada cliente.
-3. Completar auditoría, paginación y restablecimiento seguro del módulo administrativo de clientes.
-4. Definir e integrar almacenamiento externo para adjuntos de cotizaciones y fotografías de productos.
-5. Incorporar características técnicas flexibles por producto.
-6. Configurar backups y un plan PostgreSQL apto para producción.
-7. Eliminar el falso éxito del modo offline en operaciones administrativas.
-8. Agregar pruebas automatizadas para autenticación, clientes, cotizaciones, stock, pedidos y pagos.
-9. Completar SEO, analytics, textos legales y monitoreo.
-10. Separar sandbox y producción para Mercado Pago y confirmar condiciones comerciales definitivas.
+**Objetivo:** identificar la distancia entre la versión operativa y un ecommerce profesional de excelencia. Esta auditoría revisó rutas, componentes, API, catálogo real, checkout, pagos, seguimiento, administración, seguridad, contenido, SEO y operación. No reemplaza una sesión formal de Lighthouse, pruebas con usuarios, auditoría legal ni revisión WCAG manual con tecnologías de asistencia.
+
+### Evidencia verificada en producción
+
+| Área | Resultado observado |
+| --- | --- |
+| Disponibilidad | Frontend y backend responden correctamente mediante Vercel y Render. |
+| Pagos | Mercado Pago está habilitado y en modo producción, no sandbox. |
+| Catálogo | 10 productos publicados; todos tienen una imagen y precios en USD. |
+| Rendimiento de datos | `GET /products` pesa aproximadamente **1,76 MB** porque las imágenes se entregan como Data URL dentro del JSON. |
+| Seguridad HTTP | Backend con Helmet, HSTS, CSP, protección MIME, rate limiting y proxy de Render configurado. |
+| Compra | Carrito persistente, revalidación de precio/stock, checkout, transferencia, Mercado Pago y seguimiento por token. |
+| Operación | Administración de productos, pedidos, clientes, consultas, personalizaciones y cotizaciones. |
+| Indexación | El HTML inicial contiene solo el contenedor React; no hay metadata comercial completa, sitemap, robots ni datos estructurados. |
+| Calidad automatizada | No existen pruebas unitarias, de integración o end-to-end configuradas en el repositorio. |
+
+### Fortalezas actuales
+
+- Identidad visual propia y consistente entre Mercadobra y Óxida Studio.
+- Portada editorial configurable y catálogo conectado a PostgreSQL.
+- Ficha con galería, precio, stock, plazo, modalidad de venta, dimensiones y variantes.
+- Carrito persistente que vuelve a validar precio, publicación y disponibilidad antes de cobrar.
+- Flujo real de Mercado Pago con webhook, estados de retorno y restauración de stock ante pagos rechazados o cancelados.
+- Compra alternativa por transferencia y atención directa por WhatsApp.
+- Seguimiento público protegido mediante token y teléfono del comprador.
+- Baja segura de productos mediante archivado, sin romper pedidos históricos.
+- Autenticación por roles, contraseñas cifradas y sesiones revocables.
+- Formularios comerciales conectados a administración y correo.
+- Interfaz responsive con estados de carga, éxito, vacío y error en los flujos principales.
+
+### P0 — imprescindible antes de escalar ventas
+
+| Brecha | Riesgo actual | Resultado requerido |
+| --- | --- | --- |
+| **Entrega sin precio cerrado** | El checkout muestra “A confirmar”, pero el resumen dice “Total a pagar ahora” sin incorporar envío. Puede generar expectativas incorrectas antes de Mercado Pago. | Definir zonas, costo, retiro, cobertura y fecha estimada antes del pago; bloquear Mercado Pago cuando el total final aún no esté cerrado. |
+| **Políticas legales inexistentes** | No hay Términos, Privacidad, Cookies, Entregas, Cambios/Devoluciones, Garantías ni condiciones para productos personalizados. | Publicar páginas legales revisadas para Uruguay, enlazarlas en footer y exigir aceptación en checkout cuando corresponda. |
+| **Imágenes dentro del JSON** | El catálogo completo pesa ~1,76 MB con solo 10 productos; cada consulta descarga todas las imágenes y PostgreSQL almacena archivos Base64. | Migrar a almacenamiento de objetos/CDN, guardar URLs, generar WebP/AVIF, miniaturas, dimensiones, `srcset`, carga diferida y límites de peso reales. |
+| **Carrito multimoneda inseguro** | El total suma todos los artículos y usa la moneda del primer producto. Si conviven UYU y USD, el total sería incorrecto. | Impedir mezclar monedas o convertir con una cotización fijada y auditable antes de agregar/pagar. |
+| **Confirmación al comprador** | Las notificaciones dependen principalmente de WhatsApp; no existe una garantía visible de email transaccional de pedido, pago y despacho. | Enviar email transaccional idempotente para pedido recibido, pago aprobado/rechazado, despacho y entrega; registrar entregas y reintentos. |
+| **Sin pruebas de compra** | Cambios frecuentes pueden romper publicación, carrito, stock, pago, webhook o eliminación sin detectarse. | Cubrir producto→carrito→checkout→pago→webhook→seguimiento con pruebas de integración y E2E ejecutadas antes de desplegar. |
+| **Sin backups/recuperación demostrada** | La continuidad depende de una única base y no hay RPO/RTO documentados ni restauración ensayada. | Backups automáticos, retención, exportación, restauración probada y procedimiento de incidente. |
+
+### P1 — conversión, confianza y descubrimiento
+
+#### Catálogo y ficha de producto
+
+- Definir un estándar editorial mínimo por producto: 4–8 fotos optimizadas, vista de escala, detalle de material, terminación y contexto de uso.
+- Incorporar características técnicas flexibles con unidades claras; traducir etiquetas internas como `width`, `height` y `depth`.
+- Agregar disponibilidad real por variante, no solo stock agregado del producto.
+- Mostrar fecha estimada de entrega según producto, variante, destino y modalidad.
+- Explicar garantía, cuidados, materiales, armado/instalación, contenido del paquete y política de fabricación a pedido.
+- Incorporar zoom o lightbox accesible para las imágenes.
+- Corregir calidad editorial de nombres, tildes, dobles espacios, unidades y consistencia de marca antes de publicar.
+- Definir productos agotados: ocultar, permitir aviso de reposición o convertir en consulta, sin mensajes ambiguos.
+- Agregar recomendaciones basadas en colección, uso o compatibilidad; hoy dependen únicamente de la categoría.
+
+#### Checkout y pago
+
+- Convertir el carrito lateral en un checkout con URL propia y estado recuperable para reducir pérdidas al recargar o volver desde Mercado Pago.
+- Autocompletar datos cuando exista sesión de cliente y permitir editar dirección/contacto.
+- Mostrar resumen final inmutable: artículos, variantes, descuentos, envío, moneda, total y plazo antes de confirmar.
+- Añadir cupones/promociones con reglas de vigencia, uso, moneda, stock y auditoría.
+- Guardar consentimiento de políticas y versión legal aceptada.
+- Manejar formalmente devoluciones, cancelaciones, reembolsos parciales/totales y contracargos desde administración.
+- Probar idempotencia de creación de orden y webhook para impedir pedidos o descuentos de stock duplicados.
+- Mostrar medios y cuotas reales informados por Mercado Pago, evitando promesas genéricas no verificadas.
+
+#### Confianza y contenido comercial
+
+- Añadir bloque visible de entrega, garantía, cambios, pagos seguros y atención posventa cerca del CTA.
+- Incorporar reseñas verificadas, proyectos entregados o testimonios reales con autorización; no usar métricas ficticias.
+- Mostrar razón social, domicilio comercial cuando corresponda, canales de soporte, horarios y tiempos de respuesta.
+- Crear preguntas frecuentes sobre compra, fabricación, medidas, instalación, entrega y mantenimiento.
+- Añadir prueba social visual: proyectos reales, detalles de fabricación, proceso y equipo.
+- Mantener separados “producto comprable” y “trabajo a cotizar” para que precio, CTA y expectativa sean inequívocos.
+
+#### SEO y adquisición
+
+- Cambiar `lang="en"` por `lang="es-UY"` y definir títulos/descripciones únicos por ruta.
+- Incorporar canonical, Open Graph, Twitter Cards, favicon completo, manifest y color de interfaz.
+- Publicar `robots.txt` y sitemap dinámico con productos y páginas públicas.
+- Añadir JSON-LD `Organization`, `WebSite`, `BreadcrumbList`, `Product` y `Offer`, con precio, moneda, stock e imagen correctos.
+- Resolver renderizado indexable mediante prerender/SSR o generación estática de páginas de producto; el HTML inicial actual no contiene contenido comercial.
+- Crear URLs o slugs legibles y redirecciones permanentes, manteniendo compatibilidad con IDs históricos.
+- Añadir páginas de colección/categoría solo cuando tengan contenido editorial útil; no reintroducir filtros vacíos o sin valor.
+- Implementar Search Console y validación periódica de indexación, errores y rich results.
+
+#### Cuenta del cliente y retención
+
+- Crear `/cliente` con perfil, direcciones, pedidos, estados, comprobantes, cotizaciones y recompra.
+- Implementar recuperación/cambio de contraseña y verificación de email.
+- Vincular automáticamente órdenes de invitado con una cuenta verificada sin exponer historial por coincidencia insegura.
+- Sincronizar favoritos y carrito con la cuenta; hoy viven solo en `localStorage`.
+- Incorporar aviso de reposición, seguimiento posventa y solicitud de reseña.
+- Diseñar recuperación de carrito abandonado únicamente con consentimiento y reglas de frecuencia.
+
+### P1 — operación y administración
+
+- Eliminar el “éxito offline” en operaciones administrativas: nunca afirmar que un producto quedó guardado si la API falló.
+- Sustituir el ID numérico manual de proveedor por un selector con búsqueda y validación.
+- Añadir gestión de inventario por movimientos: ajuste, reserva, venta, cancelación, devolución y responsable.
+- Incorporar edición masiva, importación/exportación CSV, duplicado de producto y previsualización antes de publicar.
+- Permitir reordenar/eliminar fotos individualmente y definir texto alternativo desde administración.
+- Crear reglas administrables de envío, promociones, impuestos, garantía y métodos de pago.
+- Añadir historial de cambios para productos, precios, stock, pedidos, clientes, pagos y estados.
+- Completar documentos, entregas, pagos parciales y trazabilidad de cotizaciones/proyectos.
+- Agregar paginación y filtros del lado del servidor antes de crecer en productos, clientes, pedidos y consultas.
+- Separar roles internos: administrador, ventas, operaciones, contenido y soporte, con permisos mínimos.
+
+### P1 — observabilidad, seguridad y calidad
+
+- Integrar monitoreo de errores frontend/backend con alertas y contexto de versión.
+- Incorporar logs estructurados con correlación entre checkout, orden, pago, webhook y notificación, sin datos sensibles innecesarios.
+- Añadir métricas de latencia, errores, disponibilidad, colas de correo y webhooks fallidos.
+- Migrar sesiones del navegador desde `localStorage` hacia cookies `HttpOnly`, `Secure` y `SameSite`, con protección CSRF donde corresponda.
+- Configurar rate limiting compartido si Render escala a varias instancias; el store en memoria no coordina límites entre procesos.
+- Definir retención, minimización y eliminación de datos personales según política publicada.
+- Revisar CSP al migrar imágenes a CDN y limitar orígenes de forma explícita.
+- Ejecutar escaneo de dependencias, secretos y vulnerabilidades en CI.
+- Corregir el tratamiento visible de respuestas `429`, expiración de sesión y errores transitorios.
+
+### P2 — experiencia de excelencia
+
+- Medición de embudo: vista de producto, agregar al carrito, iniciar checkout, elegir pago, compra aprobada y abandono.
+- Panel de negocio con conversión, ingresos, ticket promedio, margen, productos, consultas y origen comercial.
+- Experimentos controlados sobre CTA, confianza, fotografía, checkout y contenido; no cambiar por intuición sin medir.
+- Búsqueda comercial con sinónimos, tolerancia, sugerencias y resultados indexables cuando el catálogo lo justifique.
+- Personalización prudente según comportamiento y disponibilidad, sin crear burbujas ni usar datos sin consentimiento.
+- Wishlist compartible, listas de proyecto y cotización desde carrito.
+- Accesibilidad WCAG 2.2 AA: auditoría de teclado, foco, lector de pantalla, contraste, zoom, errores y objetivos táctiles.
+- Respetar `prefers-reduced-motion` en carruseles, transiciones y desplazamientos suaves.
+- Internacionalización preparada para moneda, impuestos, formatos y expansión regional, aunque inicialmente opere solo en Uruguay.
+- PWA solo si aporta una necesidad real de operación o recompra; no priorizarla sobre rendimiento, SEO y checkout.
+
+### Calidad y rendimiento objetivo
+
+| Indicador | Objetivo inicial |
+| --- | --- |
+| Disponibilidad mensual | ≥ 99,9 % para frontend, API y checkout. |
+| LCP móvil p75 | ≤ 2,5 s. |
+| INP móvil p75 | ≤ 200 ms. |
+| CLS p75 | ≤ 0,1. |
+| Respuesta inicial de catálogo | < 200 KB sin imágenes embebidas. |
+| Imágenes de tarjeta | Preferentemente < 120 KB, responsive y lazy-loaded. |
+| Errores de checkout | < 1 % excluyendo rechazos legítimos del medio de pago. |
+| Confirmación transaccional | Enviada y registrada en < 60 s. |
+| Cobertura crítica | 100 % de los caminos de compra principales cubiertos por E2E. |
+| Accesibilidad | Sin bloqueos críticos WCAG 2.2 AA. |
+
+### Plan recomendado
+
+1. **Fundación comercial:** envío con total cerrado, legales, email transaccional, moneda segura y backups.
+2. **Rendimiento y SEO:** CDN de imágenes, metadata, sitemap, datos estructurados y renderizado indexable.
+3. **Calidad de compra:** pruebas E2E, checkout recuperable, variantes/stock y políticas visibles.
+4. **Confianza y retención:** cuenta completa, comprobantes, reseñas verificadas, FAQ y posventa.
+5. **Escala operativa:** auditoría, inventario por movimientos, envíos/promociones administrables y roles.
+6. **Optimización continua:** analytics, monitoreo, métricas de negocio, accesibilidad y experimentación.
+
+### Criterio de salida para considerarlo “ecommerce de excelencia”
+
+- El comprador conoce producto, variante, entrega, garantía, moneda y total final antes de pagar.
+- La compra completa funciona de extremo a extremo y puede recuperarse sin intervención manual.
+- Cada operación crítica es idempotente, observable, auditable y está cubierta por pruebas.
+- El sitio carga rápido en móvil, es indexable y cumple WCAG 2.2 AA sin bloqueos críticos.
+- Las fotografías, textos y especificaciones cumplen un estándar editorial uniforme.
+- Existen políticas claras, soporte visible y comunicaciones transaccionales confiables.
+- Administración puede operar catálogo, inventario, pedidos, pagos, devoluciones y clientes sin tocar código o base de datos.
+- El negocio puede medir conversión, ingresos, abandono, cumplimiento de entrega y satisfacción.
+
+## Próximas prioridades inmediatas
+
+1. Cerrar reglas y costos de entrega antes del pago.
+2. Publicar textos legales y condiciones comerciales.
+3. Migrar imágenes Base64 a almacenamiento/CDN.
+4. Proteger el carrito contra mezcla de monedas.
+5. Implementar emails transaccionales de pedido y pago.
+6. Agregar pruebas E2E del flujo de compra y webhooks.
+7. Configurar backups y probar restauración.
+8. Completar SEO técnico e indexación de productos.
+9. Integrar analytics y monitoreo de errores.
+10. Eliminar falsos éxitos offline y profesionalizar inventario/administración.
 
 ## Verificación antes de publicar
 
