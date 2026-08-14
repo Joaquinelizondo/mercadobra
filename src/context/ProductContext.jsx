@@ -11,6 +11,7 @@ function normalizeProduct(product) {
     ...product,
     id: Number(product.id),
     price: Number(product.price),
+    discountPercent: Math.min(99, Math.max(0, Number(product.discountPercent) || 0)),
     currency: normalizedCurrency === 'USD' ? 'USD' : 'UYU',
     stock: Number(
       product.stock ?? (FALLBACK_OUT_OF_STOCK_IDS.has(Number(product.id)) ? 0 : 20)
@@ -87,6 +88,7 @@ export function ProductProvider({ children }) {
       company,
       providerId,
       price: Number(formData.price),
+      discountPercent: Math.min(99, Math.max(0, Number(formData.discountPercent) || 0)),
       currency: String(formData.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
       unit: formData.unit,
       stock: Number(formData.stock ?? 0),
@@ -152,6 +154,7 @@ export function ProductProvider({ children }) {
           : Number(rawProviderId)
       })(),
       price: Number(formData.price),
+      discountPercent: Math.min(99, Math.max(0, Number(formData.discountPercent) || 0)),
       currency: String(formData.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
       unit: formData.unit,
       stock: Number(formData.stock ?? 0),

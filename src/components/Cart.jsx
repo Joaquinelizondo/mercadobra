@@ -116,7 +116,8 @@ export default function Cart() {
         const adjusted = openingCartItems.filter((item) => {
           const latest = latestById.get(Number(item.id))
           return latest && latest.status === 'published' && (
-            Number(latest.price) !== Number(item.price)
+            Number(latest.price) !== Number(item.originalPrice ?? item.price)
+            || Number(latest.discountPercent || 0) !== Number(item.discountPercent || 0)
             || Number(latest.stock) < Number(item.quantity)
           )
         })

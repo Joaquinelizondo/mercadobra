@@ -8,6 +8,7 @@ import ProductCard from '../components/ProductCard'
 import ProductCustomizer from '../components/ProductCustomizer'
 import { companyInitials, formatPrice } from '../utils/format'
 import { createWhatsAppLink } from '../utils/whatsapp'
+import { discountedPrice, normalizeDiscount } from '../utils/pricing'
 import '../styles/ProductDetail.css'
 
 const PRODUCT_TYPE_LABELS = {
@@ -37,11 +38,21 @@ export default function ProductDetail() {
   const relatedProducts = useMemo(() => {
     if (!product) return []
     return productList
-      .filter((item) => item.id !== product.id && item.status === 'published' && item.category === product.category)
+      .filter((item) => item.id !== product.id && (item.status === 'published' || item.status === 'out_of_stock'))
+      .sort((a, b) => {
+        const aSameCategory = a.category === product.category ? 1 : 0
+        const bSameCategory = b.category === product.category ? 1 : 0
+        if (aSameCategory !== bSameCategory) return bSameCategory - aSameCategory
+
+        const productPrice = Number(product.price) || 0
+        return Math.abs((Number(a.price) || 0) - productPrice) - Math.abs((Number(b.price) || 0) - productPrice)
+      })
       .slice(0, 3)
   }, [product, productList])
 
-  const displayPrice = Number(product?.price ?? 0)
+  const originalPrice = Number(product?.price ?? 0)
+  const discount = normalizeDiscount(product?.discountPercent)
+  const displayPrice = discountedPrice(originalPrice, discount)
   const displayStock = Number(product?.stock ?? 0)
   const images = product?.images?.length ? product.images : []
   const visibleImageIndex = Math.min(activeImage, Math.max(0, images.length - 1))
@@ -138,8 +149,12 @@ export default function ProductDetail() {
           <p className="product-detail-description">{product.description}</p>
 
           <div className="product-detail-price">
-            <strong>{formatPrice(displayPrice, product.currency)}</strong>
+            <div>
+              {discount > 0 && <del>{formatPrice(originalPrice, product.currency)}</del>}
+              <strong>{formatPrice(displayPrice, product.currency)}</strong>
+            </div>
             <span>por {product.unit}</span>
+            {discount > 0 && <b className="product-detail-discount">Ahorrás {discount}%</b>}
           </div>
 
           <div className="product-purchase-actions">
@@ -179,8 +194,8 @@ export default function ProductDetail() {
 
       {relatedProducts.length > 0 && (
         <section className="product-related-section">
-          <div className="product-related-heading"><div><span>También te puede interesar</span><h2>Más piezas de esta colección.</h2></div><Link to="/explorar">Ver todo ↗</Link></div>
-          <div className="products-grid">{relatedProducts.map((item) => <ProductCard key={item.id} product={item} />)}</div>
+          <div className="product-related-heading"><div><span>También te puede interesar</span><h2>Productos para seguir explorando.</h2></div><Link to="/explorar">Ver todo ↗</Link></div>
+          <div className="products-grid product-related-grid">{relatedProducts.map((item) => <ProductCard key={item.id} product={item} />)}</div>
         </section>
       )}
 

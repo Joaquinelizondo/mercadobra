@@ -502,6 +502,7 @@ app.post('/products', authMiddleware, (req, res, next) => {
     company: body.company,
     providerId: body.providerId === null || body.providerId === undefined || body.providerId === '' ? null : Number(body.providerId),
     price: Number(body.price),
+    discountPercent: validateNumber(body.discountPercent ?? 0, 'Descuento', 0, 99),
     currency: normalizedCurrency,
     unit: body.unit,
     stock: Number(body.stock ?? 0),
@@ -534,6 +535,9 @@ app.patch('/products/:id', authMiddleware, providerOnly, async (req, res) => {
   const updates = req.body || {}
   if (updates.currency !== undefined) {
     updates.currency = validateEnum(updates.currency, ['uyu', 'usd'], 'Moneda').toUpperCase()
+  }
+  if (updates.discountPercent !== undefined) {
+    updates.discountPercent = validateNumber(updates.discountPercent || 0, 'Descuento', 0, 99)
   }
   if (updates.status !== undefined) {
     updates.status = validateEnum(updates.status, ['draft', 'published', 'out_of_stock', 'archived'], 'Estado')
@@ -676,7 +680,7 @@ app.post('/payments/mercadopago/checkout', async (req, res) => {
         return {
           productId: product.id,
           name: product.name,
-          price: Number(product.price),
+          price: Math.round(Number(product.price) * (1 - Math.min(99, Math.max(0, Number(product.discountPercent) || 0)) / 100) * 100) / 100,
           currency: String(product.currency || 'UYU').toUpperCase() === 'USD' ? 'USD' : 'UYU',
           quantity: Number(item.quantity),
         }

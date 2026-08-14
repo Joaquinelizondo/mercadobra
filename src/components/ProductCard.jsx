@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { formatPrice, companyInitials } from '../utils/format'
+import { discountedPrice, normalizeDiscount } from '../utils/pricing'
 
 const ADD_FEEDBACK = ['Listo, al carrito', 'Sumado', 'Buenisimo, agregado']
 
@@ -21,6 +22,8 @@ export default function ProductCard({
   const [isAddingToCart, setIsAddingToCart] = useState(false)
   const [addFeedback, setAddFeedback] = useState('')
   const coverImage = product.images?.[0]?.url || product.image || ''
+  const discount = normalizeDiscount(product.discountPercent)
+  const currentPrice = discountedPrice(product.price, discount)
 
   function handleCardClick() {
     navigate(`/producto/${product.id}`)
@@ -78,6 +81,7 @@ export default function ProductCard({
         {product.ribbonEnabled && product.ribbonText && (
           <span className="product-ribbon">{product.ribbonText}</span>
         )}
+        {discount > 0 && <span className="product-discount-badge">-{discount}%</span>}
         {onToggleCompare && (
           <button
             type="button"
@@ -125,7 +129,8 @@ export default function ProductCard({
         )}
         <div className="product-footer">
           <div className="product-price">
-            <span className="price-amount">{formatPrice(product.price, product.currency)}</span>
+            {discount > 0 && <span className="price-original">{formatPrice(product.price, product.currency)}</span>}
+            <span className={`price-amount${discount > 0 ? ' price-amount--discounted' : ''}`}>{formatPrice(currentPrice, product.currency)}</span>
             <span className="price-unit">/ {product.unit}</span>
           </div>
           <div className="product-actions">

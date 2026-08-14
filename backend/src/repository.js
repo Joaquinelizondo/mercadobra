@@ -12,6 +12,7 @@ function mapProductRow(row) {
     company: row.company,
     providerId: Number(row.provider_id ?? row.providerId),
     price: Number(row.price),
+    discountPercent: Math.min(99, Math.max(0, Number(row.discount_percent ?? row.discountPercent) || 0)),
     currency: normalizedCurrency === 'USD' ? 'USD' : 'UYU',
     unit: row.unit,
     stock: Number(row.stock),
@@ -125,7 +126,12 @@ function generateTrackingToken() {
 }
 
 function mapOrderItemRow(item) {
-  const unitPrice = Number(item.unit_price ?? item.unitPrice ?? item.price ?? 0)
+  const storedUnitPrice = item.unit_price ?? item.unitPrice
+  const originalPrice = Number(item.price ?? 0)
+  const discountPercent = Math.min(99, Math.max(0, Number(item.discount_percent ?? item.discountPercent) || 0))
+  const unitPrice = storedUnitPrice == null
+    ? Math.round(originalPrice * (1 - discountPercent / 100) * 100) / 100
+    : Number(storedUnitPrice)
   const quantity = Number(item.quantity)
   return {
     productId: Number(item.product_id ?? item.productId),
@@ -962,14 +968,14 @@ async function getPgRepo() {
     async createProduct(payload) {
       const { rows } = await pool.query(
         `INSERT INTO products
-          (name, description, category, company, provider_id, price, currency, unit, stock, color, images,
+          (name, description, category, company, provider_id, price, discount_percent, currency, unit, stock, color, images,
            sku, status, product_type, lead_time_days, weight_kg, dimensions, configurable, variants,
            ribbon_enabled, ribbon_text, slide_enabled, slide_title, slide_subtitle, slide_order)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26)
          RETURNING *`,
         [
           payload.name, payload.description, payload.category, payload.company, payload.providerId,
-          payload.price, payload.currency || 'UYU', payload.unit, payload.stock, payload.color,
+          payload.price, payload.discountPercent || 0, payload.currency || 'UYU', payload.unit, payload.stock, payload.color,
           JSON.stringify(payload.images || []), payload.sku || null, payload.status || 'published',
           payload.productType || 'ready', payload.leadTimeDays || 3, payload.weightKg || null,
           JSON.stringify(payload.dimensions || {}), Boolean(payload.configurable),
@@ -986,16 +992,16 @@ async function getPgRepo() {
       const merged = { ...current, ...updates }
       const { rows } = await pool.query(
         `UPDATE products
-         SET name=$1, description=$2, category=$3, company=$4, provider_id=$5, price=$6, currency=$7,
-             unit=$8, stock=$9, color=$10, images=$11, sku=$12, status=$13, product_type=$14,
-             lead_time_days=$15, weight_kg=$16, dimensions=$17, configurable=$18, variants=$19,
-             ribbon_enabled=$20, ribbon_text=$21, slide_enabled=$22, slide_title=$23,
-             slide_subtitle=$24, slide_order=$25
-         WHERE id=$26
+         SET name=$1, description=$2, category=$3, company=$4, provider_id=$5, price=$6, discount_percent=$7, currency=$8,
+             unit=$9, stock=$10, color=$11, images=$12, sku=$13, status=$14, product_type=$15,
+             lead_time_days=$16, weight_kg=$17, dimensions=$18, configurable=$19, variants=$20,
+             ribbon_enabled=$21, ribbon_text=$22, slide_enabled=$23, slide_title=$24,
+             slide_subtitle=$25, slide_order=$26
+         WHERE id=$27
          RETURNING *`,
         [
           merged.name, merged.description, merged.category, merged.company, merged.providerId,
-          merged.price, merged.currency || 'UYU', merged.unit, merged.stock, merged.color,
+          merged.price, merged.discountPercent || 0, merged.currency || 'UYU', merged.unit, merged.stock, merged.color,
           JSON.stringify(merged.images || []), merged.sku || null, merged.status || 'published',
           merged.productType || 'ready', merged.leadTimeDays || 3, merged.weightKg || null,
           JSON.stringify(merged.dimensions || {}), Boolean(merged.configurable),

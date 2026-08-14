@@ -11,9 +11,30 @@ import './Storefront.css'
 
 export default function Storefront() {
   const { productList, loadingProducts } = useProducts()
-  const featured = useMemo(
-    () => productList.filter((product) => product.status === 'published').slice(0, 8),
+  const publishedProducts = useMemo(
+    () => productList.filter((product) => product.status === 'published' || product.status === 'out_of_stock'),
     [productList]
+  )
+  const featured = useMemo(
+    () => {
+      const groups = new Map()
+      publishedProducts.forEach((product) => {
+        const category = product.category || 'Otros'
+        groups.set(category, [...(groups.get(category) || []), product])
+      })
+
+      const selection = []
+      const categoryGroups = [...groups.values()]
+      let row = 0
+      while (selection.length < 8 && categoryGroups.some((group) => group[row])) {
+        categoryGroups.forEach((group) => {
+          if (selection.length < 8 && group[row]) selection.push(group[row])
+        })
+        row += 1
+      }
+      return selection
+    },
+    [publishedProducts]
   )
   return (
     <div className="storefront">
@@ -50,15 +71,41 @@ export default function Storefront() {
 
       <section className="store-section" id="coleccion">
         <div className="store-heading">
-          <div><span>Óxida Collection</span><h2>Diseños listos para comprar.</h2></div>
-          <p>Elegí un modelo base. Después definimos contigo medidas, color y terminación.</p>
+          <div>
+            <span>Productos destacados</span>
+            <h2>Una selección de nuestro catálogo.</h2>
+            {!loadingProducts && publishedProducts.length > 0 && (
+              <p className="store-product-count">
+                {publishedProducts.length} producto{publishedProducts.length === 1 ? '' : 's'} disponible{publishedProducts.length === 1 ? '' : 's'}
+              </p>
+            )}
+          </div>
+          <div className="store-heading-action">
+            <p>Mostramos una selección variada para que el inicio siga siendo claro y rápido.</p>
+            <Link to="/explorar#catalog-results">
+              Ver catálogo completo <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </div>
         {loadingProducts ? (
           <p className="store-loading">Cargando colección…</p>
-        ) : (
-          <div className="products-grid store-products">
-            {featured.map((product) => <ProductCard key={product.id} product={product} />)}
+        ) : featured.length === 0 ? (
+          <div className="store-products-empty">
+            <p>Todavía no hay productos publicados.</p>
+            <Link to="/explorar">Ir al catálogo</Link>
           </div>
+        ) : (
+          <>
+            <div className="products-grid store-products">
+              {featured.map((product) => <ProductCard key={product.id} product={product} />)}
+            </div>
+            {publishedProducts.length > featured.length && (
+              <div className="store-catalog-footer">
+                <p>Estás viendo {featured.length} de {publishedProducts.length} productos.</p>
+                <Link to="/explorar#catalog-results">Ver los {publishedProducts.length} productos</Link>
+              </div>
+            )}
+          </>
         )}
       </section>
 

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { discountedPrice } from '../utils/pricing'
 
 const CartContext = createContext(null)
 const CART_STORAGE_KEY = 'mercadobra-cart-v1'
@@ -13,7 +14,9 @@ function readStoredCart() {
         id: Number(item.id),
         name: String(item.name || 'Producto'),
         company: String(item.company || ''),
-        price: Number(item.price) || 0,
+        price: discountedPrice(item.originalPrice ?? item.price, item.discountPercent),
+        originalPrice: Number(item.originalPrice ?? item.price) || 0,
+        discountPercent: Number(item.discountPercent) || 0,
         currency: String(item.currency || 'UYU'),
         unit: String(item.unit || 'unidad'),
         stock: Math.max(0, Number(item.stock) || 0),
@@ -55,7 +58,12 @@ export function CartProvider({ children }) {
           i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
         )
       }
-      return [...prev, { ...product, quantity: 1 }]
+      return [...prev, {
+        ...product,
+        originalPrice: Number(product.price) || 0,
+        price: discountedPrice(product.price, product.discountPercent),
+        quantity: 1,
+      }]
     })
     return true
   }
@@ -83,7 +91,9 @@ export function CartProvider({ children }) {
         return {
           ...item,
           stock,
-          price: Number(latest.price),
+          originalPrice: Number(latest.price),
+          discountPercent: Number(latest.discountPercent) || 0,
+          price: discountedPrice(latest.price, latest.discountPercent),
           currency: latest.currency,
           quantity: Math.min(item.quantity, stock),
         }

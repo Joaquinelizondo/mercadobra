@@ -5,7 +5,7 @@ import { companyInitials } from '../utils/format'
 import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../data/constants'
 
 const EMPTY_FORM = {
-  name: '', sku: '', category: 'Mobiliario', price: '', currency: 'UYU', unit: 'unidad',
+  name: '', sku: '', category: 'Mobiliario', price: '', discountPercent: '', currency: 'UYU', unit: 'unidad',
   company: '', providerId: '',
   stock: '0', status: 'published', productType: 'ready', leadTimeDays: '7', weightKg: '',
   dimensions: { width: '', height: '', depth: '' }, configurable: false,
@@ -228,6 +228,22 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
                   <option value="USD">Dolares (USD)</option>
                 </select>
               </div>
+            </div>
+
+            <div className="form-row">
+              <label className="form-label" htmlFor="pub-discount">Descuento porcentual</label>
+              <input
+                id="pub-discount"
+                className="form-input"
+                name="discountPercent"
+                type="number"
+                min="0"
+                max="99"
+                step="1"
+                value={formData.discountPercent ?? ''}
+                onChange={handleChange}
+                placeholder="Ej: 15 (opcional)"
+              />
             </div>
 
             <div className="form-row">
