@@ -102,6 +102,18 @@ function mapAdminCustomerRow(row) {
   }
 }
 
+function mapQuoteMessageRow(row) {
+  return {
+    id: Number(row.id),
+    quoteId: Number(row.quote_id ?? row.quoteId),
+    authorUserId: Number(row.author_user_id ?? row.authorUserId),
+    authorRole: row.author_role ?? row.authorRole,
+    message: row.message || '',
+    attachments: Array.isArray(row.attachments) ? row.attachments : [],
+    createdAt: row.created_at ?? row.createdAt ?? null,
+  }
+}
+
 function mapCustomerQuoteRow(row) {
   return {
     id: Number(row.id),
@@ -116,6 +128,10 @@ function mapCustomerQuoteRow(row) {
     estimatedStartAt: row.estimated_start_at ?? row.estimatedStartAt ?? null,
     estimatedEndAt: row.estimated_end_at ?? row.estimatedEndAt ?? null,
     internalNotes: row.internal_notes ?? row.internalNotes ?? '',
+    attachments: Array.isArray(row.attachments) ? row.attachments : [],
+    desiredDate: row.desired_date ?? row.desiredDate ?? null,
+    budget: row.budget == null ? null : Number(row.budget),
+    proposalDescription: row.proposal_description ?? row.proposalDescription ?? '',
     createdAt: row.created_at ?? row.createdAt ?? null,
     updatedAt: row.updated_at ?? row.updatedAt ?? null,
   }
@@ -328,6 +344,23 @@ async function getJsonRepo() {
       quote.updatedAt = new Date().toISOString()
       writeDb(db)
       return mapCustomerQuoteRow(quote)
+    },
+    async updateCustomerQuote(id, updates) {
+      const db = readDb()
+      const quote = (db.customerQuotes || []).find((item) => Number(item.id) === Number(id))
+      if (!quote) return null
+      Object.assign(quote, updates, { updatedAt: new Date().toISOString() })
+      writeDb(db)
+      return mapCustomerQuoteRow(quote)
+    },
+    async getQuoteMessages(quoteId) {
+      return (readDb().customerQuoteMessages || []).filter((item) => Number(item.quoteId) === Number(quoteId)).map(mapQuoteMessageRow)
+    },
+    async createQuoteMessage(payload) {
+      const db = readDb()
+      if (!Array.isArray(db.customerQuoteMessages)) db.customerQuoteMessages = []
+      const created = { ...payload, id: nextId(db.customerQuoteMessages), createdAt: new Date().toISOString() }
+      db.customerQuoteMessages.push(created); writeDb(db); return mapQuoteMessageRow(created)
     },
     async getProviders() {
       return readDb().providers
@@ -903,15 +936,16 @@ async function getPgRepo() {
       const { rows } = await pool.query(
         `INSERT INTO customer_quotes
            (customer_user_id, reference_number, title, description, status, total_amount, currency,
-            sent_at, estimated_start_at, estimated_end_at, internal_notes, created_by)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+            sent_at, estimated_start_at, estimated_end_at, internal_notes, created_by, attachments, desired_date, budget)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
          RETURNING *`,
         [
           payload.customerId, payload.referenceNumber, payload.title, payload.description,
           payload.status, payload.totalAmount, payload.currency,
           payload.status === 'sent' ? new Date() : null,
           payload.estimatedStartAt || null, payload.estimatedEndAt || null,
-          payload.internalNotes, payload.createdBy,
+          payload.internalNotes, payload.createdBy, JSON.stringify(payload.attachments || []),
+          payload.desiredDate || null, payload.budget ?? null,
         ]
       )
       return mapCustomerQuoteRow(rows[0])
@@ -926,6 +960,34 @@ async function getPgRepo() {
         [status, id]
       )
       return rows[0] ? mapCustomerQuoteRow(rows[0]) : null
+    },
+    async updateCustomerQuote(id, updates) {
+      const current = (await pool.query('SELECT * FROM customer_quotes WHERE id=$1', [id])).rows[0]
+      if (!current) return null
+      const merged = { ...mapCustomerQuoteRow(current), ...updates }
+      const { rows } = await pool.query(
+        `UPDATE customer_quotes SET title=$1, description=$2, status=$3, total_amount=$4, currency=$5,
+         estimated_start_at=$6, estimated_end_at=$7, desired_date=$8, budget=$9, attachments=$10,
+         proposal_description=$11,
+         sent_at=CASE WHEN $3='sent' AND sent_at IS NULL THEN NOW() ELSE sent_at END, updated_at=NOW()
+         WHERE id=$12 RETURNING *`,
+        [merged.title, merged.description, merged.status, merged.totalAmount, merged.currency,
+          merged.estimatedStartAt || null, merged.estimatedEndAt || null, merged.desiredDate || null,
+          merged.budget ?? null, JSON.stringify(merged.attachments || []), merged.proposalDescription || '', id]
+      )
+      return mapCustomerQuoteRow(rows[0])
+    },
+    async getQuoteMessages(quoteId) {
+      const { rows } = await pool.query('SELECT * FROM customer_quote_messages WHERE quote_id=$1 ORDER BY created_at ASC, id ASC', [quoteId])
+      return rows.map(mapQuoteMessageRow)
+    },
+    async createQuoteMessage(payload) {
+      const { rows } = await pool.query(
+        `INSERT INTO customer_quote_messages (quote_id, author_user_id, author_role, message, attachments)
+         VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+        [payload.quoteId, payload.authorUserId, payload.authorRole, payload.message, JSON.stringify(payload.attachments || [])]
+      )
+      return mapQuoteMessageRow(rows[0])
     },
     async getProviders() {
       const { rows } = await pool.query('SELECT * FROM providers ORDER BY name ASC')

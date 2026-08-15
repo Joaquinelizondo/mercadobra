@@ -74,17 +74,17 @@ export default function Topbar() {
             <span className="supplier-session-avatar">
               {companyInitials(customerUser.company || 'Cliente')}
             </span>
-            <span className="supplier-session-name">
+            <Link to="/cliente" className="supplier-session-name">
               {customerUser.company || customerUser.email}
-            </span>
+            </Link>
             <button className="supplier-logout" onClick={logoutCustomer} aria-label="Cerrar sesión">
               Salir
             </button>
           </div>
         ) : (
-          <div className="topbar-access-links is-temporarily-hidden" aria-hidden="true">
+          <div className="topbar-access-links">
             <Link to="/cliente/login" className="topbar-user-login-btn">
-              Mi cuenta
+              Acceso clientes
             </Link>
             <Link to="/proveedor/login" className="topbar-login-btn">
               Soy proveedor

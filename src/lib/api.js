@@ -153,6 +153,17 @@ export function updateCustomerQuoteStatus(quoteId, status, token) {
   })
 }
 
+export function getCustomerProfile(token) { return request('/customer/profile', { token }) }
+export function updateCustomerProfile(payload, token) { return request('/customer/profile', { method: 'PATCH', token, body: JSON.stringify(payload) }) }
+export function getMyQuotes(token) { return request('/customer/quotes', { token }) }
+export function createMyQuote(payload, token) { return request('/customer/quotes', { method: 'POST', token, body: JSON.stringify(payload) }) }
+export function getMyQuoteMessages(quoteId, token) { return request(`/customer/quotes/${quoteId}/messages`, { token }) }
+export function sendMyQuoteMessage(quoteId, payload, token) { return request(`/customer/quotes/${quoteId}/messages`, { method: 'POST', token, body: JSON.stringify(payload) }) }
+export function respondToMyQuote(quoteId, status, token) { return request(`/customer/quotes/${quoteId}/status`, { method: 'PATCH', token, body: JSON.stringify({ status }) }) }
+export function updateAdminQuote(quoteId, payload, token) { return request(`/admin/quotes/${quoteId}`, { method: 'PATCH', token, body: JSON.stringify(payload) }) }
+export function getAdminQuoteMessages(quoteId, token) { return request(`/admin/quotes/${quoteId}/messages`, { token }) }
+export function sendAdminQuoteMessage(quoteId, payload, token) { return request(`/admin/quotes/${quoteId}/messages`, { method: 'POST', token, body: JSON.stringify(payload) }) }
+
 export function loginSupplier(email, password) {
   return request('/auth/login', {
     method: 'POST',

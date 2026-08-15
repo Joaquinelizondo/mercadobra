@@ -8,6 +8,7 @@ import SupplierLogin from './pages/SupplierLogin'
 import SupplierDashboard from './pages/SupplierDashboard'
 import CustomerLogin from './pages/CustomerLogin'
 import CustomerRegister from './pages/CustomerRegister'
+import CustomerPortal from './pages/CustomerPortal'
 import AdminLogin from './pages/AdminLogin'
 import OrderTracking from './pages/OrderTracking'
 import AdminQuoteConsultations from './pages/AdminQuoteConsultations'
@@ -21,6 +22,7 @@ import AdminCustomRequests from './pages/AdminCustomRequests'
 import AdminOrders from './pages/AdminOrders'
 import AdminCustomers from './pages/AdminCustomers'
 import AdminCustomerDetail from './pages/AdminCustomerDetail'
+import AdminQuoteWorkspace from './pages/AdminQuoteWorkspace'
 import './pages/AdminCustomRequests.css'
 import { useState } from 'react'
 import heroImg from './assets/hero.png'
@@ -869,10 +871,12 @@ export default function App() {
         <Route path="/proveedor/:company" element={<SupplierProfile />} />
         <Route path="/cliente/login" element={<CustomerLogin />} />
         <Route path="/cliente/registro" element={<CustomerRegister />} />
+        <Route path="/cliente" element={<CustomerPortal />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/productos" element={<AdminProducts />} />
         <Route path="/admin/clientes" element={<AdminCustomers />} />
         <Route path="/admin/clientes/:id" element={<AdminCustomerDetail />} />
+        <Route path="/admin/clientes/:id/cotizaciones/:quoteId" element={<AdminQuoteWorkspace />} />
         <Route path="/admin/pedidos" element={<AdminOrders />} />
         <Route path="/admin/personalizaciones" element={<AdminCustomRequests />} />
         <Route path="/proveedor/login" element={<SupplierLogin />} />

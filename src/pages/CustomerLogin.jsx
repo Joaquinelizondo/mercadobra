@@ -12,7 +12,7 @@ export default function CustomerLogin() {
   } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/'
+  const redirect = searchParams.get('redirect') || '/cliente'
 
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
@@ -51,7 +51,7 @@ export default function CustomerLogin() {
             </svg>
           </div>
           <h1>Iniciar sesión</h1>
-          <p>Entrá con tu cuenta para guardar tus datos y seguir tus pedidos.</p>
+          <p>Entrá para solicitar cotizaciones, adjuntar planos y conversar sobre cada proyecto.</p>
         </div>
 
         <form className="publish-form" onSubmit={handleSubmit} noValidate>

@@ -15,6 +15,7 @@ const REQUIRED_TABLES = [
   'auth_sessions',
   'customer_profiles',
   'customer_quotes',
+  'customer_quote_messages',
   'migrations',
 ]
 

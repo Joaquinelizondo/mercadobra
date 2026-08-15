@@ -195,6 +195,19 @@ function requireRoleOrAdmin(role) {
 
 const providerOnly = requireRoleOrAdmin('provider')
 const adminOnly = requireRoleOrAdmin('admin')
+const customerOnly = requireRoleOrAdmin('customer')
+
+function validateAttachments(value) {
+  const items = Array.isArray(value) ? value.slice(0, 3) : []
+  return items.map((item) => {
+    const name = validateStringLength(item?.name || 'archivo', 'Nombre del archivo', 1, 160)
+    const type = validateStringLength(item?.type || 'application/octet-stream', 'Tipo de archivo', 1, 100)
+    const data = String(item?.data || '')
+    if (!data.startsWith('data:') || data.length > 2800000) throw new ValidationError('Cada archivo debe pesar menos de 2 MB')
+    if (!['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(type)) throw new ValidationError('Solo se permiten PDF, JPG, PNG o WEBP')
+    return { name, type, data }
+  })
+}
 
 app.get('/health', (_req, res) => {
   res.json({
@@ -305,6 +318,75 @@ app.post('/auth/customer/login', asyncHandler(async (req, res) => {
       company: user.company,
     },
   })
+}))
+
+app.get('/customer/profile', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  const profile = await repo.getAdminCustomerById(req.authUser.id)
+  if (!profile) throw new NotFoundError('Perfil')
+  return res.json(profile)
+}))
+
+app.patch('/customer/profile', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  const current = await repo.getAdminCustomerById(req.authUser.id)
+  if (!current) throw new NotFoundError('Perfil')
+  const body = req.body || {}
+  const updated = await repo.updateAdminCustomer(req.authUser.id, {
+    email: req.authUser.email,
+    name: validateStringLength(body.name || current.name, 'Nombre', 2, 120),
+    phone: validateStringLength(body.phone || '', 'Teléfono', 0, 40),
+    companyName: validateStringLength(body.companyName || '', 'Empresa', 0, 120),
+    address: validateStringLength(body.address || '', 'Dirección', 0, 180),
+    city: validateStringLength(body.city || '', 'Localidad', 0, 100),
+    department: validateStringLength(body.department || '', 'Departamento', 0, 100),
+    status: current.status || 'active', internalNotes: current.internalNotes || '',
+  })
+  return res.json(updated)
+}))
+
+app.get('/customer/quotes', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
+  const repo = await getRepository(); const rows = await repo.getCustomerQuotes(req.authUser.id)
+  return res.json({ rows, total: rows.length })
+}))
+
+app.post('/customer/quotes', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
+  const body = req.body || {}; const repo = await getRepository()
+  const created = await repo.createCustomerQuote({
+    customerId: req.authUser.id, referenceNumber: `SOL-${Date.now().toString(36).toUpperCase()}`,
+    title: validateStringLength(requireField(body.title, 'Título'), 'Título', 2, 160),
+    description: validateStringLength(requireField(body.description, 'Descripción'), 'Descripción', 10, 4000),
+    status: 'in_progress', totalAmount: 0,
+    currency: validateEnum(body.currency || 'UYU', ['uyu', 'usd'], 'Moneda').toUpperCase(),
+    desiredDate: body.desiredDate || null,
+    budget: body.budget === '' || body.budget == null ? null : validateNumber(body.budget, 'Presupuesto', 0, 999999999999),
+    attachments: validateAttachments(body.attachments), internalNotes: '', createdBy: req.authUser.id,
+  })
+  return res.status(201).json(created)
+}))
+
+app.get('/customer/quotes/:quoteId/messages', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
+  const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
+  const quote = (await repo.getCustomerQuotes(req.authUser.id)).find((item) => item.id === quoteId)
+  if (!quote) throw new NotFoundError('Cotización')
+  return res.json({ quote, rows: await repo.getQuoteMessages(quoteId) })
+}))
+
+app.post('/customer/quotes/:quoteId/messages', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
+  const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
+  const quote = (await repo.getCustomerQuotes(req.authUser.id)).find((item) => item.id === quoteId)
+  if (!quote) throw new NotFoundError('Cotización')
+  const created = await repo.createQuoteMessage({ quoteId, authorUserId: req.authUser.id, authorRole: 'customer',
+    message: validateStringLength(requireField(req.body?.message, 'Mensaje'), 'Mensaje', 1, 3000), attachments: validateAttachments(req.body?.attachments) })
+  return res.status(201).json(created)
+}))
+
+app.patch('/customer/quotes/:quoteId/status', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
+  const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
+  const quote = (await repo.getCustomerQuotes(req.authUser.id)).find((item) => item.id === quoteId)
+  if (!quote) throw new NotFoundError('Cotización')
+  const status = validateEnum(req.body?.status, ['accepted', 'rejected'], 'Estado')
+  return res.json(await repo.updateCustomerQuoteStatus(quoteId, status))
 }))
 
 app.post('/auth/admin/login', asyncHandler(async (req, res) => {
@@ -433,6 +515,34 @@ app.patch('/admin/quotes/:quoteId/status', authMiddleware, adminOnly, asyncHandl
   const updated = await repo.updateCustomerQuoteStatus(quoteId, status)
   if (!updated) throw new NotFoundError('Cotización')
   return res.json(updated)
+}))
+
+app.patch('/admin/quotes/:quoteId', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
+  const body = req.body || {}
+  const updated = await repo.updateCustomerQuote(quoteId, {
+    title: validateStringLength(requireField(body.title, 'Título'), 'Título', 2, 160),
+    description: validateStringLength(body.description || '', 'Descripción', 0, 4000),
+    proposalDescription: validateStringLength(body.proposalDescription || '', 'Detalle de propuesta', 0, 4000),
+    status: validateEnum(body.status || 'sent', CUSTOMER_QUOTE_STATUSES, 'Estado'),
+    totalAmount: validateNumber(body.totalAmount ?? 0, 'Monto total', 0, 999999999999),
+    currency: validateEnum(body.currency || 'UYU', ['uyu', 'usd'], 'Moneda').toUpperCase(),
+    estimatedStartAt: body.estimatedStartAt || null, estimatedEndAt: body.estimatedEndAt || null,
+  })
+  if (!updated) throw new NotFoundError('Cotización')
+  return res.json(updated)
+}))
+
+app.get('/admin/quotes/:quoteId/messages', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
+  return res.json({ rows: await repo.getQuoteMessages(quoteId) })
+}))
+
+app.post('/admin/quotes/:quoteId/messages', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
+  const created = await repo.createQuoteMessage({ quoteId, authorUserId: req.authUser.id, authorRole: 'admin',
+    message: validateStringLength(requireField(req.body?.message, 'Mensaje'), 'Mensaje', 1, 3000), attachments: validateAttachments(req.body?.attachments) })
+  return res.status(201).json(created)
 }))
 
 app.post('/auth/logout', authMiddleware, asyncHandler(async (req, res) => {

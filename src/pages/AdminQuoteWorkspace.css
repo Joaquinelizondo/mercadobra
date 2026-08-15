@@ -1,0 +1,9 @@
+.admin-quote-workspace { display: grid; grid-template-columns: 1.2fr .8fr; gap: clamp(30px,5vw,70px); margin-top: 42px; }
+.admin-proposal-form { display: grid; gap: 13px; padding: 26px; background: #e8dfd1; }
+.admin-proposal-form > span { color: #a8522e; font-size: .68rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.admin-proposal-form h2 { margin: 0 0 10px; }
+.admin-proposal-form label { display: grid; gap: 5px; font-size: .76rem; font-weight: 800; }
+.admin-proposal-form input,.admin-proposal-form textarea,.admin-proposal-form select { width: 100%; padding: 11px; border: 1px solid #c5baaa; background: #fff; font: inherit; }
+.admin-proposal-form > div { display: grid; grid-template-columns: 1fr .65fr; gap: 9px; }
+.admin-proposal-form > button { padding: 14px; border: 0; background: #a8522e; color: #fff; font-weight: 900; cursor: pointer; }
+@media (max-width: 950px) { .admin-quote-workspace { grid-template-columns: 1fr; } }

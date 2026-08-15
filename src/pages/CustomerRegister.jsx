@@ -13,7 +13,7 @@ export default function CustomerRegister() {
 
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/'
+  const redirect = searchParams.get('redirect') || '/cliente'
 
   const [form, setForm] = useState({
     fullName: '',
