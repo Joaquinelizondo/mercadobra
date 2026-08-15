@@ -447,7 +447,7 @@ app.post('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req,
 }))
 
 app.post('/admin/customer-invitations', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
-  const body=req.body||{}; const firstName=validateStringLength(requireField(body.firstName,'Nombre'),'Nombre',2,60); const lastName=validateStringLength(requireField(body.lastName,'Apellido'),'Apellido',2,60); const email=validateEmail(body.email); const validatedPhone=validatePhone(body.phone); const phone=validatedPhone.startsWith('0')?`598${validatedPhone.slice(1)}`:validatedPhone; const repo=await getRepository()
+  const body=req.body||{}; const firstName=validateStringLength(requireField(body.firstName,'Nombre'),'Nombre',2,60); const lastName=validateStringLength(requireField(body.lastName,'Apellido'),'Apellido',2,60); const email=validateEmail(body.email); const validatedPhone=body.phone?validatePhone(body.phone):''; const phone=validatedPhone.startsWith('0')?`598${validatedPhone.slice(1)}`:validatedPhone; const repo=await getRepository()
   let user=await repo.findUserByEmail(email)
   if(user&&user.role!=='customer')throw new ConflictError('Ese correo pertenece a otro tipo de cuenta')
   if(!user){user=await repo.createAdminCustomer({email,name:`${firstName} ${lastName}`,password:hashPassword(createSessionCredentials().token),phone,companyName:validateStringLength(body.companyName||'','Empresa',0,120),address:'',city:'',department:'',internalNotes:''})}
