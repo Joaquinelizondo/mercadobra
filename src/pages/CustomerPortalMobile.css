@@ -1,0 +1,23 @@
+@media (max-width: 700px) {
+  .customer-portal { padding: 22px 14px 40px; overflow: hidden; }
+  .customer-portal > header { gap: 20px; padding-bottom: 24px; }
+  .customer-portal > header h1 { margin-top: 10px; font-size: clamp(2.2rem, 11vw, 3.3rem); line-height: .98; }
+  .customer-portal > header p { line-height: 1.55; }
+  .customer-portal > header button { width: 100%; min-height: 48px; }
+  .customer-portal-layout { gap: 30px; margin-top: 28px; }
+  .customer-portal-layout aside { display: flex; flex-flow: row nowrap; gap: 10px; margin-inline: -14px; padding: 0 14px 8px; overflow-x: auto; scroll-snap-type: x proximity; }
+  .customer-portal-layout aside h2 { display: none; }
+  .customer-portal-layout aside > button { min-width: min(78vw, 260px); scroll-snap-align: start; }
+  .customer-request { gap: 24px; }
+  .customer-request h2 { font-size: 2.45rem; line-height: 1; }
+  .customer-request form { min-width: 0; }
+  .customer-request input,.customer-request textarea,.customer-request select { min-height: 48px; font-size: 16px; }
+  .customer-request textarea { min-height: 130px; }
+  .customer-request form > button { width: 100%; min-height: 50px; }
+  .customer-profile { gap: 10px; margin-top: 42px; padding: 26px 18px; border: 1px solid #cfc7ba; background: #eae3d8; }
+  .customer-profile input { min-height: 48px; font-size: 16px; }
+  .customer-profile button { width: 100%; }
+  .quote-workspace-head > strong { font-size: 1.7rem; }
+  .quote-decision { display: grid; gap: 8px; }
+  .quote-decision button,.quote-decision button + button { width: 100%; margin: 0; }
+}

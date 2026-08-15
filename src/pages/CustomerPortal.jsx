@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { createMyQuote, getCustomerProfile, getMyQuoteMessages, getMyQuotes, respondToMyQuote, sendMyQuoteMessage, updateCustomerProfile } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import './CustomerPortal.css'
+import './CustomerPortalMobile.css'
 
 const STATUS = { in_progress:'En revisión', sent:'Cotizada', accepted:'Aceptada', project_in_progress:'En ejecución', completed:'Finalizada', rejected:'Rechazada', cancelled:'Cancelada' }
 const EMPTY_REQUEST = { title:'', description:'', budget:'', currency:'UYU', desiredDate:'', attachments:[] }

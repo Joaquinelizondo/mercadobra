@@ -4,7 +4,7 @@ import cors from 'cors'
 import { getRepository } from './repository.js'
 import { isPostgresEnabled } from './db.js'
 import { generateChatReply } from './chatService.js'
-import { notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifySearchRecommendations, sendCustomerInvitationEmail } from './notificationService.js'
+import { notifyAdminCustomerReply, notifyCustomerQuoteActivity, notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifySearchRecommendations, sendCustomerInvitationEmail } from './notificationService.js'
 import {
   createMercadoPagoPreference,
   getMercadoPagoPayment,
@@ -378,6 +378,7 @@ app.post('/customer/quotes/:quoteId/messages', authMiddleware, customerOnly, asy
   if (!quote) throw new NotFoundError('Cotización')
   const created = await repo.createQuoteMessage({ quoteId, authorUserId: req.authUser.id, authorRole: 'customer',
     message: validateStringLength(requireField(req.body?.message, 'Mensaje'), 'Mensaje', 1, 3000), attachments: validateAttachments(req.body?.attachments) })
+  await notifyAdminCustomerReply({ customerName:req.authUser.company, quote }).catch((error)=>console.error('[quote-notification:error]',error.message))
   return res.status(201).json(created)
 }))
 
@@ -541,6 +542,7 @@ app.patch('/admin/quotes/:quoteId/status', authMiddleware, adminOnly, asyncHandl
   const repo = await getRepository()
   const updated = await repo.updateCustomerQuoteStatus(quoteId, status)
   if (!updated) throw new NotFoundError('Cotización')
+  if(status==='sent'){const customer=await repo.findUserById(updated.customerId);if(customer?.email)await notifyCustomerQuoteActivity({email:customer.email,customerName:customer.company,quote:updated,kind:'quote'}).catch((error)=>console.error('[quote-notification:error]',error.message))}
   return res.json(updated)
 }))
 
@@ -557,6 +559,8 @@ app.patch('/admin/quotes/:quoteId', authMiddleware, adminOnly, asyncHandler(asyn
     estimatedStartAt: body.estimatedStartAt || null, estimatedEndAt: body.estimatedEndAt || null,
   })
   if (!updated) throw new NotFoundError('Cotización')
+  const customer=await repo.findUserById(updated.customerId)
+  if(customer?.email)await notifyCustomerQuoteActivity({email:customer.email,customerName:customer.company,quote:updated,kind:'quote'}).catch((error)=>console.error('[quote-notification:error]',error.message))
   return res.json(updated)
 }))
 
@@ -567,8 +571,11 @@ app.get('/admin/quotes/:quoteId/messages', authMiddleware, adminOnly, asyncHandl
 
 app.post('/admin/quotes/:quoteId/messages', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
+  const quote=await repo.getCustomerQuoteById(quoteId); if(!quote)throw new NotFoundError('Cotización')
   const created = await repo.createQuoteMessage({ quoteId, authorUserId: req.authUser.id, authorRole: 'admin',
     message: validateStringLength(requireField(req.body?.message, 'Mensaje'), 'Mensaje', 1, 3000), attachments: validateAttachments(req.body?.attachments) })
+  const customer=await repo.findUserById(quote.customerId)
+  if(customer?.email)await notifyCustomerQuoteActivity({email:customer.email,customerName:customer.company,quote,kind:'message'}).catch((error)=>console.error('[quote-notification:error]',error.message))
   return res.status(201).json(created)
 }))
 

@@ -561,6 +561,21 @@ export async function sendCustomerInvitationEmail({ email, firstName, inviteUrl 
   return { sent: true, channel: 'email-smtp' }
 }
 
+async function sendPortalEmail({ email, subject, title, intro, actionUrl, actionLabel }) {
+  const html=`<div style="margin:0;background:#ece8df;padding:28px 12px;font-family:Arial,sans-serif;color:#20201d"><div style="max-width:620px;margin:auto;background:#f8f5ee;border:1px solid #d6cec1"><div style="padding:28px 34px;background:#20201d;border-top:6px solid #b55c35;color:#fff"><div style="color:#d27b52;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase">ÓXIDA STUDIO · by Mercadobra</div><h1 style="margin:14px 0 0;font-size:30px">${escapeEmailHtml(title)}</h1></div><div style="padding:34px"><p style="margin:0 0 24px;color:#625f58;font-size:16px;line-height:1.7">${escapeEmailHtml(intro)}</p><a href="${escapeEmailHtml(actionUrl)}" style="display:inline-block;padding:14px 22px;background:#b55c35;color:#fff;text-decoration:none;font-size:13px;font-weight:800">${escapeEmailHtml(actionLabel)} →</a><p style="margin:22px 0 0;color:#817b72;font-size:12px">Podés responder y consultar todo el historial desde tu área privada.</p></div></div></div>`
+  if(RESEND_API_KEY&&RESEND_FROM){await sendRecommendationEmailViaResend({email,subject,html,replyTo:LEADS_NOTIFICATION_EMAIL});return {sent:true,channel:'email-resend'}}
+  const emailTransporter=getTransporter(); if(!emailTransporter)return {sent:false,channel:'email-mock',reason:'email provider not configured'}
+  await withTimeout(emailTransporter.sendMail({from:SMTP_FROM,to:email,replyTo:LEADS_NOTIFICATION_EMAIL,subject,html}),EMAIL_SEND_TIMEOUT_MS,'portal email send'); return {sent:true,channel:'email-smtp'}
+}
+
+export function notifyCustomerQuoteActivity({ email, customerName, quote, kind='message' }) {
+  return sendPortalEmail({email,subject:kind==='quote'?'Tu cotización está lista · Óxida by Mercadobra':'Tenés una nueva respuesta · Óxida by Mercadobra',title:kind==='quote'?'Tu cotización está lista':'Hay una nueva respuesta',intro:`Hola ${customerName||''}. ${kind==='quote'?`Preparamos la propuesta para “${quote.title}”.`:`Respondimos en la solicitud “${quote.title}”.`}`,actionUrl:`${FRONTEND_PUBLIC_URL}/cliente`,actionLabel:'VER COTIZACIÓN'})
+}
+
+export function notifyAdminCustomerReply({ customerName, quote }) {
+  return sendPortalEmail({email:LEADS_NOTIFICATION_EMAIL,subject:`Nueva respuesta de ${customerName||'un cliente'} · ${quote.referenceNumber}`,title:'Un cliente respondió',intro:`${customerName||'Un cliente'} envió un mensaje en “${quote.title}”.`,actionUrl:`${FRONTEND_PUBLIC_URL}/admin/clientes/${quote.customerId}/cotizaciones/${quote.id}`,actionLabel:'ABRIR CONVERSACIÓN'})
+}
+
 async function sendRecommendationEmail(email, searchTerm, products) {
   if (!email) {
     return { sent: false, channel: 'email', reason: 'email missing' }

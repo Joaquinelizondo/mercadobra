@@ -336,6 +336,9 @@ async function getJsonRepo() {
         .map(mapCustomerQuoteRow)
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     },
+    async getCustomerQuoteById(id) {
+      const quote=(readDb().customerQuotes||[]).find((item)=>Number(item.id)===Number(id)); return quote?mapCustomerQuoteRow(quote):null
+    },
     async createCustomerQuote(payload) {
       const db = readDb()
       if (!Array.isArray(db.customerQuotes)) db.customerQuotes = []
@@ -965,6 +968,9 @@ async function getPgRepo() {
         [customerId]
       )
       return rows.map(mapCustomerQuoteRow)
+    },
+    async getCustomerQuoteById(id) {
+      const {rows}=await pool.query('SELECT * FROM customer_quotes WHERE id=$1 LIMIT 1',[id]); return rows[0]?mapCustomerQuoteRow(rows[0]):null
     },
     async createCustomerQuote(payload) {
       const { rows } = await pool.query(
