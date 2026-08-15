@@ -540,10 +540,14 @@ export async function sendCustomerInvitationEmail({ email, firstName, inviteUrl 
         </div>
         <div style="padding:38px;">
           <p style="margin:0 0 18px;font-size:20px;font-weight:700;">Hola ${safeName},</p>
-          <p style="margin:0;color:#625f58;font-size:16px;line-height:1.7;">Creamos un acceso privado para que puedas solicitar cotizaciones, adjuntar fotos o planos y conversar con nuestro equipo sobre cada proyecto.</p>
-          <div style="margin:28px 0;padding:20px;border-left:4px solid #b55c35;background:#fff;">
-            <div style="margin-bottom:9px;font-weight:700;">Todo en un solo lugar</div>
-            <div style="color:#6f6a62;font-size:14px;line-height:1.8;">Solicitudes claras · Archivos organizados · Respuestas y seguimiento</div>
+          <p style="margin:0;color:#625f58;font-size:16px;line-height:1.7;">Te damos la bienvenida a tu espacio privado de Óxida by Mercadobra. Desde acá vas a poder solicitar cotizaciones, adjuntar fotos o planos y conversar con nuestro equipo sobre cada proyecto.</p>
+          <div style="margin:28px 0;padding:22px;border-left:4px solid #b55c35;background:#fff;">
+            <div style="margin-bottom:16px;font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#b55c35;">Cómo comenzar</div>
+            <table width="100%" cellspacing="0" cellpadding="0">
+              <tr><td style="width:34px;padding:0 10px 14px 0;vertical-align:top;color:#b55c35;font-size:20px;font-weight:800;">01</td><td style="padding:0 0 14px;color:#34322e;font-size:14px;line-height:1.5;"><strong>Creá tu contraseña</strong><br><span style="color:#777168;">Usá el botón de abajo para activar tu acceso seguro.</span></td></tr>
+              <tr><td style="width:34px;padding:0 10px 14px 0;vertical-align:top;color:#b55c35;font-size:20px;font-weight:800;">02</td><td style="padding:0 0 14px;color:#34322e;font-size:14px;line-height:1.5;"><strong>Completá tu perfil</strong><br><span style="color:#777168;">Agregá teléfono, empresa y ubicación para responderte mejor.</span></td></tr>
+              <tr><td style="width:34px;padding:0 10px 0 0;vertical-align:top;color:#b55c35;font-size:20px;font-weight:800;">03</td><td style="padding:0;color:#34322e;font-size:14px;line-height:1.5;"><strong>Enviá tu solicitud</strong><br><span style="color:#777168;">Contanos tu idea y adjuntá fotos, referencias o planos.</span></td></tr>
+            </table>
           </div>
           <a href="${safeUrl}" style="display:inline-block;padding:15px 24px;background:#b55c35;color:#fff;text-decoration:none;font-size:14px;font-weight:800;letter-spacing:.5px;">CREAR MI CONTRASEÑA →</a>
           <p style="margin:22px 0 0;color:#817b72;font-size:12px;line-height:1.6;">Este enlace es personal, funciona una sola vez y vence en 72 horas.</p>
