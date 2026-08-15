@@ -9,6 +9,7 @@ import SupplierDashboard from './pages/SupplierDashboard'
 import CustomerLogin from './pages/CustomerLogin'
 import CustomerRegister from './pages/CustomerRegister'
 import CustomerPortal from './pages/CustomerPortal'
+import CustomerInvitation from './pages/CustomerInvitation'
 import AdminLogin from './pages/AdminLogin'
 import OrderTracking from './pages/OrderTracking'
 import AdminQuoteConsultations from './pages/AdminQuoteConsultations'
@@ -872,6 +873,7 @@ export default function App() {
         <Route path="/cliente/login" element={<CustomerLogin />} />
         <Route path="/cliente/registro" element={<CustomerRegister />} />
         <Route path="/cliente" element={<CustomerPortal />} />
+        <Route path="/cliente/invitacion/:token" element={<CustomerInvitation />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/productos" element={<AdminProducts />} />
         <Route path="/admin/clientes" element={<AdminCustomers />} />

@@ -99,6 +99,8 @@ function mapAdminCustomerRow(row) {
     updatedAt: row.updated_at ?? row.updatedAt ?? null,
     orderCount: Number(row.order_count ?? row.orderCount ?? 0),
     lastOrderAt: row.last_order_at ?? row.lastOrderAt ?? null,
+    invitationStatus: row.invitation_status ?? row.invitationStatus ?? '',
+    invitationExpiresAt: row.invitation_expires_at ?? row.invitationExpiresAt ?? null,
   }
 }
 
@@ -241,6 +243,19 @@ async function getJsonRepo() {
       db.users.push(created)
       writeDb(db)
       return created
+    },
+    async createCustomerInvitation(payload) {
+      const db = readDb(); if (!Array.isArray(db.customerInvitations)) db.customerInvitations=[]
+      db.customerInvitations.forEach((item)=>{if(Number(item.userId)===Number(payload.userId)&&item.status==='sent')item.status='revoked'})
+      const created={...payload,id:nextId(db.customerInvitations),status:'sent',createdAt:new Date().toISOString()}; db.customerInvitations.push(created); writeDb(db); return created
+    },
+    async findCustomerInvitation(tokenHash) {
+      const db=readDb(); const invite=(db.customerInvitations||[]).find((item)=>item.tokenHash===tokenHash)
+      if(!invite)return null; return {...invite,user:db.users.find((u)=>Number(u.id)===Number(invite.userId))||null}
+    },
+    async acceptCustomerInvitation(id) {
+      const db=readDb(); const invite=(db.customerInvitations||[]).find((item)=>Number(item.id)===Number(id)); if(!invite)return false
+      invite.status='accepted'; invite.acceptedAt=new Date().toISOString(); const profile=(db.customerProfiles||[]).find((p)=>Number(p.userId)===Number(invite.userId)); if(profile)profile.status='active'; writeDb(db); return true
     },
     async getAdminCustomers({ q = '', status = '' } = {}) {
       const db = readDb()
@@ -809,6 +824,15 @@ async function getPgRepo() {
       )
       return mapUserRow(rows[0])
     },
+    async createCustomerInvitation(payload) {
+      const client=await pool.connect(); try{await client.query('BEGIN'); await client.query("UPDATE customer_invitations SET status='revoked' WHERE user_id=$1 AND status='sent'",[payload.userId]); const {rows}=await client.query(`INSERT INTO customer_invitations (user_id,email,token_hash,expires_at,created_by) VALUES ($1,$2,$3,$4,$5) RETURNING *`,[payload.userId,payload.email,payload.tokenHash,payload.expiresAt,payload.createdBy]); await client.query('COMMIT'); return rows[0]}catch(error){await client.query('ROLLBACK');throw error}finally{client.release()}
+    },
+    async findCustomerInvitation(tokenHash) {
+      const {rows}=await pool.query(`SELECT customer_invitations.*,users.company,users.email AS user_email FROM customer_invitations JOIN users ON users.id=customer_invitations.user_id WHERE token_hash=$1 LIMIT 1`,[tokenHash]); if(!rows[0])return null; return {...rows[0],userId:Number(rows[0].user_id),user:{id:Number(rows[0].user_id),company:rows[0].company,email:rows[0].user_email}}
+    },
+    async acceptCustomerInvitation(id) {
+      const client=await pool.connect(); try{await client.query('BEGIN'); const {rows}=await client.query("UPDATE customer_invitations SET status='accepted',accepted_at=NOW() WHERE id=$1 RETURNING user_id",[id]); if(!rows[0]){await client.query('ROLLBACK');return false} await client.query(`INSERT INTO customer_profiles (user_id,status) VALUES ($1,'active') ON CONFLICT(user_id) DO UPDATE SET status='active',updated_at=NOW()`,[rows[0].user_id]); await client.query('COMMIT'); return true}catch(error){await client.query('ROLLBACK');throw error}finally{client.release()}
+    },
     async getAdminCustomers({ q = '', status = '' } = {}) {
       const values = []
       const clauses = ["users.role = 'customer'"]
@@ -827,7 +851,8 @@ async function getPgRepo() {
                 COALESCE(customer_profiles.status, 'active') AS status,
                 customer_profiles.internal_notes, customer_profiles.updated_at,
                 COALESCE(order_summary.order_count, 0)::int AS order_count,
-                order_summary.last_order_at
+                order_summary.last_order_at, latest_invitation.status AS invitation_status,
+                latest_invitation.expires_at AS invitation_expires_at
          FROM users
          LEFT JOIN customer_profiles ON customer_profiles.user_id = users.id
          LEFT JOIN (
@@ -836,6 +861,10 @@ async function getPgRepo() {
            WHERE buyer_email IS NOT NULL AND buyer_email <> ''
            GROUP BY LOWER(buyer_email)
          ) AS order_summary ON order_summary.email_key = LOWER(users.email)
+         LEFT JOIN LATERAL (
+           SELECT status, expires_at FROM customer_invitations
+           WHERE user_id = users.id ORDER BY created_at DESC LIMIT 1
+         ) AS latest_invitation ON TRUE
          WHERE ${clauses.join(' AND ')}
          ORDER BY users.created_at DESC, users.id DESC`,
         values
@@ -913,13 +942,18 @@ async function getPgRepo() {
                 COALESCE(customer_profiles.status, 'active') AS status,
                 customer_profiles.internal_notes, customer_profiles.updated_at,
                 COALESCE(order_summary.order_count, 0)::int AS order_count,
-                order_summary.last_order_at
+                order_summary.last_order_at, latest_invitation.status AS invitation_status,
+                latest_invitation.expires_at AS invitation_expires_at
          FROM users
          LEFT JOIN customer_profiles ON customer_profiles.user_id = users.id
          LEFT JOIN (
            SELECT LOWER(buyer_email) AS email_key, COUNT(*) AS order_count, MAX(created_at) AS last_order_at
            FROM orders WHERE buyer_email IS NOT NULL AND buyer_email <> '' GROUP BY LOWER(buyer_email)
          ) AS order_summary ON order_summary.email_key = LOWER(users.email)
+         LEFT JOIN LATERAL (
+           SELECT status, expires_at FROM customer_invitations
+           WHERE user_id = users.id ORDER BY created_at DESC LIMIT 1
+         ) AS latest_invitation ON TRUE
          WHERE users.id = $1 AND users.role = 'customer' LIMIT 1`,
         [id]
       )

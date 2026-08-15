@@ -4,7 +4,7 @@ import cors from 'cors'
 import { getRepository } from './repository.js'
 import { isPostgresEnabled } from './db.js'
 import { generateChatReply } from './chatService.js'
-import { notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifySearchRecommendations } from './notificationService.js'
+import { notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifySearchRecommendations, sendCustomerInvitationEmail } from './notificationService.js'
 import {
   createMercadoPagoPreference,
   getMercadoPagoPayment,
@@ -443,6 +443,33 @@ app.post('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req,
     internalNotes: validateStringLength(body.internalNotes || '', 'Notas internas', 0, 1000),
   })
   return res.status(201).json(created)
+}))
+
+app.post('/admin/customer-invitations', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const body=req.body||{}; const firstName=validateStringLength(requireField(body.firstName,'Nombre'),'Nombre',2,60); const lastName=validateStringLength(requireField(body.lastName,'Apellido'),'Apellido',2,60); const email=validateEmail(body.email); const repo=await getRepository()
+  let user=await repo.findUserByEmail(email)
+  if(user&&user.role!=='customer')throw new ConflictError('Ese correo pertenece a otro tipo de cuenta')
+  if(!user){user=await repo.createAdminCustomer({email,name:`${firstName} ${lastName}`,password:hashPassword(createSessionCredentials().token),phone:'',companyName:validateStringLength(body.companyName||'','Empresa',0,120),address:'',city:'',department:'',internalNotes:''})}
+  const credentials=createSessionCredentials(); const expiresAt=new Date(Date.now()+72*60*60*1000).toISOString()
+  const invitation=await repo.createCustomerInvitation({userId:user.id,email,tokenHash:credentials.tokenHash,expiresAt,createdBy:req.authUser.id})
+  const inviteUrl=`${FRONTEND_PUBLIC_URL}/cliente/invitacion/${encodeURIComponent(credentials.token)}`
+  const delivery=await sendCustomerInvitationEmail({email,firstName,inviteUrl})
+  if(!delivery.sent)throw new ServiceUnavailableError('No se pudo enviar el email de invitación')
+  return res.status(201).json({id:Number(invitation.id),email,status:'sent',expiresAt,delivery:delivery.channel})
+}))
+
+app.get('/customer-invitations/:token', asyncHandler(async (req,res)=>{
+  const repo=await getRepository(); const invitation=await repo.findCustomerInvitation(hashSessionToken(req.params.token))
+  if(!invitation||invitation.status!=='sent'||new Date(invitation.expires_at??invitation.expiresAt).getTime()<=Date.now())throw new ValidationError('La invitación no es válida o ya venció')
+  return res.json({email:invitation.email,firstName:String(invitation.user?.company||'').split(' ')[0],expiresAt:invitation.expires_at??invitation.expiresAt})
+}))
+
+app.post('/customer-invitations/:token/accept', asyncHandler(async (req,res)=>{
+  const password=validatePassword(req.body?.password); const repo=await getRepository(); const invitation=await repo.findCustomerInvitation(hashSessionToken(req.params.token)); const expiresAt=invitation?.expires_at??invitation?.expiresAt
+  if(!invitation||invitation.status!=='sent'||new Date(expiresAt).getTime()<=Date.now())throw new ValidationError('La invitación no es válida o ya venció')
+  const userId=Number(invitation.user_id??invitation.userId); await repo.updateUserPassword(userId,hashPassword(password)); await repo.acceptCustomerInvitation(invitation.id)
+  const token=await issueSession(repo,userId); const user=await repo.findUserById(userId)
+  return res.json({token,user:{id:user.id,email:user.email,role:user.role,company:user.company}})
 }))
 
 app.patch('/admin/customers/:id', authMiddleware, adminOnly, asyncHandler(async (req, res) => {

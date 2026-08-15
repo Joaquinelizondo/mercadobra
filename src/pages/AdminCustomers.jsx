@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { createAdminCustomer, getAdminCustomers, updateAdminCustomer } from '../lib/api'
+import { createCustomerInvitation, getAdminCustomers, updateAdminCustomer } from '../lib/api'
 import './AdminCustomers.css'
 
 const EMPTY_FORM = {
-  name: '', email: '', phone: '', companyName: '', address: '', city: '', department: '',
+  firstName: '', lastName: '', name: '', email: '', phone: '', companyName: '', address: '', city: '', department: '',
   status: 'active', internalNotes: '',
 }
 
@@ -83,9 +83,10 @@ export default function AdminCustomers() {
     setSuccess('')
     try {
       if (creating) {
-        const created = await createAdminCustomer(form, adminToken)
-        setCustomers((previous) => [created, ...previous])
-        setSuccess('Cliente agregado como perfil inactivo.')
+        await createCustomerInvitation(form, adminToken)
+        const refreshed = await getAdminCustomers({}, adminToken)
+        setCustomers(refreshed.rows || [])
+        setSuccess(`Invitación enviada a ${form.email}. El enlace vence en 72 horas.`)
       } else {
         const updated = await updateAdminCustomer(editing.id, form, adminToken)
         setCustomers((previous) => previous.map((customer) => customer.id === updated.id ? { ...customer, ...updated } : customer))
@@ -111,7 +112,7 @@ export default function AdminCustomers() {
         <div><strong>{metrics.active}</strong><span>Activos</span></div>
         <div><strong>{metrics.withOrders}</strong><span>Con pedidos</span></div>
         <div><strong>{metrics.blocked}</strong><span>Bloqueados</span></div>
-      </div><button type="button" onClick={openCreate}>＋ Nuevo cliente</button></div>
+      </div><button type="button" onClick={openCreate}>✉ Invitar cliente</button></div>
 
       <div className="admin-customers-toolbar">
         <label><span>Buscar clientes</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, email, teléfono, localidad…" /></label>
@@ -128,7 +129,7 @@ export default function AdminCustomers() {
           {filtered.map((customer) => (
             <article key={customer.id}>
               <div className="admin-customer-avatar" aria-hidden="true">{String(customer.name || customer.email || 'C').trim().charAt(0).toUpperCase()}</div>
-              <div className="admin-customer-main"><div><h2>{customer.name || 'Cliente sin nombre'}</h2><span className={`admin-customer-status is-${customer.status}`}>{STATUS_LABELS[customer.status]}</span></div><a href={`mailto:${customer.email}`}>{customer.email}</a><p>{[customer.phone, customer.city, customer.department].filter(Boolean).join(' · ') || 'Contacto pendiente de completar'}</p></div>
+              <div className="admin-customer-main"><div><h2>{customer.name || 'Cliente sin nombre'}</h2><span className={`admin-customer-status is-${customer.status}`}>{customer.invitationStatus==='sent'?'Invitación enviada':customer.invitationStatus==='accepted'?'Invitación aceptada':STATUS_LABELS[customer.status]}</span></div><a href={`mailto:${customer.email}`}>{customer.email}</a><p>{[customer.phone, customer.city, customer.department].filter(Boolean).join(' · ') || 'Contacto pendiente de completar'}</p></div>
               <div className="admin-customer-activity"><strong>{customer.orderCount || 0}</strong><span>pedido{Number(customer.orderCount) === 1 ? '' : 's'}</span>{customer.lastOrderAt && <small>Último: {new Date(customer.lastOrderAt).toLocaleDateString('es-UY')}</small>}</div>
               <div className="admin-customer-actions"><Link to={`/admin/clientes/${customer.id}`}>Abrir cliente</Link><button type="button" onClick={() => openEditor(customer)}>Editar datos</button></div>
             </article>
@@ -136,10 +137,10 @@ export default function AdminCustomers() {
         </div>
       )}
 
-      {(editing || creating) && <><div className="modal-overlay" onClick={closeEditor} aria-hidden="true" /><aside className="admin-customer-editor" role="dialog" aria-modal="true" aria-labelledby="customer-editor-title"><header><div><span>Perfil de cliente</span><h2 id="customer-editor-title">{creating ? 'Nuevo cliente' : 'Editar datos'}</h2></div><button type="button" onClick={closeEditor} aria-label="Cerrar">×</button></header><form onSubmit={handleSubmit}>
-        <div className="admin-customer-form-grid"><label><span>Nombre completo *</span><input name="name" value={form.name} onChange={handleChange} required /></label><label><span>Email *</span><input type="email" name="email" value={form.email} onChange={handleChange} required /></label><label><span>Teléfono</span><input name="phone" value={form.phone} onChange={handleChange} /></label><label><span>Empresa</span><input name="companyName" value={form.companyName} onChange={handleChange} /></label><label className="is-wide"><span>Dirección</span><input name="address" value={form.address} onChange={handleChange} /></label><label><span>Localidad</span><input name="city" value={form.city} onChange={handleChange} /></label><label><span>Departamento</span><input name="department" value={form.department} onChange={handleChange} /></label><label><span>Estado</span><select name="status" value={form.status} onChange={handleChange}><option value="active">Activo</option><option value="inactive">Inactivo</option><option value="blocked">Bloqueado</option></select></label><label className="is-wide"><span>Notas internas</span><textarea name="internalNotes" value={form.internalNotes} onChange={handleChange} rows="4" placeholder="Solo visibles para administración" /></label></div>
-        <p className="admin-customer-editor-note">{creating ? 'El perfil se crea inactivo y sin acceso hasta implementar la invitación segura. Sus datos ya podrán usarse para la gestión comercial.' : 'Las contraseñas nunca son visibles desde este panel. Bloquear una cuenta cerrará sus sesiones activas.'}</p>
-        <button className="admin-customer-save" type="submit" disabled={saving}>{saving ? 'Guardando…' : creating ? 'Agregar cliente' : 'Guardar cambios'}</button>
+      {(editing || creating) && <><div className="modal-overlay" onClick={closeEditor} aria-hidden="true" /><aside className="admin-customer-editor" role="dialog" aria-modal="true" aria-labelledby="customer-editor-title"><header><div><span>{creating?'Óxida by Mercadobra':'Perfil de cliente'}</span><h2 id="customer-editor-title">{creating ? 'Enviar invitación' : 'Editar datos'}</h2></div><button type="button" onClick={closeEditor} aria-label="Cerrar">×</button></header><form onSubmit={handleSubmit}>
+        <div className="admin-customer-form-grid">{creating?<><label><span>Nombre *</span><input name="firstName" value={form.firstName} onChange={handleChange} required /></label><label><span>Apellido *</span><input name="lastName" value={form.lastName} onChange={handleChange} required /></label><label className="is-wide"><span>Email *</span><input type="email" name="email" value={form.email} onChange={handleChange} required /></label><label className="is-wide"><span>Empresa</span><input name="companyName" value={form.companyName} onChange={handleChange} /></label></>:<><label><span>Nombre completo *</span><input name="name" value={form.name} onChange={handleChange} required /></label><label><span>Email *</span><input type="email" name="email" value={form.email} onChange={handleChange} required /></label><label><span>Teléfono</span><input name="phone" value={form.phone} onChange={handleChange} /></label><label><span>Empresa</span><input name="companyName" value={form.companyName} onChange={handleChange} /></label><label className="is-wide"><span>Dirección</span><input name="address" value={form.address} onChange={handleChange} /></label><label><span>Localidad</span><input name="city" value={form.city} onChange={handleChange} /></label><label><span>Departamento</span><input name="department" value={form.department} onChange={handleChange} /></label><label><span>Estado</span><select name="status" value={form.status} onChange={handleChange}><option value="active">Activo</option><option value="inactive">Inactivo</option><option value="blocked">Bloqueado</option></select></label><label className="is-wide"><span>Notas internas</span><textarea name="internalNotes" value={form.internalNotes} onChange={handleChange} rows="4" placeholder="Solo visibles para administración" /></label></>}</div>
+        <p className="admin-customer-editor-note">{creating ? 'Recibirá al momento un email visual con un enlace personal para crear su contraseña. El enlace funciona una vez y vence en 72 horas.' : 'Las contraseñas nunca son visibles desde este panel. Bloquear una cuenta cerrará sus sesiones activas.'}</p>
+        <button className="admin-customer-save" type="submit" disabled={saving}>{saving ? 'Enviando…' : creating ? 'Enviar invitación' : 'Guardar cambios'}</button>
       </form></aside></>}
     </section>
   )

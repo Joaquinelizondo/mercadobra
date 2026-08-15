@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from 'react'
-import { loginAdmin, loginCustomer, loginSupplier, logoutSession, registerCustomer } from '../lib/api'
+import { acceptCustomerInvitation, loginAdmin, loginCustomer, loginSupplier, logoutSession, registerCustomer } from '../lib/api'
 
 const AuthContext = createContext(null)
 const SUPPLIER_SESSION_KEY = 'mercadobra-supplier-session'
@@ -109,6 +109,13 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function acceptCustomerInvite(inviteToken, password) {
+    setCustomerAuthLoading(true); setCustomerAuthError('')
+    try { const response=await acceptCustomerInvitation(inviteToken,password); setCustomerUser(response.user); setCustomerToken(response.token); persistSession(CUSTOMER_SESSION_KEY,'customerUser',response.user,response.token); return response.user }
+    catch(error){setCustomerAuthError(error.message||'No se pudo aceptar la invitación');return null}
+    finally{setCustomerAuthLoading(false)}
+  }
+
   function logoutCustomer() {
     void logoutSession(customerToken).catch(() => {})
     setCustomerUser(null)
@@ -155,6 +162,7 @@ export function AuthProvider({ children }) {
       customerAuthLoading,
       loginCustomer: loginCustomerAccount,
       registerCustomer: registerCustomerAccount,
+      acceptCustomerInvite,
       logoutCustomer,
       adminUser,
       adminToken,
@@ -186,6 +194,7 @@ export function useAuth() {
       customerAuthLoading: false,
       loginCustomer: async () => null,
       registerCustomer: async () => null,
+      acceptCustomerInvite: async () => null,
       logoutCustomer: () => {},
       adminUser: null,
       adminToken: '',

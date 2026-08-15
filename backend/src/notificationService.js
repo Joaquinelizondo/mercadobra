@@ -527,6 +527,40 @@ export async function notifyLeadCreated(lead) {
   return { sent: true, channel: 'email-smtp', to: destination }
 }
 
+export async function sendCustomerInvitationEmail({ email, firstName, inviteUrl }) {
+  const safeName = escapeEmailHtml(firstName)
+  const safeUrl = escapeEmailHtml(inviteUrl)
+  const subject = `${firstName}, te damos la bienvenida a Óxida by Mercadobra`
+  const html = `
+    <div style="margin:0;background:#ece8df;padding:28px 12px;font-family:Arial,sans-serif;color:#20201d;">
+      <div style="max-width:640px;margin:auto;background:#f8f5ee;border:1px solid #d6cec1;">
+        <div style="padding:34px 38px;background:#20201d;border-top:7px solid #b55c35;color:#f7f2e9;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#d27b52;">ÓXIDA STUDIO · by Mercadobra</div>
+          <h1 style="margin:18px 0 0;font-size:38px;line-height:1.05;font-weight:700;">Tu próximo proyecto<br>empieza acá.</h1>
+        </div>
+        <div style="padding:38px;">
+          <p style="margin:0 0 18px;font-size:20px;font-weight:700;">Hola ${safeName},</p>
+          <p style="margin:0;color:#625f58;font-size:16px;line-height:1.7;">Creamos un acceso privado para que puedas solicitar cotizaciones, adjuntar fotos o planos y conversar con nuestro equipo sobre cada proyecto.</p>
+          <div style="margin:28px 0;padding:20px;border-left:4px solid #b55c35;background:#fff;">
+            <div style="margin-bottom:9px;font-weight:700;">Todo en un solo lugar</div>
+            <div style="color:#6f6a62;font-size:14px;line-height:1.8;">Solicitudes claras · Archivos organizados · Respuestas y seguimiento</div>
+          </div>
+          <a href="${safeUrl}" style="display:inline-block;padding:15px 24px;background:#b55c35;color:#fff;text-decoration:none;font-size:14px;font-weight:800;letter-spacing:.5px;">CREAR MI CONTRASEÑA →</a>
+          <p style="margin:22px 0 0;color:#817b72;font-size:12px;line-height:1.6;">Este enlace es personal, funciona una sola vez y vence en 72 horas.</p>
+        </div>
+        <div style="padding:20px 38px;border-top:1px solid #d6cec1;color:#817b72;font-size:12px;">Óxida Studio · diseño y fabricación · powered by Mercadobra</div>
+      </div>
+    </div>`
+  if (RESEND_API_KEY && RESEND_FROM) {
+    await sendRecommendationEmailViaResend({ email, subject, html })
+    return { sent: true, channel: 'email-resend' }
+  }
+  const emailTransporter = getTransporter()
+  if (!emailTransporter) return { sent: false, channel: 'email-mock', reason: 'email provider not configured' }
+  await withTimeout(emailTransporter.sendMail({ from: SMTP_FROM, to: email, subject, html }), EMAIL_SEND_TIMEOUT_MS, 'invitation email send')
+  return { sent: true, channel: 'email-smtp' }
+}
+
 async function sendRecommendationEmail(email, searchTerm, products) {
   if (!email) {
     return { sent: false, channel: 'email', reason: 'email missing' }

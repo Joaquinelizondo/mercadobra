@@ -199,6 +199,9 @@ export function registerCustomer(payload) {
     body: JSON.stringify(payload),
   })
 }
+export function createCustomerInvitation(payload, token) { return request('/admin/customer-invitations', { method:'POST', token, body:JSON.stringify(payload) }) }
+export function getCustomerInvitation(token) { return request(`/customer-invitations/${encodeURIComponent(token)}`) }
+export function acceptCustomerInvitation(token, password) { return request(`/customer-invitations/${encodeURIComponent(token)}/accept`, { method:'POST', body:JSON.stringify({password}) }) }
 
 export function sendChatMessage(message, history = []) {
   return request('/chat', {
