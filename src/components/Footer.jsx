@@ -125,7 +125,7 @@ export default function Footer() {
           <h3>Contacto</h3>
           <ul>
             <li><a href="mailto:contacto@mercadobra.com">contacto@mercadobra.com</a></li>
-            <li><a href="tel:+59899213300">+598 99 213 300</a></li>
+            <li><a href="tel:+59898046990">+598 98 046 990</a></li>
             <li>Uruguay</li>
           </ul>
         </section>

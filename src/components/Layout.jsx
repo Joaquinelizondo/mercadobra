@@ -6,6 +6,8 @@ import Cart from './Cart'
 import ChatWidget from './ChatWidget'
 import WhatsAppButton from './WhatsAppButton'
 
+const AI_CHAT_ENABLED = import.meta.env.VITE_AI_CHAT_ENABLED === 'true'
+
 export default function Layout() {
   const location = useLocation()
 
@@ -19,7 +21,7 @@ export default function Layout() {
       <Outlet />
       <Footer />
       <Cart />
-      <ChatWidget />
+      {AI_CHAT_ENABLED && <ChatWidget />}
       <WhatsAppButton />
     </main>
   )

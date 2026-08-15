@@ -1,4 +1,4 @@
-const WHATSAPP_NUMBER = String(import.meta.env.VITE_WHATSAPP_NUMBER || '59899213300').replace(/\D/g, '')
+const WHATSAPP_NUMBER = String(import.meta.env.VITE_WHATSAPP_NUMBER || '59898046990').replace(/\D/g, '')
 
 function fallback(value, fallbackValue = 'No informado') {
   const normalized = String(value ?? '').trim()

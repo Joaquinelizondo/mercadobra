@@ -61,7 +61,7 @@ export default function Contact() {
           <p>Escribinos para consultar por productos, cotizaciones, estructuras, fabricación a medida o acompañamiento técnico para tu proyecto.</p>
           <div className="info-page-actions">
             <a href="mailto:contacto@mercadobra.com">contacto@mercadobra.com</a>
-            <a href={whatsappLink} target="_blank" rel="noreferrer">+598 99 213 300 · Uruguay</a>
+            <a href={whatsappLink} target="_blank" rel="noreferrer">+598 98 046 990 · Uruguay</a>
           </div>
         </div>
         <form className="contact-form" id="formulario-contacto" onSubmit={handleSubmit}>
