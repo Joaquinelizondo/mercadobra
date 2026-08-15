@@ -565,6 +565,13 @@ export async function sendCustomerInvitationEmail({ email, firstName, inviteUrl 
   return { sent: true, channel: 'email-smtp' }
 }
 
+export async function sendCustomerInvitationWhatsapp({ phone, firstName, inviteUrl }) {
+  if (!phone) return { sent:false, channel:'none', reason:'phone missing' }
+  const message=[`Hola ${firstName} 👋`,`Te damos la bienvenida a Óxida by Mercadobra.`, '', 'Para comenzar:', '1. Creá tu contraseña', '2. Completá tu perfil', '3. Enviá tu primera solicitud con fotos o planos', '', `Activá tu acceso acá: ${inviteUrl}`, '', 'El enlace es personal, funciona una sola vez y vence en 72 horas.'].join('\n')
+  try { const channel=await withTimeout(sendViaWhatsappProvider({channel:'whatsapp',to:phone,message}),WHATSAPP_SEND_TIMEOUT_MS,'invitation whatsapp send'); return {sent:true,channel} }
+  catch(error){return {sent:false,channel:'whatsapp',reason:error.message}}
+}
+
 async function sendPortalEmail({ email, subject, title, intro, actionUrl, actionLabel }) {
   const html=`<div style="margin:0;background:#ece8df;padding:28px 12px;font-family:Arial,sans-serif;color:#20201d"><div style="max-width:620px;margin:auto;background:#f8f5ee;border:1px solid #d6cec1"><div style="padding:28px 34px;background:#20201d;border-top:6px solid #b55c35;color:#fff"><div style="color:#d27b52;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase">ÓXIDA STUDIO · by Mercadobra</div><h1 style="margin:14px 0 0;font-size:30px">${escapeEmailHtml(title)}</h1></div><div style="padding:34px"><p style="margin:0 0 24px;color:#625f58;font-size:16px;line-height:1.7">${escapeEmailHtml(intro)}</p><a href="${escapeEmailHtml(actionUrl)}" style="display:inline-block;padding:14px 22px;background:#b55c35;color:#fff;text-decoration:none;font-size:13px;font-weight:800">${escapeEmailHtml(actionLabel)} →</a><p style="margin:22px 0 0;color:#817b72;font-size:12px">Podés responder y consultar todo el historial desde tu área privada.</p></div></div></div>`
   if(RESEND_API_KEY&&RESEND_FROM){await sendRecommendationEmailViaResend({email,subject,html,replyTo:LEADS_NOTIFICATION_EMAIL});return {sent:true,channel:'email-resend'}}

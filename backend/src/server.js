@@ -4,7 +4,7 @@ import cors from 'cors'
 import { getRepository } from './repository.js'
 import { isPostgresEnabled } from './db.js'
 import { generateChatReply } from './chatService.js'
-import { notifyAdminCustomerReply, notifyCustomerQuoteActivity, notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifySearchRecommendations, sendCustomerInvitationEmail } from './notificationService.js'
+import { notifyAdminCustomerReply, notifyCustomerQuoteActivity, notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifySearchRecommendations, sendCustomerInvitationEmail, sendCustomerInvitationWhatsapp } from './notificationService.js'
 import {
   createMercadoPagoPreference,
   getMercadoPagoPayment,
@@ -447,16 +447,16 @@ app.post('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req,
 }))
 
 app.post('/admin/customer-invitations', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
-  const body=req.body||{}; const firstName=validateStringLength(requireField(body.firstName,'Nombre'),'Nombre',2,60); const lastName=validateStringLength(requireField(body.lastName,'Apellido'),'Apellido',2,60); const email=validateEmail(body.email); const repo=await getRepository()
+  const body=req.body||{}; const firstName=validateStringLength(requireField(body.firstName,'Nombre'),'Nombre',2,60); const lastName=validateStringLength(requireField(body.lastName,'Apellido'),'Apellido',2,60); const email=validateEmail(body.email); const validatedPhone=validatePhone(body.phone); const phone=validatedPhone.startsWith('0')?`598${validatedPhone.slice(1)}`:validatedPhone; const repo=await getRepository()
   let user=await repo.findUserByEmail(email)
   if(user&&user.role!=='customer')throw new ConflictError('Ese correo pertenece a otro tipo de cuenta')
-  if(!user){user=await repo.createAdminCustomer({email,name:`${firstName} ${lastName}`,password:hashPassword(createSessionCredentials().token),phone:'',companyName:validateStringLength(body.companyName||'','Empresa',0,120),address:'',city:'',department:'',internalNotes:''})}
+  if(!user){user=await repo.createAdminCustomer({email,name:`${firstName} ${lastName}`,password:hashPassword(createSessionCredentials().token),phone,companyName:validateStringLength(body.companyName||'','Empresa',0,120),address:'',city:'',department:'',internalNotes:''})}
   const credentials=createSessionCredentials(); const expiresAt=new Date(Date.now()+72*60*60*1000).toISOString()
   const invitation=await repo.createCustomerInvitation({userId:user.id,email,tokenHash:credentials.tokenHash,expiresAt,createdBy:req.authUser.id})
   const inviteUrl=`${FRONTEND_PUBLIC_URL}/cliente/invitacion/${encodeURIComponent(credentials.token)}`
-  const delivery=await sendCustomerInvitationEmail({email,firstName,inviteUrl})
-  if(!delivery.sent)throw new ServiceUnavailableError('No se pudo enviar el email de invitación')
-  return res.status(201).json({id:Number(invitation.id),email,status:'sent',expiresAt,delivery:delivery.channel})
+  const [emailDelivery,whatsappDelivery]=await Promise.all([sendCustomerInvitationEmail({email,firstName,inviteUrl}),sendCustomerInvitationWhatsapp({phone,firstName,inviteUrl})])
+  if(!emailDelivery.sent&&!whatsappDelivery.sent)throw new ServiceUnavailableError('No se pudo enviar la invitación')
+  return res.status(201).json({id:Number(invitation.id),email,phone,status:'sent',expiresAt,delivery:{email:emailDelivery.channel,whatsapp:whatsappDelivery.channel}})
 }))
 
 app.get('/customer-invitations/:token', asyncHandler(async (req,res)=>{
