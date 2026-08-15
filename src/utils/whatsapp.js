@@ -9,8 +9,8 @@ export function getWhatsAppEndpoint() {
   return WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}` : 'https://wa.me/'
 }
 
-export function buildWhatsAppMessage({ intent = 'consulta', source = 'site', data = {} } = {}) {
-  const lines = ['Hola Mercadobra, vengo desde la web.']
+export function buildWhatsAppMessage({ intent = 'consulta', data = {} } = {}) {
+  const lines = ['Hola, estoy visitando la web de Mercadobra.']
 
   if (intent === 'cotizar') {
     lines.push('Quiero cotizar productos para mi obra.')
@@ -21,11 +21,8 @@ export function buildWhatsAppMessage({ intent = 'consulta', source = 'site', dat
   } else if (intent === 'soporte') {
     lines.push('Necesito ayuda con una consulta general.')
   } else {
-    lines.push('Quiero recibir asesoria para comprar.')
+    lines.push('Quisiera recibir asesoramiento para elegir el producto adecuado.')
   }
-
-  lines.push('')
-  lines.push(`Origen: ${source}`)
 
   if (data.route) lines.push(`Ruta: ${data.route}`)
   if (data.projectType) lines.push(`Proyecto: ${data.projectType}`)
@@ -48,7 +45,7 @@ export function buildWhatsAppMessage({ intent = 'consulta', source = 'site', dat
   }
 
   lines.push('')
-  lines.push('Me podrian ayudar con esto?')
+  lines.push('¿Podrían ayudarme?')
 
   return lines.join('\n')
 }
