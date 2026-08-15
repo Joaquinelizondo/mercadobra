@@ -104,7 +104,7 @@ export default function AdminCustomers() {
     <section className="admin-customers-page">
       <header className="admin-customers-header">
         <div><span>Relaciones comerciales</span><h1>Clientes</h1><p>Perfiles, contacto y actividad en un solo lugar.</p></div>
-        <nav><Link to="/admin/productos">Productos</Link><Link to="/admin/pedidos">Pedidos</Link><Link to="/admin/cotizaciones">Consultas</Link><Link to="/admin/personalizaciones">Personalizaciones</Link><Link to="/">Ver tienda ↗</Link></nav>
+        <nav><Link to="/admin/cotizaciones-clientes">Cotizaciones</Link><Link to="/admin/productos">Productos</Link><Link to="/admin/pedidos">Pedidos</Link><Link to="/admin/cotizaciones">Consultas web</Link><Link to="/admin/personalizaciones">Personalizaciones</Link><Link to="/">Ver tienda ↗</Link></nav>
       </header>
 
       <div className="admin-customers-title-row"><div className="admin-customers-metrics" aria-label="Resumen de clientes">

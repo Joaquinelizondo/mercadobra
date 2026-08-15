@@ -65,7 +65,7 @@ export default function AdminCustomerDetail() {
 
   return (
     <section className="admin-client-detail">
-      <header><div><Link to="/admin/clientes">← Clientes</Link><span>Ficha comercial</span><h1>{customer?.name || 'Cliente'}</h1><p>{customer?.email}{customer?.phone ? ` · ${customer.phone}` : ''}</p></div><nav><Link to="/admin/productos">Productos</Link><Link to="/admin/pedidos">Pedidos</Link><Link to="/">Ver tienda ↗</Link></nav></header>
+      <header><div><Link to="/admin/clientes">← Clientes</Link><span>Ficha comercial</span><h1>{customer?.name || 'Cliente'}</h1><p>{customer?.email}{customer?.phone ? ` · ${customer.phone}` : ''}</p></div><nav><Link to="/admin/cotizaciones-clientes">Cotizaciones</Link><Link to="/admin/productos">Productos</Link><Link to="/admin/pedidos">Pedidos</Link><Link to="/">Ver tienda ↗</Link></nav></header>
 
       {error && <p className="admin-client-detail-error" role="alert">{error}</p>}
       {loading ? <p className="admin-client-detail-empty">Cargando ficha comercial…</p> : <>

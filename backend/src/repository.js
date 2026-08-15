@@ -336,6 +336,9 @@ async function getJsonRepo() {
         .map(mapCustomerQuoteRow)
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     },
+    async getAllCustomerQuotes() {
+      const db=readDb(); return (db.customerQuotes||[]).map((quote)=>{const user=db.users.find((item)=>Number(item.id)===Number(quote.customerId));return {...mapCustomerQuoteRow(quote),customerName:user?.company||'',customerEmail:user?.email||''}}).sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt))
+    },
     async getCustomerQuoteById(id) {
       const quote=(readDb().customerQuotes||[]).find((item)=>Number(item.id)===Number(id)); return quote?mapCustomerQuoteRow(quote):null
     },
@@ -968,6 +971,10 @@ async function getPgRepo() {
         [customerId]
       )
       return rows.map(mapCustomerQuoteRow)
+    },
+    async getAllCustomerQuotes() {
+      const {rows}=await pool.query(`SELECT customer_quotes.*,users.company AS customer_name,users.email AS customer_email FROM customer_quotes JOIN users ON users.id=customer_quotes.customer_user_id ORDER BY customer_quotes.updated_at DESC,customer_quotes.id DESC`)
+      return rows.map((row)=>({...mapCustomerQuoteRow(row),customerName:row.customer_name||'',customerEmail:row.customer_email||''}))
     },
     async getCustomerQuoteById(id) {
       const {rows}=await pool.query('SELECT * FROM customer_quotes WHERE id=$1 LIMIT 1',[id]); return rows[0]?mapCustomerQuoteRow(rows[0]):null

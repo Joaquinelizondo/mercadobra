@@ -140,6 +140,7 @@ export function getAdminCustomer(id, token) {
 export function getCustomerQuotes(customerId, token) {
   return request(`/admin/customers/${customerId}/quotes`, { token })
 }
+export function getAllCustomerQuotes(token) { return request('/admin/customer-quotes', { token }) }
 
 export function createCustomerQuote(customerId, payload, token) {
   return request(`/admin/customers/${customerId}/quotes`, {

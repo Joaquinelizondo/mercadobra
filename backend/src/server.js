@@ -515,6 +515,8 @@ app.get('/admin/customers/:customerId/quotes', authMiddleware, adminOnly, asyncH
   return res.json({ rows, total: rows.length })
 }))
 
+app.get('/admin/customer-quotes', authMiddleware, adminOnly, asyncHandler(async (_req,res)=>{const repo=await getRepository();const rows=await repo.getAllCustomerQuotes();return res.json({rows,total:rows.length})}))
+
 app.post('/admin/customers/:customerId/quotes', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const customerId = validateNumber(req.params.customerId, 'Cliente ID', 1)
   const body = req.body || {}
