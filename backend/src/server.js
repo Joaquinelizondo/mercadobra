@@ -689,6 +689,38 @@ app.post('/product-images', authMiddleware, providerOnly, asyncHandler(async (re
   return res.status(201).json({ image })
 }))
 
+app.post('/admin/product-images/migrate', authMiddleware, adminOnly, asyncHandler(async (_req, res) => {
+  if (!isCloudinaryConfigured()) throw new ServiceUnavailableError('Cloudinary todavía no está configurado')
+
+  const repo = await getRepository()
+  const products = await repo.getProducts({})
+  let migratedImages = 0
+  let migratedProducts = 0
+
+  for (const product of products) {
+    let changed = false
+    const images = []
+
+    for (const image of product.images || []) {
+      if (!String(image?.url || '').startsWith('data:image/')) {
+        images.push(image)
+        continue
+      }
+
+      images.push(await uploadProductImage(image.url, { alt: image.alt || product.name }))
+      migratedImages += 1
+      changed = true
+    }
+
+    if (changed) {
+      await repo.updateProduct(product.id, { images })
+      migratedProducts += 1
+    }
+  }
+
+  return res.json({ migratedImages, migratedProducts })
+}))
+
 app.post('/products', authMiddleware, (req, res, next) => {
   // Permitir tanto admin como provider
   if (req.authUser?.role !== 'provider' && req.authUser?.role !== 'admin') {
