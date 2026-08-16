@@ -86,6 +86,14 @@ export function getProducts() {
   return request('/products')
 }
 
+export function uploadProductImage(payload, token) {
+  return request('/product-images', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
 export function createProduct(payload, token) {
   return request('/products', {
     method: 'POST',

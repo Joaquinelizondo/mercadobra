@@ -46,7 +46,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 
 | Punto | Estado | Criterio para darlo por terminado |
 | --- | --- | --- |
-| Fotografías reales por producto | En curso | El catálogo ya entrega las imágenes embebidas mediante URLs cacheables y optimiza nuevas cargas en WebP; falta migrar los archivos existentes a almacenamiento externo y completar las galerías. |
+| Fotografías reales por producto | En curso | Integración Cloudinary implementada para nuevas cargas, variantes responsive y migración de Base64; falta configurar credenciales en producción, ejecutar la migración y completar las galerías. |
 | Ficha de producto completa | Terminado | Galería, medidas, stock, plazo, entrega, proveedor y acción de compra/cotización implementados. |
 | Stock por variante/SKU | Postergado | Por ahora los productos de hierro no tendrán variantes públicas; medida, color y terminación se definen en la cotización. |
 | Persistencia del carrito | Terminado | El carrito sobrevive recargas, se recupera de forma segura y revalida stock, precio y publicación al abrirse y antes del checkout. |
@@ -98,6 +98,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | 2026-08-05 | Datos públicos de contacto. | Se unificaron email, teléfono, WhatsApp y país con los datos comerciales de Mercadobra en Uruguay. | Este cambio |
 | 2026-08-05 | Red social de Óxida Studio. | Los accesos de Instagram apuntan al perfil oficial `@oxidastudio`. | Este cambio |
 | 2026-08-16 | Primera etapa de rendimiento de imágenes. | El listado dejó de transportar imágenes Base64, se agregaron URLs cacheables, carga diferida y optimización WebP para nuevas fotos. La migración física a CDN continúa pendiente. | Este cambio |
+| 2026-08-16 | Integración Cloudinary. | Se implementaron cargas autenticadas desde backend, URLs persistentes, variantes responsive y un comando reanudable para migrar las imágenes históricas. La activación espera credenciales de producción. | Este cambio |
 
 ## Forma de trabajo
 

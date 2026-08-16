@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { formatPrice, companyInitials } from '../utils/format'
 import { discountedPrice, normalizeDiscount } from '../utils/pricing'
+import { responsiveImageProps } from '../utils/productImages'
 
 const ADD_FEEDBACK = ['Listo, al carrito', 'Sumado', 'Buenisimo, agregado']
 
@@ -77,7 +78,7 @@ export default function ProductCard({
       aria-label={`Ver detalle de ${product.name}`}
     >
       <div className={`product-img${coverImage ? ' product-img--photo' : ''}`} style={{ '--product-color': product.color }}>
-        {coverImage && <img src={coverImage} alt={product.images?.[0]?.alt || product.name} loading="lazy" decoding="async" />}
+        {coverImage && <img src={coverImage} alt={product.images?.[0]?.alt || product.name} loading="lazy" decoding="async" {...responsiveImageProps(product.images?.[0], '(max-width: 720px) 92vw, 33vw')} />}
         {product.ribbonEnabled && product.ribbonText && (
           <span className="product-ribbon">{product.ribbonText}</span>
         )}

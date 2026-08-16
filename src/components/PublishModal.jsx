@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useProducts } from '../context/ProductContext'
 import { companyInitials } from '../utils/format'
 import { optimizeProductImage } from '../utils/productImages'
+import { uploadProductImage } from '../lib/api'
 import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../data/constants'
 
 const EMPTY_FORM = {
@@ -21,6 +22,7 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
   const [formData, setFormData] = useState(() => ({ ...EMPTY_FORM, ...(initialFormData || {}) }))
   const [formSuccess, setFormSuccess] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [saving, setSaving] = useState(false)
   const isEditMode = Boolean(initialFormData?.id)
   // Admin and supplier sessions may coexist in localStorage. Inside the admin
   // catalog, always use the admin identity instead of a stale supplier session.
@@ -87,6 +89,7 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (saving) return
     setSubmitError('')
     if (!formData.name.trim() || !formData.price || !formData.description.trim()) {
       setSubmitError('Completá nombre, precio y descripción.')
@@ -97,10 +100,27 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
       return
     }
 
+    setSaving(true)
     try {
+      const images = await Promise.all((formData.images || []).map(async (image) => {
+        if (!String(image.url || '').startsWith('data:image/')) return image
+        try {
+          const response = await uploadProductImage({
+            dataUrl: image.url,
+            alt: image.alt || formData.name,
+          }, publisherToken)
+          return response.image
+        } catch (error) {
+          // Permite desplegar la integración antes de cargar las credenciales.
+          // Esas imágenes quedan embebidas y el migrador las moverá después.
+          if (String(error.message || '').includes('todavía no está configurado')) return image
+          throw error
+        }
+      }))
+      const submission = { ...formData, images }
       const savedProduct = isEditMode
-        ? await editProduct(initialFormData.id, formData, publisher, publisherToken)
-        : await addProduct(formData, publisher, publisherToken)
+        ? await editProduct(initialFormData.id, submission, publisher, publisherToken)
+        : await addProduct(submission, publisher, publisherToken)
       setFormSuccess(true)
       setTimeout(() => {
         setFormData(EMPTY_FORM)
@@ -110,6 +130,8 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
       }, 1800)
     } catch (error) {
       setSubmitError(error.message || (isEditMode ? 'No se pudo actualizar el producto' : 'No se pudo publicar el producto'))
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -371,8 +393,8 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
               />
             </div>
 
-            <button type="submit" className="cart-confirm-btn">
-              {isEditMode ? 'Guardar cambios' : 'Publicar en el catálogo'}
+            <button type="submit" className="cart-confirm-btn" disabled={saving}>
+              {saving ? 'Guardando…' : isEditMode ? 'Guardar cambios' : 'Publicar en el catálogo'}
             </button>
           </form>
         )}

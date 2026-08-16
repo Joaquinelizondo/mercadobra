@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { responsiveImageProps } from '../utils/productImages'
 
 export default function EditorialProductSlider({ products = [] }) {
   const slides = useMemo(() => products
@@ -24,7 +25,7 @@ export default function EditorialProductSlider({ products = [] }) {
   return <section className="editorial-slider" aria-label="Selección destacada">
     <div className="editorial-slider-stage">
       {slides.map((slide, index) => <Link key={slide.id} to={`/producto/${slide.id}`} className={`editorial-slide${index === visibleActive ? ' is-active' : ''}`} aria-hidden={index !== visibleActive} tabIndex={index === visibleActive ? 0 : -1}>
-        <img src={slide.images[0].url} alt={slide.images[0].alt || slide.name} loading={index === visibleActive ? 'eager' : 'lazy'} decoding="async" fetchPriority={index === visibleActive ? 'high' : 'low'} />
+        <img src={slide.images[0].url} alt={slide.images[0].alt || slide.name} loading={index === visibleActive ? 'eager' : 'lazy'} decoding="async" fetchPriority={index === visibleActive ? 'high' : 'low'} {...responsiveImageProps(slide.images[0], '100vw')} />
         <span className="editorial-slide-shade" />
         <div className="editorial-slide-copy">
           <h2>{slide.slideTitle}</h2>

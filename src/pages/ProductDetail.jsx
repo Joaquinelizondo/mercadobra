@@ -9,6 +9,7 @@ import ProductCustomizer from '../components/ProductCustomizer'
 import { companyInitials, formatPrice } from '../utils/format'
 import { createWhatsAppLink } from '../utils/whatsapp'
 import { discountedPrice, normalizeDiscount } from '../utils/pricing'
+import { responsiveImageProps } from '../utils/productImages'
 import '../styles/ProductDetail.css'
 
 const PRODUCT_TYPE_LABELS = {
@@ -119,7 +120,7 @@ export default function ProductDetail() {
         <section className="product-gallery" aria-label={`Imágenes de ${product.name}`}>
           <div className={`product-gallery-main${images.length ? '' : ' is-placeholder'}`} style={{ '--product-color': product.color }}>
             {images.length ? (
-              <img src={images[visibleImageIndex]?.url} alt={images[visibleImageIndex]?.alt || product.name} decoding="async" fetchPriority="high" />
+              <img src={images[visibleImageIndex]?.url} alt={images[visibleImageIndex]?.alt || product.name} decoding="async" fetchPriority="high" {...responsiveImageProps(images[visibleImageIndex], '(max-width: 900px) 100vw, 58vw')} />
             ) : (
               <span>{companyInitials(product.company)}</span>
             )}
@@ -132,7 +133,7 @@ export default function ProductDetail() {
             <div className="product-gallery-thumbs">
               {images.map((image, index) => (
                 <button key={`${image.url}-${index}`} type="button" className={index === visibleImageIndex ? 'is-active' : ''} onClick={() => setActiveImage(index)} aria-label={`Ver imagen ${index + 1}`}>
-                  <img src={image.url} alt="" loading="lazy" decoding="async" />
+                  <img src={image.url} alt="" loading="lazy" decoding="async" {...responsiveImageProps(image, '96px')} />
                 </button>
               ))}
             </div>

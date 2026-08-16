@@ -11,7 +11,8 @@
     "seed": "node src/seed.js",
     "db:bootstrap": "npm run migrate && npm run seed",
     "db:check": "node src/dbCheck.js",
-    "admin:bootstrap": "node src/bootstrapAdmin.js"
+    "admin:bootstrap": "node src/bootstrapAdmin.js",
+    "images:migrate": "node src/migrateProductImages.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

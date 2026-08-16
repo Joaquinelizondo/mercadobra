@@ -605,13 +605,29 @@ ADMIN_COMPANY=Mercadobra
 Variables opcionales:
 
 - `MERCADOPAGO_ACCESS_TOKEN`
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+- `CLOUDINARY_FOLDER` (por defecto `mercadobra/products`)
 - `OPENAI_API_KEY`
 - `OPENAI_MODEL`
 - `OPENAI_BASE_URL`
 - Credenciales SMTP o Resend.
 - Variables de Meta WhatsApp, Twilio o webhook de WhatsApp.
 
-Si OpenAI o WhatsApp no están configurados, el backend muestra advertencias informativas, pero puede iniciar normalmente.
+Si Cloudinary, OpenAI o WhatsApp no están configurados, el backend muestra advertencias informativas, pero puede iniciar normalmente. La carga de nuevas fotos desde administración requiere las tres credenciales de Cloudinary.
+
+### Imágenes de productos — Cloudinary
+
+Las fotos nuevas se optimizan a WebP en el navegador y se envían a `POST /product-images`, una ruta autenticada que realiza la carga en Cloudinary sin exponer `CLOUDINARY_API_SECRET`. La base conserva la URL segura, el identificador público, dimensiones, formato y peso. Las vistas públicas generan variantes responsive de Cloudinary con formato y calidad automáticos.
+
+Después de configurar Cloudinary y verificar una carga nueva, las imágenes Base64 históricas pueden migrarse una sola vez con:
+
+```bash
+npm --prefix backend run images:migrate
+```
+
+El comando es reanudable: ignora imágenes que ya sean URLs y reemplaza únicamente imágenes Base64. Debe ejecutarse con `DATABASE_URL` apuntando explícitamente a la base que se desea migrar.
 
 Nunca confundir:
 

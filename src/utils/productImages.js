@@ -37,3 +37,20 @@ export async function optimizeProductImage(file) {
     format: 'webp',
   }
 }
+
+function cloudinaryVariant(url, width) {
+  const marker = '/image/upload/'
+  if (!String(url || '').includes(marker)) return ''
+  return url.replace(marker, `${marker}f_auto,q_auto,c_limit,w_${width}/`)
+}
+
+export function responsiveImageProps(image, sizes) {
+  const url = String(image?.url || '')
+  const widths = [360, 720, 1200, 1800]
+  const variants = widths.map((width) => {
+    const variant = cloudinaryVariant(url, width)
+    return variant ? `${variant} ${width}w` : ''
+  }).filter(Boolean)
+
+  return variants.length ? { srcSet: variants.join(', '), sizes } : {}
+}

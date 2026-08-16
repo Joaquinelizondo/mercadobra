@@ -53,6 +53,12 @@ export const config = {
   whatsappProvider: env.WHATSAPP_PROVIDER || 'webhook',
   whatsappWebhookUrl: env.WHATSAPP_WEBHOOK_URL || null,
   whatsappSendTimeoutMs: Number(env.WHATSAPP_SEND_TIMEOUT_MS || 12000),
+
+  // Product media - Cloudinary
+  cloudinaryCloudName: env.CLOUDINARY_CLOUD_NAME || null,
+  cloudinaryApiKey: env.CLOUDINARY_API_KEY || null,
+  cloudinaryApiSecret: env.CLOUDINARY_API_SECRET || null,
+  cloudinaryFolder: env.CLOUDINARY_FOLDER || 'mercadobra/products',
 }
 
 /**
@@ -107,6 +113,11 @@ export function validateEnvVars() {
       name: 'PostgreSQL',
       required: ['DATABASE_URL'],
       optional: [],
+    },
+    {
+      name: 'Cloudinary Images',
+      required: ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'],
+      optional: ['CLOUDINARY_FOLDER'],
     },
     {
       name: 'SMTP (Email)',

@@ -48,6 +48,7 @@ import {
   hashSessionToken,
   verifyPassword,
 } from './authService.js'
+import { isCloudinaryConfigured, uploadProductImage } from './cloudinaryService.js'
 
 // Validar env vars antes de iniciar la app
 validateEnvVars()
@@ -678,6 +679,14 @@ app.get('/products/:id', asyncHandler(async (req, res) => {
   }
 
   return res.json(publicProduct(product))
+}))
+
+app.post('/product-images', authMiddleware, providerOnly, asyncHandler(async (req, res) => {
+  if (!isCloudinaryConfigured()) throw new ServiceUnavailableError('Cloudinary todavía no está configurado')
+  const image = await uploadProductImage(req.body?.dataUrl, {
+    alt: validateStringLength(req.body?.alt || '', 'Texto alternativo', 0, 180),
+  })
+  return res.status(201).json({ image })
 }))
 
 app.post('/products', authMiddleware, (req, res, next) => {
