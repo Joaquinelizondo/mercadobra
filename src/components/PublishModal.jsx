@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useProducts } from '../context/ProductContext'
 import { companyInitials } from '../utils/format'
+import { optimizeProductImage } from '../utils/productImages'
 import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../data/constants'
 
 const EMPTY_FORM = {
@@ -64,20 +65,24 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
     setFormData((previous) => ({ ...previous, variants: previous.variants.filter((_, variantIndex) => variantIndex !== index) }))
   }
 
-  function handleImages(event) {
+  async function handleImages(event) {
     const files = Array.from(event.target.files || []).slice(0, 5)
-    if (files.some((file) => file.size > 2 * 1024 * 1024)) {
-      setSubmitError('Cada imagen debe pesar menos de 2 MB.')
+    if (files.some((file) => file.size > 8 * 1024 * 1024)) {
+      setSubmitError('Cada archivo original debe pesar menos de 8 MB.')
       event.target.value = ''
       return
     }
     setSubmitError('')
-    Promise.all(files.map((file) => new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve({ url: reader.result, alt: formData.name || file.name })
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    }))).then((images) => setFormData((previous) => ({ ...previous, images })))
+    try {
+      const images = await Promise.all(files.map(async (file) => ({
+        ...await optimizeProductImage(file),
+        alt: formData.name || file.name,
+      })))
+      setFormData((previous) => ({ ...previous, images }))
+    } catch {
+      setSubmitError('No pudimos procesar una de las imágenes. Probá con otro archivo.')
+      event.target.value = ''
+    }
   }
 
   async function handleSubmit(e) {
@@ -337,14 +342,14 @@ export default function PublishModal({ onClose, onPublished, initialFormData = n
               <label className="form-label" htmlFor="pub-images">Fotos del producto</label>
               <label className="product-photo-picker" htmlFor="pub-images">
                 <strong>Subir fotos</strong>
-                <span>Hasta 5 imágenes JPG, PNG o WEBP (máx. 2 MB). La primera será la portada.</span>
+                <span>Hasta 5 imágenes JPG, PNG o WEBP. Se optimizan automáticamente; la primera será la portada.</span>
               </label>
               <input id="pub-images" className="product-photo-input" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleImages} />
               {formData.images?.length > 0 && (
                 <div className="product-photo-preview">
                   {formData.images.map((image, index) => (
                     <div key={`${image.url.slice(0, 30)}-${index}`}>
-                      <img src={image.url} alt={image.alt || `Vista previa ${index + 1}`} />
+                      <img src={image.url} alt={image.alt || `Vista previa ${index + 1}`} loading="lazy" decoding="async" />
                       {index === 0 && <span>Portada</span>}
                     </div>
                   ))}

@@ -77,7 +77,7 @@ export default function ProductCard({
       aria-label={`Ver detalle de ${product.name}`}
     >
       <div className={`product-img${coverImage ? ' product-img--photo' : ''}`} style={{ '--product-color': product.color }}>
-        {coverImage && <img src={coverImage} alt={product.images?.[0]?.alt || product.name} />}
+        {coverImage && <img src={coverImage} alt={product.images?.[0]?.alt || product.name} loading="lazy" decoding="async" />}
         {product.ribbonEnabled && product.ribbonText && (
           <span className="product-ribbon">{product.ribbonText}</span>
         )}

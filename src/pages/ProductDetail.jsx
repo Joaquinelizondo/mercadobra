@@ -119,7 +119,7 @@ export default function ProductDetail() {
         <section className="product-gallery" aria-label={`Imágenes de ${product.name}`}>
           <div className={`product-gallery-main${images.length ? '' : ' is-placeholder'}`} style={{ '--product-color': product.color }}>
             {images.length ? (
-              <img src={images[visibleImageIndex]?.url} alt={images[visibleImageIndex]?.alt || product.name} />
+              <img src={images[visibleImageIndex]?.url} alt={images[visibleImageIndex]?.alt || product.name} decoding="async" fetchPriority="high" />
             ) : (
               <span>{companyInitials(product.company)}</span>
             )}
@@ -132,7 +132,7 @@ export default function ProductDetail() {
             <div className="product-gallery-thumbs">
               {images.map((image, index) => (
                 <button key={`${image.url}-${index}`} type="button" className={index === visibleImageIndex ? 'is-active' : ''} onClick={() => setActiveImage(index)} aria-label={`Ver imagen ${index + 1}`}>
-                  <img src={image.url} alt="" />
+                  <img src={image.url} alt="" loading="lazy" decoding="async" />
                 </button>
               ))}
             </div>

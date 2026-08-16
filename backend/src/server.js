@@ -67,6 +67,46 @@ const FRONTEND_PUBLIC_URL = config.frontendPublicUrl
 const BACKEND_PUBLIC_URL = config.backendPublicUrl
 const CUSTOMER_QUOTE_STATUSES = ['in_progress', 'sent', 'accepted', 'project_in_progress', 'completed', 'rejected', 'cancelled']
 const HAS_PUBLIC_HTTPS_FRONTEND = /^https:\/\//.test(FRONTEND_PUBLIC_URL)
+const PRODUCT_IMAGE_DATA_PATTERN = /^data:(image\/(?:avif|gif|jpeg|png|webp));base64,([a-z0-9+/=\s]+)$/i
+
+function embeddedImageVersion(url) {
+  let hash = 0
+  for (let index = 0; index < url.length; index += 1) {
+    hash = ((hash << 5) - hash + url.charCodeAt(index)) | 0
+  }
+  return Math.abs(hash).toString(36)
+}
+
+function productImageUrl(productId, imageIndex, version) {
+  return `${String(BACKEND_PUBLIC_URL).replace(/\/+$/, '')}/products/${productId}/images/${imageIndex}?v=${version}`
+}
+
+function publicProduct(product) {
+  return {
+    ...product,
+    images: (Array.isArray(product.images) ? product.images : []).map((image, index) => {
+      const url = String(image?.url || '')
+      if (!url.startsWith('data:image/')) return image
+      return {
+        ...image,
+        url: productImageUrl(product.id, index, embeddedImageVersion(url)),
+        storage: 'embedded',
+        index,
+      }
+    }),
+  }
+}
+
+function restoreEmbeddedImageReferences(images, existingImages) {
+  if (!Array.isArray(images)) return images
+  return images.map((image) => {
+    if (image?.storage !== 'embedded') return image
+    const index = Number(image.index)
+    return Number.isInteger(index) && existingImages[index]
+      ? existingImages[index]
+      : image
+  })
+}
 
 const allowedOrigins = FRONTEND_ORIGIN
   .split(',')
@@ -601,8 +641,32 @@ app.get('/providers/:id/products', async (req, res) => {
 app.get('/products', async (req, res) => {
   const repo = await getRepository()
   const { q, category, providerId, stock } = req.query
-  res.json(await repo.getProducts({ q, category, providerId, stock }))
+  const products = await repo.getProducts({ q, category, providerId, stock })
+  res.json(products.map(publicProduct))
 })
+
+app.get('/products/:id/images/:index', asyncHandler(async (req, res) => {
+  const id = validateNumber(req.params.id, 'Product ID', 1)
+  const index = validateNumber(req.params.index, 'Índice de imagen', 0)
+  const repo = await getRepository()
+  const product = await repo.getProductById(id)
+
+  if (!product || product.status === 'archived') throw new NotFoundError('Imagen')
+
+  const image = Array.isArray(product.images) ? product.images[index] : null
+  const imageUrl = String(image?.url || '')
+  const embeddedImage = imageUrl.match(PRODUCT_IMAGE_DATA_PATTERN)
+
+  if (embeddedImage) {
+    res.set('Content-Type', embeddedImage[1].toLowerCase())
+    res.set('Cache-Control', 'public, max-age=31536000, immutable')
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin')
+    return res.send(Buffer.from(embeddedImage[2], 'base64'))
+  }
+
+  if (/^https?:\/\//i.test(imageUrl)) return res.redirect(302, imageUrl)
+  throw new NotFoundError('Imagen')
+}))
 
 app.get('/products/:id', asyncHandler(async (req, res) => {
   const id = validateNumber(req.params.id, 'Product ID', 1)
@@ -613,7 +677,7 @@ app.get('/products/:id', asyncHandler(async (req, res) => {
     throw new NotFoundError('Producto')
   }
 
-  return res.json(product)
+  return res.json(publicProduct(product))
 }))
 
 app.post('/products', authMiddleware, (req, res, next) => {
@@ -672,7 +736,7 @@ app.post('/products', authMiddleware, (req, res, next) => {
 
   return res.status(201).json({
     message: 'Producto guardado correctamente',
-    product: created
+    product: publicProduct(created)
   })
 })
 
@@ -711,8 +775,12 @@ app.patch('/products/:id', authMiddleware, providerOnly, async (req, res) => {
     return res.status(403).json({ message: 'No podés editar productos de otro proveedor' })
   }
 
+  if (updates.images !== undefined) {
+    updates.images = restoreEmbeddedImageReferences(updates.images, existing.images || [])
+  }
+
   const updated = await repo.updateProduct(id, updates)
-  return res.json(updated)
+  return res.json(publicProduct(updated))
 })
 
 app.delete('/products/:id', authMiddleware, providerOnly, async (req, res) => {
