@@ -110,26 +110,43 @@ function restoreEmbeddedImageReferences(images, existingImages) {
 }
 
 async function migrateEmbeddedProductImages() {
-  if (!isCloudinaryConfigured()) return { migratedImages: 0, migratedProducts: 0 }
+  if (!isCloudinaryConfigured()) return { migratedImages: 0, migratedProducts: 0, failedImages: [] }
 
   const repo = await getRepository()
   const products = await repo.getProducts({})
   let migratedImages = 0
   let migratedProducts = 0
+  const failedImages = []
 
   for (const product of products) {
     let changed = false
     const images = []
 
-    for (const image of product.images || []) {
+    for (let imageIndex = 0; imageIndex < (product.images || []).length; imageIndex += 1) {
+      const image = product.images[imageIndex]
       if (!String(image?.url || '').startsWith('data:image/')) {
         images.push(image)
         continue
       }
 
-      images.push(await uploadProductImage(image.url, { alt: image.alt || product.name }))
-      migratedImages += 1
-      changed = true
+      try {
+        let uploaded
+        for (let attempt = 1; attempt <= 3; attempt += 1) {
+          try {
+            uploaded = await uploadProductImage(image.url, { alt: image.alt || product.name })
+            break
+          } catch (error) {
+            if (attempt === 3) throw error
+            await new Promise((resolve) => setTimeout(resolve, attempt * 1500))
+          }
+        }
+        images.push(uploaded)
+        migratedImages += 1
+        changed = true
+      } catch (error) {
+        images.push(image)
+        failedImages.push({ productId: product.id, imageIndex, reason: error.message })
+      }
     }
 
     if (changed) {
@@ -138,7 +155,7 @@ async function migrateEmbeddedProductImages() {
     }
   }
 
-  return { migratedImages, migratedProducts }
+  return { migratedImages, migratedProducts, failedImages }
 }
 
 const allowedOrigins = FRONTEND_ORIGIN
@@ -1421,8 +1438,9 @@ app.use(globalErrorHandler)
 const server = app.listen(PORT, () => {
   console.log(`✅ Mercadobra backend listening on http://localhost:${PORT}`)
   migrateEmbeddedProductImages()
-    .then(({ migratedImages, migratedProducts }) => {
+    .then(({ migratedImages, migratedProducts, failedImages }) => {
       if (migratedImages > 0) console.log(`✅ Cloudinary: ${migratedImages} imágenes de ${migratedProducts} productos migradas`)
+      if (failedImages.length > 0) console.error(`⚠️ Cloudinary: ${failedImages.length} imágenes pendientes de migración`)
     })
     .catch((error) => console.error('⚠️ No se pudieron migrar imágenes a Cloudinary:', error.message))
 })
