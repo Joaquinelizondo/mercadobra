@@ -384,6 +384,14 @@ async function getJsonRepo() {
       const created = { ...payload, id: nextId(db.customerQuoteMessages), createdAt: new Date().toISOString() }
       db.customerQuoteMessages.push(created); writeDb(db); return mapQuoteMessageRow(created)
     },
+    async getDueQuoteReminders() {
+      const db=readDb(); const reminders=Array.isArray(db.customerQuoteReminders)?db.customerQuoteReminders:[]; const now=Date.now(); const due=[]
+      for(const quote of db.customerQuotes||[]){if(quote.status!=='sent'||!quote.sentAt)continue;const age=now-new Date(quote.sentAt).getTime();const user=db.users.find(item=>Number(item.id)===Number(quote.customerId));for(const [type,days] of [['client_day_7',7],['admin_day_14',14]]){const previous=reminders.find(item=>Number(item.quoteId)===Number(quote.id)&&item.reminderType===type);const retryAllowed=!previous||previous.status!=='sent'&&(now-new Date(previous.attemptedAt||0).getTime()>=24*60*60*1000);if(age>=days*24*60*60*1000&&retryAllowed)due.push({...mapCustomerQuoteRow(quote),reminderType:type,customerEmail:user?.email||'',customerName:user?.company||''})}}
+      return due
+    },
+    async recordQuoteReminder({quoteId,reminderType,status,errorMessage=''}) {
+      const db=readDb();if(!Array.isArray(db.customerQuoteReminders))db.customerQuoteReminders=[];let row=db.customerQuoteReminders.find(item=>Number(item.quoteId)===Number(quoteId)&&item.reminderType===reminderType);const values={quoteId:Number(quoteId),reminderType,status,attemptedAt:new Date().toISOString(),sentAt:status==='sent'?new Date().toISOString():null,errorMessage};if(row)Object.assign(row,values);else{row={id:nextId(db.customerQuoteReminders),...values};db.customerQuoteReminders.push(row)}writeDb(db);return row
+    },
     async getProviders() {
       return readDb().providers
     },
@@ -1037,6 +1045,14 @@ async function getPgRepo() {
         [payload.quoteId, payload.authorUserId, payload.authorRole, payload.message, JSON.stringify(payload.attachments || [])]
       )
       return mapQuoteMessageRow(rows[0])
+    },
+    async getDueQuoteReminders() {
+      const {rows}=await pool.query(`SELECT customer_quotes.*,users.email AS customer_email,users.company AS customer_name,reminder.reminder_type,reminder.status AS reminder_status,reminder.attempted_at FROM customer_quotes JOIN users ON users.id=customer_quotes.customer_user_id CROSS JOIN (VALUES ('client_day_7',7),('admin_day_14',14)) AS schedule(reminder_type,days) LEFT JOIN customer_quote_reminders reminder ON reminder.quote_id=customer_quotes.id AND reminder.reminder_type=schedule.reminder_type WHERE customer_quotes.status='sent' AND customer_quotes.sent_at IS NOT NULL AND customer_quotes.sent_at<=NOW()-(schedule.days*INTERVAL '1 day') AND (reminder.id IS NULL OR (reminder.status<>'sent' AND reminder.attempted_at<=NOW()-INTERVAL '24 hours')) ORDER BY customer_quotes.sent_at ASC`)
+      return rows.map(row=>({...mapCustomerQuoteRow(row),reminderType:row.reminder_type,customerEmail:row.customer_email||'',customerName:row.customer_name||''}))
+    },
+    async recordQuoteReminder({quoteId,reminderType,status,errorMessage=''}) {
+      const {rows}=await pool.query(`INSERT INTO customer_quote_reminders (quote_id,reminder_type,status,attempted_at,sent_at,error_message) VALUES ($1,$2,$3,NOW(),CASE WHEN $3='sent' THEN NOW() ELSE NULL END,$4) ON CONFLICT (quote_id,reminder_type) DO UPDATE SET status=EXCLUDED.status,attempted_at=NOW(),sent_at=CASE WHEN EXCLUDED.status='sent' THEN NOW() ELSE customer_quote_reminders.sent_at END,error_message=EXCLUDED.error_message RETURNING *`,[quoteId,reminderType,status,errorMessage])
+      return rows[0]
     },
     async getProviders() {
       const { rows } = await pool.query('SELECT * FROM providers ORDER BY name ASC')

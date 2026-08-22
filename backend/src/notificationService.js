@@ -587,6 +587,22 @@ export function notifyAdminCustomerReply({ customerName, quote }) {
   return sendPortalEmail({email:LEADS_NOTIFICATION_EMAIL,subject:`Nueva respuesta de ${customerName||'un cliente'} · ${quote.referenceNumber}`,title:'Un cliente respondió',intro:`${customerName||'Un cliente'} envió un mensaje en “${quote.title}”.`,actionUrl:`${FRONTEND_PUBLIC_URL}/admin/clientes/${quote.customerId}/cotizaciones/${quote.id}`,actionLabel:'ABRIR CONVERSACIÓN'})
 }
 
+export function notifyAdminCustomerRegistered({ customerName, email, customerId }) {
+  return sendPortalEmail({email:LEADS_NOTIFICATION_EMAIL,subject:`Nuevo cliente registrado · ${customerName||email}`,title:'Un cliente activó su cuenta',intro:`${customerName||email} completó el registro y ya puede enviar solicitudes desde su portal.`,actionUrl:`${FRONTEND_PUBLIC_URL}/admin/clientes/${customerId}`,actionLabel:'VER CLIENTE'})
+}
+
+export function notifyAdminNewQuoteRequest({ customerName, quote }) {
+  return sendPortalEmail({email:LEADS_NOTIFICATION_EMAIL,subject:`Nueva solicitud · ${quote.referenceNumber}`,title:'Nueva solicitud de cotización',intro:`${customerName||'Un cliente'} solicitó “${quote.title}”. Ya podés revisar la información y preparar la propuesta.`,actionUrl:`${FRONTEND_PUBLIC_URL}/admin/clientes/${quote.customerId}/cotizaciones/${quote.id}`,actionLabel:'ABRIR SOLICITUD'})
+}
+
+export function notifyCustomerQuoteReminder({ email, customerName, quote }) {
+  return sendPortalEmail({email,subject:`Recordatorio de cotización · ${quote.referenceNumber}`,title:'Tu cotización sigue disponible',intro:`Hola ${customerName||''}. Hace siete días te enviamos la propuesta para “${quote.title}”. Podés revisarla, aprobarla o escribirnos desde tu espacio privado.`,actionUrl:`${FRONTEND_PUBLIC_URL}/cliente`,actionLabel:'REVISAR COTIZACIÓN'})
+}
+
+export function notifyAdminQuoteStale({ customerName, quote }) {
+  return sendPortalEmail({email:LEADS_NOTIFICATION_EMAIL,subject:`Seguimiento pendiente · ${quote.referenceNumber}`,title:'Cotización sin respuesta',intro:`La propuesta “${quote.title}” enviada a ${customerName||'el cliente'} continúa sin respuesta después de catorce días.`,actionUrl:`${FRONTEND_PUBLIC_URL}/admin/clientes/${quote.customerId}/cotizaciones/${quote.id}`,actionLabel:'HACER SEGUIMIENTO'})
+}
+
 async function sendRecommendationEmail(email, searchTerm, products) {
   if (!email) {
     return { sent: false, channel: 'email', reason: 'email missing' }

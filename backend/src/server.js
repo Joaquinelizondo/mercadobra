@@ -4,7 +4,7 @@ import cors from 'cors'
 import { getRepository } from './repository.js'
 import { isPostgresEnabled } from './db.js'
 import { generateChatReply } from './chatService.js'
-import { notifyAdminCustomerReply, notifyCustomerQuoteActivity, notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifySearchRecommendations, sendCustomerInvitationEmail, sendCustomerInvitationWhatsapp } from './notificationService.js'
+import { notifyAdminCustomerRegistered, notifyAdminCustomerReply, notifyAdminNewQuoteRequest, notifyAdminQuoteStale, notifyCustomerQuoteActivity, notifyCustomerQuoteReminder, notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifySearchRecommendations, sendCustomerInvitationEmail, sendCustomerInvitationWhatsapp } from './notificationService.js'
 import {
   createMercadoPagoPreference,
   getMercadoPagoPayment,
@@ -70,6 +70,7 @@ const CUSTOMER_QUOTE_STATUSES = ['in_progress', 'sent', 'accepted', 'project_in_
 const MILESTONE_STATUSES = ['pending', 'in_progress', 'completed']
 const HAS_PUBLIC_HTTPS_FRONTEND = /^https:\/\//.test(FRONTEND_PUBLIC_URL)
 const PRODUCT_IMAGE_DATA_PATTERN = /^data:(image\/(?:avif|gif|jpeg|png|webp));base64,([a-z0-9+/=\s]+)$/i
+const QUOTE_REMINDER_CHECK_INTERVAL_MS = 60 * 60 * 1000
 
 function embeddedImageVersion(url) {
   let hash = 0
@@ -117,6 +118,11 @@ function validateMilestones(value) {
       completedAt: status === 'completed' ? (milestone.completedAt || new Date().toISOString()) : null,
     }
   })
+}
+
+async function processDueQuoteReminders() {
+  const repo=await getRepository(); const due=await repo.getDueQuoteReminders()
+  for(const item of due){try{if(item.reminderType==='client_day_7'){if(!item.customerEmail)throw new Error('El cliente no tiene email');await notifyCustomerQuoteReminder({email:item.customerEmail,customerName:item.customerName,quote:item})}else{await notifyAdminQuoteStale({customerName:item.customerName,quote:item})}await repo.recordQuoteReminder({quoteId:item.id,reminderType:item.reminderType,status:'sent'})}catch(error){await repo.recordQuoteReminder({quoteId:item.id,reminderType:item.reminderType,status:'failed',errorMessage:String(error?.message||error).slice(0,500)});console.error('[quote-reminder:error]',item.id,item.reminderType,error?.message||error)}}
 }
 
 function restoreEmbeddedImageReferences(images, existingImages) {
@@ -392,6 +398,8 @@ app.post('/auth/customer/register', asyncHandler(async (req, res) => {
 
   const token = await issueSession(repo, created.id)
 
+  void notifyAdminCustomerRegistered({customerName:created.company,email:created.email,customerId:created.id}).catch((error)=>console.error('[customer-registered-notification:error]',error.message))
+
   return res.status(201).json({
     token,
     user: {
@@ -473,6 +481,7 @@ app.post('/customer/quotes', authMiddleware, customerOnly, asyncHandler(async (r
     budget: body.budget === '' || body.budget == null ? null : validateNumber(body.budget, 'Presupuesto', 0, 999999999999),
     attachments: validateAttachments(body.attachments), internalNotes: '', createdBy: req.authUser.id,
   })
+  void notifyAdminNewQuoteRequest({customerName:req.authUser.company,quote:created}).catch((error)=>console.error('[new-quote-notification:error]',error.message))
   return res.status(201).json(created)
 }))
 
@@ -581,6 +590,7 @@ app.post('/customer-invitations/:token/accept', asyncHandler(async (req,res)=>{
   if(!invitation||invitation.status!=='sent'||new Date(expiresAt).getTime()<=Date.now())throw new ValidationError('La invitación no es válida o ya venció')
   const userId=Number(invitation.user_id??invitation.userId); await repo.updateUserPassword(userId,hashPassword(password)); await repo.acceptCustomerInvitation(invitation.id)
   const token=await issueSession(repo,userId); const user=await repo.findUserById(userId)
+  void notifyAdminCustomerRegistered({customerName:user.company,email:user.email,customerId:user.id}).catch((error)=>console.error('[customer-registered-notification:error]',error.message))
   return res.json({token,user:{id:user.id,email:user.email,role:user.role,company:user.company}})
 }))
 
@@ -1465,6 +1475,9 @@ const server = app.listen(PORT, () => {
       if (failedImages.length > 0) console.error(`⚠️ Cloudinary: ${failedImages.length} imágenes pendientes de migración`)
     })
     .catch((error) => console.error('⚠️ No se pudieron migrar imágenes a Cloudinary:', error.message))
+  const reminderTimer=setInterval(()=>{void processDueQuoteReminders().catch((error)=>console.error('[quote-reminder-sweep:error]',error.message))},QUOTE_REMINDER_CHECK_INTERVAL_MS)
+  reminderTimer.unref()
+  setTimeout(()=>{void processDueQuoteReminders().catch((error)=>console.error('[quote-reminder-sweep:error]',error.message))},15000).unref()
 })
 
 server.on('error', (err) => {
