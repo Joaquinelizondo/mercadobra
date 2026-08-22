@@ -134,6 +134,7 @@ function mapCustomerQuoteRow(row) {
     desiredDate: row.desired_date ?? row.desiredDate ?? null,
     budget: row.budget == null ? null : Number(row.budget),
     proposalDescription: row.proposal_description ?? row.proposalDescription ?? '',
+    milestones: Array.isArray(row.milestones) ? row.milestones : [],
     createdAt: row.created_at ?? row.createdAt ?? null,
     updatedAt: row.updated_at ?? row.updatedAt ?? null,
   }
@@ -1015,12 +1016,13 @@ async function getPgRepo() {
       const { rows } = await pool.query(
         `UPDATE customer_quotes SET title=$1, description=$2, status=$3, total_amount=$4, currency=$5,
          estimated_start_at=$6, estimated_end_at=$7, desired_date=$8, budget=$9, attachments=$10,
-         proposal_description=$11,
+         proposal_description=$11, milestones=$12,
          sent_at=CASE WHEN $3='sent' AND sent_at IS NULL THEN NOW() ELSE sent_at END, updated_at=NOW()
-         WHERE id=$12 RETURNING *`,
+         WHERE id=$13 RETURNING *`,
         [merged.title, merged.description, merged.status, merged.totalAmount, merged.currency,
           merged.estimatedStartAt || null, merged.estimatedEndAt || null, merged.desiredDate || null,
-          merged.budget ?? null, JSON.stringify(merged.attachments || []), merged.proposalDescription || '', id]
+          merged.budget ?? null, JSON.stringify(merged.attachments || []), merged.proposalDescription || '',
+          JSON.stringify(merged.milestones || []), id]
       )
       return mapCustomerQuoteRow(rows[0])
     },

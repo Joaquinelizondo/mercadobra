@@ -67,6 +67,7 @@ const FRONTEND_ORIGIN = config.frontendOrigin
 const FRONTEND_PUBLIC_URL = config.frontendPublicUrl
 const BACKEND_PUBLIC_URL = config.backendPublicUrl
 const CUSTOMER_QUOTE_STATUSES = ['in_progress', 'sent', 'accepted', 'project_in_progress', 'completed', 'rejected', 'cancelled']
+const MILESTONE_STATUSES = ['pending', 'in_progress', 'completed']
 const HAS_PUBLIC_HTTPS_FRONTEND = /^https:\/\//.test(FRONTEND_PUBLIC_URL)
 const PRODUCT_IMAGE_DATA_PATTERN = /^data:(image\/(?:avif|gif|jpeg|png|webp));base64,([a-z0-9+/=\s]+)$/i
 
@@ -96,6 +97,26 @@ function publicProduct(product) {
       }
     }),
   }
+}
+
+function validateMilestones(value) {
+  if (value == null) return []
+  if (!Array.isArray(value)) throw new ValidationError('Hitos debe ser un array')
+  if (value.length > 30) throw new ValidationError('Se permiten hasta 30 hitos')
+  const rows = value
+  return rows.map((item, index) => {
+    const milestone = item && typeof item === 'object' ? item : {}
+    const status = validateEnum(milestone.status || 'pending', MILESTONE_STATUSES, `Estado del hito ${index + 1}`)
+    return {
+      id: validateStringLength(String(milestone.id || `milestone-${index + 1}`), 'ID del hito', 1, 80),
+      title: validateStringLength(requireField(milestone.title, `Título del hito ${index + 1}`), 'Título del hito', 2, 120),
+      description: validateStringLength(milestone.description || '', 'Nota del hito', 0, 500),
+      status,
+      plannedStartAt: milestone.plannedStartAt || null,
+      plannedEndAt: milestone.plannedEndAt || null,
+      completedAt: status === 'completed' ? (milestone.completedAt || new Date().toISOString()) : null,
+    }
+  })
 }
 
 function restoreEmbeddedImageReferences(images, existingImages) {
@@ -649,6 +670,7 @@ app.patch('/admin/quotes/:quoteId', authMiddleware, adminOnly, asyncHandler(asyn
     totalAmount: validateNumber(body.totalAmount ?? 0, 'Monto total', 0, 999999999999),
     currency: validateEnum(body.currency || 'UYU', ['uyu', 'usd'], 'Moneda').toUpperCase(),
     estimatedStartAt: body.estimatedStartAt || null, estimatedEndAt: body.estimatedEndAt || null,
+    milestones: validateMilestones(body.milestones),
   })
   if (!updated) throw new NotFoundError('Cotización')
   const customer=await repo.findUserById(updated.customerId)
