@@ -7,3 +7,21 @@
 .admin-proposal-form > div { display: grid; grid-template-columns: 1fr .65fr; gap: 9px; }
 .admin-proposal-form > button { padding: 14px; border: 0; background: #a8522e; color: #fff; font-weight: 900; cursor: pointer; }
 @media (max-width: 950px) { .admin-quote-workspace { grid-template-columns: 1fr; } }
+@media (max-width: 700px) {
+  .admin-quote-workspace,
+  .admin-quote-workspace * { box-sizing: border-box; }
+  .admin-quote-workspace { width: 100%; min-width: 0; gap: 28px; margin-top: 28px; }
+  .admin-quote-workspace > *,
+  .admin-proposal-form { width: 100%; min-width: 0; }
+  .admin-proposal-form { gap: 14px; padding: 22px 14px; }
+  .admin-proposal-form > div { grid-template-columns: 1fr; gap: 14px; }
+  .admin-proposal-form input,
+  .admin-proposal-form textarea,
+  .admin-proposal-form select { min-width: 0; min-height: 48px; font-size: 16px; }
+  .admin-proposal-form textarea { min-height: 130px; }
+  .admin-proposal-form > button { width: 100%; min-height: 50px; }
+  .customer-portal > header > div { width: 100%; min-width: 0; }
+  .customer-portal > header a { display: block; width: fit-content; margin-bottom: 18px; overflow-wrap: anywhere; }
+  .customer-portal > header span { display: block; }
+  .customer-portal > header strong { font-size: 1.6rem; }
+}

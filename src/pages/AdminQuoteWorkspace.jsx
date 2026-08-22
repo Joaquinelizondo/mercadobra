@@ -4,7 +4,15 @@ import { useAuth } from '../context/AuthContext'
 import { getAdminCustomer, getAdminQuoteMessages, getCustomerQuotes, sendAdminQuoteMessage, updateAdminQuote } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import './CustomerPortal.css'
+import './CustomerPortalMobile.css'
 import './AdminQuoteWorkspace.css'
+
+function formatRequestedDate(value) {
+  if (!value) return ''
+  const text = String(value)
+  const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(text) ? `${text}T00:00:00` : text)
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('es-UY')
+}
 
 export default function AdminQuoteWorkspace(){
   const {id,quoteId}=useParams(); const {adminUser,adminToken}=useAuth(); const [customer,setCustomer]=useState(null); const [quote,setQuote]=useState(null); const [messages,setMessages]=useState([]); const [message,setMessage]=useState(''); const [error,setError]=useState(''); const [saving,setSaving]=useState(false)
@@ -14,7 +22,7 @@ export default function AdminQuoteWorkspace(){
   async function send(e){e.preventDefault();if(!message.trim())return;try{const m=await sendAdminQuoteMessage(quote.id,{message},adminToken);setMessages(p=>[...p,m]);setMessage('')}catch(e){setError(e.message)}}
   if(!quote)return <section className="customer-portal"><p>{error||'Cargando cotización…'}</p></section>
   return <section className="customer-portal"><header><div><Link to={`/admin/clientes/${id}`}>← Volver al cliente</Link><span>Respuesta comercial</span><h1>{quote.title}</h1><p>{customer?.name} · {quote.referenceNumber}</p></div>{quote.totalAmount>0&&<strong>{formatPrice(quote.totalAmount,quote.currency)}</strong>}</header>{error&&<p className="customer-portal-error">{error}</p>}
-    <div className="admin-quote-workspace"><div className="quote-workspace"><div className="quote-workspace-head"><div><span>Solicitud del cliente</span><p>{quote.description}</p>{quote.budget!=null&&<p>Presupuesto indicado: {formatPrice(quote.budget,quote.currency)}</p>}{quote.desiredDate&&<p>Fecha deseada: {new Date(`${quote.desiredDate}T00:00:00`).toLocaleDateString('es-UY')}</p>}</div></div>{quote.attachments?.length>0&&<div className="quote-files">{quote.attachments.map((f,i)=><a key={i} href={f.data} download={f.name}>📎 {f.name}</a>)}</div>}
+    <div className="admin-quote-workspace"><div className="quote-workspace"><div className="quote-workspace-head"><div><span>Solicitud del cliente</span><p>{quote.description}</p>{quote.budget!=null&&<p>Presupuesto indicado: {formatPrice(quote.budget,quote.currency)}</p>}{formatRequestedDate(quote.desiredDate)&&<p>Fecha deseada: {formatRequestedDate(quote.desiredDate)}</p>}</div></div>{quote.attachments?.length>0&&<div className="quote-files">{quote.attachments.map((f,i)=><a key={i} href={f.data} download={f.name}>📎 {f.name}</a>)}</div>}
       <div className="quote-thread">{messages.length===0?<p className="quote-thread-empty">Todavía no hay mensajes.</p>:messages.map(m=><article key={m.id} className={m.authorRole==='admin'?'is-customer':'is-admin'}><small>{m.authorRole==='admin'?'Mercadobra':customer?.name||'Cliente'}</small><p>{m.message}</p><time>{new Date(m.createdAt).toLocaleString('es-UY')}</time></article>)}</div><form className="quote-message-form" onSubmit={send}><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Responder al cliente…"/><button>Enviar mensaje</button></form></div>
       <form className="admin-proposal-form" onSubmit={saveProposal}><span>Propuesta económica</span><h2>Preparar cotización</h2><label>Título<input value={quote.title} onChange={e=>setQuote({...quote,title:e.target.value})}/></label><label>Descripción para el cliente<textarea rows="5" value={quote.proposalDescription||''} onChange={e=>setQuote({...quote,proposalDescription:e.target.value})}/></label><div><label>Monto<input type="number" min="0" value={quote.totalAmount} onChange={e=>setQuote({...quote,totalAmount:e.target.value})}/></label><label>Moneda<select value={quote.currency} onChange={e=>setQuote({...quote,currency:e.target.value})}><option>UYU</option><option>USD</option></select></label></div><label>Inicio estimado<input type="date" value={quote.estimatedStartAt||''} onChange={e=>setQuote({...quote,estimatedStartAt:e.target.value})}/></label><label>Fin estimado<input type="date" value={quote.estimatedEndAt||''} onChange={e=>setQuote({...quote,estimatedEndAt:e.target.value})}/></label><button disabled={saving}>{saving?'Enviando…':'Enviar cotización al cliente'}</button></form></div>
   </section>
