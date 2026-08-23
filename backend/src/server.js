@@ -49,6 +49,7 @@ import {
   verifyPassword,
 } from './authService.js'
 import { isCloudinaryConfigured, uploadProductImage } from './cloudinaryService.js'
+import { createQuotePdf } from './quotePdfService.js'
 
 // Validar env vars antes de iniciar la app
 validateEnvVars()
@@ -118,6 +119,12 @@ function validateMilestones(value) {
       completedAt: status === 'completed' ? (milestone.completedAt || new Date().toISOString()) : null,
     }
   })
+}
+
+function validateQuoteDocument(body) {
+  const items=Array.isArray(body.documentItems)?body.documentItems.slice(0,10).map((item,index)=>({code:validateStringLength(item?.code||String(index+1).padStart(2,'0'),'Codigo',1,20),description:validateStringLength(requireField(item?.description,`Descripcion del item ${index+1}`),'Descripcion',2,240),subtotal:validateNumber(item?.subtotal??0,'Subtotal',0,999999999999)})):[]
+  const source=body.documentTerms&&typeof body.documentTerms==='object'?body.documentTerms:{}
+  return {documentItems:items,documentTerms:{validityDays:validateNumber(source.validityDays??30,'Validez',1,365),paymentTerms:validateStringLength(source.paymentTerms||'','Forma de pago',0,1200),executionTime:validateStringLength(source.executionTime||'','Plazo',0,800),warranty:validateStringLength(source.warranty||'','Garantia',0,1200),exclusions:validateStringLength(source.exclusions||'','Exclusiones',0,1800),notes:validateStringLength(source.notes||'','Notas',0,1200)},taxRate:validateNumber(body.taxRate??22,'IVA',0,100)}
 }
 
 function defaultProjectMilestones() {
@@ -681,6 +688,7 @@ app.patch('/admin/quotes/:quoteId/status', authMiddleware, adminOnly, asyncHandl
 app.patch('/admin/quotes/:quoteId', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
   const body = req.body || {}
+  const quoteDocument=validateQuoteDocument(body)
   const depositMode=validateEnum(body.depositMode||'none',['none','percentage','fixed'],'Tipo de seña')
   const depositValue=depositMode==='none'?0:validateNumber(body.depositValue??0,'Valor de seña',0,999999999999)
   const totalAmount=validateNumber(body.totalAmount??0,'Monto total',0,999999999999)
@@ -697,13 +705,18 @@ app.patch('/admin/quotes/:quoteId', authMiddleware, adminOnly, asyncHandler(asyn
     estimatedStartAt: body.estimatedStartAt || null, estimatedEndAt: body.estimatedEndAt || null,
     milestones: validateMilestones(body.milestones),
     depositMode, depositValue, depositAmount,
+    ...quoteDocument,
   })
   if (!updated) throw new NotFoundError('Cotización')
   if(depositAmount>0&&updated.depositStatus==='not_required')updated=await repo.updateCustomerQuoteDeposit(quoteId,{depositStatus:'pending'})
   if(depositAmount===0&&updated.depositStatus!=='approved')updated=await repo.updateCustomerQuoteDeposit(quoteId,{depositStatus:'not_required',depositMethod:'',depositReceipt:null,depositReportedAt:null})
   const customer=await repo.findUserById(updated.customerId)
-  if(customer?.email)await notifyCustomerQuoteActivity({email:customer.email,customerName:customer.company,quote:updated,kind:'quote'}).catch((error)=>console.error('[quote-notification:error]',error.message))
+  if(body.notifyCustomer!==false&&customer?.email)await notifyCustomerQuoteActivity({email:customer.email,customerName:customer.company,quote:updated,kind:'quote'}).catch((error)=>console.error('[quote-notification:error]',error.message))
   return res.json(updated)
+}))
+
+app.get('/admin/quotes/:quoteId/pdf',authMiddleware,adminOnly,asyncHandler(async(req,res)=>{
+  const quoteId=validateNumber(req.params.quoteId,'Cotizacion ID',1);const repo=await getRepository();const quote=await repo.getCustomerQuoteById(quoteId);if(!quote)throw new NotFoundError('Cotizacion');const customer=await repo.getAdminCustomerById(quote.customerId);const pdf=await createQuotePdf({quote,customer});const filename=`Cotizacion-${String(quote.referenceNumber||quote.id).replace(/[^a-z0-9-]/gi,'_')}.pdf`;res.set({'Content-Type':'application/pdf','Content-Disposition':`attachment; filename="${filename}"`,'Content-Length':String(pdf.length)});return res.send(pdf)
 }))
 
 app.post('/customer/quotes/:quoteId/deposit/mercadopago',authMiddleware,customerOnly,asyncHandler(async(req,res)=>{

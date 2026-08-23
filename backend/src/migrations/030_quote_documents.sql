@@ -1,0 +1,4 @@
+ALTER TABLE customer_quotes
+  ADD COLUMN IF NOT EXISTS document_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS document_terms JSONB NOT NULL DEFAULT '{}'::jsonb,
+  ADD COLUMN IF NOT EXISTS tax_rate NUMERIC(5, 2) NOT NULL DEFAULT 22;

@@ -175,6 +175,11 @@ export function sendAdminQuoteMessage(quoteId, payload, token) { return request(
 export function startQuoteDepositCheckout(quoteId, token) { return request(`/customer/quotes/${quoteId}/deposit/mercadopago`, { method: 'POST', token, body: '{}' }) }
 export function reportQuoteDepositTransfer(quoteId, receipt, token) { return request(`/customer/quotes/${quoteId}/deposit/transfer`, { method: 'POST', token, body: JSON.stringify({ receipt }) }) }
 export function reviewQuoteDeposit(quoteId, status, token) { return request(`/admin/quotes/${quoteId}/deposit`, { method: 'PATCH', token, body: JSON.stringify({ status }) }) }
+export async function downloadQuotePdf(quoteId, token) {
+  const response=await fetch(`${getApiBaseCandidates()[0]}/admin/quotes/${quoteId}/pdf`,{headers:{Authorization:`Bearer ${token}`}})
+  if(!response.ok)throw new Error('No se pudo generar el PDF de la cotización.')
+  const blob=await response.blob();const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`Cotizacion-${quoteId}.pdf`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url)
+}
 
 export function loginSupplier(email, password) {
   return request('/auth/login', {

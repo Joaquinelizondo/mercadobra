@@ -145,6 +145,9 @@ function mapCustomerQuoteRow(row) {
     depositReceipt: row.deposit_receipt ?? row.depositReceipt ?? null,
     depositReportedAt: row.deposit_reported_at ?? row.depositReportedAt ?? null,
     depositPaidAt: row.deposit_paid_at ?? row.depositPaidAt ?? null,
+    documentItems: Array.isArray(row.document_items ?? row.documentItems) ? (row.document_items ?? row.documentItems) : [],
+    documentTerms: row.document_terms ?? row.documentTerms ?? {},
+    taxRate: Number(row.tax_rate ?? row.taxRate ?? 22),
     createdAt: row.created_at ?? row.createdAt ?? null,
     updatedAt: row.updated_at ?? row.updatedAt ?? null,
   }
@@ -1038,13 +1041,15 @@ async function getPgRepo() {
         `UPDATE customer_quotes SET title=$1, description=$2, status=$3, total_amount=$4, currency=$5,
          estimated_start_at=$6, estimated_end_at=$7, desired_date=$8, budget=$9, attachments=$10,
          proposal_description=$11, milestones=$12, deposit_mode=$13, deposit_value=$14, deposit_amount=$15,
+         document_items=$16, document_terms=$17, tax_rate=$18,
          sent_at=CASE WHEN $3='sent' AND sent_at IS NULL THEN NOW() ELSE sent_at END, updated_at=NOW()
-         WHERE id=$16 RETURNING *`,
+         WHERE id=$19 RETURNING *`,
         [merged.title, merged.description, merged.status, merged.totalAmount, merged.currency,
           merged.estimatedStartAt || null, merged.estimatedEndAt || null, merged.desiredDate || null,
           merged.budget ?? null, JSON.stringify(merged.attachments || []), merged.proposalDescription || '',
           JSON.stringify(merged.milestones || []), merged.depositMode || 'none', merged.depositValue || 0,
-          merged.depositAmount || 0, id]
+          merged.depositAmount || 0, JSON.stringify(merged.documentItems || []), JSON.stringify(merged.documentTerms || {}),
+          merged.taxRate ?? 22, id]
       )
       return mapCustomerQuoteRow(rows[0])
     },
