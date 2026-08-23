@@ -100,6 +100,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | 2026-08-16 | Primera etapa de rendimiento de imágenes. | El listado dejó de transportar imágenes Base64, se agregaron URLs cacheables, carga diferida y optimización WebP para nuevas fotos. La migración física a CDN continúa pendiente. | Este cambio |
 | 2026-08-16 | Integración Cloudinary. | Se implementaron cargas autenticadas desde backend, URLs persistentes, variantes responsive y un comando reanudable para migrar las imágenes históricas. La activación espera credenciales de producción. | Este cambio |
 | 2026-08-22 | Alertas y seguimiento automático de cotizaciones privadas. | Se notifican altas y nuevas solicitudes; el cliente recibe un recordatorio a los 7 días desde el envío de la propuesta y administración recibe una alerta a los 14 días. Los envíos quedan registrados para evitar duplicados. | Este cambio |
+| 2026-08-22 | Cobro de señas de proyectos. | Mercadobra configura porcentaje o monto fijo; el cliente paga con Mercado Pago o informa una transferencia. La confirmación activa el proyecto y crea hitos iniciales cuando no fueron definidos. | Este cambio |
 
 ## Forma de trabajo
 

@@ -603,6 +603,14 @@ export function notifyAdminQuoteStale({ customerName, quote }) {
   return sendPortalEmail({email:LEADS_NOTIFICATION_EMAIL,subject:`Seguimiento pendiente · ${quote.referenceNumber}`,title:'Cotización sin respuesta',intro:`La propuesta “${quote.title}” enviada a ${customerName||'el cliente'} continúa sin respuesta después de catorce días.`,actionUrl:`${FRONTEND_PUBLIC_URL}/admin/clientes/${quote.customerId}/cotizaciones/${quote.id}`,actionLabel:'HACER SEGUIMIENTO'})
 }
 
+export function notifyAdminTransferReported({ customerName, quote }) {
+  return sendPortalEmail({email:LEADS_NOTIFICATION_EMAIL,subject:`Transferencia informada · ${quote.referenceNumber}`,title:'Comprobante de seña recibido',intro:`${customerName||'El cliente'} informó una transferencia para “${quote.title}”. Revisá el comprobante antes de confirmar el proyecto.`,actionUrl:`${FRONTEND_PUBLIC_URL}/admin/clientes/${quote.customerId}/cotizaciones/${quote.id}`,actionLabel:'REVISAR COMPROBANTE'})
+}
+
+export function notifyQuoteDepositApproved({ email, customerName, quote }) {
+  return sendPortalEmail({email,subject:`Proyecto confirmado · ${quote.referenceNumber}`,title:'Tu proyecto está confirmado',intro:`Hola ${customerName||''}. Confirmamos la seña de “${quote.title}”. Ya podés seguir las etapas de la obra desde tu espacio privado.`,actionUrl:`${FRONTEND_PUBLIC_URL}/cliente`,actionLabel:'VER PROYECTO'})
+}
+
 async function sendRecommendationEmail(email, searchTerm, products) {
   if (!email) {
     return { sent: false, channel: 'email', reason: 'email missing' }

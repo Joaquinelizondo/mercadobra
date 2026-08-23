@@ -4,7 +4,7 @@ import cors from 'cors'
 import { getRepository } from './repository.js'
 import { isPostgresEnabled } from './db.js'
 import { generateChatReply } from './chatService.js'
-import { notifyAdminCustomerRegistered, notifyAdminCustomerReply, notifyAdminNewQuoteRequest, notifyAdminQuoteStale, notifyCustomerQuoteActivity, notifyCustomerQuoteReminder, notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifySearchRecommendations, sendCustomerInvitationEmail, sendCustomerInvitationWhatsapp } from './notificationService.js'
+import { notifyAdminCustomerRegistered, notifyAdminCustomerReply, notifyAdminNewQuoteRequest, notifyAdminQuoteStale, notifyAdminTransferReported, notifyCustomerQuoteActivity, notifyCustomerQuoteReminder, notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifyQuoteDepositApproved, notifySearchRecommendations, sendCustomerInvitationEmail, sendCustomerInvitationWhatsapp } from './notificationService.js'
 import {
   createMercadoPagoPreference,
   getMercadoPagoPayment,
@@ -118,6 +118,15 @@ function validateMilestones(value) {
       completedAt: status === 'completed' ? (milestone.completedAt || new Date().toISOString()) : null,
     }
   })
+}
+
+function defaultProjectMilestones() {
+  return ['Relevamiento y definición','Diseño y aprobación','Compra de materiales','Fabricación y terminaciones','Instalación y entrega'].map((title,index)=>({id:`default-${index+1}`,title,description:'',status:index===0?'in_progress':'pending',plannedStartAt:null,plannedEndAt:null,completedAt:null}))
+}
+
+async function activateQuoteProject(repo,quote,depositUpdates) {
+  if(!(quote.milestones||[]).length)await repo.updateCustomerQuote(quote.id,{...quote,status:'project_in_progress',milestones:defaultProjectMilestones()})
+  return repo.updateCustomerQuoteDeposit(quote.id,{...depositUpdates,status:'project_in_progress'})
 }
 
 async function processDueQuoteReminders() {
@@ -672,19 +681,52 @@ app.patch('/admin/quotes/:quoteId/status', authMiddleware, adminOnly, asyncHandl
 app.patch('/admin/quotes/:quoteId', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
   const body = req.body || {}
-  const updated = await repo.updateCustomerQuote(quoteId, {
+  const depositMode=validateEnum(body.depositMode||'none',['none','percentage','fixed'],'Tipo de seña')
+  const depositValue=depositMode==='none'?0:validateNumber(body.depositValue??0,'Valor de seña',0,999999999999)
+  const totalAmount=validateNumber(body.totalAmount??0,'Monto total',0,999999999999)
+  if(depositMode==='percentage'&&depositValue>100)throw new ValidationError('El porcentaje de seña no puede superar 100%')
+  const depositAmount=depositMode==='percentage'?Math.round(totalAmount*depositValue)/100:depositMode==='fixed'?depositValue:0
+  if(depositAmount>totalAmount&&totalAmount>0)throw new ValidationError('La seña no puede superar el total de la cotización')
+  let updated = await repo.updateCustomerQuote(quoteId, {
     title: validateStringLength(requireField(body.title, 'Título'), 'Título', 2, 160),
     description: validateStringLength(body.description || '', 'Descripción', 0, 4000),
     proposalDescription: validateStringLength(body.proposalDescription || '', 'Detalle de propuesta', 0, 4000),
     status: validateEnum(body.status || 'sent', CUSTOMER_QUOTE_STATUSES, 'Estado'),
-    totalAmount: validateNumber(body.totalAmount ?? 0, 'Monto total', 0, 999999999999),
+    totalAmount,
     currency: validateEnum(body.currency || 'UYU', ['uyu', 'usd'], 'Moneda').toUpperCase(),
     estimatedStartAt: body.estimatedStartAt || null, estimatedEndAt: body.estimatedEndAt || null,
     milestones: validateMilestones(body.milestones),
+    depositMode, depositValue, depositAmount,
   })
   if (!updated) throw new NotFoundError('Cotización')
+  if(depositAmount>0&&updated.depositStatus==='not_required')updated=await repo.updateCustomerQuoteDeposit(quoteId,{depositStatus:'pending'})
+  if(depositAmount===0&&updated.depositStatus!=='approved')updated=await repo.updateCustomerQuoteDeposit(quoteId,{depositStatus:'not_required',depositMethod:'',depositReceipt:null,depositReportedAt:null})
   const customer=await repo.findUserById(updated.customerId)
   if(customer?.email)await notifyCustomerQuoteActivity({email:customer.email,customerName:customer.company,quote:updated,kind:'quote'}).catch((error)=>console.error('[quote-notification:error]',error.message))
+  return res.json(updated)
+}))
+
+app.post('/customer/quotes/:quoteId/deposit/mercadopago',authMiddleware,customerOnly,asyncHandler(async(req,res)=>{
+  if(!isMercadoPagoConfigured())throw new ServiceUnavailableError('Mercado Pago no está configurado')
+  const quoteId=validateNumber(req.params.quoteId,'Cotización ID',1);const repo=await getRepository();const quote=(await repo.getCustomerQuotes(req.authUser.id)).find(item=>item.id===quoteId)
+  if(!quote)throw new NotFoundError('Cotización');if(quote.status!=='accepted')throw new ValidationError('Primero debés aprobar la cotización');if(quote.depositAmount<=0)throw new ValidationError('Esta cotización no requiere seña');if(quote.depositStatus==='approved')throw new ConflictError('La seña ya fue confirmada')
+  const preference=await createMercadoPagoPreference({external_reference:`quote-deposit:${quote.id}`,items:[{id:`quote-${quote.id}`,title:`Seña · ${quote.title}`,quantity:1,currency_id:quote.currency,unit_price:quote.depositAmount}],payer:{name:req.authUser.company,email:req.authUser.email},metadata:{payment_kind:'quote_deposit',quote_id:quote.id},notification_url:`${BACKEND_PUBLIC_URL}/payments/mercadopago/webhook`,back_urls:{success:`${FRONTEND_PUBLIC_URL}/cliente?deposit=success&quoteId=${quote.id}`,failure:`${FRONTEND_PUBLIC_URL}/cliente?deposit=failure&quoteId=${quote.id}`,pending:`${FRONTEND_PUBLIC_URL}/cliente?deposit=pending&quoteId=${quote.id}`},...(HAS_PUBLIC_HTTPS_FRONTEND?{auto_return:'approved'}:{}),statement_descriptor:'MERCADOBRA',expires:true,expiration_date_from:new Date().toISOString(),expiration_date_to:new Date(Date.now()+72*60*60*1000).toISOString()})
+  const updated=await repo.updateCustomerQuoteDeposit(quote.id,{depositStatus:'pending',depositMethod:'mercadopago',depositPreferenceId:String(preference.id||'')})
+  return res.status(201).json({quote:updated,initPoint:preference.init_point,sandboxInitPoint:preference.sandbox_init_point,sandbox:isMercadoPagoSandbox()})
+}))
+
+app.post('/customer/quotes/:quoteId/deposit/transfer',authMiddleware,customerOnly,asyncHandler(async(req,res)=>{
+  const quoteId=validateNumber(req.params.quoteId,'Cotización ID',1);const repo=await getRepository();const quote=(await repo.getCustomerQuotes(req.authUser.id)).find(item=>item.id===quoteId)
+  if(!quote)throw new NotFoundError('Cotización');if(quote.status!=='accepted')throw new ValidationError('Primero debés aprobar la cotización');if(quote.depositAmount<=0)throw new ValidationError('Esta cotización no requiere seña');if(quote.depositStatus==='approved')throw new ConflictError('La seña ya fue confirmada')
+  const receipt=validateAttachments([req.body?.receipt])[0];const updated=await repo.updateCustomerQuoteDeposit(quote.id,{depositStatus:'reported',depositMethod:'transfer',depositReceipt:receipt,depositReportedAt:new Date().toISOString()})
+  await notifyAdminTransferReported({customerName:req.authUser.company,quote:updated}).catch(error=>console.error('[transfer-notification:error]',error.message))
+  return res.json(updated)
+}))
+
+app.patch('/admin/quotes/:quoteId/deposit',authMiddleware,adminOnly,asyncHandler(async(req,res)=>{
+  const quoteId=validateNumber(req.params.quoteId,'Cotización ID',1);const status=validateEnum(req.body?.status,['approved','rejected'],'Estado de seña');const repo=await getRepository();const quote=await repo.getCustomerQuoteById(quoteId);if(!quote)throw new NotFoundError('Cotización')
+  const updated=status==='approved'?await activateQuoteProject(repo,quote,{depositStatus:'approved',depositPaidAt:new Date().toISOString()}):await repo.updateCustomerQuoteDeposit(quoteId,{depositStatus:'rejected',status:quote.status,depositPaidAt:null})
+  if(status==='approved'){const customer=await repo.findUserById(updated.customerId);if(customer?.email)void notifyQuoteDepositApproved({email:customer.email,customerName:customer.company,quote:updated}).catch(error=>console.error('[deposit-approved-notification:error]',error.message))}
   return res.json(updated)
 }))
 
@@ -1087,14 +1129,15 @@ app.post('/payments/mercadopago/webhook', async (req, res) => {
   try {
     const payment = await getMercadoPagoPayment(paymentId)
     const externalReference = String(payment.external_reference || payment.metadata?.order_id || '').trim()
+    const quoteId=Number(payment.metadata?.quote_id||(/^quote-deposit:(\d+)$/.exec(externalReference)?.[1]))
+    const paymentStatus = mapMercadoPagoStatus(payment.status)
+    const repo = await getRepository()
+    if(quoteId){const quote=await repo.getCustomerQuoteById(quoteId);if(!quote)return res.status(200).json({ok:true,ignored:true});const approved=['approved','authorized'].includes(paymentStatus);const depositUpdates={depositStatus:approved?'approved':paymentStatus==='pending'?'pending':paymentStatus==='rejected'?'rejected':'cancelled',depositMethod:'mercadopago',depositExternalId:String(payment.id||''),depositPaidAt:approved?new Date().toISOString():null};const updated=approved?await activateQuoteProject(repo,quote,depositUpdates):await repo.updateCustomerQuoteDeposit(quoteId,{...depositUpdates,status:quote.status});if(approved&&quote.depositStatus!=='approved'){const customer=await repo.findUserById(updated.customerId);if(customer?.email)void notifyQuoteDepositApproved({email:customer.email,customerName:customer.company,quote:updated}).catch(error=>console.error('[deposit-approved-notification:error]',error.message))}return res.status(200).json({ok:true,kind:'quote_deposit'})}
     const orderId = Number(externalReference)
 
     if (!orderId) {
       return res.status(200).json({ ok: true, ignored: true })
     }
-
-    const paymentStatus = mapMercadoPagoStatus(payment.status)
-    const repo = await getRepository()
 
     await repo.updateOrderPayment(orderId, {
       paymentStatus,

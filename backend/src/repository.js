@@ -135,6 +135,16 @@ function mapCustomerQuoteRow(row) {
     budget: row.budget == null ? null : Number(row.budget),
     proposalDescription: row.proposal_description ?? row.proposalDescription ?? '',
     milestones: Array.isArray(row.milestones) ? row.milestones : [],
+    depositMode: row.deposit_mode ?? row.depositMode ?? 'none',
+    depositValue: Number(row.deposit_value ?? row.depositValue ?? 0),
+    depositAmount: Number(row.deposit_amount ?? row.depositAmount ?? 0),
+    depositStatus: row.deposit_status ?? row.depositStatus ?? 'not_required',
+    depositMethod: row.deposit_method ?? row.depositMethod ?? '',
+    depositPreferenceId: row.deposit_preference_id ?? row.depositPreferenceId ?? '',
+    depositExternalId: row.deposit_external_id ?? row.depositExternalId ?? '',
+    depositReceipt: row.deposit_receipt ?? row.depositReceipt ?? null,
+    depositReportedAt: row.deposit_reported_at ?? row.depositReportedAt ?? null,
+    depositPaidAt: row.deposit_paid_at ?? row.depositPaidAt ?? null,
     createdAt: row.created_at ?? row.createdAt ?? null,
     updatedAt: row.updated_at ?? row.updatedAt ?? null,
   }
@@ -374,6 +384,9 @@ async function getJsonRepo() {
       Object.assign(quote, updates, { updatedAt: new Date().toISOString() })
       writeDb(db)
       return mapCustomerQuoteRow(quote)
+    },
+    async updateCustomerQuoteDeposit(id, updates) {
+      const db=readDb();const quote=(db.customerQuotes||[]).find(item=>Number(item.id)===Number(id));if(!quote)return null;Object.assign(quote,updates,{updatedAt:new Date().toISOString()});writeDb(db);return mapCustomerQuoteRow(quote)
     },
     async getQuoteMessages(quoteId) {
       return (readDb().customerQuoteMessages || []).filter((item) => Number(item.quoteId) === Number(quoteId)).map(mapQuoteMessageRow)
@@ -1024,14 +1037,20 @@ async function getPgRepo() {
       const { rows } = await pool.query(
         `UPDATE customer_quotes SET title=$1, description=$2, status=$3, total_amount=$4, currency=$5,
          estimated_start_at=$6, estimated_end_at=$7, desired_date=$8, budget=$9, attachments=$10,
-         proposal_description=$11, milestones=$12,
+         proposal_description=$11, milestones=$12, deposit_mode=$13, deposit_value=$14, deposit_amount=$15,
          sent_at=CASE WHEN $3='sent' AND sent_at IS NULL THEN NOW() ELSE sent_at END, updated_at=NOW()
-         WHERE id=$13 RETURNING *`,
+         WHERE id=$16 RETURNING *`,
         [merged.title, merged.description, merged.status, merged.totalAmount, merged.currency,
           merged.estimatedStartAt || null, merged.estimatedEndAt || null, merged.desiredDate || null,
           merged.budget ?? null, JSON.stringify(merged.attachments || []), merged.proposalDescription || '',
-          JSON.stringify(merged.milestones || []), id]
+          JSON.stringify(merged.milestones || []), merged.depositMode || 'none', merged.depositValue || 0,
+          merged.depositAmount || 0, id]
       )
+      return mapCustomerQuoteRow(rows[0])
+    },
+    async updateCustomerQuoteDeposit(id, updates) {
+      const current=await this.getCustomerQuoteById(id);if(!current)return null;const merged={...current,...updates}
+      const {rows}=await pool.query(`UPDATE customer_quotes SET deposit_status=$1,deposit_method=$2,deposit_preference_id=$3,deposit_external_id=$4,deposit_receipt=$5,deposit_reported_at=$6,deposit_paid_at=$7,status=$8,updated_at=NOW() WHERE id=$9 RETURNING *`,[merged.depositStatus,merged.depositMethod||'',merged.depositPreferenceId||'',merged.depositExternalId||'',merged.depositReceipt?JSON.stringify(merged.depositReceipt):null,merged.depositReportedAt||null,merged.depositPaidAt||null,merged.status,id])
       return mapCustomerQuoteRow(rows[0])
     },
     async getQuoteMessages(quoteId) {

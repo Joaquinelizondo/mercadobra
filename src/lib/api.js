@@ -172,6 +172,9 @@ export function respondToMyQuote(quoteId, status, token) { return request(`/cust
 export function updateAdminQuote(quoteId, payload, token) { return request(`/admin/quotes/${quoteId}`, { method: 'PATCH', token, body: JSON.stringify(payload) }) }
 export function getAdminQuoteMessages(quoteId, token) { return request(`/admin/quotes/${quoteId}/messages`, { token }) }
 export function sendAdminQuoteMessage(quoteId, payload, token) { return request(`/admin/quotes/${quoteId}/messages`, { method: 'POST', token, body: JSON.stringify(payload) }) }
+export function startQuoteDepositCheckout(quoteId, token) { return request(`/customer/quotes/${quoteId}/deposit/mercadopago`, { method: 'POST', token, body: '{}' }) }
+export function reportQuoteDepositTransfer(quoteId, receipt, token) { return request(`/customer/quotes/${quoteId}/deposit/transfer`, { method: 'POST', token, body: JSON.stringify({ receipt }) }) }
+export function reviewQuoteDeposit(quoteId, status, token) { return request(`/admin/quotes/${quoteId}/deposit`, { method: 'PATCH', token, body: JSON.stringify({ status }) }) }
 
 export function loginSupplier(email, password) {
   return request('/auth/login', {
