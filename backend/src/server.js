@@ -580,8 +580,41 @@ app.put('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async 
       thickness: validateNumber(wall?.thickness, `Espesor de ${label}`, 0.01, 10),
     }
   })
+  const wallIds = new Set(normalizedWalls.map((wall) => wall.id))
+  const openings = req.body?.model?.openings ?? []
+  if (!Array.isArray(openings) || openings.length > 4000) throw new ValidationError('El modelo puede contener hasta 4000 aberturas')
+  const normalizedOpenings = openings.map((opening, index) => {
+    const label = `Abertura ${index + 1}`
+    const wallId = validateStringLength(opening?.wallId, `Muro de ${label}`, 1, 100)
+    if (!wallIds.has(wallId)) throw new ValidationError(`${label} referencia un muro inexistente`)
+    return {
+      id: validateStringLength(opening?.id, `ID de ${label}`, 1, 100),
+      type: validateEnum(opening?.type, ['door', 'window'], `Tipo de ${label}`),
+      wallId,
+      t: validateNumber(opening?.t, `Posición de ${label}`, 0, 1),
+      width: validateNumber(opening?.width, `Ancho de ${label}`, 0.2, 20),
+      height: validateNumber(opening?.height, `Alto de ${label}`, 0.2, 20),
+      sill: validateNumber(opening?.sill ?? 0, `Antepecho de ${label}`, 0, 20),
+    }
+  })
+  const furniture = req.body?.model?.furniture ?? []
+  if (!Array.isArray(furniture) || furniture.length > 4000) throw new ValidationError('El modelo puede contener hasta 4000 muebles')
+  const furnitureTypes = ['bed', 'sofa', 'table', 'chair', 'wardrobe', 'toilet']
+  const normalizedFurniture = furniture.map((item, index) => {
+    const label = `Mueble ${index + 1}`
+    return {
+      id: validateStringLength(item?.id, `ID de ${label}`, 1, 100),
+      type: validateEnum(item?.type, furnitureTypes, `Tipo de ${label}`),
+      x: validateNumber(item?.x, `Posición X de ${label}`, -10000, 10000),
+      y: validateNumber(item?.y, `Posición Y de ${label}`, -10000, 10000),
+      width: validateNumber(item?.width, `Ancho de ${label}`, 0.1, 100),
+      depth: validateNumber(item?.depth, `Profundidad de ${label}`, 0.1, 100),
+      height: validateNumber(item?.height, `Alto de ${label}`, 0.1, 100),
+      rotation: validateNumber(item?.rotation ?? 0, `Rotación de ${label}`, -1000, 1000),
+    }
+  })
   const repo = await getRepository()
-  return res.json({ project: await repo.saveModelerProject(req.authUser.id, { name, model: { walls: normalizedWalls } }) })
+  return res.json({ project: await repo.saveModelerProject(req.authUser.id, { name, model: { walls: normalizedWalls, openings: normalizedOpenings, furniture: normalizedFurniture } }) })
 }))
 
 app.post('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
