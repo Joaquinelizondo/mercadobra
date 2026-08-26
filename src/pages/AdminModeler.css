@@ -1,7 +1,10 @@
 .modeler-page{min-height:100vh;background:#22231f;color:#292823}
 .modeler-header{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:#f3efe6;border-bottom:1px solid #cfc7bb}
 .modeler-brand,.modeler-header nav{display:flex;align-items:center;gap:14px}
-.modeler-brand .oxida-wordmark{width:102px}
+.modeler-brand .oxida-wordmark{flex:0 0 102px;width:102px;color:#292823}
+.modeler-brand .oxida-wordmark-name{font-size:1.42rem;letter-spacing:-.08em}
+.modeler-brand .oxida-wordmark-line{height:1px;margin:.12em 0 .2em}
+.modeler-brand .oxida-wordmark-studio{font-size:.48rem;letter-spacing:.28em;padding-left:.28em}
 .modeler-brand>span{padding-left:14px;border-left:1px solid #bdb4a6;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em}
 .modeler-brand em{padding:5px 8px;border-radius:99px;background:#b85e39;color:#fff;font-size:.62rem;font-style:normal;font-weight:800;text-transform:uppercase}
 .modeler-header a,.modeler-header button{border:0;background:transparent;color:#5f584e;font:700 .75rem inherit;text-decoration:none;cursor:pointer}
@@ -61,6 +64,10 @@
 .modeler-brand>span{display:none}
 }
 @media(max-width:540px){.modeler-header{padding:0 12px}
+.modeler-brand{min-width:0;gap:8px}
+.modeler-brand .oxida-wordmark{flex-basis:84px;width:84px}
+.modeler-brand .oxida-wordmark-name{font-size:1.16rem}
+.modeler-brand .oxida-wordmark-studio{font-size:.4rem}
 .modeler-brand em{display:none}
 .modeler-workspace{grid-template-columns:1fr}
 .modeler-tools{position:absolute;z-index:2;bottom:12px;left:12px;right:12px;height:62px;flex-direction:row;padding:5px}
