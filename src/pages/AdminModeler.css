@@ -1,1 +1,58 @@
-.modeler-page{min-height:100vh;background:#22231f;color:#292823}.modeler-header{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:#f3efe6;border-bottom:1px solid #cfc7bb}.modeler-brand,.modeler-header nav{display:flex;align-items:center;gap:14px}.modeler-brand .oxida-wordmark{width:102px}.modeler-brand>span{padding-left:14px;border-left:1px solid #bdb4a6;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em}.modeler-brand em{padding:5px 8px;border-radius:99px;background:#b85e39;color:#fff;font-size:.62rem;font-style:normal;font-weight:800;text-transform:uppercase}.modeler-header a,.modeler-header button{border:0;background:transparent;color:#5f584e;font:700 .75rem inherit;text-decoration:none;cursor:pointer}.modeler-workspace{display:grid;grid-template-columns:76px minmax(0,1fr) 280px;height:calc(100vh - 72px);min-height:600px}.modeler-tools{display:flex;flex-direction:column;gap:7px;padding:14px 9px;background:#2d2e29;border-right:1px solid #45463f}.modeler-tools button{display:grid;place-items:center;gap:3px;min-height:58px;border:1px solid transparent;border-radius:6px;background:transparent;color:#d4d0c7;font-size:1.35rem;cursor:pointer}.modeler-tools button span{font-size:.58rem}.modeler-tools button:hover,.modeler-tools button.is-active{border-color:#786558;background:#45423b;color:#f0a177}.modeler-tools button:disabled{opacity:.3;cursor:not-allowed}.modeler-stage{display:grid;grid-template-rows:58px minmax(0,1fr);min-width:0}.modeler-stagebar{display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#f8f5ef;border-bottom:1px solid #cac3b8}.modeler-stagebar>div:first-child{display:grid;gap:2px}.modeler-stagebar strong{font-size:.86rem}.modeler-stagebar span{color:#888075;font-size:.66rem}.modeler-view-toggle{display:flex;gap:4px}.modeler-view-toggle button{padding:8px 12px;border:1px solid #bbb3a7;background:#fff;color:#4c4841;font:700 .7rem inherit;cursor:pointer}.modeler-view-toggle button.is-active,.modeler-view-toggle button:last-child{background:#2d2e29;color:#fff}.modeler-canvas-wrap{position:relative;min-height:0;overflow:hidden}.modeler-canvas-wrap canvas{display:block;cursor:crosshair}.modeler-hint{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);padding:8px 13px;border-radius:99px;background:rgba(35,35,31,.82);color:#f5f1e8;font-size:.68rem;pointer-events:none}.modeler-properties{overflow:auto;padding:24px 18px;background:#f3efe6;border-left:1px solid #cfc7bb}.modeler-eyebrow{margin:0;color:#ad5835;font-size:.64rem;font-weight:900;text-transform:uppercase;letter-spacing:.14em}.modeler-properties h2{margin:7px 0 24px;font-size:1.25rem}.modeler-properties>label{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #d5cec3;color:#655f56;font-size:.76rem;font-weight:700}.modeler-properties label span{display:flex;align-items:center;gap:5px}.modeler-properties input{width:64px;padding:7px;border:1px solid #bdb5aa;background:#fff;text-align:right}.modeler-summary{display:grid;grid-template-columns:1fr 1fr;margin:24px 0;border:1px solid #cbc3b7}.modeler-summary div{display:grid;gap:3px;padding:12px}.modeler-summary div+div{border-left:1px solid #cbc3b7}.modeler-summary strong{font-size:1.1rem}.modeler-summary span{color:#837b70;font-size:.62rem;text-transform:uppercase}.modeler-list>p{font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:.1em}.modeler-list>span{color:#8b8378;font-size:.75rem}.modeler-list button{width:100%;display:flex;justify-content:space-between;padding:10px;border:0;border-bottom:1px solid #d6cfc4;background:transparent;color:#45413b;cursor:pointer}.modeler-list button.is-active{background:#e3d8ca;color:#9a492c}.modeler-list small{color:#827b71}@media(max-width:850px){.modeler-workspace{grid-template-columns:64px 1fr}.modeler-properties{display:none}.modeler-header nav a{display:none}.modeler-brand>span{display:none}}@media(max-width:540px){.modeler-header{padding:0 12px}.modeler-brand em{display:none}.modeler-workspace{grid-template-columns:1fr}.modeler-tools{position:absolute;z-index:2;bottom:12px;left:12px;right:12px;height:62px;flex-direction:row;padding:5px}.modeler-tools button{flex:1;min-height:50px}.modeler-stagebar{padding:0 9px}.modeler-stagebar>div:first-child{display:none}.modeler-view-toggle{width:100%}.modeler-view-toggle button{flex:1}}
+.modeler-page{min-height:100vh;background:#22231f;color:#292823}
+.modeler-header{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:#f3efe6;border-bottom:1px solid #cfc7bb}
+.modeler-brand,.modeler-header nav{display:flex;align-items:center;gap:14px}
+.modeler-brand .oxida-wordmark{width:102px}
+.modeler-brand>span{padding-left:14px;border-left:1px solid #bdb4a6;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em}
+.modeler-brand em{padding:5px 8px;border-radius:99px;background:#b85e39;color:#fff;font-size:.62rem;font-style:normal;font-weight:800;text-transform:uppercase}
+.modeler-header a,.modeler-header button{border:0;background:transparent;color:#5f584e;font:700 .75rem inherit;text-decoration:none;cursor:pointer}
+.modeler-workspace{display:grid;grid-template-columns:76px minmax(0,1fr) 280px;height:calc(100vh - 72px);min-height:600px}
+.modeler-tools{display:flex;flex-direction:column;gap:7px;padding:14px 9px;background:#2d2e29;border-right:1px solid #45463f}
+.modeler-tools button{display:grid;place-items:center;gap:3px;min-height:58px;border:1px solid transparent;border-radius:6px;background:transparent;color:#d4d0c7;font-size:1.35rem;cursor:pointer}
+.modeler-tools button span{font-size:.58rem}
+.modeler-tools button:hover,.modeler-tools button.is-active{border-color:#786558;background:#45423b;color:#f0a177}
+.modeler-tools button:disabled{opacity:.3;cursor:not-allowed}
+.modeler-stage{display:grid;grid-template-rows:58px minmax(0,1fr);min-width:0}
+.modeler-stagebar{display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#f8f5ef;border-bottom:1px solid #cac3b8}
+.modeler-stagebar>div:first-child{display:grid;gap:2px}
+.modeler-stagebar strong{font-size:.86rem}
+.modeler-stagebar span{color:#888075;font-size:.66rem}
+.modeler-view-toggle{display:flex;gap:4px}
+.modeler-view-toggle button{padding:8px 12px;border:1px solid #bbb3a7;background:#fff;color:#4c4841;font:700 .7rem inherit;cursor:pointer}
+.modeler-view-toggle button.is-active,.modeler-view-toggle button:last-child{background:#2d2e29;color:#fff}
+.modeler-canvas-wrap{position:relative;min-height:0;overflow:hidden}
+.modeler-canvas-wrap canvas{display:block;cursor:crosshair}
+.modeler-hint{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);padding:8px 13px;border-radius:99px;background:rgba(35,35,31,.82);color:#f5f1e8;font-size:.68rem;pointer-events:none}
+.modeler-properties{overflow:auto;padding:24px 18px;background:#f3efe6;border-left:1px solid #cfc7bb}
+.modeler-eyebrow{margin:0;color:#ad5835;font-size:.64rem;font-weight:900;text-transform:uppercase;letter-spacing:.14em}
+.modeler-properties h2{margin:7px 0 24px;font-size:1.25rem}
+.modeler-properties>label{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #d5cec3;color:#655f56;font-size:.76rem;font-weight:700}
+.modeler-properties label span{display:flex;align-items:center;gap:5px}
+.modeler-properties input{width:64px;padding:7px;border:1px solid #bdb5aa;background:#fff;text-align:right}
+.modeler-summary{display:grid;grid-template-columns:1fr 1fr;margin:24px 0;border:1px solid #cbc3b7}
+.modeler-summary div{display:grid;gap:3px;padding:12px}
+.modeler-summary div+div{border-left:1px solid #cbc3b7}
+.modeler-summary strong{font-size:1.1rem}
+.modeler-summary span{color:#837b70;font-size:.62rem;text-transform:uppercase}
+.modeler-list>p{font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:.1em}
+.modeler-list>span{color:#8b8378;font-size:.75rem}
+.modeler-list button{width:100%;display:flex;justify-content:space-between;padding:10px;border:0;border-bottom:1px solid #d6cfc4;background:transparent;color:#45413b;cursor:pointer}
+.modeler-list button.is-active{background:#e3d8ca;color:#9a492c}
+.modeler-list small{color:#827b71}
+@media(max-width:850px){.modeler-workspace{position:relative;grid-template-columns:64px 1fr}
+.modeler-properties{position:absolute;z-index:4;right:12px;bottom:12px;width:260px;max-height:calc(100% - 82px);box-sizing:border-box;border:1px solid #cfc7bb;border-radius:8px;box-shadow:0 16px 38px rgba(35,35,31,.24)}
+.modeler-header nav a{display:none}
+.modeler-brand>span{display:none}
+}
+@media(max-width:540px){.modeler-header{padding:0 12px}
+.modeler-brand em{display:none}
+.modeler-workspace{grid-template-columns:1fr}
+.modeler-tools{position:absolute;z-index:2;bottom:12px;left:12px;right:12px;height:62px;flex-direction:row;padding:5px}
+.modeler-tools button{flex:1;min-height:50px}
+.modeler-stagebar{padding:0 9px}
+.modeler-stagebar>div:first-child{display:none}
+.modeler-view-toggle{width:100%}
+.modeler-view-toggle button{flex:1}
+.modeler-properties{position:fixed;left:12px;right:12px;bottom:84px;width:auto;max-height:34vh;padding:16px}
+.modeler-properties h2{margin-bottom:12px}
+.modeler-summary,.modeler-list{display:none}
+}

@@ -155,7 +155,7 @@ export default function AdminModeler() {
       const hit=nearestWall(screen);if(!hit||hit.distance>24){setSaveState('Elegí un punto sobre un muro');return}
       remember();setModel((current)=>({...current,openings:[...current.openings,{id:crypto.randomUUID(),type:tool,wallId:hit.wall.id,t:Math.max(.05,Math.min(.95,hit.t)),width:Number(settings.openingWidth),height:Number(settings.openingHeight),sill:tool==='window'?Number(settings.sill):0}]}))
     }else if(tool==='furniture'){
-      const def=FURNITURE[settings.furnitureType];remember();setModel((current)=>({...current,furniture:[...current.furniture,{id:crypto.randomUUID(),type:settings.furnitureType,x:point.x,y:point.y,width:def.width,depth:def.depth,height:def.height,rotation:0}]}))
+      const def=FURNITURE[settings.furnitureType];const id=crypto.randomUUID();remember();setModel((current)=>({...current,furniture:[...current.furniture,{id,type:settings.furnitureType,x:point.x,y:point.y,width:def.width,depth:def.depth,height:def.height,rotation:0}]}));setSelection({collection:'furniture',id});setTool('select')
     }setSaveState('Cambios sin guardar')
   }
   function undo(){if(!history.length)return;setModel(history.at(-1));setHistory((items)=>items.slice(0,-1));setSelection(null);setDraftStart(null);setSaveState('Cambios sin guardar')}
