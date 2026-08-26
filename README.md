@@ -253,10 +253,17 @@ El documento `model` utiliza esta estructura:
 
 ### API y seguridad
 
+El botón **Asistente** abre el chat privado del simulador. El chat convierte instrucciones en una vista previa de acciones estructuradas; ninguna acción modifica el modelo hasta que el administrador presiona **Aplicar cambios**. Un plan completo se incorpora como un único estado del historial para poder deshacerlo.
+
+El MVP reconoce creación de habitaciones rectangulares, puertas, ventanas, muebles del catálogo y limpieza total del modelo. Acepta medidas en metros y sinónimos como `ropero`, `armario`, `placard`, `sofá` o `sillón`. Cuando OpenAI no está configurado o no responde, utiliza un intérprete local para estos comandos básicos.
+
+La integración con OpenAI utiliza salida estructurada restringida por JSON Schema. No permite que el modelo ejecute JavaScript, consultas SQL ni código arbitrario.
+
 Los endpoints disponibles son:
 
 - `GET /admin/modeler/project`: recupera el proyecto del administrador autenticado.
 - `PUT /admin/modeler/project`: valida y guarda el documento completo, incrementando su versión.
+- `POST /admin/modeler/interpret`: interpreta una instrucción y devuelve un plan de acciones sin ejecutarlo.
 
 Ambos requieren token Bearer y rol `admin`. El backend vuelve a validar todos los datos aunque el frontend ya los haya controlado:
 

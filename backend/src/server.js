@@ -50,6 +50,7 @@ import {
 } from './authService.js'
 import { isCloudinaryConfigured, uploadProductImage } from './cloudinaryService.js'
 import { createQuotePdf } from './quotePdfService.js'
+import { interpretModelerPrompt } from './modelerChatService.js'
 
 // Validar env vars antes de iniciar la app
 validateEnvVars()
@@ -615,6 +616,16 @@ app.put('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async 
   })
   const repo = await getRepository()
   return res.json({ project: await repo.saveModelerProject(req.authUser.id, { name, model: { walls: normalizedWalls, openings: normalizedOpenings, furniture: normalizedFurniture } }) })
+}))
+
+app.post('/admin/modeler/interpret', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const message = validateStringLength(req.body?.message, 'Instrucción', 1, 1200)
+  const summary = req.body?.model && typeof req.body.model === 'object' ? {
+    wallCount: Math.min(2000, Number(req.body.model.wallCount) || 0),
+    openingCount: Math.min(4000, Number(req.body.model.openingCount) || 0),
+    furnitureCount: Math.min(4000, Number(req.body.model.furnitureCount) || 0),
+  } : { wallCount: 0, openingCount: 0, furnitureCount: 0 }
+  return res.json(await interpretModelerPrompt({ message, model: summary }))
 }))
 
 app.post('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req, res) => {

@@ -133,6 +133,10 @@ export function saveAdminModelerProject(payload, token) {
   return request('/admin/modeler/project', { method: 'PUT', token, body: JSON.stringify(payload) })
 }
 
+export function interpretAdminModelerPrompt(payload, token) {
+  return request('/admin/modeler/interpret', { method: 'POST', token, body: JSON.stringify(payload) })
+}
+
 export function createAdminCustomer(payload, token) {
   return request('/admin/customers', {
     method: 'POST',
