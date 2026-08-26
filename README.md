@@ -310,19 +310,111 @@ npm --prefix backend run dev
 
 En producción, Render ejecuta `npm ci`, las migraciones, `db:check` y `admin:bootstrap` antes de iniciar el backend. Vercel compila y publica el frontend al recibir cambios en `main`.
 
-### Limitaciones y próximas etapas
+### Estado reciente y hoja de ruta
 
-- Sustituir el renderizador Canvas por un motor WebGL/Three.js cuando se incorporen geometría y navegación avanzadas.
-- Permitir editar extremos, longitud, altura y espesor de muros existentes.
-- Mover y redimensionar puertas y ventanas después de insertarlas.
-- Recortar físicamente las aberturas en los sólidos de los muros.
-- Detectar perímetros cerrados y crear pisos, losas y ambientes.
-- Incorporar cocina, baño, luminarias y una biblioteca ampliada de mobiliario.
-- Agregar cotas, etiquetas, cortes, fachadas y exportación de planos.
-- Relacionar proyectos 3D con obras y clientes específicos.
-- Admitir varios proyectos y versiones navegables por administrador.
-- Exportar GLB/OBJ y evaluar SKP, DXF e IFC.
-- Implementar prompts para crear y modificar elementos mediante comandos validados.
+Esta lista funciona como tablero de seguimiento. Los elementos marcados están publicados en producción; los demás permanecen pendientes.
+
+#### Base y acceso
+
+- [x] Ruta privada `/admin/modelador` exclusiva para sesiones con rol `admin`.
+- [x] Acceso **Simulador 3D** desde la navegación administrativa.
+- [x] Persistencia PostgreSQL mediante `modeler_projects`.
+- [x] Versionado incremental al guardar.
+- [x] Respaldo local cuando el backend no está disponible.
+- [x] Logo ÓXIDA corregido para escritorio y pantallas responsive.
+- [x] Panel de propiedades disponible en escritorio, ventanas pequeñas y móvil.
+- [ ] Relacionar cada modelo con una obra y un cliente específicos.
+- [ ] Admitir varios proyectos por administrador.
+- [ ] Incorporar miniaturas, duplicación, archivado y recuperación de versiones.
+
+#### Muros y precisión de dibujo — próxima prioridad
+
+- [x] Crear y eliminar muros.
+- [x] Definir altura y espesor al crearlos.
+- [x] Ajuste de coordenadas a la rejilla.
+- [x] Mostrar longitud total del modelo.
+- [ ] Arrastrar los extremos de un muro.
+- [ ] Editar numéricamente longitud, altura y espesor de muros existentes.
+- [ ] Unir y limpiar esquinas automáticamente.
+- [ ] Dividir, duplicar y desplazar muros.
+- [ ] Bloquear dibujo a ejes horizontal y vertical.
+- [ ] Mostrar medidas dinámicas mientras se dibuja.
+
+#### Puertas y ventanas
+
+- [x] Insertar puertas y ventanas vinculadas a un muro.
+- [x] Configurar medidas iniciales y antepecho.
+- [x] Representarlas en planta y vista 3D.
+- [x] Eliminar aberturas dependientes cuando se elimina su muro.
+- [ ] Mover una abertura a lo largo del muro.
+- [ ] Redimensionar una abertura después de insertarla.
+- [ ] Cambiar el sentido de apertura de las puertas.
+- [ ] Evitar solapamientos y elementos fuera del muro.
+- [ ] Incorporar puertas dobles/corredizas y ventanas fijas/batientes.
+- [ ] Recortar físicamente las aberturas en los sólidos de los muros.
+
+#### Ambientes, pisos y materiales
+
+- [ ] Detectar automáticamente perímetros cerrados.
+- [ ] Crear pisos, losas y ambientes.
+- [ ] Nombrar ambientes: dormitorio, cocina, baño, etc.
+- [ ] Calcular superficie y perímetro por ambiente.
+- [ ] Asignar materiales y terminaciones.
+- [ ] Ocultar muros temporalmente para revisar interiores.
+
+#### Mobiliario
+
+- [x] Biblioteca inicial: cama, sofá, mesa, silla, placard e inodoro.
+- [x] Selección, eliminación y rotación.
+- [x] Edición de ancho, profundidad, altura, posición y ángulo.
+- [x] Arrastre con mouse, trackpad o pantalla táctil.
+- [ ] Ampliar cocina, baño, luminarias, electrodomésticos y exterior.
+- [ ] Incorporar modelos visuales detallados sin degradar el rendimiento.
+- [ ] Detectar colisiones entre muebles, muros y aberturas.
+
+#### Chat e inteligencia artificial
+
+- [x] Botón superior **Asistente** y acceso flotante **Chat IA**.
+- [x] Endpoint privado `/admin/modeler/interpret` exclusivo para admin.
+- [x] Vista previa, confirmación y cancelación antes de modificar el modelo.
+- [x] Ejecución agrupada para deshacer un prompt completo.
+- [x] Structured Outputs con JSON Schema y sin ejecución de código libre.
+- [x] Intérprete local cuando OpenAI no está disponible.
+- [x] Creación por prompt de habitaciones, puertas, ventanas y muebles iniciales.
+- [ ] Entender referencias al elemento seleccionado: “esta cama” o “esta ventana”.
+- [ ] Mover, rotar, redimensionar y eliminar elementos mediante prompts.
+- [ ] Entender relaciones espaciales: frente, detrás, opuesto, centrado y esquina.
+- [ ] Amueblar automáticamente un ambiente según su tipo.
+- [ ] Conservar historial conversacional por proyecto.
+- [ ] Crear una versión automática antes de cada operación de IA.
+
+#### Motor 3D y navegación
+
+- [x] Vista isométrica y planta mediante Canvas.
+- [x] Zoom y selección gráfica.
+- [ ] Migrar a WebGL/Three.js para geometría avanzada.
+- [ ] Órbita libre, cámara en primera persona y vistas estándar.
+- [ ] Incorporar sólidos, iluminación, sombras, materiales y texturas.
+- [ ] Optimizar modelos grandes mediante instancias y Web Workers.
+
+#### Planos, cómputos e interoperabilidad
+
+- [ ] Cotas, etiquetas y escalas.
+- [ ] Plantas, cortes y fachadas.
+- [ ] Exportación PDF.
+- [ ] Cómputo de superficies, volúmenes y cantidades de materiales.
+- [ ] Vincular cantidades con productos y precios de Mercadobra.
+- [ ] Exportar GLB/OBJ.
+- [ ] Evaluar compatibilidad SKP, DXF e IFC.
+
+#### Seguridad y trazabilidad
+
+- [x] Autenticación administrativa en frontend y backend.
+- [x] Validación de tipos, medidas, coordenadas y referencias en backend.
+- [x] Confirmación de planes generados por IA.
+- [ ] Registrar historial de prompts y acciones administrativas.
+- [ ] Establecer límites de uso y costos de IA por proyecto.
+- [ ] Auditoría de cambios destructivos.
 
 ## Dirección de producto y estilo de plataforma
 
