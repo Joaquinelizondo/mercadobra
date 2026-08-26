@@ -6,7 +6,7 @@ Plataforma uruguaya para descubrir, cotizar y comprar productos para obra, con e
 
 **Backend:** <https://mercadobra.onrender.com>
 
-**Última actualización:** 10 de agosto de 2026
+**Última actualización:** 25 de agosto de 2026
 
 El estado funcional detallado y las prioridades se mantienen también en [docs/ESTADO_WEB.md](docs/ESTADO_WEB.md).
 
@@ -109,6 +109,213 @@ El sistema visual de Óxida utiliza fondo grafito, superficies cálidas, tipogra
 - Gestión de pedidos, consultas de cotización y solicitudes personalizadas.
 - Publicación para cualquier proveedor o sin proveedor asociado.
 - Cuenta administrada mediante `ADMIN_EMAIL`, `ADMIN_PASSWORD` y `ADMIN_COMPANY`.
+
+## Simulador 3D de obra — beta privada
+
+**Estado:** primera versión funcional desplegada en producción.
+
+**Ruta:** `/admin/modelador`
+
+**Acceso:** exclusivamente mediante una sesión con rol `admin`. Los clientes, proveedores y usuarios creados desde el portal no ven el acceso y tampoco pueden utilizar los endpoints del simulador.
+
+El Simulador 3D es un modelador paramétrico propio de Mercadobra alojado dentro del portal administrativo. No incrusta SketchUp ni depende de una instalación de escritorio. Su objetivo es permitir el diseño preliminar de espacios, la documentación y los futuros cómputos de obra desde el navegador, incluyendo posteriormente operación mediante prompts.
+
+El acceso **Simulador 3D · Beta** aparece en la navegación de Productos y como **Simulador 3D** en Clientes, Pedidos, Consultas y Personalizaciones.
+
+### Funciones disponibles
+
+- Lienzo interactivo con rejilla, ejes y ajuste cada 25 cm.
+- Vista isométrica 3D y vista ortográfica de planta.
+- Zoom mediante rueda del mouse o trackpad.
+- Creación consecutiva de muros mediante puntos.
+- Altura y espesor configurables para muros nuevos.
+- Selección de elementos desde el lienzo o el listado lateral.
+- Eliminación y deshacer con un historial local de hasta 50 estados.
+- Nombre editable para el proyecto.
+- Métricas de cantidad de muros, aberturas, muebles y longitud total de muros.
+- Guardado en PostgreSQL con número de versión incremental.
+- Respaldo en `localStorage` cuando el backend no está disponible.
+- Interacción adaptada para mouse, trackpad y pantalla táctil.
+
+### Puertas y ventanas
+
+Las aberturas siempre pertenecen a un muro existente. Al eliminar el muro también se eliminan sus aberturas para evitar referencias huérfanas.
+
+**Puertas:**
+
+- Inserción haciendo clic sobre un muro.
+- Ancho y altura configurables.
+- Posición normalizada sobre el muro.
+- Representación de hoja y apertura en planta.
+- Representación con ancho y altura en 3D.
+
+**Ventanas:**
+
+- Inserción haciendo clic sobre un muro.
+- Ancho, altura y antepecho configurables.
+- Posición normalizada sobre el muro.
+- Representación diferenciada en planta y 3D.
+
+La versión actual representa visualmente la abertura sobre la superficie del muro. El recorte booleano real de la geometría queda para una etapa posterior del motor 3D.
+
+### Biblioteca de muebles
+
+El catálogo inicial contiene:
+
+| Tipo interno | Elemento | Medida inicial aproximada |
+| --- | --- | --- |
+| `bed` | Cama | 1,60 × 2,00 × 0,55 m |
+| `sofa` | Sofá | 2,00 × 0,85 × 0,80 m |
+| `table` | Mesa | 1,40 × 0,80 × 0,75 m |
+| `chair` | Silla | 0,50 × 0,50 × 0,90 m |
+| `wardrobe` | Placard | 1,80 × 0,60 × 2,20 m |
+| `toilet` | Inodoro | 0,42 × 0,70 × 0,75 m |
+
+Después de seleccionar un mueble se puede:
+
+- Modificar ancho, profundidad y altura.
+- Editar sus coordenadas X e Y.
+- Definir la rotación en grados.
+- Rotar rápidamente 90°.
+- Arrastrarlo directamente sobre el lienzo.
+- Eliminarlo o deshacer la modificación.
+
+Las formas actuales son representaciones geométricas livianas y no modelos fotorealistas. Esto permite mantener el editor rápido mientras se consolida la lógica paramétrica.
+
+### Uso básico
+
+1. Iniciar sesión en `/admin/login`.
+2. Abrir **Simulador 3D** o navegar a `/admin/modelador`.
+3. Asignar un nombre al proyecto.
+4. Seleccionar **Muro** y marcar puntos consecutivos sobre la rejilla.
+5. Presionar `Esc` para finalizar o cancelar la cadena de muros.
+6. Seleccionar **Puerta** o **Ventana**, configurar sus medidas y hacer clic sobre un muro.
+7. Seleccionar **Muebles**, elegir el tipo y hacer clic para ubicarlo.
+8. Usar **Seleccionar** para editar, arrastrar, rotar o eliminar elementos.
+9. Alternar entre **Planta** y **3D** para revisar el modelo.
+10. Presionar **Guardar** para persistirlo en PostgreSQL.
+
+### Modelo de datos
+
+La tabla `modeler_projects`, creada mediante la migración `031_modeler_projects.sql`, almacena un proyecto por administrador en esta primera etapa:
+
+```text
+modeler_projects
+  id
+  owner_user_id -> users.id
+  name
+  model JSONB
+  version
+  created_at
+  updated_at
+```
+
+El documento `model` utiliza esta estructura:
+
+```json
+{
+  "walls": [
+    {
+      "id": "uuid",
+      "start": { "x": 0, "y": 0 },
+      "end": { "x": 4, "y": 0 },
+      "height": 2.7,
+      "thickness": 0.15
+    }
+  ],
+  "openings": [
+    {
+      "id": "uuid",
+      "type": "door",
+      "wallId": "uuid",
+      "t": 0.5,
+      "width": 0.9,
+      "height": 2.1,
+      "sill": 0
+    }
+  ],
+  "furniture": [
+    {
+      "id": "uuid",
+      "type": "bed",
+      "x": 2,
+      "y": 2,
+      "width": 1.6,
+      "depth": 2,
+      "height": 0.55,
+      "rotation": 0
+    }
+  ]
+}
+```
+
+`openings[].t` expresa la posición relativa a lo largo del muro, entre `0` y `1`. `furniture[].rotation` se almacena en radianes, aunque la interfaz lo presenta en grados.
+
+### API y seguridad
+
+Los endpoints disponibles son:
+
+- `GET /admin/modeler/project`: recupera el proyecto del administrador autenticado.
+- `PUT /admin/modeler/project`: valida y guarda el documento completo, incrementando su versión.
+
+Ambos requieren token Bearer y rol `admin`. El backend vuelve a validar todos los datos aunque el frontend ya los haya controlado:
+
+- Hasta 2.000 muros.
+- Hasta 4.000 aberturas.
+- Hasta 4.000 muebles.
+- Coordenadas, medidas, rotaciones y posiciones dentro de rangos permitidos.
+- Tipos de abertura limitados a `door` y `window`.
+- Tipos de mueble limitados al catálogo conocido.
+- Cada abertura debe referenciar un muro incluido en el mismo documento.
+
+La IA futura no ejecutará JavaScript ni código arbitrario. Los prompts se convertirán en operaciones estructuradas y autorizadas sobre este mismo modelo de datos.
+
+### Archivos principales
+
+| Archivo | Responsabilidad |
+| --- | --- |
+| `src/pages/AdminModeler.jsx` | Estado, interacción, renderizado Canvas y herramientas del simulador. |
+| `src/pages/AdminModeler.css` | Distribución responsive y lenguaje visual. |
+| `src/lib/api.js` | Cliente HTTP para cargar y guardar proyectos. |
+| `backend/src/server.js` | Autorización, validación y endpoints del simulador. |
+| `backend/src/repository.js` | Persistencia PostgreSQL y alternativa JSON local. |
+| `backend/src/migrations/031_modeler_projects.sql` | Tabla e índices del módulo. |
+| `backend/src/dbCheck.js` | Verificación de la tabla durante el despliegue. |
+
+### Desarrollo y verificación
+
+Desde la raíz del frontend:
+
+```bash
+npm install
+npm run lint
+npm run build
+```
+
+Para el backend:
+
+```bash
+npm --prefix backend install
+npm --prefix backend run migrate
+npm --prefix backend run db:check
+npm --prefix backend run dev
+```
+
+En producción, Render ejecuta `npm ci`, las migraciones, `db:check` y `admin:bootstrap` antes de iniciar el backend. Vercel compila y publica el frontend al recibir cambios en `main`.
+
+### Limitaciones y próximas etapas
+
+- Sustituir el renderizador Canvas por un motor WebGL/Three.js cuando se incorporen geometría y navegación avanzadas.
+- Permitir editar extremos, longitud, altura y espesor de muros existentes.
+- Mover y redimensionar puertas y ventanas después de insertarlas.
+- Recortar físicamente las aberturas en los sólidos de los muros.
+- Detectar perímetros cerrados y crear pisos, losas y ambientes.
+- Incorporar cocina, baño, luminarias y una biblioteca ampliada de mobiliario.
+- Agregar cotas, etiquetas, cortes, fachadas y exportación de planos.
+- Relacionar proyectos 3D con obras y clientes específicos.
+- Admitir varios proyectos y versiones navegables por administrador.
+- Exportar GLB/OBJ y evaluar SKP, DXF e IFC.
+- Implementar prompts para crear y modificar elementos mediante comandos validados.
 
 ## Dirección de producto y estilo de plataforma
 
