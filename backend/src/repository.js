@@ -797,6 +797,27 @@ async function getJsonRepo() {
 
       return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     },
+    async getModelerProject(ownerUserId) {
+      const db = readDb()
+      return (db.modelerProjects || []).find((item) => Number(item.ownerUserId) === Number(ownerUserId)) || null
+    },
+    async saveModelerProject(ownerUserId, payload) {
+      const db = readDb()
+      if (!Array.isArray(db.modelerProjects)) db.modelerProjects = []
+      const now = new Date().toISOString()
+      let project = db.modelerProjects.find((item) => Number(item.ownerUserId) === Number(ownerUserId))
+      if (project) {
+        project.name = payload.name
+        project.model = payload.model
+        project.version = Number(project.version || 0) + 1
+        project.updatedAt = now
+      } else {
+        project = { id: nextId(db.modelerProjects), ownerUserId: Number(ownerUserId), name: payload.name, model: payload.model, version: 1, createdAt: now, updatedAt: now }
+        db.modelerProjects.push(project)
+      }
+      writeDb(db)
+      return project
+    },
   }
 }
 
@@ -1683,6 +1704,25 @@ async function getPgRepo() {
         searchContactId: row.search_contact_id ? Number(row.search_contact_id) : null,
         createdAt: row.created_at,
       }))
+    },
+    async getModelerProject(ownerUserId) {
+      const { rows } = await pool.query('SELECT * FROM modeler_projects WHERE owner_user_id = $1 LIMIT 1', [ownerUserId])
+      if (!rows[0]) return null
+      const row = rows[0]
+      return { id: Number(row.id), ownerUserId: Number(row.owner_user_id), name: row.name, model: row.model, version: Number(row.version), createdAt: row.created_at, updatedAt: row.updated_at }
+    },
+    async saveModelerProject(ownerUserId, payload) {
+      const { rows } = await pool.query(
+        `INSERT INTO modeler_projects (owner_user_id, name, model)
+         VALUES ($1, $2, $3::jsonb)
+         ON CONFLICT (owner_user_id) DO UPDATE
+         SET name = EXCLUDED.name, model = EXCLUDED.model,
+             version = modeler_projects.version + 1, updated_at = NOW()
+         RETURNING *`,
+        [ownerUserId, payload.name, JSON.stringify(payload.model)]
+      )
+      const row = rows[0]
+      return { id: Number(row.id), ownerUserId: Number(row.owner_user_id), name: row.name, model: row.model, version: Number(row.version), createdAt: row.created_at, updatedAt: row.updated_at }
     },
   }
 }

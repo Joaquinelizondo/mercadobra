@@ -17,6 +17,7 @@ const REQUIRED_TABLES = [
   'customer_quotes',
   'customer_quote_messages',
   'customer_invitations',
+  'modeler_projects',
   'migrations',
 ]
 

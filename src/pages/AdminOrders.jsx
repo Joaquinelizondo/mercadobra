@@ -109,7 +109,7 @@ export default function AdminOrders() {
     <section className="admin-orders-page">
       <header className="admin-orders-header">
         <div><span>Operación comercial</span><h1>Pedidos</h1><p>Ventas web y pedidos recibidos por otros canales.</p></div>
-        <nav><Link to="/admin/productos">Productos</Link><Link to="/admin/clientes">Clientes</Link><Link to="/admin/cotizaciones">Consultas</Link><Link to="/admin/personalizaciones">Personalizaciones</Link><Link to="/">Ver tienda ↗</Link></nav>
+        <nav><Link to="/admin/productos">Productos</Link><Link to="/admin/clientes">Clientes</Link><Link to="/admin/modelador">Simulador 3D</Link><Link to="/admin/cotizaciones">Consultas</Link><Link to="/admin/personalizaciones">Personalizaciones</Link><Link to="/">Ver tienda ↗</Link></nav>
       </header>
 
       <div className="admin-orders-title-row">

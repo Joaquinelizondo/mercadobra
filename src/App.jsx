@@ -25,6 +25,7 @@ import AdminCustomers from './pages/AdminCustomers'
 import AdminCustomerDetail from './pages/AdminCustomerDetail'
 import AdminQuoteWorkspace from './pages/AdminQuoteWorkspace'
 import AdminCustomerQuotes from './pages/AdminCustomerQuotes'
+import AdminModeler from './pages/AdminModeler'
 import './pages/AdminCustomRequests.css'
 import { useState } from 'react'
 import heroImg from './assets/hero.png'
@@ -883,6 +884,7 @@ export default function App() {
         <Route path="/admin/cotizaciones-clientes" element={<AdminCustomerQuotes />} />
         <Route path="/admin/pedidos" element={<AdminOrders />} />
         <Route path="/admin/personalizaciones" element={<AdminCustomRequests />} />
+        <Route path="/admin/modelador" element={<AdminModeler />} />
         <Route path="/proveedor/login" element={<SupplierLogin />} />
         <Route path="/proveedor" element={<SupplierDashboard />} />
         <Route path="/seguimiento/:trackingToken" element={<OrderTracking />} />

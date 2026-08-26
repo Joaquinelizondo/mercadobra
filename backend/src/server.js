@@ -561,6 +561,29 @@ app.get('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req, 
   return res.json({ rows, total: rows.length })
 }))
 
+app.get('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  return res.json({ project: await repo.getModelerProject(req.authUser.id) })
+}))
+
+app.put('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const name = validateStringLength(req.body?.name || 'Proyecto sin nombre', 'Nombre del proyecto', 1, 120)
+  const walls = req.body?.model?.walls
+  if (!Array.isArray(walls) || walls.length > 2000) throw new ValidationError('El modelo debe contener entre 0 y 2000 muros')
+  const normalizedWalls = walls.map((wall, index) => {
+    const label = `Muro ${index + 1}`
+    return {
+      id: validateStringLength(wall?.id, `ID de ${label}`, 1, 100),
+      start: { x: validateNumber(wall?.start?.x, `Inicio X de ${label}`, -10000, 10000), y: validateNumber(wall?.start?.y, `Inicio Y de ${label}`, -10000, 10000) },
+      end: { x: validateNumber(wall?.end?.x, `Fin X de ${label}`, -10000, 10000), y: validateNumber(wall?.end?.y, `Fin Y de ${label}`, -10000, 10000) },
+      height: validateNumber(wall?.height, `Altura de ${label}`, 0.1, 100),
+      thickness: validateNumber(wall?.thickness, `Espesor de ${label}`, 0.01, 10),
+    }
+  })
+  const repo = await getRepository()
+  return res.json({ project: await repo.saveModelerProject(req.authUser.id, { name, model: { walls: normalizedWalls } }) })
+}))
+
 app.post('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const body = req.body || {}
   const email = validateEmail(body.email)

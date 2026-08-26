@@ -125,6 +125,14 @@ export function getAdminCustomers(filters = {}, token) {
   return request(`/admin/customers${query ? `?${query}` : ''}`, { token })
 }
 
+export function getAdminModelerProject(token) {
+  return request('/admin/modeler/project', { token })
+}
+
+export function saveAdminModelerProject(payload, token) {
+  return request('/admin/modeler/project', { method: 'PUT', token, body: JSON.stringify(payload) })
+}
+
 export function createAdminCustomer(payload, token) {
   return request('/admin/customers', {
     method: 'POST',
