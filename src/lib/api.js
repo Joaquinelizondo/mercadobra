@@ -64,15 +64,20 @@ async function request(path, options = {}) {
 
   if (!response.ok) {
     let message = `HTTP ${response.status}`
+    let code = null
     try {
       const data = await response.json()
       if (data?.message) {
         message = data.message
       }
+      code = data?.code || null
     } catch {
       // ignore parse errors
     }
-    throw new Error(message)
+    const error = new Error(message)
+    error.status = response.status
+    error.code = code
+    throw error
   }
 
   if (response.status === 204) {

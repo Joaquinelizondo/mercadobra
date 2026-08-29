@@ -569,6 +569,7 @@ app.get('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async 
 
 app.put('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const name = validateStringLength(req.body?.name || 'Proyecto sin nombre', 'Nombre del proyecto', 1, 120)
+  const expectedVersion = req.body?.version == null ? null : validateNumber(req.body.version, 'Versión del proyecto', 1, 2147483647)
   const walls = req.body?.model?.walls
   if (!Array.isArray(walls) || walls.length > 2000) throw new ValidationError('El modelo debe contener entre 0 y 2000 muros')
   const normalizedWalls = walls.map((wall, index) => {
@@ -598,6 +599,22 @@ app.put('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async 
       sill: validateNumber(opening?.sill ?? 0, `Antepecho de ${label}`, 0, 20),
     }
   })
+  const wallsById = new Map(normalizedWalls.map((wall) => [wall.id, wall]))
+  normalizedOpenings.forEach((opening, index) => {
+    const wall = wallsById.get(opening.wallId)
+    const length = Math.hypot(wall.end.x - wall.start.x, wall.end.y - wall.start.y)
+    if (opening.width > length) throw new ValidationError(`Abertura ${index + 1} supera el largo del muro`)
+    if (opening.sill + opening.height > wall.height) throw new ValidationError(`Abertura ${index + 1} supera la altura del muro`)
+    const margin = opening.width / (2 * length)
+    if (opening.t < margin || opening.t > 1 - margin) throw new ValidationError(`Abertura ${index + 1} queda fuera de los extremos del muro`)
+    const overlaps = normalizedOpenings.slice(0, index).some((other) => {
+      if (other.wallId !== opening.wallId) return false
+      const start = opening.t - opening.width / (2 * length); const end = opening.t + opening.width / (2 * length)
+      const otherStart = other.t - other.width / (2 * length); const otherEnd = other.t + other.width / (2 * length)
+      return start < otherEnd - 1e-9 && end > otherStart + 1e-9
+    })
+    if (overlaps) throw new ValidationError(`Abertura ${index + 1} se superpone con otra abertura del mismo muro`)
+  })
   const furniture = req.body?.model?.furniture ?? []
   if (!Array.isArray(furniture) || furniture.length > 4000) throw new ValidationError('El modelo puede contener hasta 4000 muebles')
   const furnitureTypes = ['bed', 'sofa', 'table', 'chair', 'wardrobe', 'toilet']
@@ -615,7 +632,9 @@ app.put('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async 
     }
   })
   const repo = await getRepository()
-  return res.json({ project: await repo.saveModelerProject(req.authUser.id, { name, model: { walls: normalizedWalls, openings: normalizedOpenings, furniture: normalizedFurniture } }) })
+  const project = await repo.saveModelerProject(req.authUser.id, { name, model: { walls: normalizedWalls, openings: normalizedOpenings, furniture: normalizedFurniture }, expectedVersion })
+  if (!project) throw new ConflictError('El proyecto fue modificado en otra pestaña o sesión. Recargalo antes de volver a guardar.', 'MODELER_VERSION_CONFLICT')
+  return res.json({ project })
 }))
 
 app.post('/admin/modeler/interpret', authMiddleware, adminOnly, asyncHandler(async (req, res) => {

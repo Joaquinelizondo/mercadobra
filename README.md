@@ -6,7 +6,7 @@ Plataforma uruguaya para descubrir, cotizar y comprar productos para obra, con e
 
 **Backend:** <https://mercadobra.onrender.com>
 
-**Última actualización:** 25 de agosto de 2026
+**Última actualización:** 29 de agosto de 2026
 
 El estado funcional detallado y las prioridades se mantienen también en [docs/ESTADO_WEB.md](docs/ESTADO_WEB.md).
 
@@ -125,7 +125,7 @@ El acceso **Simulador 3D · Beta** aparece en la navegación de Productos y como
 ### Funciones disponibles
 
 - Lienzo interactivo con rejilla, ejes y ajuste cada 25 cm.
-- Vista isométrica 3D y vista ortográfica de planta.
+- Vista 3D WebGL navegable y vista ortográfica de planta mediante Canvas.
 - Zoom mediante rueda del mouse o trackpad.
 - Creación consecutiva de muros mediante puntos.
 - Altura y espesor configurables para muros nuevos.
@@ -134,6 +134,8 @@ El acceso **Simulador 3D · Beta** aparece en la navegación de Productos y como
 - Nombre editable para el proyecto.
 - Métricas de cantidad de muros, aberturas, muebles y longitud total de muros.
 - Guardado en PostgreSQL con número de versión incremental.
+- Guardado automático 1,5 segundos después del último cambio.
+- Detección de conflictos para impedir que una pestaña desactualizada sobrescriba otra versión.
 - Respaldo en `localStorage` cuando el backend no está disponible.
 - Interacción adaptada para mouse, trackpad y pantalla táctil.
 
@@ -283,6 +285,8 @@ La IA futura no ejecutará JavaScript ni código arbitrario. Los prompts se conv
 | --- | --- |
 | `src/pages/AdminModeler.jsx` | Estado, interacción, renderizado Canvas y herramientas del simulador. |
 | `src/pages/AdminModeler.css` | Distribución responsive y lenguaje visual. |
+| `src/modeler/core.js` | Geometría, validaciones, historial y transformaciones independientes del renderizador. |
+| `src/modeler/Modeler3DView.jsx` | Escena Three.js, cámara orbital y representación WebGL del modelo. |
 | `src/lib/api.js` | Cliente HTTP para cargar y guardar proyectos. |
 | `backend/src/server.js` | Autorización, validación y endpoints del simulador. |
 | `backend/src/repository.js` | Persistencia PostgreSQL y alternativa JSON local. |
@@ -314,12 +318,186 @@ En producción, Render ejecuta `npm ci`, las migraciones, `db:check` y `admin:bo
 
 Esta lista funciona como tablero de seguimiento. Los elementos marcados están publicados en producción; los demás permanecen pendientes.
 
+#### Visión de producto
+
+El objetivo es convertir la beta administrativa en un modelador web colaborativo para terceros, especializado en diseño preliminar de espacios, obra y presupuestación. No se busca reproducir toda la amplitud de SketchUp: la ventaja de Mercadobra debe ser un flujo más simple que conecte el modelo con cantidades, costos, cotizaciones, clientes y proveedores.
+
+La aplicación evoluciona sin descartar el modelo paramétrico actual. Muros, aberturas, ambientes, muebles y materiales siguen siendo entidades de dominio validadas; Three.js/WebGL funciona como motor de representación e interacción 3D, no como fuente única de verdad.
+
+#### Ruta para convertirlo en producto para terceros
+
+##### Fase 1 — Editor preciso y base verificable
+
+**Objetivo:** transformar la demostración actual en una herramienta confiable para dibujar una planta sencilla.
+
+**Estado:** implementación y QA integrada local completadas; pendiente de validación visual manual y despliegue.
+
+- [x] Extraer el estado y las operaciones del modelo fuera del componente visual.
+- [x] Incorporar las primeras pruebas unitarias para geometría y operaciones del modelo.
+- [x] Arrastrar extremos y editar longitud, altura y espesor de muros existentes.
+- [x] Cubrir con pruebas unitarias el historial y las validaciones geométricas principales del editor.
+- [x] Agregar bloqueo horizontal/vertical con `Shift` y medidas dinámicas durante el dibujo.
+- [x] Mover y redimensionar puertas y ventanas después de insertarlas, manteniéndolas dentro del muro.
+- [x] Impedir aberturas fuera del muro, demasiado altas o solapadas, tanto en el editor como en el backend.
+- [x] Implementar guardado automático, indicador de cambios y protección frente a sobrescrituras concurrentes.
+
+**Criterio de salida:** una planta residencial simple puede dibujarse, corregirse, guardarse y recuperarse sin perder precisión ni consistencia.
+
+La QA integrada local verificó autenticación administrativa, carga del proyecto, creación de la versión 1, actualización incremental, rechazo `409` de una escritura obsoleta y rechazo `400` de geometría inválida. La prueba se ejecutó con una copia temporal del backend y almacenamiento JSON aislado, sin utilizar datos de producción.
+
+##### Fase 2 — Motor 3D paramétrico
+
+**Objetivo:** reemplazar la proyección isométrica por una escena 3D navegable conservando el modelo de dominio.
+
+**Estado:** en curso; primera escena WebGL integrada localmente, pendiente de QA visual y geometría avanzada.
+
+- [x] Integrar Three.js y React Three Fiber mediante una capa de renderizado desacoplada y carga diferida.
+- [x] Generar muros con longitud, espesor y altura como volúmenes tridimensionales.
+- [ ] Recortar puertas y ventanas en los muros.
+- [x] Incorporar cámara orbital con rotación, zoom y desplazamiento.
+- [ ] Incorporar vistas estándar y modo de recorrido en primera persona.
+- [ ] Detectar perímetros cerrados y generar pisos y ambientes.
+- [ ] Agregar materiales, iluminación y sombras con niveles de calidad configurables.
+- [x] Mantener una vista de planta precisa además de la escena 3D.
+
+**Criterio de salida:** el mismo proyecto puede editarse en planta y revisarse como geometría tridimensional consistente.
+
+##### Fase 3 — Estructuras metálicas y encuentros constructivos
+
+**Objetivo:** diseñar y acoplar estructuras de hierro a muros, losas y otros elementos de obra, distinguiendo siempre el encaje geométrico de la verificación estructural profesional.
+
+- [ ] Crear una biblioteca paramétrica de vigas, columnas, perfiles, tubos, ángulos y planchuelas.
+- [ ] Incorporar placas base, cartelas, ménsulas, bulones, anclajes, soldaduras, perforaciones y cortes.
+- [ ] Permitir ajuste automático a caras, ejes, extremos y puntos de apoyo.
+- [ ] Crear conectores persistentes entre acero, pared, losa, hormigón y otros soportes.
+- [ ] Mantener las uniones al mover o redimensionar los elementos relacionados.
+- [ ] Detectar colisiones, interferencias, separaciones insuficientes y componentes desconectados.
+- [ ] Generar despieces, listas de materiales y planos preliminares de fabricación.
+- [ ] Preparar exportaciones para herramientas externas de cálculo y fabricación.
+- [ ] Diferenciar visualmente `encaje geométrico`, `pendiente de verificación` y `verificado por profesional`.
+- [ ] Registrar responsable, fecha, hipótesis y documento de cada verificación estructural.
+
+**Criterio de salida:** una estructura metálica puede modelarse, acoplarse y documentarse dentro de una construcción sin presentar el encaje visual como garantía de seguridad estructural.
+
+##### Fase 4 — Gestión de proyectos
+
+**Objetivo:** dejar de tener un único modelo administrativo y organizar diferentes obras sin sobrescribir información.
+
+- [ ] Crear una pantalla con el listado de proyectos.
+- [ ] Permitir crear, renombrar, duplicar y archivar proyectos.
+- [ ] Generar miniaturas automáticas.
+- [ ] Incorporar papelera y recuperación.
+- [ ] Guardar versiones restaurables.
+- [ ] Relacionar proyectos con clientes, obras y cotizaciones.
+- [ ] Registrar las operaciones y cambios del modelo.
+- [ ] Importar y exportar el formato interno de Mercadobra.
+
+**Criterio de salida:** cada usuario puede administrar varias obras, recuperar versiones anteriores y evitar sobrescrituras accidentales.
+
+##### Fase 5 — Usuarios y colaboración
+
+**Objetivo:** habilitar el uso seguro por clientes, estudios y profesionales externos.
+
+- [ ] Permitir varios proyectos por usuario y organización.
+- [ ] Abrir el registro para profesionales y organizaciones.
+- [ ] Separar organizaciones, miembros y proyectos.
+- [ ] Incorporar roles de propietario, editor y visualizador.
+- [ ] Incorporar invitaciones por correo.
+- [ ] Compartir proyectos mediante enlaces de solo lectura.
+- [ ] Agregar comentarios y observaciones.
+- [ ] Aplicar los permisos tanto en frontend como en backend.
+- [ ] Detectar conflictos de edición y preparar colaboración simultánea.
+- [ ] Definir cuotas de almacenamiento, complejidad del modelo y consumo de IA.
+
+**Criterio de salida:** un tercero puede registrarse, gestionar proyectos y colaborar sin acceder a información de otros usuarios.
+
+##### Fase 6 — Planos y documentación
+
+**Objetivo:** obtener documentación técnica básica a partir del modelo.
+
+- [ ] Incorporar cotas, etiquetas, norte y escalas.
+- [ ] Generar plantas, cortes y fachadas.
+- [ ] Crear láminas configurables.
+- [ ] Exportar documentación a PDF.
+- [ ] Exportar imágenes del proyecto.
+- [ ] Exportar inicialmente GLB/OBJ.
+- [ ] Evaluar DXF/IFC según la demanda de los primeros usuarios.
+
+**Criterio de salida:** el proyecto puede entregarse y revisarse mediante planos básicos con una escala y presentación consistentes.
+
+##### Fase 7 — Cómputos y presupuestos
+
+**Objetivo:** conectar cada decisión de diseño con cantidades, costos y proveedores.
+
+- [ ] Calcular superficies, perímetros, volúmenes y cantidades de materiales.
+- [ ] Detectar cantidades de muros, pisos, aberturas y componentes.
+- [ ] Crear una biblioteca de materiales, rendimientos y desperdicios.
+- [ ] Asociar componentes con productos, precios y proveedores de Mercadobra.
+- [ ] Generar presupuestos versionados desde el modelo.
+- [ ] Solicitar cotizaciones a proveedores.
+- [ ] Actualizar el presupuesto cuando cambie el modelo.
+
+**Criterio de salida:** un proyecto genera planos básicos y un cómputo auditable conectado con una cotización.
+
+##### Fase 8 — Asistente inteligente de diseño
+
+**Objetivo:** permitir operaciones de alto nivel mediante lenguaje natural sin delegar la seguridad ni la geometría a la IA.
+
+- [ ] Enviar al asistente contexto geométrico y selección relevante.
+- [ ] Interpretar referencias espaciales y elementos seleccionados.
+- [ ] Mover, rotar, redimensionar y eliminar mediante planes confirmables.
+- [ ] Proponer distribuciones y amoblamientos según el tipo de ambiente.
+- [ ] Conservar historial conversacional por proyecto.
+- [ ] Crear una versión recuperable antes de cada operación asistida.
+- [ ] Registrar costos, límites, prompts y acciones para auditoría.
+
+**Criterio de salida:** la IA acelera tareas repetitivas y complejas, pero todas sus acciones son estructuradas, visibles, validables y reversibles.
+
+##### Fase 9 — Lanzamiento comercial
+
+**Objetivo:** operar el modelador como servicio sostenible para terceros.
+
+- [ ] Definir planes gratuito, profesional y organización.
+- [ ] Integrar suscripciones, facturación y control de capacidad.
+- [ ] Incorporar onboarding, proyectos de ejemplo y ayuda contextual.
+- [ ] Implementar telemetría de producto sin capturar contenido sensible.
+- [ ] Preparar monitoreo, respaldos, recuperación y soporte.
+- [ ] Publicar términos, privacidad, propiedad de modelos y política de datos.
+- [ ] Ejecutar una beta cerrada con usuarios externos antes del acceso público.
+- [ ] Corregir los problemas detectados durante la beta.
+- [ ] Abrir gradualmente el acceso público.
+
+**Criterio de salida:** terceros pueden contratar, usar y abandonar el servicio con reglas claras, datos protegidos y operación medible.
+
+#### Orden de ejecución inmediato
+
+La **Fase 2** es la prioridad activa. La primera escena Three.js ya consume el modelo paramétrico sin modificarlo, representa muros y muebles como volúmenes, mantiene la selección y permite navegación orbital. El siguiente bloque es generar huecos reales para las aberturas y conservar la vista de planta como superficie principal de edición precisa.
+
+```text
+Precisión 2D
+    ↓
+Motor geométrico
+    ↓
+Three.js
+    ↓
+Estructuras metálicas
+    ↓
+Proyectos y usuarios
+    ↓
+Planos y cómputos
+    ↓
+IA
+    ↓
+Lanzamiento comercial
+```
+
 #### Base y acceso
 
 - [x] Ruta privada `/admin/modelador` exclusiva para sesiones con rol `admin`.
 - [x] Acceso **Simulador 3D** desde la navegación administrativa.
 - [x] Persistencia PostgreSQL mediante `modeler_projects`.
 - [x] Versionado incremental al guardar.
+- [x] Autoguardado con control optimista de versión y detección de conflictos entre pestañas.
 - [x] Respaldo local cuando el backend no está disponible.
 - [x] Logo ÓXIDA corregido para escritorio y pantallas responsive.
 - [x] Panel de propiedades disponible en escritorio, ventanas pequeñas y móvil.
@@ -333,12 +511,12 @@ Esta lista funciona como tablero de seguimiento. Los elementos marcados están p
 - [x] Definir altura y espesor al crearlos.
 - [x] Ajuste de coordenadas a la rejilla.
 - [x] Mostrar longitud total del modelo.
-- [ ] Arrastrar los extremos de un muro.
-- [ ] Editar numéricamente longitud, altura y espesor de muros existentes.
+- [x] Arrastrar los extremos de un muro.
+- [x] Editar numéricamente longitud, altura y espesor de muros existentes.
 - [ ] Unir y limpiar esquinas automáticamente.
 - [ ] Dividir, duplicar y desplazar muros.
-- [ ] Bloquear dibujo a ejes horizontal y vertical.
-- [ ] Mostrar medidas dinámicas mientras se dibuja.
+- [x] Bloquear dibujo a ejes horizontal y vertical con `Shift`.
+- [x] Mostrar longitud y desplazamientos X/Y mientras se dibuja.
 
 #### Puertas y ventanas
 
@@ -346,10 +524,11 @@ Esta lista funciona como tablero de seguimiento. Los elementos marcados están p
 - [x] Configurar medidas iniciales y antepecho.
 - [x] Representarlas en planta y vista 3D.
 - [x] Eliminar aberturas dependientes cuando se elimina su muro.
-- [ ] Mover una abertura a lo largo del muro.
-- [ ] Redimensionar una abertura después de insertarla.
+- [x] Mover una abertura a lo largo del muro.
+- [x] Redimensionar ancho, altura y antepecho después de insertarla.
 - [ ] Cambiar el sentido de apertura de las puertas.
-- [ ] Evitar solapamientos y elementos fuera del muro.
+- [x] Evitar que una abertura sobresalga por los extremos del muro.
+- [x] Evitar solapamientos entre aberturas del mismo muro.
 - [ ] Incorporar puertas dobles/corredizas y ventanas fijas/batientes.
 - [ ] Recortar físicamente las aberturas en los sólidos de los muros.
 
@@ -392,9 +571,11 @@ Esta lista funciona como tablero de seguimiento. Los elementos marcados están p
 
 - [x] Vista isométrica y planta mediante Canvas.
 - [x] Zoom y selección gráfica.
-- [ ] Migrar a WebGL/Three.js para geometría avanzada.
-- [ ] Órbita libre, cámara en primera persona y vistas estándar.
-- [ ] Incorporar sólidos, iluminación, sombras, materiales y texturas.
+- [x] Migrar la vista 3D a WebGL/Three.js sin reemplazar el modelo de dominio.
+- [x] Incorporar órbita libre, zoom, paneo y selección en la escena 3D.
+- [ ] Incorporar cámara en primera persona y vistas estándar.
+- [x] Representar muros y muebles como sólidos con iluminación y sombras básicas.
+- [ ] Incorporar materiales, texturas y niveles de calidad configurables.
 - [ ] Optimizar modelos grandes mediante instancias y Web Workers.
 
 #### Planos, cómputos e interoperabilidad

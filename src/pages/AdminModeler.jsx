@@ -1,39 +1,41 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import OxidaWordmark from '../components/OxidaWordmark'
 import { getAdminModelerProject, interpretAdminModelerPrompt, saveAdminModelerProject } from '../lib/api'
+import {
+  EMPTY_MODEL,
+  FURNITURE,
+  appendWall,
+  constrainOrthogonal,
+  deleteElement,
+  moveOpening,
+  moveWallEndpoint,
+  normalizeModel,
+  pointOnWall,
+  rememberModel,
+  rotateFurniture,
+  segmentHit,
+  setWallLength,
+  snap,
+  updateFurniture,
+  updateOpening,
+  updateWall,
+  undoModel,
+  validateOpeningPlacement,
+  wallLength,
+} from '../modeler/core'
 import './AdminModeler.css'
 
 const STORAGE_KEY = 'mercadobra-modeler-private-beta'
-const GRID_SIZE = 0.25
-const EMPTY_MODEL = { walls: [], openings: [], furniture: [] }
 const DEFAULTS = { wallHeight: 2.7, wallThickness: 0.15, openingWidth: 0.9, openingHeight: 2.1, sill: 0.9, furnitureType: 'bed' }
-const FURNITURE = {
-  bed: { label: 'Cama', width: 1.6, depth: 2, height: 0.55, color: '#8da1aa' },
-  sofa: { label: 'Sofá', width: 2, depth: 0.85, height: 0.8, color: '#9b806e' },
-  table: { label: 'Mesa', width: 1.4, depth: 0.8, height: 0.75, color: '#a77b50' },
-  chair: { label: 'Silla', width: 0.5, depth: 0.5, height: 0.9, color: '#b58b62' },
-  wardrobe: { label: 'Placard', width: 1.8, depth: 0.6, height: 2.2, color: '#8d7359' },
-  toilet: { label: 'Inodoro', width: 0.42, depth: 0.7, height: 0.75, color: '#d8ddd9' },
-}
-
-const snap = (value) => Math.round(value / GRID_SIZE) * GRID_SIZE
-const wallLength = (wall) => Math.hypot(wall.end.x - wall.start.x, wall.end.y - wall.start.y)
-const pointOnWall = (wall, t) => ({ x: wall.start.x + (wall.end.x - wall.start.x) * t, y: wall.start.y + (wall.end.y - wall.start.y) * t })
+const Modeler3DView = lazy(() => import('../modeler/Modeler3DView'))
 
 function loadLocalModel() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY))
-    return { walls: saved?.walls || [], openings: saved?.openings || [], furniture: saved?.furniture || [] }
+    return normalizeModel(saved)
   } catch { return EMPTY_MODEL }
-}
-
-function segmentHit(point, start, end) {
-  const dx = end.x - start.x; const dy = end.y - start.y
-  const squared = dx * dx + dy * dy
-  const t = squared ? Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / squared)) : 0
-  return { distance: Math.hypot(point.x - start.x - t * dx, point.y - start.y - t * dy), t }
 }
 
 export default function AdminModeler() {
@@ -41,6 +43,13 @@ export default function AdminModeler() {
   const canvasRef = useRef(null)
   const dragRef = useRef(null)
   const suppressClickRef = useRef(false)
+  const projectLoadedRef = useRef(false)
+  const suppressAutosaveRef = useRef(false)
+  const savingRef = useRef(false)
+  const versionRef = useRef(null)
+  const modelRef = useRef(null)
+  const projectNameRef = useRef('Proyecto sin nombre')
+  const saveConflictRef = useRef(false)
   const [model, setModel] = useState(loadLocalModel)
   const [history, setHistory] = useState([])
   const [draftStart, setDraftStart] = useState(null)
@@ -59,9 +68,12 @@ export default function AdminModeler() {
   const [chatMessages, setChatMessages] = useState([])
   const [pendingPlan, setPendingPlan] = useState(null)
   const [chatLoading, setChatLoading] = useState(false)
+  const [orthogonalLock, setOrthogonalLock] = useState(false)
 
   const totalLength = useMemo(() => model.walls.reduce((sum, wall) => sum + wallLength(wall), 0), [model.walls])
   const selectedItem = selection && model[selection.collection]?.find((item) => item.id === selection.id)
+  modelRef.current = model
+  projectNameRef.current = projectName
 
   useEffect(() => {
     if (!adminToken || adminUser?.role !== 'admin') return
@@ -69,12 +81,36 @@ export default function AdminModeler() {
     getAdminModelerProject(adminToken).then(({ project }) => {
       if (!active) return
       if (project) {
-        setModel({ walls: project.model?.walls || [], openings: project.model?.openings || [], furniture: project.model?.furniture || [] })
+        suppressAutosaveRef.current = true; versionRef.current = project.version; saveConflictRef.current = false
+        setModel(normalizeModel(project.model))
         setProjectName(project.name || 'Proyecto sin nombre'); setProjectVersion(project.version); setSaveState(`Versión ${project.version} cargada`)
-      } else setSaveState('Proyecto nuevo')
-    }).catch((error) => { if (active) setSaveState(`Sin conexión: ${error.message}`) })
+      } else { versionRef.current = null; setSaveState('Proyecto nuevo') }
+      projectLoadedRef.current = true
+    }).catch((error) => { if (active) { projectLoadedRef.current = true; setSaveState(`Sin conexión: ${error.message}`) } })
     return () => { active = false }
   }, [adminToken, adminUser?.role])
+
+  const persistProject = useCallback(async (manual = false) => {
+    const snapshot = modelRef.current; const name = projectNameRef.current
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...snapshot, updatedAt: new Date().toISOString() }))
+    if (savingRef.current || saveConflictRef.current || !adminToken) return
+    savingRef.current = true; setSaveState(manual ? 'Guardando…' : 'Guardando automáticamente…')
+    try {
+      const { project: saved } = await saveAdminModelerProject({ name, model: snapshot, version: versionRef.current }, adminToken)
+      versionRef.current = saved.version; setProjectVersion(saved.version); setSaveState(`${manual ? 'Guardado' : 'Autoguardado'} · versión ${saved.version}`)
+    } catch (error) {
+      if (error.code === 'MODELER_VERSION_CONFLICT' || error.status === 409) { saveConflictRef.current = true; setSaveState('Conflicto de versión · recargá antes de guardar') }
+      else setSaveState(`Guardado local · ${error.message}`)
+    } finally { savingRef.current = false }
+  }, [adminToken])
+
+  useEffect(() => {
+    if (!projectLoadedRef.current) return
+    if (suppressAutosaveRef.current) { suppressAutosaveRef.current = false; return }
+    setSaveState('Cambios sin guardar')
+    const timer = window.setTimeout(() => { void persistProject(false) }, 1500)
+    return () => window.clearTimeout(timer)
+  }, [model, projectName, persistProject])
 
   const project = useCallback((point, z = 0) => {
     const canvas = canvasRef.current
@@ -92,7 +128,7 @@ export default function AdminModeler() {
   }, [view, zoom])
 
   useEffect(() => {
-    const cancel = (event) => { if (event.key === 'Escape') setDraftStart(null) }
+    const cancel = (event) => { if (event.key === 'Escape') { setDraftStart(null); setOrthogonalLock(false) } }
     window.addEventListener('keydown', cancel); return () => window.removeEventListener('keydown', cancel)
   }, [])
 
@@ -115,6 +151,9 @@ export default function AdminModeler() {
       const selected = selection?.collection === 'walls' && selection.id === wall.id
       if (view === '3d') { ctx.fillStyle = selected ? '#c97752' : '#f7f3ea'; ctx.strokeStyle = selected ? '#8f4127' : '#5f5b54'; ctx.lineWidth = selected ? 2 : 1; ctx.beginPath(); ctx.moveTo(start.x, start.y); ctx.lineTo(end.x, end.y); ctx.lineTo(topEnd.x, topEnd.y); ctx.lineTo(topStart.x, topStart.y); ctx.closePath(); ctx.fill(); ctx.stroke() }
       else { ctx.strokeStyle = selected ? '#b85e39' : '#34332f'; ctx.lineWidth = Math.max(4, wall.thickness * zoom); ctx.lineCap = 'square'; ctx.beginPath(); ctx.moveTo(start.x, start.y); ctx.lineTo(end.x, end.y); ctx.stroke() }
+      if (selected) {
+        for (const point of [start, end]) { ctx.fillStyle = '#fff'; ctx.strokeStyle = '#b85e39'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(point.x, point.y, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke() }
+      }
     })
     model.openings.forEach((opening) => {
       const wall = model.walls.find((item) => item.id === opening.wallId); if (!wall) return
@@ -128,6 +167,7 @@ export default function AdminModeler() {
         ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.stroke()
         if(opening.type==='door'){const pc=project({x:a.x-dy*opening.width,y:a.y+dx*opening.width});ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pc.x,pc.y);ctx.stroke()}
       }
+      if(selected){const handle=project(center,z);ctx.fillStyle='#fff';ctx.strokeStyle='#e6542f';ctx.lineWidth=3;ctx.beginPath();ctx.arc(handle.x,handle.y,7,0,Math.PI*2);ctx.fill();ctx.stroke()}
     })
     model.furniture.forEach((item) => {
       const def=FURNITURE[item.type]||FURNITURE.table; const selected=selection?.collection==='furniture'&&selection.id===item.id; const c=Math.cos(item.rotation||0);const s=Math.sin(item.rotation||0)
@@ -136,53 +176,83 @@ export default function AdminModeler() {
       if(view==='3d'){const tops=world.map((p)=>project(p,item.height));ctx.fillStyle=selected?'#efb091':def.color;ctx.beginPath();tops.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fill();ctx.stroke()}
       const label=project(item,view==='3d'?item.height+.15:0);ctx.fillStyle='#302f2b';ctx.font='600 11px sans-serif';ctx.textAlign='center';ctx.fillText(def.label,label.x,label.y)
     })
-    if(draftStart&&cursor){const a=project(draftStart);const b=project(cursor);ctx.setLineDash([7,6]);ctx.strokeStyle='#b85e39';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([])}
-  }, [model,selection,draftStart,cursor,project,view,zoom,viewportRevision])
+    if(draftStart&&cursor){
+      const a=project(draftStart);const b=project(cursor);ctx.setLineDash([7,6]);ctx.strokeStyle='#b85e39';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([])
+      const dx=cursor.x-draftStart.x;const dy=cursor.y-draftStart.y;const length=Math.hypot(dx,dy);const label=`${length.toFixed(2)} m  ·  ΔX ${Math.abs(dx).toFixed(2)}  ·  ΔY ${Math.abs(dy).toFixed(2)}${orthogonalLock?'  ·  ORTO':''}`;const midpoint={x:(a.x+b.x)/2,y:(a.y+b.y)/2-14}
+      ctx.font='700 12px sans-serif';ctx.textAlign='center';const width=ctx.measureText(label).width+18;ctx.fillStyle='rgba(45,46,41,.9)';ctx.fillRect(midpoint.x-width/2,midpoint.y-14,width,24);ctx.fillStyle='#fff';ctx.fillText(label,midpoint.x,midpoint.y+3)
+    }
+  }, [model,selection,draftStart,cursor,orthogonalLock,project,view,zoom,viewportRevision])
 
   if (!adminUser || !adminToken || adminUser.role !== 'admin') return <Navigate to="/admin/login?redirect=/admin/modelador" replace />
   const screenPoint=(event)=>{const rect=canvasRef.current.getBoundingClientRect();return{x:event.clientX-rect.left,y:event.clientY-rect.top}}
   const worldPoint=(event)=>{const p=screenPoint(event);return unproject(p.x,p.y)}
-  const remember=()=>setHistory((items)=>[...items.slice(-49),structuredClone(model)])
-  const chooseTool=(next)=>{setTool(next);setDraftStart(null);setSelection(null)}
+  const remember=()=>setHistory((items)=>rememberModel(items,model))
+  const chooseTool=(next)=>{setTool(next);setDraftStart(null);setSelection(null);setOrthogonalLock(false)}
   const nearestWall=(screen)=>model.walls.map((wall)=>({wall,...segmentHit(screen,project(wall.start),project(wall.end))})).sort((a,b)=>a.distance-b.distance)[0]
 
   function handleCanvasClick(event){
     if(suppressClickRef.current){suppressClickRef.current=false;return}
-    const screen=screenPoint(event);const point=worldPoint(event)
+    const screen=screenPoint(event);const basePoint=worldPoint(event);const point=tool==='wall'&&draftStart&&event.shiftKey?constrainOrthogonal(draftStart,basePoint):basePoint
     if(tool==='select'){
       const candidates=[...model.furniture.map((item)=>({collection:'furniture',id:item.id,distance:Math.hypot(screen.x-project(item).x,screen.y-project(item).y)})),...model.openings.map((item)=>{const wall=model.walls.find((w)=>w.id===item.wallId);const p=wall?project(pointOnWall(wall,item.t)):screen;return{collection:'openings',id:item.id,distance:Math.hypot(screen.x-p.x,screen.y-p.y)}}),...model.walls.map((wall)=>({collection:'walls',id:wall.id,distance:segmentHit(screen,project(wall.start),project(wall.end)).distance}))].sort((a,b)=>a.distance-b.distance)
       setSelection(candidates[0]?.distance<=18?candidates[0]:null);return
     }
     if(tool==='wall'){
       if(!draftStart){setDraftStart(point);return}if(point.x===draftStart.x&&point.y===draftStart.y)return
-      remember();setModel((current)=>({...current,walls:[...current.walls,{id:crypto.randomUUID(),start:draftStart,end:point,height:Number(settings.wallHeight),thickness:Number(settings.wallThickness)}]}));setDraftStart(point)
+      remember();setModel((current)=>appendWall(current,{id:crypto.randomUUID(),start:draftStart,end:point,height:Number(settings.wallHeight),thickness:Number(settings.wallThickness)}));setDraftStart(point)
     }else if(tool==='door'||tool==='window'){
       const hit=nearestWall(screen);if(!hit||hit.distance>24){setSaveState('Elegí un punto sobre un muro');return}
-      remember();setModel((current)=>({...current,openings:[...current.openings,{id:crypto.randomUUID(),type:tool,wallId:hit.wall.id,t:Math.max(.05,Math.min(.95,hit.t)),width:Number(settings.openingWidth),height:Number(settings.openingHeight),sill:tool==='window'?Number(settings.sill):0}]}))
+      const opening={id:crypto.randomUUID(),type:tool,wallId:hit.wall.id,t:hit.t,width:Number(settings.openingWidth),height:Number(settings.openingHeight),sill:tool==='window'?Number(settings.sill):0};const validation=validateOpeningPlacement(model,opening)
+      if(!validation.valid){setSaveState(validation.reason);return}
+      remember();setModel((current)=>({...current,openings:[...current.openings,opening]}))
     }else if(tool==='furniture'){
       const def=FURNITURE[settings.furnitureType];const id=crypto.randomUUID();remember();setModel((current)=>({...current,furniture:[...current.furniture,{id,type:settings.furnitureType,x:point.x,y:point.y,width:def.width,depth:def.depth,height:def.height,rotation:0}]}));setSelection({collection:'furniture',id});setTool('select')
     }setSaveState('Cambios sin guardar')
   }
-  function undo(){if(!history.length)return;setModel(history.at(-1));setHistory((items)=>items.slice(0,-1));setSelection(null);setDraftStart(null);setSaveState('Cambios sin guardar')}
-  async function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify({...model,updatedAt:new Date().toISOString()}));setSaveState('Guardando…');try{const{project:saved}=await saveAdminModelerProject({name:projectName,model},adminToken);setProjectVersion(saved.version);setSaveState(`Guardado · versión ${saved.version}`)}catch(error){setSaveState(`Guardado local · ${error.message}`)}}
-  function deleteSelected(){if(!selection)return;remember();setModel((current)=>{const next={...current,[selection.collection]:current[selection.collection].filter((item)=>item.id!==selection.id)};if(selection.collection==='walls')next.openings=current.openings.filter((item)=>item.wallId!==selection.id);return next});setSelection(null);setSaveState('Cambios sin guardar')}
-  function rotateSelected(){if(selection?.collection!=='furniture')return;remember();setModel((current)=>({...current,furniture:current.furniture.map((item)=>item.id===selection.id?{...item,rotation:(item.rotation||0)+Math.PI/2}:item)}));setSaveState('Cambios sin guardar')}
+  function undo(){const result=undoModel(history,model);if(!result.changed)return;setModel(result.model);setHistory(result.history);setSelection(null);setDraftStart(null);setSaveState('Cambios sin guardar')}
+  function save(){void persistProject(true)}
+  function deleteSelected(){if(!selection)return;remember();setModel((current)=>deleteElement(current,selection));setSelection(null);setSaveState('Cambios sin guardar')}
+  function rotateSelected(){if(selection?.collection!=='furniture')return;remember();setModel((current)=>rotateFurniture(current,selection.id));setSaveState('Cambios sin guardar')}
   function updateSelectedFurniture(field,value){
     if(selection?.collection!=='furniture')return
-    const number=Number(value);if(!Number.isFinite(number))return
-    const limits={width:[.1,100],depth:[.1,100],height:[.1,100],x:[-10000,10000],y:[-10000,10000],rotation:[-360,360]};const [min,max]=limits[field]
-    const normalized=Math.max(min,Math.min(max,number));setModel((current)=>({...current,furniture:current.furniture.map((item)=>item.id===selection.id?{...item,[field]:field==='rotation'?normalized*Math.PI/180:normalized}:item)}));setSaveState('Cambios sin guardar')
+    setModel((current)=>updateFurniture(current,selection.id,field,value));setSaveState('Cambios sin guardar')
+  }
+  function updateSelectedWall(field,value){
+    if(selection?.collection!=='walls')return
+    setModel((current)=>field==='length'?setWallLength(current,selection.id,value):updateWall(current,selection.id,field,value));setSaveState('Cambios sin guardar')
+  }
+  function updateSelectedOpening(field,value){
+    if(selection?.collection!=='openings')return
+    const currentOpening=model.openings.find((item)=>item.id===selection.id);const next=updateOpening(model,selection.id,field,value);const nextOpening=next.openings.find((item)=>item.id===selection.id)
+    setModel(next);setSaveState(currentOpening===nextOpening&&Number(value)!==Number(currentOpening?.[field])?'No se puede aplicar esa medida: revisá los límites y otras aberturas.':'Cambios sin guardar')
   }
   function handlePointerDown(event){
     if(tool!=='select')return
+    if(selection?.collection==='walls'){
+      const wall=model.walls.find((item)=>item.id===selection.id)
+      if(wall){
+        const screen=screenPoint(event);const endpoints=['start','end'].map((endpoint)=>({endpoint,distance:Math.hypot(screen.x-project(wall[endpoint]).x,screen.y-project(wall[endpoint]).y)})).sort((a,b)=>a.distance-b.distance)
+        if(endpoints[0].distance<=16){remember();dragRef.current={kind:'wall-endpoint',id:wall.id,endpoint:endpoints[0].endpoint,start:screen};event.currentTarget.setPointerCapture(event.pointerId);return}
+      }
+    }
+    if(selection?.collection==='openings'){
+      const opening=model.openings.find((item)=>item.id===selection.id);const wall=opening&&model.walls.find((item)=>item.id===opening.wallId)
+      if(opening&&wall){const screen=screenPoint(event);const center=project(pointOnWall(wall,opening.t),opening.type==='window'?opening.sill:0);if(Math.hypot(screen.x-center.x,screen.y-center.y)<=18){remember();dragRef.current={kind:'opening',id:opening.id,wallId:wall.id,start:screen};event.currentTarget.setPointerCapture(event.pointerId);return}}
+    }
     const screen=screenPoint(event);const closest=model.furniture.map((item)=>({item,distance:Math.hypot(screen.x-project(item).x,screen.y-project(item).y)})).sort((a,b)=>a.distance-b.distance)[0]
     if(!closest||closest.distance>24)return
-    remember();dragRef.current={id:closest.item.id,start:screen};setSelection({collection:'furniture',id:closest.item.id});event.currentTarget.setPointerCapture(event.pointerId)
+    remember();dragRef.current={kind:'furniture',id:closest.item.id,start:screen};setSelection({collection:'furniture',id:closest.item.id});event.currentTarget.setPointerCapture(event.pointerId)
   }
   function handlePointerMove(event){
-    setCursor(worldPoint(event));if(!dragRef.current)return
+    const basePoint=worldPoint(event);const drawingOrthogonal=tool==='wall'&&draftStart&&event.shiftKey;setCursor(drawingOrthogonal?constrainOrthogonal(draftStart,basePoint):basePoint);setOrthogonalLock(Boolean(drawingOrthogonal));if(!dragRef.current)return
     const screen=screenPoint(event);if(Math.hypot(screen.x-dragRef.current.start.x,screen.y-dragRef.current.start.y)>3)suppressClickRef.current=true
-    const point=worldPoint(event);const draggedId=dragRef.current.id;setModel((current)=>({...current,furniture:current.furniture.map((item)=>item.id===draggedId?{...item,x:point.x,y:point.y}:item)}));setSaveState('Cambios sin guardar')
+    const point=worldPoint(event);const dragged=dragRef.current
+    if(dragged.kind==='wall-endpoint'){setModel((current)=>moveWallEndpoint(current,dragged.id,dragged.endpoint,point));setSaveState('Cambios sin guardar')}
+    else if(dragged.kind==='opening'){
+      const wall=model.walls.find((item)=>item.id===dragged.wallId)
+      if(wall){const hit=segmentHit(screen,project(wall.start),project(wall.end));const currentOpening=model.openings.find((item)=>item.id===dragged.id);const next=moveOpening(model,dragged.id,hit.t);const nextOpening=next.openings.find((item)=>item.id===dragged.id);setModel(next);setSaveState(currentOpening===nextOpening&&Math.abs(hit.t-currentOpening.t)>.001?'Movimiento bloqueado: la abertura se superpone o sale del muro.':'Cambios sin guardar')}
+    }
+    else {setModel((current)=>({...current,furniture:current.furniture.map((item)=>item.id===dragged.id?{...item,x:point.x,y:point.y}:item)}));setSaveState('Cambios sin guardar')}
   }
   function handlePointerUp(event){if(!dragRef.current)return;dragRef.current=null;if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId)}
   async function submitPrompt(event){
@@ -218,8 +288,8 @@ export default function AdminModeler() {
 
   return <section className="modeler-page"><header className="modeler-header"><div className="modeler-brand"><OxidaWordmark/><span>MercadoBRA Modelador</span><em>Beta privada</em></div><nav><Link to="/admin/productos">Productos</Link><Link to="/admin/clientes">Clientes</Link><button type="button" onClick={logoutAdmin}>Cerrar sesión</button></nav></header><div className="modeler-workspace">
     <aside className="modeler-tools" aria-label="Herramientas"><button className={tool==='select'?'is-active':''} onClick={()=>chooseTool('select')}>↖<span>Seleccionar</span></button><button className={tool==='wall'?'is-active':''} onClick={()=>chooseTool('wall')}>╱<span>Muro</span></button><button className={tool==='door'?'is-active':''} onClick={()=>chooseTool('door')}>▯<span>Puerta</span></button><button className={tool==='window'?'is-active':''} onClick={()=>chooseTool('window')}>▣<span>Ventana</span></button><button className={tool==='furniture'?'is-active':''} onClick={()=>chooseTool('furniture')}>▰<span>Muebles</span></button><button onClick={undo} disabled={!history.length}>↶<span>Deshacer</span></button><button onClick={deleteSelected} disabled={!selection}>⌫<span>Eliminar</span></button></aside>
-    <main className="modeler-stage"><div className="modeler-stagebar"><div><input style={{width:'min(280px,35vw)',border:0,borderBottom:'1px solid #bdb4a6',background:'transparent',fontWeight:800}} value={projectName} maxLength="120" aria-label="Nombre del proyecto" onChange={(e)=>{setProjectName(e.target.value);setSaveState('Cambios sin guardar')}}/><span>{saveState}{projectVersion?` · v${projectVersion}`:''}</span></div><div className="modeler-view-toggle"><button onClick={()=>setChatOpen((value)=>!value)}>Asistente</button><button className={view==='top'?'is-active':''} onClick={()=>setView('top')}>Planta</button><button className={view==='3d'?'is-active':''} onClick={()=>setView('3d')}>3D</button><button onClick={save}>Guardar</button></div></div><div className="modeler-canvas-wrap"><canvas ref={canvasRef} style={{touchAction:'none'}} onClick={handleCanvasClick} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onWheel={(e)=>{e.preventDefault();setZoom((value)=>Math.min(70,Math.max(18,value-e.deltaY*.04)))}}/><div className="modeler-hint">{tool==='wall'?(draftStart?'Elegí el punto final · Esc para cancelar':'Clic para iniciar un muro'):tool==='door'||tool==='window'?'Hacé clic sobre un muro':tool==='furniture'?'Hacé clic para ubicar el mueble':selection?.collection==='furniture'?'Arrastrá el mueble para moverlo':'Seleccioná un elemento'}</div>{!chatOpen&&<button type="button" className="modeler-chat-trigger" onClick={()=>setChatOpen(true)}><span>✦</span> Chat IA</button>}{chatOpen&&<section className="modeler-chat" aria-label="Asistente del simulador"><header><div><strong>Asistente de diseño</strong><span>Solo admin · acciones controladas</span></div><button type="button" onClick={()=>setChatOpen(false)}>×</button></header><div className="modeler-chat-messages">{chatMessages.length===0&&<p className="modeler-chat-empty">Probá: “Creá una habitación de 4 x 3 m con una cama”.</p>}{chatMessages.map((message,index)=><p key={index} className={`is-${message.role}`}>{message.content}</p>)}{chatLoading&&<p className="is-assistant">Interpretando…</p>}</div>{pendingPlan?.actions?.length>0&&<div className="modeler-chat-plan"><strong>Vista previa</strong>{pendingPlan.actions.map((action,index)=><span key={index}>{index+1}. {action.type.replaceAll('_',' ')}</span>)}<div><button onClick={()=>setPendingPlan(null)}>Cancelar</button><button onClick={applyPendingPlan}>Aplicar cambios</button></div></div>}<form onSubmit={submitPrompt}><input value={chatPrompt} onChange={(e)=>setChatPrompt(e.target.value)} maxLength="1200" placeholder="Indicá qué querés crear…"/><button disabled={chatLoading||!chatPrompt.trim()}>Enviar</button></form></section>}</div></main>
-    <aside className="modeler-properties"><p className="modeler-eyebrow">Propiedades</p><h2>{title}</h2>{tool==='wall'&&!selectedItem&&<><label>Altura <span><input type="number" min=".1" step=".1" value={settings.wallHeight} onChange={(e)=>setSettings({...settings,wallHeight:e.target.value})}/> m</span></label><label>Espesor <span><input type="number" min=".05" step=".01" value={settings.wallThickness} onChange={(e)=>setSettings({...settings,wallThickness:e.target.value})}/> m</span></label></>}{(tool==='door'||tool==='window')&&!selectedItem&&<><label>Ancho <span><input type="number" min=".3" step=".1" value={settings.openingWidth} onChange={(e)=>setSettings({...settings,openingWidth:e.target.value})}/> m</span></label><label>Alto <span><input type="number" min=".3" step=".1" value={settings.openingHeight} onChange={(e)=>setSettings({...settings,openingHeight:e.target.value})}/> m</span></label>{tool==='window'&&<label>Antepecho <span><input type="number" min="0" step=".1" value={settings.sill} onChange={(e)=>setSettings({...settings,sill:e.target.value})}/> m</span></label>}</>}{tool==='furniture'&&!selectedItem&&<label>Tipo <select value={settings.furnitureType} onChange={(e)=>setSettings({...settings,furnitureType:e.target.value})}>{Object.entries(FURNITURE).map(([key,item])=><option key={key} value={key}>{item.label}</option>)}</select></label>}{selection?.collection==='furniture'&&selectedItem&&<><label>Ancho <span><input type="number" min=".1" step=".1" value={selectedItem.width} onFocus={remember} onChange={(e)=>updateSelectedFurniture('width',e.target.value)}/> m</span></label><label>Profundidad <span><input type="number" min=".1" step=".1" value={selectedItem.depth} onFocus={remember} onChange={(e)=>updateSelectedFurniture('depth',e.target.value)}/> m</span></label><label>Altura <span><input type="number" min=".1" step=".1" value={selectedItem.height} onFocus={remember} onChange={(e)=>updateSelectedFurniture('height',e.target.value)}/> m</span></label><label>Posición X <span><input type="number" step=".25" value={selectedItem.x} onFocus={remember} onChange={(e)=>updateSelectedFurniture('x',e.target.value)}/> m</span></label><label>Posición Y <span><input type="number" step=".25" value={selectedItem.y} onFocus={remember} onChange={(e)=>updateSelectedFurniture('y',e.target.value)}/> m</span></label><label>Rotación <span><input type="number" min="-360" max="360" step="5" value={Math.round((selectedItem.rotation||0)*180/Math.PI)} onFocus={remember} onChange={(e)=>updateSelectedFurniture('rotation',e.target.value)}/> °</span></label><button className="modeler-property-action" onClick={rotateSelected}>Rotar 90°</button></>}
+    <main className="modeler-stage"><div className="modeler-stagebar"><div><input style={{width:'min(280px,35vw)',border:0,borderBottom:'1px solid #bdb4a6',background:'transparent',fontWeight:800}} value={projectName} maxLength="120" aria-label="Nombre del proyecto" onChange={(e)=>{setProjectName(e.target.value);setSaveState('Cambios sin guardar')}}/><span>{saveState}{projectVersion?` · v${projectVersion}`:''}</span></div><div className="modeler-view-toggle"><button onClick={()=>setChatOpen((value)=>!value)}>Asistente</button><button className={view==='top'?'is-active':''} onClick={()=>setView('top')}>Planta</button><button className={view==='3d'?'is-active':''} onClick={()=>setView('3d')}>3D</button><button onClick={save}>Guardar</button></div></div><div className="modeler-canvas-wrap"><canvas ref={canvasRef} style={{touchAction:'none',display:view==='top'?'block':'none'}} onClick={handleCanvasClick} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onWheel={(e)=>{e.preventDefault();setZoom((value)=>Math.min(70,Math.max(18,value-e.deltaY*.04)))}}/>{view==='3d'&&<Suspense fallback={<div className="modeler-three-loading">Preparando motor 3D…</div>}><Modeler3DView model={model} selection={selection} onSelect={(next)=>{setSelection(next);if(next)setTool('select')}}/></Suspense>}<div className="modeler-hint">{view==='3d'?'Arrastrá para orbitar · rueda para acercar · clic para seleccionar':tool==='wall'?(draftStart?'Elegí el punto final · Shift bloquea el eje · Esc cancela':'Clic para iniciar un muro'):tool==='door'||tool==='window'?'Hacé clic sobre un muro':tool==='furniture'?'Hacé clic para ubicar el mueble':selection?.collection==='furniture'?'Arrastrá el mueble para moverlo':'Seleccioná un elemento'}</div>{!chatOpen&&<button type="button" className="modeler-chat-trigger" onClick={()=>setChatOpen(true)}><span>✦</span> Chat IA</button>}{chatOpen&&<section className="modeler-chat" aria-label="Asistente del simulador"><header><div><strong>Asistente de diseño</strong><span>Solo admin · acciones controladas</span></div><button type="button" onClick={()=>setChatOpen(false)}>×</button></header><div className="modeler-chat-messages">{chatMessages.length===0&&<p className="modeler-chat-empty">Probá: “Creá una habitación de 4 x 3 m con una cama”.</p>}{chatMessages.map((message,index)=><p key={index} className={`is-${message.role}`}>{message.content}</p>)}{chatLoading&&<p className="is-assistant">Interpretando…</p>}</div>{pendingPlan?.actions?.length>0&&<div className="modeler-chat-plan"><strong>Vista previa</strong>{pendingPlan.actions.map((action,index)=><span key={index}>{index+1}. {action.type.replaceAll('_',' ')}</span>)}<div><button onClick={()=>setPendingPlan(null)}>Cancelar</button><button onClick={applyPendingPlan}>Aplicar cambios</button></div></div>}<form onSubmit={submitPrompt}><input value={chatPrompt} onChange={(e)=>setChatPrompt(e.target.value)} maxLength="1200" placeholder="Indicá qué querés crear…"/><button disabled={chatLoading||!chatPrompt.trim()}>Enviar</button></form></section>}</div></main>
+    <aside className="modeler-properties"><p className="modeler-eyebrow">Propiedades</p><h2>{title}</h2>{tool==='wall'&&!selectedItem&&<><label>Altura <span><input type="number" min=".1" step=".1" value={settings.wallHeight} onChange={(e)=>setSettings({...settings,wallHeight:e.target.value})}/> m</span></label><label>Espesor <span><input type="number" min=".05" step=".01" value={settings.wallThickness} onChange={(e)=>setSettings({...settings,wallThickness:e.target.value})}/> m</span></label></>}{selection?.collection==='walls'&&selectedItem&&<><label>Longitud <span><input type="number" min=".1" step=".05" value={Number(wallLength(selectedItem).toFixed(3))} onFocus={remember} onChange={(e)=>updateSelectedWall('length',e.target.value)}/> m</span></label><label>Altura <span><input type="number" min=".1" step=".1" value={selectedItem.height} onFocus={remember} onChange={(e)=>updateSelectedWall('height',e.target.value)}/> m</span></label><label>Espesor <span><input type="number" min=".01" step=".01" value={selectedItem.thickness} onFocus={remember} onChange={(e)=>updateSelectedWall('thickness',e.target.value)}/> m</span></label><p className="modeler-property-note">Arrastrá los círculos del muro para mover sus extremos sobre la rejilla.</p></>}{selection?.collection==='openings'&&selectedItem&&<><label>Ancho <span><input type="number" min=".2" step=".05" value={selectedItem.width} onFocus={remember} onChange={(e)=>updateSelectedOpening('width',e.target.value)}/> m</span></label><label>Alto <span><input type="number" min=".2" step=".05" value={selectedItem.height} onFocus={remember} onChange={(e)=>updateSelectedOpening('height',e.target.value)}/> m</span></label>{selectedItem.type==='window'&&<label>Antepecho <span><input type="number" min="0" step=".05" value={selectedItem.sill} onFocus={remember} onChange={(e)=>updateSelectedOpening('sill',e.target.value)}/> m</span></label>}<p className="modeler-property-note">Arrastrá el círculo para mover la abertura sin sacarla del muro.</p></>}{(tool==='door'||tool==='window')&&!selectedItem&&<><label>Ancho <span><input type="number" min=".3" step=".1" value={settings.openingWidth} onChange={(e)=>setSettings({...settings,openingWidth:e.target.value})}/> m</span></label><label>Alto <span><input type="number" min=".3" step=".1" value={settings.openingHeight} onChange={(e)=>setSettings({...settings,openingHeight:e.target.value})}/> m</span></label>{tool==='window'&&<label>Antepecho <span><input type="number" min="0" step=".1" value={settings.sill} onChange={(e)=>setSettings({...settings,sill:e.target.value})}/> m</span></label>}</>}{tool==='furniture'&&!selectedItem&&<label>Tipo <select value={settings.furnitureType} onChange={(e)=>setSettings({...settings,furnitureType:e.target.value})}>{Object.entries(FURNITURE).map(([key,item])=><option key={key} value={key}>{item.label}</option>)}</select></label>}{selection?.collection==='furniture'&&selectedItem&&<><label>Ancho <span><input type="number" min=".1" step=".1" value={selectedItem.width} onFocus={remember} onChange={(e)=>updateSelectedFurniture('width',e.target.value)}/> m</span></label><label>Profundidad <span><input type="number" min=".1" step=".1" value={selectedItem.depth} onFocus={remember} onChange={(e)=>updateSelectedFurniture('depth',e.target.value)}/> m</span></label><label>Altura <span><input type="number" min=".1" step=".1" value={selectedItem.height} onFocus={remember} onChange={(e)=>updateSelectedFurniture('height',e.target.value)}/> m</span></label><label>Posición X <span><input type="number" step=".25" value={selectedItem.x} onFocus={remember} onChange={(e)=>updateSelectedFurniture('x',e.target.value)}/> m</span></label><label>Posición Y <span><input type="number" step=".25" value={selectedItem.y} onFocus={remember} onChange={(e)=>updateSelectedFurniture('y',e.target.value)}/> m</span></label><label>Rotación <span><input type="number" min="-360" max="360" step="5" value={Math.round((selectedItem.rotation||0)*180/Math.PI)} onFocus={remember} onChange={(e)=>updateSelectedFurniture('rotation',e.target.value)}/> °</span></label><button className="modeler-property-action" onClick={rotateSelected}>Rotar 90°</button></>}
       <div className="modeler-summary"><div><strong>{model.walls.length}</strong><span>Muros</span></div><div><strong>{model.openings.length}</strong><span>Aberturas</span></div><div><strong>{model.furniture.length}</strong><span>Muebles</span></div><div><strong>{totalLength.toFixed(1)} m</strong><span>Longitud</span></div></div><div className="modeler-list"><p>Elementos</p>{model.walls.map((item,i)=><button key={item.id} className={selection?.id===item.id?'is-active':''} onClick={()=>{setSelection({collection:'walls',id:item.id});setTool('select')}}><span>Muro {i+1}</span><small>{wallLength(item).toFixed(2)} m</small></button>)}{model.openings.map((item,i)=><button key={item.id} className={selection?.id===item.id?'is-active':''} onClick={()=>{setSelection({collection:'openings',id:item.id});setTool('select')}}><span>{item.type==='door'?'Puerta':'Ventana'} {i+1}</span><small>{item.width.toFixed(2)} m</small></button>)}{model.furniture.map((item,i)=><button key={item.id} className={selection?.id===item.id?'is-active':''} onClick={()=>{setSelection({collection:'furniture',id:item.id});setTool('select')}}><span>{FURNITURE[item.type]?.label} {i+1}</span><small>{item.width.toFixed(2)} m</small></button>)}</div>
     </aside></div></section>
 }

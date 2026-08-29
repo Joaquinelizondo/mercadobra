@@ -24,7 +24,11 @@
 .modeler-view-toggle button.is-active,.modeler-view-toggle button:last-child{background:#2d2e29;color:#fff}
 .modeler-canvas-wrap{position:relative;min-height:0;overflow:hidden}
 .modeler-canvas-wrap canvas{display:block;cursor:crosshair}
-.modeler-hint{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);padding:8px 13px;border-radius:99px;background:rgba(35,35,31,.82);color:#f5f1e8;font-size:.68rem;pointer-events:none}
+.modeler-three-view{position:absolute;inset:0}
+.modeler-three-loading{position:absolute;inset:0;display:grid;place-items:center;background:#e8e3da;color:#655f56;font-size:.78rem;font-weight:800}
+.modeler-three-view canvas{cursor:grab}
+.modeler-three-view canvas:active{cursor:grabbing}
+.modeler-hint{position:absolute;z-index:3;bottom:16px;left:50%;transform:translateX(-50%);padding:8px 13px;border-radius:99px;background:rgba(35,35,31,.82);color:#f5f1e8;font-size:.68rem;pointer-events:none}
 .modeler-chat-trigger{position:absolute;z-index:5;top:16px;right:16px;display:flex;align-items:center;gap:7px;padding:11px 15px;border:0;border-radius:999px;background:#b85e39;color:#fff;font-weight:900;box-shadow:0 10px 25px rgba(77,43,29,.25);cursor:pointer}
 .modeler-chat-trigger span{font-size:1rem}
 .modeler-chat{position:absolute;z-index:6;right:16px;bottom:16px;display:grid;grid-template-rows:auto minmax(80px,1fr) auto auto;width:min(390px,calc(100% - 32px));max-height:min(560px,calc(100% - 32px));overflow:hidden;border:1px solid #c7beb1;border-radius:12px;background:#f8f5ef;box-shadow:0 20px 55px rgba(35,35,31,.3);color:#292823}
@@ -50,6 +54,7 @@
 .modeler-properties>label{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #d5cec3;color:#655f56;font-size:.76rem;font-weight:700}
 .modeler-properties label span{display:flex;align-items:center;gap:5px}
 .modeler-properties input{width:64px;padding:7px;border:1px solid #bdb5aa;background:#fff;text-align:right}
+.modeler-property-note{margin:14px 0 0;color:#7a7165;font-size:.68rem;line-height:1.45}
 .modeler-summary{display:grid;grid-template-columns:1fr 1fr;margin:24px 0;border:1px solid #cbc3b7}
 .modeler-summary div{display:grid;gap:3px;padding:12px}
 .modeler-summary div+div{border-left:1px solid #cbc3b7}

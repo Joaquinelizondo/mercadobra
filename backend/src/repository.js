@@ -807,6 +807,7 @@ async function getJsonRepo() {
       const now = new Date().toISOString()
       let project = db.modelerProjects.find((item) => Number(item.ownerUserId) === Number(ownerUserId))
       if (project) {
+        if (payload.expectedVersion == null || Number(payload.expectedVersion) !== Number(project.version)) return null
         project.name = payload.name
         project.model = payload.model
         project.version = Number(project.version || 0) + 1
@@ -1718,9 +1719,11 @@ async function getPgRepo() {
          ON CONFLICT (owner_user_id) DO UPDATE
          SET name = EXCLUDED.name, model = EXCLUDED.model,
              version = modeler_projects.version + 1, updated_at = NOW()
+         WHERE $4::integer IS NOT NULL AND modeler_projects.version = $4
          RETURNING *`,
-        [ownerUserId, payload.name, JSON.stringify(payload.model)]
+        [ownerUserId, payload.name, JSON.stringify(payload.model), payload.expectedVersion]
       )
+      if (!rows[0]) return null
       const row = rows[0]
       return { id: Number(row.id), ownerUserId: Number(row.owner_user_id), name: row.name, model: row.model, version: Number(row.version), createdAt: row.created_at, updatedAt: row.updated_at }
     },
