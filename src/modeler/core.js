@@ -146,6 +146,24 @@ export function validateOpeningPlacement(model, candidate, excludedOpeningId = c
   return overlaps ? { valid: false, reason: 'La abertura se superpone con otra abertura del mismo muro.' } : { valid: true, reason: '' }
 }
 
+export function findOpeningPlacement(model, opening, preferredWallIndex = 0) {
+  if (!model.walls.length) return null
+  const startIndex = Math.max(0, Math.min(model.walls.length - 1, Number(preferredWallIndex) || 0))
+  const walls = [...model.walls.slice(startIndex), ...model.walls.slice(0, startIndex)]
+  for (const wall of walls) {
+    const bounds = openingPositionBounds(wall, opening.width)
+    const preferred = Math.max(bounds.min, Math.min(bounds.max, Number(opening.t) || 0.5))
+    const positions = Array.from({ length: 41 }, (_, index) => bounds.min + (bounds.max - bounds.min) * index / 40)
+      .concat(preferred)
+      .sort((a, b) => Math.abs(a - preferred) - Math.abs(b - preferred))
+    for (const t of positions) {
+      const candidate = { ...opening, wallId: wall.id, t }
+      if (validateOpeningPlacement(model, candidate).valid) return candidate
+    }
+  }
+  return null
+}
+
 export function moveOpening(model, openingId, position) {
   const number = Number(position)
   if (!Number.isFinite(number)) return model

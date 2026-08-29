@@ -4,6 +4,7 @@ import {
   appendWall,
   constrainOrthogonal,
   deleteElement,
+  findOpeningPlacement,
   normalizeModel,
   openingTransform3D,
   moveWallEndpoint,
@@ -145,6 +146,26 @@ test('permite aberturas contiguas que no se solapan', () => {
   const candidate = { id: 'window-1', wallId: wall.id, t: 0.5, width: 1, height: 1, sill: 1 }
   const model = { walls: [horizontalWall], openings: [existing], furniture: [] }
   assert.equal(validateOpeningPlacement(model, candidate).valid, true)
+})
+
+test('busca una posición libre para una segunda abertura generada por el agente', () => {
+  const horizontalWall = { ...wall, end: { x: 4, y: 0 } }
+  const door = { id: 'door-1', type: 'door', wallId: wall.id, t: 0.5, width: 0.9, height: 2.1, sill: 0 }
+  const window = { id: 'window-1', type: 'window', wallId: wall.id, t: 0.5, width: 1.2, height: 1, sill: 1 }
+  const model = { walls: [horizontalWall], openings: [door], furniture: [] }
+  const placement = findOpeningPlacement(model, window, 0)
+  assert.ok(placement)
+  assert.notEqual(placement.t, 0.5)
+  assert.equal(validateOpeningPlacement(model, placement).valid, true)
+})
+
+test('prueba otros muros cuando el preferido no tiene espacio', () => {
+  const firstWall = { ...wall, id: 'wall-1', end: { x: 1, y: 0 } }
+  const secondWall = { ...wall, id: 'wall-2', start: { x: 0, y: 2 }, end: { x: 4, y: 2 } }
+  const door = { id: 'door-1', type: 'door', wallId: firstWall.id, t: 0.5, width: 1, height: 2.1, sill: 0 }
+  const window = { id: 'window-1', type: 'window', wallId: firstWall.id, t: 0.5, width: 1.2, height: 1, sill: 1 }
+  const model = { walls: [firstWall, secondWall], openings: [door], furniture: [] }
+  assert.equal(findOpeningPlacement(model, window, 0)?.wallId, secondWall.id)
 })
 
 test('impide mover una abertura encima de otra', () => {

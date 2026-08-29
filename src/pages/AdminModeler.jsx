@@ -9,6 +9,7 @@ import {
   appendWall,
   constrainOrthogonal,
   deleteElement,
+  findOpeningPlacement,
   moveOpening,
   moveWallEndpoint,
   normalizeModel,
@@ -265,7 +266,7 @@ export default function AdminModeler() {
   function applyPendingPlan(){
     if(!pendingPlan?.actions?.length)return;remember()
     setModel((current)=>{
-      const next=structuredClone(current)
+      let next=structuredClone(current)
       for(const action of pendingPlan.actions){
         if(action.type==='clear_model'){next.walls=[];next.openings=[];next.furniture=[];continue}
         if(action.type==='create_room'){
@@ -276,7 +277,7 @@ export default function AdminModeler() {
         }
         if(action.type==='add_door'||action.type==='add_window'){
           const wall=next.walls[Math.max(0,Math.min(next.walls.length-1,Number(action.wallIndex)||0))];if(!wall)continue
-          next.openings.push({id:crypto.randomUUID(),type:action.type==='add_door'?'door':'window',wallId:wall.id,t:Math.max(.05,Math.min(.95,Number(action.position)||.5)),width:Math.max(.2,Number(action.width)||(action.type==='add_door' ? .9 : 1.2)),height:Math.max(.2,Number(action.height)||(action.type==='add_door'?2.1:1.1)),sill:action.type==='add_window'?Math.max(0,Number(action.sill)||.9):0});continue
+          const opening={id:crypto.randomUUID(),type:action.type==='add_door'?'door':'window',wallId:wall.id,t:Math.max(.05,Math.min(.95,Number(action.position)||.5)),width:Math.max(.2,Number(action.width)||(action.type==='add_door' ? .9 : 1.2)),height:Math.max(.2,Number(action.height)||(action.type==='add_door'?2.1:1.1)),sill:action.type==='add_window'?Math.max(0,Number(action.sill)||.9):0};const placement=findOpeningPlacement(next,opening,Number(action.wallIndex)||0);if(placement)next={...next,openings:[...next.openings,placement]};continue
         }
         if(action.type==='add_furniture'&&FURNITURE[action.furnitureType]){
           const def=FURNITURE[action.furnitureType];const offset=next.furniture.length*.5;next.furniture.push({id:crypto.randomUUID(),type:action.furnitureType,x:1+offset,y:1+offset,width:Math.max(.1,Number(action.width)||def.width),depth:Math.max(.1,Number(action.depth)||def.depth),height:Math.max(.1,Number(action.height)||def.height),rotation:0})

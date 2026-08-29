@@ -560,6 +560,7 @@ Lanzamiento comercial
 - [x] Structured Outputs con JSON Schema y sin ejecución de código libre.
 - [x] Intérprete local cuando OpenAI no está disponible.
 - [x] Creación por prompt de habitaciones, puertas, ventanas y muebles iniciales.
+- [x] Buscar automáticamente una posición libre para las aberturas creadas por el asistente.
 - [ ] Entender referencias al elemento seleccionado: “esta cama” o “esta ventana”.
 - [ ] Mover, rotar, redimensionar y eliminar elementos mediante prompts.
 - [ ] Entender relaciones espaciales: frente, detrás, opuesto, centrado y esquina.
