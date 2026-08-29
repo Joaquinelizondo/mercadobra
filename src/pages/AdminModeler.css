@@ -54,6 +54,14 @@
 .modeler-properties>label{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #d5cec3;color:#655f56;font-size:.76rem;font-weight:700}
 .modeler-properties label span{display:flex;align-items:center;gap:5px}
 .modeler-properties input{width:64px;padding:7px;border:1px solid #bdb5aa;background:#fff;text-align:right}
+.modeler-properties select{max-width:150px;padding:7px;border:1px solid #bdb5aa;background:#fff;color:#45413b}
+.modeler-building{margin-top:22px;padding-top:16px;border-top:1px solid #cfc7bb}
+.modeler-building h3{margin:0 0 12px;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em}
+.modeler-building label{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;color:#655f56;font-size:.75rem;font-weight:700}
+.modeler-building label em{display:flex;align-items:center;gap:5px;font-style:normal}
+.modeler-building input[type="number"]{width:58px}
+.modeler-building input[type="checkbox"]{width:18px;height:18px;accent-color:#b85e39}
+.modeler-building p{margin:12px 0 0;color:#777066;font-size:.68rem}
 .modeler-property-note{margin:14px 0 0;color:#7a7165;font-size:.68rem;line-height:1.45}
 .modeler-summary{display:grid;grid-template-columns:1fr 1fr;margin:24px 0;border:1px solid #cbc3b7}
 .modeler-summary div{display:grid;gap:3px;padding:12px}

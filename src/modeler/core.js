@@ -1,6 +1,11 @@
-export const GRID_SIZE = 0.25
+export const GRID_SIZE = 0.1
+export const DOOR_SWINGS = Object.freeze(['left-in', 'right-in', 'left-out', 'right-out'])
 
-export const EMPTY_MODEL = Object.freeze({ walls: [], openings: [], furniture: [] })
+export const DEFAULT_BUILDING = Object.freeze({
+  ceiling: { enabled: false, visible: true, height: 2.4, thickness: 0.05 },
+  roof: { enabled: false, visible: true, thickness: 0.15, overhang: 0.25 },
+})
+export const EMPTY_MODEL = Object.freeze({ walls: [], openings: [], furniture: [], building: DEFAULT_BUILDING })
 
 export const FURNITURE = Object.freeze({
   bed: { label: 'Cama', width: 1.6, depth: 2, height: 0.55, color: '#8da1aa' },
@@ -12,11 +17,39 @@ export const FURNITURE = Object.freeze({
 })
 
 export function normalizeModel(model) {
+  const building = model?.building || {}
   return {
     walls: Array.isArray(model?.walls) ? model.walls : [],
-    openings: Array.isArray(model?.openings) ? model.openings : [],
+    openings: Array.isArray(model?.openings) ? model.openings.map((opening) => opening.type === 'door' && !DOOR_SWINGS.includes(opening.swing) ? { ...opening, swing: 'left-in' } : opening) : [],
     furniture: Array.isArray(model?.furniture) ? model.furniture : [],
+    building: {
+      ceiling: { ...DEFAULT_BUILDING.ceiling, ...(building.ceiling || {}) },
+      roof: { ...DEFAULT_BUILDING.roof, ...(building.roof || {}) },
+    },
   }
+}
+
+export function updateBuilding(model, section, field, value) {
+  if (!['ceiling', 'roof'].includes(section) || !['enabled', 'visible', 'height', 'thickness', 'overhang'].includes(field)) return model
+  const current = model.building || DEFAULT_BUILDING
+  let normalized = value
+  if (field === 'enabled' || field === 'visible') normalized = Boolean(value)
+  else {
+    normalized = Number(value)
+    if (!Number.isFinite(normalized)) return model
+    const limits = field === 'height' ? [0.2, 100] : field === 'overhang' ? [0, 10] : [0.01, 5]
+    normalized = Math.max(limits[0], Math.min(limits[1], normalized))
+  }
+  return { ...model, building: { ...current, [section]: { ...current[section], [field]: normalized } } }
+}
+
+export function modelFootprint(model, padding = 0) {
+  const points = model.walls.flatMap((wall) => [wall.start, wall.end])
+  if (!points.length) return null
+  const xs = points.map((point) => point.x); const ys = points.map((point) => point.y)
+  const minX = Math.min(...xs) - padding; const maxX = Math.max(...xs) + padding
+  const minY = Math.min(...ys) - padding; const maxY = Math.max(...ys) + padding
+  return { x: (minX + maxX) / 2, y: (minY + maxY) / 2, width: Math.max(0.1, maxX - minX), depth: Math.max(0.1, maxY - minY) }
 }
 
 export function rememberModel(history, model, limit = 50) {
@@ -238,6 +271,14 @@ export function updateOpening(model, openingId, field, value) {
       }
       return validateOpeningPlacement(model, next, opening.id).valid ? next : opening
     }),
+  }
+}
+
+export function updateDoorSwing(model, openingId, swing) {
+  if (!DOOR_SWINGS.includes(swing)) return model
+  return {
+    ...model,
+    openings: model.openings.map((opening) => opening.id === openingId && opening.type === 'door' ? { ...opening, swing } : opening),
   }
 }
 

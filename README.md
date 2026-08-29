@@ -124,7 +124,7 @@ El acceso **Simulador 3D · Beta** aparece en la navegación de Productos y como
 
 ### Funciones disponibles
 
-- Lienzo interactivo con rejilla, ejes y ajuste cada 25 cm.
+- Lienzo interactivo con rejilla, ejes y ajuste de coordenadas cada 10 cm.
 - Vista 3D WebGL navegable y vista ortográfica de planta mediante Canvas.
 - Zoom mediante rueda del mouse o trackpad.
 - Creación consecutiva de muros mediante puntos.
@@ -149,16 +149,21 @@ Las aberturas siempre pertenecen a un muro existente. Al eliminar el muro tambi�
 - Ancho y altura configurables.
 - Posición normalizada sobre el muro.
 - Representación de hoja y apertura en planta.
-- Representación con ancho y altura en 3D.
+- Sentido de apertura editable: izquierda/derecha e interior/exterior.
+- Marco, dintel y hoja abierta representados en 3D.
 
 **Ventanas:**
 
 - Inserción haciendo clic sobre un muro.
 - Ancho, altura y antepecho configurables.
 - Posición normalizada sobre el muro.
-- Representación diferenciada en planta y 3D.
+- Representación diferenciada en planta y 3D, con marco y vidrio translúcido.
 
 La vista 3D divide paramétricamente cada muro alrededor de sus aberturas. Las puertas generan jambas y dintel; las ventanas generan laterales, antepecho y dintel. Al mover o redimensionar una abertura, las piezas sólidas se recalculan sin modificar el documento de dominio.
+
+### Cielorraso y techo
+
+El panel **Construcción** permite activar un cielorraso plano y un techo plano que cubren automáticamente la huella rectangular ocupada por los muros. El cielorraso admite altura configurable; el techo admite espesor y alero. Ambos pueden ocultarse temporalmente para inspeccionar el interior en la vista 3D.
 
 ### Biblioteca de muebles
 
@@ -233,7 +238,8 @@ El documento `model` utiliza esta estructura:
       "t": 0.5,
       "width": 0.9,
       "height": 2.1,
-      "sill": 0
+      "sill": 0,
+      "swing": "left-in"
     }
   ],
   "furniture": [
@@ -251,7 +257,7 @@ El documento `model` utiliza esta estructura:
 }
 ```
 
-`openings[].t` expresa la posición relativa a lo largo del muro, entre `0` y `1`. `furniture[].rotation` se almacena en radianes, aunque la interfaz lo presenta en grados.
+`openings[].t` expresa la posición relativa a lo largo del muro, entre `0` y `1`. En las puertas, `openings[].swing` admite `left-in`, `right-in`, `left-out` y `right-out`; los proyectos anteriores se normalizan como `left-in`. `furniture[].rotation` se almacena en radianes, aunque la interfaz lo presenta en grados.
 
 ### API y seguridad
 
@@ -526,7 +532,7 @@ Lanzamiento comercial
 - [x] Eliminar aberturas dependientes cuando se elimina su muro.
 - [x] Mover una abertura a lo largo del muro.
 - [x] Redimensionar ancho, altura y antepecho después de insertarla.
-- [ ] Cambiar el sentido de apertura de las puertas.
+- [x] Cambiar el sentido de apertura de las puertas.
 - [x] Evitar que una abertura sobresalga por los extremos del muro.
 - [x] Evitar solapamientos entre aberturas del mismo muro.
 - [ ] Incorporar puertas dobles/corredizas y ventanas fijas/batientes.
@@ -536,6 +542,9 @@ Lanzamiento comercial
 
 - [ ] Detectar automáticamente perímetros cerrados.
 - [ ] Crear pisos, losas y ambientes.
+- [x] Generar un cielorraso plano configurable sobre la huella del modelo.
+- [x] Generar un techo plano con espesor y alero configurables.
+- [ ] Incorporar techos inclinados, a dos aguas y faldones editables.
 - [ ] Nombrar ambientes: dormitorio, cocina, baño, etc.
 - [ ] Calcular superficie y perímetro por ambiente.
 - [ ] Asignar materiales y terminaciones.

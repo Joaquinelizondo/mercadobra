@@ -5,6 +5,7 @@ import {
   constrainOrthogonal,
   deleteElement,
   findOpeningPlacement,
+  modelFootprint,
   normalizeModel,
   openingTransform3D,
   moveWallEndpoint,
@@ -16,6 +17,8 @@ import {
   snap,
   setWallLength,
   updateFurniture,
+  updateBuilding,
+  updateDoorSwing,
   updateOpening,
   updateWall,
   undoModel,
@@ -28,7 +31,20 @@ import {
 const wall = { id: 'wall-1', start: { x: 0, y: 0 }, end: { x: 4, y: 3 }, height: 2.7, thickness: 0.15 }
 
 test('normaliza documentos incompletos', () => {
-  assert.deepEqual(normalizeModel({ walls: [wall] }), { walls: [wall], openings: [], furniture: [] })
+  const model = normalizeModel({ walls: [wall] })
+  assert.deepEqual(model.walls, [wall])
+  assert.deepEqual(model.openings, [])
+  assert.deepEqual(model.furniture, [])
+  assert.equal(model.building.ceiling.enabled, false)
+  assert.equal(model.building.roof.overhang, 0.25)
+})
+
+test('normaliza y edita el sentido de apertura de una puerta', () => {
+  const door = { id: 'door-1', type: 'door', wallId: wall.id, t: 0.5, width: 0.9, height: 2.1, sill: 0 }
+  const model = normalizeModel({ walls: [wall], openings: [door], furniture: [] })
+  assert.equal(model.openings[0].swing, 'left-in')
+  assert.equal(updateDoorSwing(model, door.id, 'right-out').openings[0].swing, 'right-out')
+  assert.equal(updateDoorSwing(model, door.id, 'invalid').openings[0].swing, 'left-in')
 })
 
 test('conserva hasta 50 estados independientes en el historial', () => {
@@ -51,9 +67,19 @@ test('deshace el último estado sin mutar el historial', () => {
   assert.equal(history.length, 1)
 })
 
-test('ajusta coordenadas a la rejilla de 25 cm', () => {
-  assert.equal(snap(1.13), 1.25)
-  assert.equal(snap(-0.12), 0)
+test('ajusta coordenadas a la rejilla de 10 cm', () => {
+  assert.equal(snap(1.13), 1.1)
+  assert.equal(snap(-0.06), -0.1)
+})
+
+test('calcula la huella y permite configurar cielorraso y techo', () => {
+  const base = normalizeModel({ walls: [wall] })
+  assert.deepEqual(modelFootprint(base), { x: 2, y: 1.5, width: 4, depth: 3 })
+  const ceiling = updateBuilding(base, 'ceiling', 'enabled', true)
+  const roof = updateBuilding(ceiling, 'roof', 'overhang', 0.5)
+  assert.equal(ceiling.building.ceiling.enabled, true)
+  assert.equal(roof.building.roof.overhang, 0.5)
+  assert.deepEqual(modelFootprint(roof, roof.building.roof.overhang), { x: 2, y: 1.5, width: 5, depth: 4 })
 })
 
 test('calcula longitud y puntos sobre un muro', () => {

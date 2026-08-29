@@ -597,6 +597,7 @@ app.put('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async 
       width: validateNumber(opening?.width, `Ancho de ${label}`, 0.2, 20),
       height: validateNumber(opening?.height, `Alto de ${label}`, 0.2, 20),
       sill: validateNumber(opening?.sill ?? 0, `Antepecho de ${label}`, 0, 20),
+      swing: opening?.type === 'door' ? validateEnum(opening?.swing ?? 'left-in', ['left-in', 'right-in', 'left-out', 'right-out'], `Apertura de ${label}`) : null,
     }
   })
   const wallsById = new Map(normalizedWalls.map((wall) => [wall.id, wall]))
@@ -631,8 +632,23 @@ app.put('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async 
       rotation: validateNumber(item?.rotation ?? 0, `Rotación de ${label}`, -1000, 1000),
     }
   })
+  const building = req.body?.model?.building || {}
+  const normalizedBuilding = {
+    ceiling: {
+      enabled: building.ceiling?.enabled === true,
+      visible: building.ceiling?.visible !== false,
+      height: validateNumber(building.ceiling?.height ?? 2.4, 'Altura del cielorraso', 0.2, 100),
+      thickness: validateNumber(building.ceiling?.thickness ?? 0.05, 'Espesor del cielorraso', 0.01, 5),
+    },
+    roof: {
+      enabled: building.roof?.enabled === true,
+      visible: building.roof?.visible !== false,
+      thickness: validateNumber(building.roof?.thickness ?? 0.15, 'Espesor del techo', 0.01, 5),
+      overhang: validateNumber(building.roof?.overhang ?? 0.25, 'Alero del techo', 0, 10),
+    },
+  }
   const repo = await getRepository()
-  const project = await repo.saveModelerProject(req.authUser.id, { name, model: { walls: normalizedWalls, openings: normalizedOpenings, furniture: normalizedFurniture }, expectedVersion })
+  const project = await repo.saveModelerProject(req.authUser.id, { name, model: { walls: normalizedWalls, openings: normalizedOpenings, furniture: normalizedFurniture, building: normalizedBuilding }, expectedVersion })
   if (!project) throw new ConflictError('El proyecto fue modificado en otra pestaña o sesión. Recargalo antes de volver a guardar.', 'MODELER_VERSION_CONFLICT')
   return res.json({ project })
 }))

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { FURNITURE, openingTransform3D, wallSolidParts } from './core'
+import { DEFAULT_BUILDING, FURNITURE, modelFootprint, openingTransform3D, wallSolidParts } from './core'
 
 function CameraControls({ target }) {
   const { camera, gl } = useThree()
@@ -34,10 +34,26 @@ function WallMesh({ wall, openings, selected, onSelect }) {
 
 function OpeningMesh({ opening, wall, selected, onSelect }) {
   const transform = openingTransform3D(opening, wall)
-  return <mesh position={transform.position} rotation={transform.rotation} onClick={(event) => { event.stopPropagation(); onSelect({ collection: 'openings', id: opening.id }) }}>
-    <boxGeometry args={transform.size} />
-    <meshStandardMaterial color={selected ? '#ef754f' : opening.type === 'door' ? '#79553f' : '#69afc1'} transparent opacity={opening.type === 'window' ? 0.72 : 1} />
-  </mesh>
+  const frame = 0.055; const depth = Math.max(0.09, wall.thickness + 0.035); const select = (event) => { event.stopPropagation(); onSelect({ collection: 'openings', id: opening.id }) }
+  if (opening.type === 'window') {
+    const glassWidth = Math.max(0.1, opening.width - frame * 2); const glassHeight = Math.max(0.1, opening.height - frame * 2)
+    return <group position={transform.position} rotation={transform.rotation} onClick={select}>
+      <mesh position={[-opening.width / 2 + frame / 2, 0, 0]} castShadow><boxGeometry args={[frame, opening.height, depth]} /><meshStandardMaterial color={selected ? '#ef754f' : '#6d665d'} /></mesh>
+      <mesh position={[opening.width / 2 - frame / 2, 0, 0]} castShadow><boxGeometry args={[frame, opening.height, depth]} /><meshStandardMaterial color={selected ? '#ef754f' : '#6d665d'} /></mesh>
+      <mesh position={[0, opening.height / 2 - frame / 2, 0]} castShadow><boxGeometry args={[glassWidth, frame, depth]} /><meshStandardMaterial color={selected ? '#ef754f' : '#6d665d'} /></mesh>
+      <mesh position={[0, -opening.height / 2 + frame / 2, 0]} castShadow><boxGeometry args={[glassWidth, frame, depth]} /><meshStandardMaterial color={selected ? '#ef754f' : '#6d665d'} /></mesh>
+      <mesh><boxGeometry args={[glassWidth, glassHeight, 0.018]} /><meshPhysicalMaterial color="#8fd3e3" transparent opacity={0.38} roughness={0.12} metalness={0.05} /></mesh>
+    </group>
+  }
+  const swing = opening.swing || 'left-in'; const hingeLeft = swing.startsWith('left'); const outward = swing.endsWith('out'); const leafWidth = Math.max(0.1, opening.width - frame * 2); const leafHeight = Math.max(0.1, opening.height - frame); const hingeX = hingeLeft ? -opening.width / 2 + frame : opening.width / 2 - frame; const leafDirection = hingeLeft ? 1 : -1; const swingAngle = (hingeLeft ? -1 : 1) * (outward ? -1 : 1) * 1.05
+  return <group position={transform.position} rotation={transform.rotation} onClick={select}>
+    <mesh position={[-opening.width / 2 + frame / 2, 0, 0]} castShadow><boxGeometry args={[frame, opening.height, depth]} /><meshStandardMaterial color={selected ? '#ef754f' : '#594a3e'} /></mesh>
+    <mesh position={[opening.width / 2 - frame / 2, 0, 0]} castShadow><boxGeometry args={[frame, opening.height, depth]} /><meshStandardMaterial color={selected ? '#ef754f' : '#594a3e'} /></mesh>
+    <mesh position={[0, opening.height / 2 - frame / 2, 0]} castShadow><boxGeometry args={[opening.width, frame, depth]} /><meshStandardMaterial color={selected ? '#ef754f' : '#594a3e'} /></mesh>
+    <group position={[hingeX, -frame / 2, 0]} rotation={[0, swingAngle, 0]}>
+      <mesh position={[leafDirection * leafWidth / 2, 0, 0]} castShadow><boxGeometry args={[leafWidth, leafHeight, 0.04]} /><meshStandardMaterial color={selected ? '#ef754f' : '#8a654d'} roughness={0.72} /></mesh>
+    </group>
+  </group>
 }
 
 function FurnitureMesh({ item, selected, onSelect }) {
@@ -46,6 +62,26 @@ function FurnitureMesh({ item, selected, onSelect }) {
     <boxGeometry args={[item.width, item.height, item.depth]} />
     <meshStandardMaterial color={selected ? '#e49a70' : color} roughness={0.75} />
   </mesh>
+}
+
+function BuildingSurfaces({ model }) {
+  const building = model.building || DEFAULT_BUILDING
+  const ceiling = building.ceiling || DEFAULT_BUILDING.ceiling
+  const roof = building.roof || DEFAULT_BUILDING.roof
+  const ceilingFootprint = modelFootprint(model)
+  const roofFootprint = modelFootprint(model, roof.overhang || 0)
+  const wallTop = model.walls.reduce((height, wall) => Math.max(height, wall.height), 0)
+  if (!ceilingFootprint) return null
+  return <>
+    {ceiling.enabled && ceiling.visible && <mesh position={[ceilingFootprint.x, ceiling.height, ceilingFootprint.y]} receiveShadow castShadow>
+      <boxGeometry args={[ceilingFootprint.width, ceiling.thickness, ceilingFootprint.depth]} />
+      <meshStandardMaterial color="#f4f1e9" roughness={0.9} transparent opacity={0.82} />
+    </mesh>}
+    {roof.enabled && roof.visible && <mesh position={[roofFootprint.x, wallTop + roof.thickness / 2, roofFootprint.y]} receiveShadow castShadow>
+      <boxGeometry args={[roofFootprint.width, roof.thickness, roofFootprint.depth]} />
+      <meshStandardMaterial color="#795b4d" roughness={0.88} />
+    </mesh>}
+  </>
 }
 
 export default function Modeler3DView({ model, selection, onSelect }) {
@@ -64,10 +100,11 @@ export default function Modeler3DView({ model, selection, onSelect }) {
       <ambientLight intensity={1.25} />
       <directionalLight position={[8, 14, 6]} intensity={2.1} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
       <hemisphereLight args={['#fff8e8', '#756b61', 0.8]} />
-      <gridHelper args={[80, 80, '#b86542', '#cbc4b9']} position={[bounds.x, 0, bounds.z]} />
+      <gridHelper args={[80, 800, '#b86542', '#d4cec4']} position={[bounds.x, 0, bounds.z]} />
       {model.walls.map((wall) => <WallMesh key={wall.id} wall={wall} openings={model.openings} selected={selection?.collection === 'walls' && selection.id === wall.id} onSelect={onSelect} />)}
       {model.openings.map((opening) => { const wall = model.walls.find((item) => item.id === opening.wallId); return wall ? <OpeningMesh key={opening.id} opening={opening} wall={wall} selected={selection?.collection === 'openings' && selection.id === opening.id} onSelect={onSelect} /> : null })}
       {model.furniture.map((item) => <FurnitureMesh key={item.id} item={item} selected={selection?.collection === 'furniture' && selection.id === item.id} onSelect={onSelect} />)}
+      <BuildingSurfaces model={model} />
       <CameraControls target={target} />
     </Canvas>
   </div>
