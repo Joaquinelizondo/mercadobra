@@ -158,7 +158,7 @@ Las aberturas siempre pertenecen a un muro existente. Al eliminar el muro tambi�
 - Posición normalizada sobre el muro.
 - Representación diferenciada en planta y 3D.
 
-La versión actual representa visualmente la abertura sobre la superficie del muro. El recorte booleano real de la geometría queda para una etapa posterior del motor 3D.
+La vista 3D divide paramétricamente cada muro alrededor de sus aberturas. Las puertas generan jambas y dintel; las ventanas generan laterales, antepecho y dintel. Al mover o redimensionar una abertura, las piezas sólidas se recalculan sin modificar el documento de dominio.
 
 ### Biblioteca de muebles
 
@@ -353,7 +353,7 @@ La QA integrada local verificó autenticación administrativa, carga del proyect
 
 - [x] Integrar Three.js y React Three Fiber mediante una capa de renderizado desacoplada y carga diferida.
 - [x] Generar muros con longitud, espesor y altura como volúmenes tridimensionales.
-- [ ] Recortar puertas y ventanas en los muros.
+- [x] Generar huecos reales para puertas y ventanas mediante piezas paramétricas del muro.
 - [x] Incorporar cámara orbital con rotación, zoom y desplazamiento.
 - [ ] Incorporar vistas estándar y modo de recorrido en primera persona.
 - [ ] Detectar perímetros cerrados y generar pisos y ambientes.
@@ -530,7 +530,7 @@ Lanzamiento comercial
 - [x] Evitar que una abertura sobresalga por los extremos del muro.
 - [x] Evitar solapamientos entre aberturas del mismo muro.
 - [ ] Incorporar puertas dobles/corredizas y ventanas fijas/batientes.
-- [ ] Recortar físicamente las aberturas en los sólidos de los muros.
+- [x] Recortar físicamente las aberturas en los sólidos de los muros.
 
 #### Ambientes, pisos y materiales
 

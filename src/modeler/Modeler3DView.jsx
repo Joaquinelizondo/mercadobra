@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { FURNITURE, openingTransform3D, wallTransform3D } from './core'
+import { FURNITURE, openingTransform3D, wallSolidParts } from './core'
 
 function CameraControls({ target }) {
   const { camera, gl } = useThree()
@@ -24,12 +24,12 @@ function CameraControls({ target }) {
   return null
 }
 
-function WallMesh({ wall, selected, onSelect }) {
-  const transform = wallTransform3D(wall)
-  return <mesh position={transform.position} rotation={transform.rotation} castShadow receiveShadow onClick={(event) => { event.stopPropagation(); onSelect({ collection: 'walls', id: wall.id }) }}>
-    <boxGeometry args={transform.size} />
+function WallMesh({ wall, openings, selected, onSelect }) {
+  const parts = wallSolidParts(wall, openings)
+  return <group>{parts.map((part) => <mesh key={part.key} position={part.position} rotation={part.rotation} castShadow receiveShadow onClick={(event) => { event.stopPropagation(); onSelect({ collection: 'walls', id: wall.id }) }}>
+    <boxGeometry args={part.size} />
     <meshStandardMaterial color={selected ? '#c97752' : '#f1eadf'} roughness={0.82} />
-  </mesh>
+  </mesh>)}</group>
 }
 
 function OpeningMesh({ opening, wall, selected, onSelect }) {
@@ -65,7 +65,7 @@ export default function Modeler3DView({ model, selection, onSelect }) {
       <directionalLight position={[8, 14, 6]} intensity={2.1} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
       <hemisphereLight args={['#fff8e8', '#756b61', 0.8]} />
       <gridHelper args={[80, 80, '#b86542', '#cbc4b9']} position={[bounds.x, 0, bounds.z]} />
-      {model.walls.map((wall) => <WallMesh key={wall.id} wall={wall} selected={selection?.collection === 'walls' && selection.id === wall.id} onSelect={onSelect} />)}
+      {model.walls.map((wall) => <WallMesh key={wall.id} wall={wall} openings={model.openings} selected={selection?.collection === 'walls' && selection.id === wall.id} onSelect={onSelect} />)}
       {model.openings.map((opening) => { const wall = model.walls.find((item) => item.id === opening.wallId); return wall ? <OpeningMesh key={opening.id} opening={opening} wall={wall} selected={selection?.collection === 'openings' && selection.id === opening.id} onSelect={onSelect} /> : null })}
       {model.furniture.map((item) => <FurnitureMesh key={item.id} item={item} selected={selection?.collection === 'furniture' && selection.id === item.id} onSelect={onSelect} />)}
       <CameraControls target={target} />

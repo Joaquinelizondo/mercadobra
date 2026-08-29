@@ -53,8 +53,44 @@ export function openingTransform3D(opening, wall) {
   return {
     position: [center.x, opening.sill + opening.height / 2, center.y],
     rotation: [0, angle, 0],
-    size: [opening.width, opening.height, wall.thickness + 0.025],
+    size: [opening.width, opening.height, opening.type === 'window' ? 0.025 : 0.04],
   }
+}
+
+export function wallSolidParts(wall, openings = []) {
+  const length = wallLength(wall)
+  if (length <= 0) return []
+  const dx = (wall.end.x - wall.start.x) / length
+  const dy = (wall.end.y - wall.start.y) / length
+  const rotation = [0, -Math.atan2(wall.end.y - wall.start.y, wall.end.x - wall.start.x), 0]
+  const wallOpenings = openings
+    .filter((opening) => opening.wallId === wall.id)
+    .map((opening) => ({ ...opening, start: opening.t * length - opening.width / 2, end: opening.t * length + opening.width / 2 }))
+    .sort((a, b) => a.start - b.start)
+
+  const parts = []
+  const addPart = (start, end, bottom, top, kind) => {
+    const width = end - start; const height = top - bottom
+    if (width <= 1e-9 || height <= 1e-9) return
+    const distance = (start + end) / 2
+    parts.push({
+      key: `${wall.id}-${kind}-${parts.length}`,
+      kind,
+      position: [wall.start.x + dx * distance, bottom + height / 2, wall.start.y + dy * distance],
+      rotation,
+      size: [width, height, wall.thickness],
+    })
+  }
+
+  let cursor = 0
+  for (const opening of wallOpenings) {
+    addPart(cursor, opening.start, 0, wall.height, 'pier')
+    addPart(opening.start, opening.end, 0, opening.sill, 'sill')
+    addPart(opening.start, opening.end, opening.sill + opening.height, wall.height, 'lintel')
+    cursor = opening.end
+  }
+  addPart(cursor, length, 0, wall.height, 'pier')
+  return parts
 }
 
 export function pointOnWall(wall, t) {

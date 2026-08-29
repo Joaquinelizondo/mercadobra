@@ -21,6 +21,7 @@ import {
   undoModel,
   validateOpeningPlacement,
   wallLength,
+  wallSolidParts,
   wallTransform3D,
 } from './core.js'
 
@@ -67,6 +68,25 @@ test('convierte muros y aberturas al sistema de coordenadas 3D', () => {
   assert.ok(Math.abs(wallTransform.rotation[1] + Math.atan2(3, 4)) < 1e-9)
   const opening = { wallId: wall.id, t: 0.5, width: 1, height: 1.2, sill: 0.9 }
   assert.deepEqual(openingTransform3D(opening, wall).position, [2, 1.5, 1.5])
+})
+
+test('divide un muro alrededor de una puerta y conserva el volumen correcto', () => {
+  const horizontalWall = { ...wall, end: { x: 4, y: 0 } }
+  const door = { id: 'door-1', type: 'door', wallId: wall.id, t: 0.5, width: 0.9, height: 2.1, sill: 0 }
+  const parts = wallSolidParts(horizontalWall, [door])
+  assert.equal(parts.length, 3)
+  assert.deepEqual(parts.map((part) => part.kind), ['pier', 'lintel', 'pier'])
+  const volume = parts.reduce((sum, part) => sum + part.size[0] * part.size[1] * part.size[2], 0)
+  const expected = (4 * 2.7 - 0.9 * 2.1) * 0.15
+  assert.ok(Math.abs(volume - expected) < 1e-9)
+})
+
+test('genera antepecho y dintel alrededor de una ventana', () => {
+  const horizontalWall = { ...wall, end: { x: 4, y: 0 } }
+  const window = { id: 'window-1', type: 'window', wallId: wall.id, t: 0.5, width: 1.2, height: 1, sill: 0.9 }
+  const parts = wallSolidParts(horizontalWall, [window])
+  assert.deepEqual(parts.map((part) => part.kind), ['pier', 'sill', 'lintel', 'pier'])
+  assert.equal(parts.find((part) => part.kind === 'sill').size[1], 0.9)
 })
 
 test('restringe un punto al eje dominante respecto del origen', () => {
