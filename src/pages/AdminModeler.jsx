@@ -18,6 +18,7 @@ import {
   moveWallEndpoint,
   normalizeModel,
   pointOnWall,
+  pointInRoom,
   rememberModel,
   rotateFurniture,
   segmentHit,
@@ -156,7 +157,7 @@ export default function AdminModeler() {
       ctx.lineWidth = major ? 1 : .5; ctx.strokeStyle = step === 0 ? '#b86542' : major ? '#d0c9be' : '#e1dcd4'; ctx.beginPath(); ctx.moveTo(xa.x, xa.y); ctx.lineTo(xb.x, xb.y); ctx.stroke()
       ctx.strokeStyle = step === 0 ? '#596c66' : major ? '#d0c9be' : '#e1dcd4'; ctx.beginPath(); ctx.moveTo(ya.x, ya.y); ctx.lineTo(yb.x, yb.y); ctx.stroke()
     }
-    if(view==='top'&&model.building?.floor.enabled&&model.building.floor.visible){detectedRooms.forEach((room)=>{const a=project({x:room.x-room.width/2,y:room.y-room.depth/2});const b=project({x:room.x+room.width/2,y:room.y+room.depth/2});const selected=selection?.collection==='rooms'&&selection.id===room.id;ctx.fillStyle=selected?'rgba(214,138,98,.65)':`${FLOOR_MATERIALS[room.material]?.color||'#aaa49a'}88`;ctx.fillRect(Math.min(a.x,b.x),Math.min(a.y,b.y),Math.abs(b.x-a.x),Math.abs(b.y-a.y));ctx.fillStyle='#554c40';ctx.font='700 11px sans-serif';ctx.textAlign='center';ctx.fillText(`${room.name} · ${room.area.toFixed(2)} m²`,(a.x+b.x)/2,(a.y+b.y)/2)})}
+    if(view==='top'&&model.building?.floor.enabled&&model.building.floor.visible){detectedRooms.forEach((room)=>{const points=room.polygon.map((point)=>project(point));const selected=selection?.collection==='rooms'&&selection.id===room.id;ctx.fillStyle=selected?'rgba(214,138,98,.65)':`${FLOOR_MATERIALS[room.material]?.color||'#aaa49a'}88`;ctx.beginPath();points.forEach((point,index)=>index?ctx.lineTo(point.x,point.y):ctx.moveTo(point.x,point.y));ctx.closePath();ctx.fill();const center=project(room);ctx.fillStyle='#554c40';ctx.font='700 11px sans-serif';ctx.textAlign='center';ctx.fillText(`${room.name} · ${room.area.toFixed(2)} m²`,center.x,center.y)})}
     model.walls.forEach((wall) => {
       const start = project(wall.start); const end = project(wall.end); const topStart = project(wall.start, wall.height); const topEnd = project(wall.end, wall.height)
       const selected = selection?.collection === 'walls' && selection.id === wall.id
@@ -205,7 +206,7 @@ export default function AdminModeler() {
     if(suppressClickRef.current){suppressClickRef.current=false;return}
     const screen=screenPoint(event);const basePoint=worldPoint(event);const point=tool==='wall'&&draftStart&&event.shiftKey?constrainOrthogonal(draftStart,basePoint):basePoint
     if(tool==='select'){
-      const candidates=[...detectedRooms.map((room)=>({collection:'rooms',id:room.id,distance:basePoint.x>=room.x-room.width/2&&basePoint.x<=room.x+room.width/2&&basePoint.y>=room.y-room.depth/2&&basePoint.y<=room.y+room.depth/2?0:Infinity})),...model.furniture.map((item)=>({collection:'furniture',id:item.id,distance:Math.hypot(screen.x-project(item).x,screen.y-project(item).y)})),...model.openings.map((item)=>{const wall=model.walls.find((w)=>w.id===item.wallId);const p=wall?project(pointOnWall(wall,item.t)):screen;return{collection:'openings',id:item.id,distance:Math.hypot(screen.x-p.x,screen.y-p.y)}}),...model.walls.map((wall)=>({collection:'walls',id:wall.id,distance:segmentHit(screen,project(wall.start),project(wall.end)).distance}))].sort((a,b)=>a.distance-b.distance)
+      const candidates=[...detectedRooms.map((room)=>({collection:'rooms',id:room.id,distance:pointInRoom(basePoint,room)?0:Infinity})),...model.furniture.map((item)=>({collection:'furniture',id:item.id,distance:Math.hypot(screen.x-project(item).x,screen.y-project(item).y)})),...model.openings.map((item)=>{const wall=model.walls.find((w)=>w.id===item.wallId);const p=wall?project(pointOnWall(wall,item.t)):screen;return{collection:'openings',id:item.id,distance:Math.hypot(screen.x-p.x,screen.y-p.y)}}),...model.walls.map((wall)=>({collection:'walls',id:wall.id,distance:segmentHit(screen,project(wall.start),project(wall.end)).distance}))].sort((a,b)=>a.distance-b.distance)
       setSelection(candidates[0]?.distance<=18?candidates[0]:null);return
     }
     if(tool==='wall'){

@@ -110,7 +110,11 @@ El sistema visual de Óxida utiliza fondo grafito, superficies cálidas, tipogra
 - Publicación para cualquier proveedor o sin proveedor asociado.
 - Cuenta administrada mediante `ADMIN_EMAIL`, `ADMIN_PASSWORD` y `ADMIN_COMPANY`.
 
-## Simulador 3D de obra — beta privada
+## OXI Modela — beta privada
+
+**Nombre del producto:** OXI Modela
+
+**Descripción:** diseño paramétrico 2D/3D para construcción, ambientes y futuras estructuras metálicas.
 
 **Estado:** primera versión funcional desplegada en producción.
 
@@ -118,7 +122,7 @@ El sistema visual de Óxida utiliza fondo grafito, superficies cálidas, tipogra
 
 **Acceso:** exclusivamente mediante una sesión con rol `admin`. Los clientes, proveedores y usuarios creados desde el portal no ven el acceso y tampoco pueden utilizar los endpoints del simulador.
 
-El Simulador 3D es un modelador paramétrico propio de Mercadobra alojado dentro del portal administrativo. No incrusta SketchUp ni depende de una instalación de escritorio. Su objetivo es permitir el diseño preliminar de espacios, la documentación y los futuros cómputos de obra desde el navegador, incluyendo posteriormente operación mediante prompts.
+OXI Modela es un modelador paramétrico propio alojado actualmente dentro del portal administrativo de Mercadobra. No incrusta SketchUp ni depende de una instalación de escritorio. Su objetivo es permitir el diseño preliminar de espacios, la documentación y los futuros cómputos de obra desde el navegador, incluyendo posteriormente operación mediante prompts.
 
 El acceso **Simulador 3D · Beta** aparece en la navegación de Productos y como **Simulador 3D** en Clientes, Pedidos, Consultas y Personalizaciones.
 
@@ -167,7 +171,7 @@ El panel **Construcción** permite activar un cielorraso plano y un techo plano 
 
 ### Ambientes y pisos automáticos
 
-El modelador detecta recintos rectangulares formados por cuatro muros cerrados. Cada ambiente detectado muestra su nombre y superficie en planta y genera automáticamente un piso 3D configurable desde **Construcción**. El piso puede seleccionarse tanto en planta como en 3D para editar el nombre, el tipo de ambiente y el material: hormigón, cerámica, madera o porcelanato. El panel también informa superficie, perímetro, cantidad de ambientes y metros cuadrados totales.
+El modelador detecta perímetros cerrados rectangulares, irregulares y subdivididos por muros interiores. Cada ambiente detectado muestra su nombre y superficie en planta y genera automáticamente un piso 3D con la forma real del recinto. El piso puede seleccionarse tanto en planta como en 3D para editar el nombre, el tipo de ambiente y el material: hormigón, cerámica, madera o porcelanato. El panel también informa superficie, perímetro, cantidad de ambientes y metros cuadrados totales.
 
 Los datos del ambiente se vinculan a los cuatro muros que lo forman, por lo que se conservan cuando cambian sus dimensiones sin abrir el recinto. Si se abre el perímetro al eliminar o mover un muro, el piso deja de representarse para evitar superficies huérfanas.
 
@@ -305,6 +309,21 @@ La IA futura no ejecutará JavaScript ni código arbitrario. Los prompts se conv
 | `backend/src/migrations/031_modeler_projects.sql` | Tabla e índices del módulo. |
 | `backend/src/dbCheck.js` | Verificación de la tabla durante el despliegue. |
 
+### Extracción futura como aplicación independiente
+
+OXI Modela puede separarse de Mercadobra y convertirse en una aplicación propia sin rehacer el motor geométrico. La lógica principal ya se encuentra desacoplada en `src/modeler/core.js`, mientras que la escena 3D ocupa su propia capa de representación.
+
+La extracción se realizará gradualmente:
+
+1. Mover el módulo a un paquete o aplicación `oxi-modela` con rutas y diseño visual propios.
+2. Reemplazar la autenticación administrativa de Mercadobra por cuentas y organizaciones de OXI Modela.
+3. Incorporar una API de proyectos independiente y migrar los documentos existentes.
+4. Mantener el editor web como base compartida.
+5. Publicar una PWA instalable y, si se necesita distribución en tiendas, envolverla con Capacitor para Android/iOS o Tauri para escritorio.
+6. Conectar Mercadobra mediante API, conservándolo como canal de materiales, presupuestos y proveedores.
+
+El formato paramétrico de proyectos debe mantenerse versionado e independiente de la interfaz para que un mismo archivo pueda abrirse en la web, una aplicación instalada o futuras integraciones.
+
 ### Desarrollo y verificación
 
 Desde la raíz del frontend:
@@ -368,7 +387,7 @@ La QA integrada local verificó autenticación administrativa, carga del proyect
 - [x] Generar huecos reales para puertas y ventanas mediante piezas paramétricas del muro.
 - [x] Incorporar cámara orbital con rotación, zoom y desplazamiento.
 - [ ] Incorporar vistas estándar y modo de recorrido en primera persona.
-- [ ] Detectar perímetros cerrados y generar pisos y ambientes.
+- [x] Detectar perímetros cerrados y generar pisos y ambientes.
 - [ ] Agregar materiales, iluminación y sombras con niveles de calidad configurables.
 - [x] Mantener una vista de planta precisa además de la escena 3D.
 
@@ -546,15 +565,15 @@ Lanzamiento comercial
 
 #### Ambientes, pisos y materiales
 
-- [x] Detectar automáticamente perímetros rectangulares cerrados.
-- [x] Crear pisos automáticos para ambientes rectangulares.
-- [ ] Detectar ambientes con plantas irregulares y muros divididos.
+- [x] Detectar automáticamente perímetros cerrados.
+- [x] Crear pisos automáticos con la forma real del ambiente.
+- [x] Detectar ambientes con plantas irregulares y muros divididos.
 - [ ] Crear losas y ambientes persistentes editables.
 - [x] Generar un cielorraso plano configurable sobre la huella del modelo.
 - [x] Generar un techo plano con espesor y alero configurables.
 - [ ] Incorporar techos inclinados, a dos aguas y faldones editables.
 - [x] Nombrar ambientes: dormitorio, cocina, baño, etc.
-- [x] Calcular superficie y perímetro por ambiente rectangular.
+- [x] Calcular superficie y perímetro por ambiente.
 - [x] Asignar materiales básicos a los pisos.
 - [ ] Crear una biblioteca completa de materiales y terminaciones.
 - [ ] Ocultar muros temporalmente para revisar interiores.

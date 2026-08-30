@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { Shape } from 'three'
 import { DEFAULT_BUILDING, FLOOR_MATERIALS, FURNITURE, detectRectangularRooms, modelFootprint, openingTransform3D, wallSolidParts } from './core'
 
 function CameraControls({ target }) {
@@ -64,6 +65,14 @@ function FurnitureMesh({ item, selected, onSelect }) {
   </mesh>
 }
 
+function FloorMesh({ room, thickness, selected, onSelect }) {
+  const shape = useMemo(() => { const next = new Shape(); room.polygon.forEach((point, index) => index ? next.lineTo(point.x, point.y) : next.moveTo(point.x, point.y)); next.closePath(); return next }, [room.polygon])
+  return <mesh rotation={[Math.PI / 2, 0, 0]} receiveShadow onClick={(event)=>{event.stopPropagation();onSelect({collection:'rooms',id:room.id})}}>
+    <extrudeGeometry args={[shape,{depth:thickness,bevelEnabled:false}]} />
+    <meshStandardMaterial color={selected?'#d68a62':FLOOR_MATERIALS[room.material]?.color||'#aaa49a'} roughness={0.92} />
+  </mesh>
+}
+
 function BuildingSurfaces({ model, selection, onSelect }) {
   const building = model.building || DEFAULT_BUILDING
   const floor = building.floor || DEFAULT_BUILDING.floor
@@ -75,10 +84,7 @@ function BuildingSurfaces({ model, selection, onSelect }) {
   const rooms = detectRectangularRooms(model)
   if (!ceilingFootprint) return null
   return <>
-    {floor.enabled && floor.visible && rooms.map((room) => <mesh key={`floor-${room.id}`} position={[room.x, -floor.thickness / 2, room.y]} receiveShadow onClick={(event)=>{event.stopPropagation();onSelect({collection:'rooms',id:room.id})}}>
-      <boxGeometry args={[room.width, floor.thickness, room.depth]} />
-      <meshStandardMaterial color={selection?.collection==='rooms'&&selection.id===room.id?'#d68a62':FLOOR_MATERIALS[room.material]?.color||'#aaa49a'} roughness={0.92} />
-    </mesh>)}
+    {floor.enabled && floor.visible && rooms.map((room) => <FloorMesh key={`floor-${room.id}`} room={room} thickness={floor.thickness} selected={selection?.collection==='rooms'&&selection.id===room.id} onSelect={onSelect}/>)}
     {ceiling.enabled && ceiling.visible && <mesh position={[ceilingFootprint.x, ceiling.height, ceilingFootprint.y]} receiveShadow castShadow>
       <boxGeometry args={[ceilingFootprint.width, ceiling.thickness, ceilingFootprint.depth]} />
       <meshStandardMaterial color="#f4f1e9" roughness={0.9} transparent opacity={0.82} />

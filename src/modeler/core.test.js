@@ -5,6 +5,7 @@ import {
   constrainOrthogonal,
   deleteElement,
   detectRectangularRooms,
+  detectRooms,
   findOpeningPlacement,
   modelFootprint,
   normalizeModel,
@@ -12,6 +13,7 @@ import {
   moveWallEndpoint,
   moveOpening,
   pointOnWall,
+  pointInRoom,
   rememberModel,
   rotateFurniture,
   segmentHit,
@@ -117,6 +119,30 @@ test('conserva nombre, tipo y material de un ambiente al cambiar sus medidas', (
   assert.equal(room.type, 'kitchen')
   assert.equal(room.material, 'ceramic')
   assert.equal(room.area, 15)
+})
+
+test('detecta una planta irregular en L y permite seleccionar su interior', () => {
+  const points = [{x:0,y:0},{x:4,y:0},{x:4,y:2},{x:2,y:2},{x:2,y:4},{x:0,y:4}]
+  const walls = points.map((start,index)=>({ ...wall, id:`l-${index}`, start, end:points[(index+1)%points.length] }))
+  const rooms = detectRooms({ walls, rooms: [] })
+  assert.equal(rooms.length, 1)
+  assert.equal(rooms[0].area, 12)
+  assert.equal(rooms[0].perimeter, 16)
+  assert.equal(pointInRoom({x:1,y:3},rooms[0]), true)
+  assert.equal(pointInRoom({x:3,y:3},rooms[0]), false)
+})
+
+test('divide una planta en dos ambientes mediante un muro interior', () => {
+  const walls = [
+    { ...wall, id:'bottom', start:{x:0,y:0}, end:{x:6,y:0} },
+    { ...wall, id:'right', start:{x:6,y:0}, end:{x:6,y:3} },
+    { ...wall, id:'top', start:{x:6,y:3}, end:{x:0,y:3} },
+    { ...wall, id:'left', start:{x:0,y:3}, end:{x:0,y:0} },
+    { ...wall, id:'divider', start:{x:3,y:0}, end:{x:3,y:3} },
+  ]
+  const rooms = detectRooms({ walls, rooms: [] })
+  assert.equal(rooms.length, 2)
+  assert.deepEqual(rooms.map((room)=>room.area).sort((a,b)=>a-b),[9,9])
 })
 
 test('calcula longitud y puntos sobre un muro', () => {

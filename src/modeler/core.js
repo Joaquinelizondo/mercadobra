@@ -53,32 +53,63 @@ export function updateBuilding(model, section, field, value) {
   return { ...model, building: { ...current, [section]: { ...current[section], [field]: normalized } } }
 }
 
-export function detectRectangularRooms(model, tolerance = 1e-6) {
-  const horizontal = []; const vertical = []
-  for (const wall of model.walls) {
-    const { start, end } = wall
-    if (Math.abs(start.y - end.y) <= tolerance) horizontal.push({ id: wall.id, y: (start.y + end.y) / 2, min: Math.min(start.x, end.x), max: Math.max(start.x, end.x) })
-    else if (Math.abs(start.x - end.x) <= tolerance) vertical.push({ id: wall.id, x: (start.x + end.x) / 2, min: Math.min(start.y, end.y), max: Math.max(start.y, end.y) })
+export function detectRooms(model, tolerance = 1e-6) {
+  const walls = model.walls.filter((wall) => wallLength(wall) > tolerance)
+  const keyOf = (point) => `${Math.round(point.x / tolerance)}:${Math.round(point.y / tolerance)}`
+  const nodes = new Map(); const edges = new Map()
+  const addNode = (point) => { const key = keyOf(point); if (!nodes.has(key)) nodes.set(key, { key, x: point.x, y: point.y, neighbors: new Map() }); return nodes.get(key) }
+  const intersection = (a, b) => {
+    const r = { x: a.end.x - a.start.x, y: a.end.y - a.start.y }; const s = { x: b.end.x - b.start.x, y: b.end.y - b.start.y }
+    const cross = r.x * s.y - r.y * s.x
+    if (Math.abs(cross) <= tolerance) return null
+    const q = { x: b.start.x - a.start.x, y: b.start.y - a.start.y }
+    const t = (q.x * s.y - q.y * s.x) / cross; const u = (q.x * r.y - q.y * r.x) / cross
+    return t >= -tolerance && t <= 1 + tolerance && u >= -tolerance && u <= 1 + tolerance ? { x: a.start.x + r.x * t, y: a.start.y + r.y * t, t, u } : null
   }
-  const close = (a, b) => Math.abs(a - b) <= tolerance
-  const coveringVertical = (x, min, max) => vertical.find((line) => close(line.x, x) && line.min <= min + tolerance && line.max >= max - tolerance)
-  const rooms = []; const seen = new Set()
-  for (let index = 0; index < horizontal.length; index += 1) {
-    const first = horizontal[index]
-    for (let otherIndex = index + 1; otherIndex < horizontal.length; otherIndex += 1) {
-      const second = horizontal[otherIndex]
-      if (!close(first.min, second.min) || !close(first.max, second.max) || close(first.y, second.y)) continue
-      const minX = first.min; const maxX = first.max; const minY = Math.min(first.y, second.y); const maxY = Math.max(first.y, second.y)
-      const left = coveringVertical(minX, minY, maxY); const right = coveringVertical(maxX, minY, maxY)
-      if (!left || !right) continue
-      const wallIds = [first.id, second.id, left.id, right.id].sort()
-      const id = wallIds.join(':')
-      if (seen.has(id)) continue
-      seen.add(id); rooms.push({ id, wallIds, x: (minX + maxX) / 2, y: (minY + maxY) / 2, width: maxX - minX, depth: maxY - minY, area: (maxX - minX) * (maxY - minY), perimeter: 2 * (maxX - minX + maxY - minY) })
+  const cuts = walls.map(() => [0, 1])
+  for (let i = 0; i < walls.length; i += 1) for (let j = i + 1; j < walls.length; j += 1) {
+    const hit = intersection(walls[i], walls[j]); if (!hit) continue
+    cuts[i].push(Math.max(0, Math.min(1, hit.t))); cuts[j].push(Math.max(0, Math.min(1, hit.u)))
+  }
+  walls.forEach((wall, wallIndex) => {
+    const values = [...new Set(cuts[wallIndex].sort((a, b) => a - b).map((value) => Math.round(value / tolerance) * tolerance))]
+    for (let index = 0; index < values.length - 1; index += 1) {
+      const start = pointOnWall(wall, values[index]); const end = pointOnWall(wall, values[index + 1]); if (Math.hypot(end.x - start.x, end.y - start.y) <= tolerance) continue
+      const a = addNode(start); const b = addNode(end); a.neighbors.set(b.key, wall.id); b.neighbors.set(a.key, wall.id); edges.set(`${a.key}>${b.key}`, wall.id); edges.set(`${b.key}>${a.key}`, wall.id)
     }
+  })
+  const visited = new Set(); const faces = []
+  for (const directed of edges.keys()) {
+    if (visited.has(directed)) continue
+    const [startKey, nextKey] = directed.split('>'); let previousKey = startKey; let currentKey = nextKey; const polygon = []; const wallIds = new Set(); let closed = false
+    for (let guard = 0; guard <= edges.size; guard += 1) {
+      const edgeKey = `${previousKey}>${currentKey}`; if (visited.has(edgeKey)) break
+      visited.add(edgeKey); const current = nodes.get(currentKey); polygon.push({ x: current.x, y: current.y }); wallIds.add(edges.get(edgeKey))
+      const ordered = [...current.neighbors.keys()].sort((left, right) => Math.atan2(nodes.get(left).y - current.y, nodes.get(left).x - current.x) - Math.atan2(nodes.get(right).y - current.y, nodes.get(right).x - current.x))
+      const reverseIndex = ordered.indexOf(previousKey); const followingKey = ordered[(reverseIndex - 1 + ordered.length) % ordered.length]
+      previousKey = currentKey; currentKey = followingKey
+      if (previousKey === startKey && currentKey === nextKey) { closed = true; break }
+    }
+    if (!closed || polygon.length < 3) continue
+    const signedArea = polygon.reduce((sum, point, index) => { const next = polygon[(index + 1) % polygon.length]; return sum + point.x * next.y - next.x * point.y }, 0) / 2
+    if (signedArea <= tolerance) continue
+    const perimeter = polygon.reduce((sum, point, index) => { const next = polygon[(index + 1) % polygon.length]; return sum + Math.hypot(next.x - point.x, next.y - point.y) }, 0)
+    const centroidFactor = 1 / (6 * signedArea); const x = polygon.reduce((sum, point, index) => { const next = polygon[(index + 1) % polygon.length]; return sum + (point.x + next.x) * (point.x * next.y - next.x * point.y) }, 0) * centroidFactor; const y = polygon.reduce((sum, point, index) => { const next = polygon[(index + 1) % polygon.length]; return sum + (point.y + next.y) * (point.x * next.y - next.x * point.y) }, 0) * centroidFactor
+    const xs = polygon.map((point) => point.x); const ys = polygon.map((point) => point.y); const ids = [...wallIds].sort(); const id = ids.join(':'); faces.push({ id, wallIds: ids, polygon, x, y, width: Math.max(...xs) - Math.min(...xs), depth: Math.max(...ys) - Math.min(...ys), area: signedArea, perimeter })
   }
   const metadata = new Map((model.rooms || []).map((room) => [room.id, room]))
-  return rooms.map((room, index) => ({ name: `Ambiente ${index + 1}`, type: 'generic', material: 'concrete', ...metadata.get(room.id), ...room }))
+  return faces.map((room, index) => ({ name: `Ambiente ${index + 1}`, type: 'generic', material: 'concrete', ...metadata.get(room.id), ...room }))
+}
+
+export const detectRectangularRooms = detectRooms
+
+export function pointInRoom(point, room) {
+  let inside = false
+  for (let index = 0, previous = room.polygon.length - 1; index < room.polygon.length; previous = index++) {
+    const a = room.polygon[index]; const b = room.polygon[previous]
+    if ((a.y > point.y) !== (b.y > point.y) && point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x) inside = !inside
+  }
+  return inside
 }
 
 export function updateRoom(model, roomId, field, value) {
