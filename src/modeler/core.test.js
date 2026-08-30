@@ -21,6 +21,7 @@ import {
   updateBuilding,
   updateDoorSwing,
   updateOpening,
+  updateRoom,
   updateWall,
   undoModel,
   validateOpeningPlacement,
@@ -36,6 +37,7 @@ test('normaliza documentos incompletos', () => {
   assert.deepEqual(model.walls, [wall])
   assert.deepEqual(model.openings, [])
   assert.deepEqual(model.furniture, [])
+  assert.deepEqual(model.rooms, [])
   assert.equal(model.building.floor.enabled, true)
   assert.equal(model.building.ceiling.enabled, false)
   assert.equal(model.building.roof.overhang, 0.25)
@@ -95,6 +97,26 @@ test('detecta un ambiente rectangular cerrado y calcula su piso', () => {
   assert.equal(rooms.length, 1)
   assert.deepEqual({ x: rooms[0].x, y: rooms[0].y, width: rooms[0].width, depth: rooms[0].depth, area: rooms[0].area, perimeter: rooms[0].perimeter }, { x: 2, y: 1.5, width: 4, depth: 3, area: 12, perimeter: 14 })
   assert.equal(detectRectangularRooms({ walls: walls.slice(0, 3) }).length, 0)
+})
+
+test('conserva nombre, tipo y material de un ambiente al cambiar sus medidas', () => {
+  const walls = [
+    { ...wall, id: 'bottom', start: { x: 0, y: 0 }, end: { x: 4, y: 0 } },
+    { ...wall, id: 'right', start: { x: 4, y: 0 }, end: { x: 4, y: 3 } },
+    { ...wall, id: 'top', start: { x: 4, y: 3 }, end: { x: 0, y: 3 } },
+    { ...wall, id: 'left', start: { x: 0, y: 3 }, end: { x: 0, y: 0 } },
+  ]
+  let model = normalizeModel({ walls })
+  const roomId = detectRectangularRooms(model)[0].id
+  model = updateRoom(model, roomId, 'name', 'Cocina')
+  model = updateRoom(model, roomId, 'type', 'kitchen')
+  model = updateRoom(model, roomId, 'material', 'ceramic')
+  const resized = { ...model, walls: model.walls.map((item) => item.id === 'right' ? { ...item, start: { x: 5, y: 0 }, end: { x: 5, y: 3 } } : item.id === 'bottom' || item.id === 'top' ? { ...item, start: { ...item.start, x: item.start.x === 4 ? 5 : item.start.x }, end: { ...item.end, x: item.end.x === 4 ? 5 : item.end.x } } : item) }
+  const room = detectRectangularRooms(resized)[0]
+  assert.equal(room.name, 'Cocina')
+  assert.equal(room.type, 'kitchen')
+  assert.equal(room.material, 'ceramic')
+  assert.equal(room.area, 15)
 })
 
 test('calcula longitud y puntos sobre un muro', () => {

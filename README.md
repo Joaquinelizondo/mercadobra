@@ -167,7 +167,9 @@ El panel **Construcción** permite activar un cielorraso plano y un techo plano 
 
 ### Ambientes y pisos automáticos
 
-El modelador detecta recintos rectangulares formados por cuatro muros cerrados. Cada ambiente detectado muestra su superficie en planta y genera automáticamente un piso 3D configurable desde **Construcción**. El panel informa la cantidad de ambientes y los metros cuadrados totales de piso. Si se abre el perímetro al eliminar o mover un muro, el piso desaparece para evitar superficies huérfanas.
+El modelador detecta recintos rectangulares formados por cuatro muros cerrados. Cada ambiente detectado muestra su nombre y superficie en planta y genera automáticamente un piso 3D configurable desde **Construcción**. El piso puede seleccionarse tanto en planta como en 3D para editar el nombre, el tipo de ambiente y el material: hormigón, cerámica, madera o porcelanato. El panel también informa superficie, perímetro, cantidad de ambientes y metros cuadrados totales.
+
+Los datos del ambiente se vinculan a los cuatro muros que lo forman, por lo que se conservan cuando cambian sus dimensiones sin abrir el recinto. Si se abre el perímetro al eliminar o mover un muro, el piso deja de representarse para evitar superficies huérfanas.
 
 ### Biblioteca de muebles
 
@@ -551,9 +553,10 @@ Lanzamiento comercial
 - [x] Generar un cielorraso plano configurable sobre la huella del modelo.
 - [x] Generar un techo plano con espesor y alero configurables.
 - [ ] Incorporar techos inclinados, a dos aguas y faldones editables.
-- [ ] Nombrar ambientes: dormitorio, cocina, baño, etc.
-- [ ] Calcular superficie y perímetro por ambiente.
-- [ ] Asignar materiales y terminaciones.
+- [x] Nombrar ambientes: dormitorio, cocina, baño, etc.
+- [x] Calcular superficie y perímetro por ambiente rectangular.
+- [x] Asignar materiales básicos a los pisos.
+- [ ] Crear una biblioteca completa de materiales y terminaciones.
 - [ ] Ocultar muros temporalmente para revisar interiores.
 
 #### Mobiliario

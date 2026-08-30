@@ -652,8 +652,16 @@ app.put('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async 
       overhang: validateNumber(building.roof?.overhang ?? 0.25, 'Alero del techo', 0, 10),
     },
   }
+  const rooms = req.body?.model?.rooms ?? []
+  if (!Array.isArray(rooms) || rooms.length > 2000) throw new ValidationError('El modelo puede contener hasta 2000 ambientes')
+  const normalizedRooms = rooms.map((room, index) => ({
+    id: validateStringLength(room?.id, `ID del ambiente ${index + 1}`, 1, 500),
+    name: validateStringLength(room?.name || `Ambiente ${index + 1}`, `Nombre del ambiente ${index + 1}`, 1, 80),
+    type: validateEnum(room?.type ?? 'generic', ['generic', 'living', 'kitchen', 'bedroom', 'bathroom', 'dining', 'garage', 'office'], `Tipo del ambiente ${index + 1}`),
+    material: validateEnum(room?.material ?? 'concrete', ['concrete', 'ceramic', 'wood', 'porcelain'], `Piso del ambiente ${index + 1}`),
+  }))
   const repo = await getRepository()
-  const project = await repo.saveModelerProject(req.authUser.id, { name, model: { walls: normalizedWalls, openings: normalizedOpenings, furniture: normalizedFurniture, building: normalizedBuilding }, expectedVersion })
+  const project = await repo.saveModelerProject(req.authUser.id, { name, model: { walls: normalizedWalls, openings: normalizedOpenings, furniture: normalizedFurniture, rooms: normalizedRooms, building: normalizedBuilding }, expectedVersion })
   if (!project) throw new ConflictError('El proyecto fue modificado en otra pestaña o sesión. Recargalo antes de volver a guardar.', 'MODELER_VERSION_CONFLICT')
   return res.json({ project })
 }))

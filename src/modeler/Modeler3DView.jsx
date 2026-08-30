@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { DEFAULT_BUILDING, FURNITURE, detectRectangularRooms, modelFootprint, openingTransform3D, wallSolidParts } from './core'
+import { DEFAULT_BUILDING, FLOOR_MATERIALS, FURNITURE, detectRectangularRooms, modelFootprint, openingTransform3D, wallSolidParts } from './core'
 
 function CameraControls({ target }) {
   const { camera, gl } = useThree()
@@ -64,7 +64,7 @@ function FurnitureMesh({ item, selected, onSelect }) {
   </mesh>
 }
 
-function BuildingSurfaces({ model }) {
+function BuildingSurfaces({ model, selection, onSelect }) {
   const building = model.building || DEFAULT_BUILDING
   const floor = building.floor || DEFAULT_BUILDING.floor
   const ceiling = building.ceiling || DEFAULT_BUILDING.ceiling
@@ -75,9 +75,9 @@ function BuildingSurfaces({ model }) {
   const rooms = detectRectangularRooms(model)
   if (!ceilingFootprint) return null
   return <>
-    {floor.enabled && floor.visible && rooms.map((room) => <mesh key={`floor-${room.id}`} position={[room.x, -floor.thickness / 2, room.y]} receiveShadow>
+    {floor.enabled && floor.visible && rooms.map((room) => <mesh key={`floor-${room.id}`} position={[room.x, -floor.thickness / 2, room.y]} receiveShadow onClick={(event)=>{event.stopPropagation();onSelect({collection:'rooms',id:room.id})}}>
       <boxGeometry args={[room.width, floor.thickness, room.depth]} />
-      <meshStandardMaterial color="#b9a98e" roughness={0.92} />
+      <meshStandardMaterial color={selection?.collection==='rooms'&&selection.id===room.id?'#d68a62':FLOOR_MATERIALS[room.material]?.color||'#aaa49a'} roughness={0.92} />
     </mesh>)}
     {ceiling.enabled && ceiling.visible && <mesh position={[ceilingFootprint.x, ceiling.height, ceilingFootprint.y]} receiveShadow castShadow>
       <boxGeometry args={[ceilingFootprint.width, ceiling.thickness, ceilingFootprint.depth]} />
@@ -110,7 +110,7 @@ export default function Modeler3DView({ model, selection, onSelect }) {
       {model.walls.map((wall) => <WallMesh key={wall.id} wall={wall} openings={model.openings} selected={selection?.collection === 'walls' && selection.id === wall.id} onSelect={onSelect} />)}
       {model.openings.map((opening) => { const wall = model.walls.find((item) => item.id === opening.wallId); return wall ? <OpeningMesh key={opening.id} opening={opening} wall={wall} selected={selection?.collection === 'openings' && selection.id === opening.id} onSelect={onSelect} /> : null })}
       {model.furniture.map((item) => <FurnitureMesh key={item.id} item={item} selected={selection?.collection === 'furniture' && selection.id === item.id} onSelect={onSelect} />)}
-      <BuildingSurfaces model={model} />
+      <BuildingSurfaces model={model} selection={selection} onSelect={onSelect} />
       <CameraControls target={target} />
     </Canvas>
   </div>

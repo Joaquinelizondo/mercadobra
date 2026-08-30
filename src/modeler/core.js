@@ -1,12 +1,19 @@
 export const GRID_SIZE = 0.1
 export const DOOR_SWINGS = Object.freeze(['left-in', 'right-in', 'left-out', 'right-out'])
+export const ROOM_TYPES = Object.freeze(['generic', 'living', 'kitchen', 'bedroom', 'bathroom', 'dining', 'garage', 'office'])
+export const FLOOR_MATERIALS = Object.freeze({
+  concrete: { label: 'Hormigón', color: '#aaa49a' },
+  ceramic: { label: 'Cerámica', color: '#c8b99e' },
+  wood: { label: 'Madera', color: '#a87950' },
+  porcelain: { label: 'Porcelanato', color: '#ddd8cf' },
+})
 
 export const DEFAULT_BUILDING = Object.freeze({
   floor: { enabled: true, visible: true, thickness: 0.12 },
   ceiling: { enabled: false, visible: true, height: 2.4, thickness: 0.05 },
   roof: { enabled: false, visible: true, thickness: 0.15, overhang: 0.25 },
 })
-export const EMPTY_MODEL = Object.freeze({ walls: [], openings: [], furniture: [], building: DEFAULT_BUILDING })
+export const EMPTY_MODEL = Object.freeze({ walls: [], openings: [], furniture: [], rooms: [], building: DEFAULT_BUILDING })
 
 export const FURNITURE = Object.freeze({
   bed: { label: 'Cama', width: 1.6, depth: 2, height: 0.55, color: '#8da1aa' },
@@ -23,6 +30,7 @@ export function normalizeModel(model) {
     walls: Array.isArray(model?.walls) ? model.walls : [],
     openings: Array.isArray(model?.openings) ? model.openings.map((opening) => opening.type === 'door' && !DOOR_SWINGS.includes(opening.swing) ? { ...opening, swing: 'left-in' } : opening) : [],
     furniture: Array.isArray(model?.furniture) ? model.furniture : [],
+    rooms: Array.isArray(model?.rooms) ? model.rooms : [],
     building: {
       floor: { ...DEFAULT_BUILDING.floor, ...(building.floor || {}) },
       ceiling: { ...DEFAULT_BUILDING.ceiling, ...(building.ceiling || {}) },
@@ -49,11 +57,11 @@ export function detectRectangularRooms(model, tolerance = 1e-6) {
   const horizontal = []; const vertical = []
   for (const wall of model.walls) {
     const { start, end } = wall
-    if (Math.abs(start.y - end.y) <= tolerance) horizontal.push({ y: (start.y + end.y) / 2, min: Math.min(start.x, end.x), max: Math.max(start.x, end.x) })
-    else if (Math.abs(start.x - end.x) <= tolerance) vertical.push({ x: (start.x + end.x) / 2, min: Math.min(start.y, end.y), max: Math.max(start.y, end.y) })
+    if (Math.abs(start.y - end.y) <= tolerance) horizontal.push({ id: wall.id, y: (start.y + end.y) / 2, min: Math.min(start.x, end.x), max: Math.max(start.x, end.x) })
+    else if (Math.abs(start.x - end.x) <= tolerance) vertical.push({ id: wall.id, x: (start.x + end.x) / 2, min: Math.min(start.y, end.y), max: Math.max(start.y, end.y) })
   }
   const close = (a, b) => Math.abs(a - b) <= tolerance
-  const coversVertical = (x, min, max) => vertical.some((line) => close(line.x, x) && line.min <= min + tolerance && line.max >= max - tolerance)
+  const coveringVertical = (x, min, max) => vertical.find((line) => close(line.x, x) && line.min <= min + tolerance && line.max >= max - tolerance)
   const rooms = []; const seen = new Set()
   for (let index = 0; index < horizontal.length; index += 1) {
     const first = horizontal[index]
@@ -61,13 +69,25 @@ export function detectRectangularRooms(model, tolerance = 1e-6) {
       const second = horizontal[otherIndex]
       if (!close(first.min, second.min) || !close(first.max, second.max) || close(first.y, second.y)) continue
       const minX = first.min; const maxX = first.max; const minY = Math.min(first.y, second.y); const maxY = Math.max(first.y, second.y)
-      if (!coversVertical(minX, minY, maxY) || !coversVertical(maxX, minY, maxY)) continue
-      const id = `${minX.toFixed(4)}:${minY.toFixed(4)}:${maxX.toFixed(4)}:${maxY.toFixed(4)}`
+      const left = coveringVertical(minX, minY, maxY); const right = coveringVertical(maxX, minY, maxY)
+      if (!left || !right) continue
+      const wallIds = [first.id, second.id, left.id, right.id].sort()
+      const id = wallIds.join(':')
       if (seen.has(id)) continue
-      seen.add(id); rooms.push({ id, x: (minX + maxX) / 2, y: (minY + maxY) / 2, width: maxX - minX, depth: maxY - minY, area: (maxX - minX) * (maxY - minY), perimeter: 2 * (maxX - minX + maxY - minY) })
+      seen.add(id); rooms.push({ id, wallIds, x: (minX + maxX) / 2, y: (minY + maxY) / 2, width: maxX - minX, depth: maxY - minY, area: (maxX - minX) * (maxY - minY), perimeter: 2 * (maxX - minX + maxY - minY) })
     }
   }
-  return rooms
+  const metadata = new Map((model.rooms || []).map((room) => [room.id, room]))
+  return rooms.map((room, index) => ({ name: `Ambiente ${index + 1}`, type: 'generic', material: 'concrete', ...metadata.get(room.id), ...room }))
+}
+
+export function updateRoom(model, roomId, field, value) {
+  if (!['name', 'type', 'material'].includes(field)) return model
+  if (field === 'type' && !ROOM_TYPES.includes(value)) return model
+  if (field === 'material' && !FLOOR_MATERIALS[value]) return model
+  const normalized = field === 'name' ? String(value).trimStart().slice(0, 80) : value
+  const current = (model.rooms || []).find((room) => room.id === roomId) || { id: roomId, name: 'Ambiente', type: 'generic', material: 'concrete' }
+  return { ...model, rooms: [...(model.rooms || []).filter((room) => room.id !== roomId), { ...current, [field]: normalized }] }
 }
 
 export function modelFootprint(model, padding = 0) {
