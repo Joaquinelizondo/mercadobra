@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { DEFAULT_BUILDING, FURNITURE, modelFootprint, openingTransform3D, wallSolidParts } from './core'
+import { DEFAULT_BUILDING, FURNITURE, detectRectangularRooms, modelFootprint, openingTransform3D, wallSolidParts } from './core'
 
 function CameraControls({ target }) {
   const { camera, gl } = useThree()
@@ -66,13 +66,19 @@ function FurnitureMesh({ item, selected, onSelect }) {
 
 function BuildingSurfaces({ model }) {
   const building = model.building || DEFAULT_BUILDING
+  const floor = building.floor || DEFAULT_BUILDING.floor
   const ceiling = building.ceiling || DEFAULT_BUILDING.ceiling
   const roof = building.roof || DEFAULT_BUILDING.roof
   const ceilingFootprint = modelFootprint(model)
   const roofFootprint = modelFootprint(model, roof.overhang || 0)
   const wallTop = model.walls.reduce((height, wall) => Math.max(height, wall.height), 0)
+  const rooms = detectRectangularRooms(model)
   if (!ceilingFootprint) return null
   return <>
+    {floor.enabled && floor.visible && rooms.map((room) => <mesh key={`floor-${room.id}`} position={[room.x, -floor.thickness / 2, room.y]} receiveShadow>
+      <boxGeometry args={[room.width, floor.thickness, room.depth]} />
+      <meshStandardMaterial color="#b9a98e" roughness={0.92} />
+    </mesh>)}
     {ceiling.enabled && ceiling.visible && <mesh position={[ceilingFootprint.x, ceiling.height, ceilingFootprint.y]} receiveShadow castShadow>
       <boxGeometry args={[ceilingFootprint.width, ceiling.thickness, ceilingFootprint.depth]} />
       <meshStandardMaterial color="#f4f1e9" roughness={0.9} transparent opacity={0.82} />

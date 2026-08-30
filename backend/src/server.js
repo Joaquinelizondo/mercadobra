@@ -634,6 +634,11 @@ app.put('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async 
   })
   const building = req.body?.model?.building || {}
   const normalizedBuilding = {
+    floor: {
+      enabled: building.floor?.enabled !== false,
+      visible: building.floor?.visible !== false,
+      thickness: validateNumber(building.floor?.thickness ?? 0.12, 'Espesor del piso', 0.01, 5),
+    },
     ceiling: {
       enabled: building.ceiling?.enabled === true,
       visible: building.ceiling?.visible !== false,

@@ -165,6 +165,10 @@ La vista 3D divide paramétricamente cada muro alrededor de sus aberturas. Las p
 
 El panel **Construcción** permite activar un cielorraso plano y un techo plano que cubren automáticamente la huella rectangular ocupada por los muros. El cielorraso admite altura configurable; el techo admite espesor y alero. Ambos pueden ocultarse temporalmente para inspeccionar el interior en la vista 3D.
 
+### Ambientes y pisos automáticos
+
+El modelador detecta recintos rectangulares formados por cuatro muros cerrados. Cada ambiente detectado muestra su superficie en planta y genera automáticamente un piso 3D configurable desde **Construcción**. El panel informa la cantidad de ambientes y los metros cuadrados totales de piso. Si se abre el perímetro al eliminar o mover un muro, el piso desaparece para evitar superficies huérfanas.
+
 ### Biblioteca de muebles
 
 El catálogo inicial contiene:
@@ -540,8 +544,10 @@ Lanzamiento comercial
 
 #### Ambientes, pisos y materiales
 
-- [ ] Detectar automáticamente perímetros cerrados.
-- [ ] Crear pisos, losas y ambientes.
+- [x] Detectar automáticamente perímetros rectangulares cerrados.
+- [x] Crear pisos automáticos para ambientes rectangulares.
+- [ ] Detectar ambientes con plantas irregulares y muros divididos.
+- [ ] Crear losas y ambientes persistentes editables.
 - [x] Generar un cielorraso plano configurable sobre la huella del modelo.
 - [x] Generar un techo plano con espesor y alero configurables.
 - [ ] Incorporar techos inclinados, a dos aguas y faldones editables.

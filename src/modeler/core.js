@@ -2,6 +2,7 @@ export const GRID_SIZE = 0.1
 export const DOOR_SWINGS = Object.freeze(['left-in', 'right-in', 'left-out', 'right-out'])
 
 export const DEFAULT_BUILDING = Object.freeze({
+  floor: { enabled: true, visible: true, thickness: 0.12 },
   ceiling: { enabled: false, visible: true, height: 2.4, thickness: 0.05 },
   roof: { enabled: false, visible: true, thickness: 0.15, overhang: 0.25 },
 })
@@ -23,6 +24,7 @@ export function normalizeModel(model) {
     openings: Array.isArray(model?.openings) ? model.openings.map((opening) => opening.type === 'door' && !DOOR_SWINGS.includes(opening.swing) ? { ...opening, swing: 'left-in' } : opening) : [],
     furniture: Array.isArray(model?.furniture) ? model.furniture : [],
     building: {
+      floor: { ...DEFAULT_BUILDING.floor, ...(building.floor || {}) },
       ceiling: { ...DEFAULT_BUILDING.ceiling, ...(building.ceiling || {}) },
       roof: { ...DEFAULT_BUILDING.roof, ...(building.roof || {}) },
     },
@@ -30,7 +32,7 @@ export function normalizeModel(model) {
 }
 
 export function updateBuilding(model, section, field, value) {
-  if (!['ceiling', 'roof'].includes(section) || !['enabled', 'visible', 'height', 'thickness', 'overhang'].includes(field)) return model
+  if (!['floor', 'ceiling', 'roof'].includes(section) || !['enabled', 'visible', 'height', 'thickness', 'overhang'].includes(field)) return model
   const current = model.building || DEFAULT_BUILDING
   let normalized = value
   if (field === 'enabled' || field === 'visible') normalized = Boolean(value)
@@ -41,6 +43,31 @@ export function updateBuilding(model, section, field, value) {
     normalized = Math.max(limits[0], Math.min(limits[1], normalized))
   }
   return { ...model, building: { ...current, [section]: { ...current[section], [field]: normalized } } }
+}
+
+export function detectRectangularRooms(model, tolerance = 1e-6) {
+  const horizontal = []; const vertical = []
+  for (const wall of model.walls) {
+    const { start, end } = wall
+    if (Math.abs(start.y - end.y) <= tolerance) horizontal.push({ y: (start.y + end.y) / 2, min: Math.min(start.x, end.x), max: Math.max(start.x, end.x) })
+    else if (Math.abs(start.x - end.x) <= tolerance) vertical.push({ x: (start.x + end.x) / 2, min: Math.min(start.y, end.y), max: Math.max(start.y, end.y) })
+  }
+  const close = (a, b) => Math.abs(a - b) <= tolerance
+  const coversVertical = (x, min, max) => vertical.some((line) => close(line.x, x) && line.min <= min + tolerance && line.max >= max - tolerance)
+  const rooms = []; const seen = new Set()
+  for (let index = 0; index < horizontal.length; index += 1) {
+    const first = horizontal[index]
+    for (let otherIndex = index + 1; otherIndex < horizontal.length; otherIndex += 1) {
+      const second = horizontal[otherIndex]
+      if (!close(first.min, second.min) || !close(first.max, second.max) || close(first.y, second.y)) continue
+      const minX = first.min; const maxX = first.max; const minY = Math.min(first.y, second.y); const maxY = Math.max(first.y, second.y)
+      if (!coversVertical(minX, minY, maxY) || !coversVertical(maxX, minY, maxY)) continue
+      const id = `${minX.toFixed(4)}:${minY.toFixed(4)}:${maxX.toFixed(4)}:${maxY.toFixed(4)}`
+      if (seen.has(id)) continue
+      seen.add(id); rooms.push({ id, x: (minX + maxX) / 2, y: (minY + maxY) / 2, width: maxX - minX, depth: maxY - minY, area: (maxX - minX) * (maxY - minY), perimeter: 2 * (maxX - minX + maxY - minY) })
+    }
+  }
+  return rooms
 }
 
 export function modelFootprint(model, padding = 0) {
