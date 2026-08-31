@@ -142,6 +142,13 @@ export function cameraPositionForView(bounds, view = 'perspective') {
   return positions[view] || positions.perspective
 }
 
+export function walkStartPosition(model, eyeHeight = 1.65) {
+  const room = detectRooms(model)[0]
+  if (room) return [room.x, eyeHeight, room.y]
+  const footprint = modelFootprint(model)
+  return footprint ? [footprint.x, eyeHeight, footprint.y] : [0, eyeHeight, 0]
+}
+
 export function rememberModel(history, model, limit = 50) {
   return [...history.slice(-(limit - 1)), structuredClone(model)]
 }

@@ -1,8 +1,30 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 import { Shape } from 'three'
-import { DEFAULT_BUILDING, FLOOR_MATERIALS, FURNITURE, cameraPositionForView, detectRectangularRooms, modelFootprint, openingTransform3D, wallSolidParts } from './core'
+import { DEFAULT_BUILDING, FLOOR_MATERIALS, FURNITURE, cameraPositionForView, detectRectangularRooms, modelFootprint, openingTransform3D, walkStartPosition, wallSolidParts } from './core'
+
+function WalkControls({ start, onExit }) {
+  const { camera, gl } = useThree(); const controlsRef = useRef(null); const keysRef = useRef(new Set()); const activatedRef = useRef(false)
+  useEffect(() => {
+    const controls = new PointerLockControls(camera, gl.domElement); camera.position.set(...start); camera.lookAt(start[0], start[1], start[2] - 1); controlsRef.current = controls
+    const keyDown = (event) => { if (event.code === 'Escape') onExit(); else keysRef.current.add(event.code) }
+    const keyUp = (event) => keysRef.current.delete(event.code)
+    const lock = () => controls.lock(); const activated = () => { activatedRef.current = true }; const unlocked = () => { if (activatedRef.current) onExit() }
+    document.addEventListener('keydown', keyDown); document.addEventListener('keyup', keyUp); gl.domElement.addEventListener('click', lock); controls.addEventListener('lock', activated); controls.addEventListener('unlock', unlocked)
+    return () => { document.removeEventListener('keydown', keyDown); document.removeEventListener('keyup', keyUp); gl.domElement.removeEventListener('click', lock); controls.removeEventListener('lock', activated); controls.removeEventListener('unlock', unlocked); if(controls.isLocked)controls.unlock(); controls.dispose(); controlsRef.current = null }
+  }, [camera, gl, onExit, start])
+  useFrame((_, delta) => {
+    const controls = controlsRef.current; if (!controls?.isLocked) return
+    const keys = keysRef.current; const step = Math.min(delta, 0.05) * 2.4
+    if (keys.has('KeyW') || keys.has('ArrowUp')) controls.moveForward(step)
+    if (keys.has('KeyS') || keys.has('ArrowDown')) controls.moveForward(-step)
+    if (keys.has('KeyA') || keys.has('ArrowLeft')) controls.moveRight(-step)
+    if (keys.has('KeyD') || keys.has('ArrowRight')) controls.moveRight(step)
+  })
+  return null
+}
 
 function CameraControls({ target, position }) {
   const { camera, gl } = useThree()
@@ -97,7 +119,7 @@ function BuildingSurfaces({ model, selection, onSelect }) {
   </>
 }
 
-export default function Modeler3DView({ model, selection, onSelect, cameraView = 'perspective', hiddenWallIds = [] }) {
+export default function Modeler3DView({ model, selection, onSelect, cameraView = 'perspective', hiddenWallIds = [], walkMode = false, onExitWalk = () => {} }) {
   const bounds = useMemo(() => {
     const points = model.walls.flatMap((wall) => [wall.start, wall.end]).concat(model.furniture.map((item) => ({ x: item.x, y: item.y })))
     if (!points.length) return { x: 0, z: 0, span: 8 }
@@ -108,6 +130,7 @@ export default function Modeler3DView({ model, selection, onSelect, cameraView =
   const target = useMemo(() => [bounds.x, 1.2, bounds.z], [bounds.x, bounds.z])
   const cameraPosition = useMemo(() => cameraPositionForView(bounds, cameraView), [bounds, cameraView])
   const hiddenWalls = useMemo(() => new Set(hiddenWallIds), [hiddenWallIds])
+  const walkStart = useMemo(() => walkStartPosition(model), [model])
 
   return <div className="modeler-three-view" aria-label="Vista tridimensional del proyecto">
     <Canvas shadows dpr={[1, 2]} camera={{ position: [bounds.x + bounds.span, bounds.span * 0.75, bounds.z + bounds.span], fov: 42, near: 0.1, far: 500 }} onPointerMissed={() => onSelect(null)}>
@@ -120,7 +143,8 @@ export default function Modeler3DView({ model, selection, onSelect, cameraView =
       {model.openings.map((opening) => { const wall = model.walls.find((item) => item.id === opening.wallId); return wall&&!hiddenWalls.has(wall.id) ? <OpeningMesh key={opening.id} opening={opening} wall={wall} selected={selection?.collection === 'openings' && selection.id === opening.id} onSelect={onSelect} /> : null })}
       {model.furniture.map((item) => <FurnitureMesh key={item.id} item={item} selected={selection?.collection === 'furniture' && selection.id === item.id} onSelect={onSelect} />)}
       <BuildingSurfaces model={model} selection={selection} onSelect={onSelect} />
-      <CameraControls target={target} position={cameraPosition} />
+      {walkMode?<WalkControls start={walkStart} onExit={onExitWalk}/>:<CameraControls target={target} position={cameraPosition} />}
     </Canvas>
+    {walkMode&&<div className="modeler-walk-help">Clic para mirar · W A S D o flechas para caminar · Esc para salir</div>}
   </div>
 }

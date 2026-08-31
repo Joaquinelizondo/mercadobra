@@ -132,6 +132,7 @@ El acceso **Simulador 3D · Beta** aparece en la navegación de Productos y como
 - Vista 3D WebGL navegable y vista ortográfica de planta mediante Canvas.
 - Vistas 3D predefinidas: perspectiva, frente, fondo y laterales.
 - Ocultamiento temporal de muros y acción **Mostrar todo** para revisar interiores.
+- Primer modo de recorrido interior para escritorio, con cámara a 1,65 m, mouse y movimiento mediante `WASD` o flechas.
 - Zoom mediante rueda del mouse o trackpad.
 - Creación consecutiva de muros mediante puntos.
 - Altura y espesor configurables para muros nuevos.
@@ -389,7 +390,9 @@ La QA integrada local verificó autenticación administrativa, carga del proyect
 - [x] Generar huecos reales para puertas y ventanas mediante piezas paramétricas del muro.
 - [x] Incorporar cámara orbital con rotación, zoom y desplazamiento.
 - [x] Incorporar vistas estándar de frente, fondo y laterales.
-- [ ] Incorporar modo de recorrido en primera persona.
+- [x] Incorporar la primera versión del recorrido en primera persona para escritorio.
+- [ ] Impedir que la cámara de recorrido atraviese muros y muebles.
+- [ ] Incorporar controles táctiles para el recorrido móvil.
 - [x] Detectar perímetros cerrados y generar pisos y ambientes.
 - [ ] Agregar materiales, iluminación y sombras con niveles de calidad configurables.
 - [x] Mantener una vista de planta precisa además de la escena 3D.
@@ -615,7 +618,8 @@ Lanzamiento comercial
 - [x] Migrar la vista 3D a WebGL/Three.js sin reemplazar el modelo de dominio.
 - [x] Incorporar órbita libre, zoom, paneo y selección en la escena 3D.
 - [x] Incorporar vistas estándar.
-- [ ] Incorporar cámara en primera persona.
+- [x] Incorporar cámara en primera persona con teclado y mouse.
+- [ ] Incorporar colisiones y controles táctiles al recorrido.
 - [x] Representar muros y muebles como sólidos con iluminación y sombras básicas.
 - [ ] Incorporar materiales, texturas y niveles de calidad configurables.
 - [ ] Optimizar modelos grandes mediante instancias y Web Workers.

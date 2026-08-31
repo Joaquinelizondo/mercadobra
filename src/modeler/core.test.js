@@ -31,6 +31,7 @@ import {
   wallLength,
   wallSolidParts,
   wallTransform3D,
+  walkStartPosition,
 } from './core.js'
 
 const wall = { id: 'wall-1', start: { x: 0, y: 0 }, end: { x: 4, y: 3 }, height: 2.7, thickness: 0.15 }
@@ -96,6 +97,17 @@ test('calcula posiciones de cámara para vistas estándar', () => {
   assert.deepEqual(cameraPositionForView(bounds, 'left'), [-14, 1.4, 3])
   assert.deepEqual(cameraPositionForView(bounds, 'right'), [18, 1.4, 3])
   assert.deepEqual(cameraPositionForView(bounds, 'perspective'), [12, 7.5, 13])
+})
+
+test('inicia el recorrido en el centro del primer ambiente', () => {
+  const walls = [
+    { ...wall, id:'bottom', start:{x:0,y:0}, end:{x:4,y:0} },
+    { ...wall, id:'right', start:{x:4,y:0}, end:{x:4,y:3} },
+    { ...wall, id:'top', start:{x:4,y:3}, end:{x:0,y:3} },
+    { ...wall, id:'left', start:{x:0,y:3}, end:{x:0,y:0} },
+  ]
+  assert.deepEqual(walkStartPosition({walls,rooms:[]}),[2,1.65,1.5])
+  assert.deepEqual(walkStartPosition({walls:[]}),[0,1.65,0])
 })
 
 test('detecta un ambiente rectangular cerrado y calcula su piso', () => {
