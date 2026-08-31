@@ -138,20 +138,35 @@ export function saveAdminModelerProject(payload, token) {
   return request('/admin/modeler/project', { method: 'PUT', token, body: JSON.stringify(payload) })
 }
 
-export function getAdminModelerProjects(token) {
-  return request('/admin/modeler/projects', { token })
+export async function getAdminModelerProjects(token) {
+  try { return await request('/admin/modeler/projects', { token }) }
+  catch (error) {
+    if (error.status !== 404) throw error
+    const { project } = await request('/admin/modeler/project', { token })
+    return { projects: project ? [{ id: project.id, name: project.name, version: project.version, createdAt: project.createdAt, updatedAt: project.updatedAt }] : [] }
+  }
 }
 
-export function getAdminModelerProjectById(projectId, token) {
-  return request(`/admin/modeler/projects/${projectId}`, { token })
+export async function getAdminModelerProjectById(projectId, token) {
+  try { return await request(`/admin/modeler/projects/${projectId}`, { token }) }
+  catch (error) {
+    if (error.status !== 404) throw error
+    const result = await request('/admin/modeler/project', { token })
+    if (!result.project || Number(result.project.id) !== Number(projectId)) throw error
+    return result
+  }
 }
 
 export function createAdminModelerProject(payload, token) {
   return request('/admin/modeler/projects', { method: 'POST', token, body: JSON.stringify(payload) })
 }
 
-export function saveAdminModelerProjectById(projectId, payload, token) {
-  return request(`/admin/modeler/projects/${projectId}`, { method: 'PUT', token, body: JSON.stringify(payload) })
+export async function saveAdminModelerProjectById(projectId, payload, token) {
+  try { return await request(`/admin/modeler/projects/${projectId}`, { method: 'PUT', token, body: JSON.stringify(payload) }) }
+  catch (error) {
+    if (error.status !== 404) throw error
+    return request('/admin/modeler/project', { method: 'PUT', token, body: JSON.stringify(payload) })
+  }
 }
 
 export function interpretAdminModelerPrompt(payload, token) {
