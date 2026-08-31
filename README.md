@@ -130,6 +130,8 @@ El acceso **Simulador 3D · Beta** aparece en la navegación de Productos y como
 
 - Lienzo interactivo con rejilla, ejes y ajuste de coordenadas cada 10 cm.
 - Vista 3D WebGL navegable y vista ortográfica de planta mediante Canvas.
+- Vistas 3D predefinidas: perspectiva, frente, fondo y laterales.
+- Ocultamiento temporal de muros y acción **Mostrar todo** para revisar interiores.
 - Zoom mediante rueda del mouse o trackpad.
 - Creación consecutiva de muros mediante puntos.
 - Altura y espesor configurables para muros nuevos.
@@ -386,7 +388,8 @@ La QA integrada local verificó autenticación administrativa, carga del proyect
 - [x] Generar muros con longitud, espesor y altura como volúmenes tridimensionales.
 - [x] Generar huecos reales para puertas y ventanas mediante piezas paramétricas del muro.
 - [x] Incorporar cámara orbital con rotación, zoom y desplazamiento.
-- [ ] Incorporar vistas estándar y modo de recorrido en primera persona.
+- [x] Incorporar vistas estándar de frente, fondo y laterales.
+- [ ] Incorporar modo de recorrido en primera persona.
 - [x] Detectar perímetros cerrados y generar pisos y ambientes.
 - [ ] Agregar materiales, iluminación y sombras con niveles de calidad configurables.
 - [x] Mantener una vista de planta precisa además de la escena 3D.
@@ -576,7 +579,7 @@ Lanzamiento comercial
 - [x] Calcular superficie y perímetro por ambiente.
 - [x] Asignar materiales básicos a los pisos.
 - [ ] Crear una biblioteca completa de materiales y terminaciones.
-- [ ] Ocultar muros temporalmente para revisar interiores.
+- [x] Ocultar muros temporalmente para revisar interiores.
 
 #### Mobiliario
 
@@ -611,7 +614,8 @@ Lanzamiento comercial
 - [x] Zoom y selección gráfica.
 - [x] Migrar la vista 3D a WebGL/Three.js sin reemplazar el modelo de dominio.
 - [x] Incorporar órbita libre, zoom, paneo y selección en la escena 3D.
-- [ ] Incorporar cámara en primera persona y vistas estándar.
+- [x] Incorporar vistas estándar.
+- [ ] Incorporar cámara en primera persona.
 - [x] Representar muros y muebles como sólidos con iluminación y sombras básicas.
 - [ ] Incorporar materiales, texturas y niveles de calidad configurables.
 - [ ] Optimizar modelos grandes mediante instancias y Web Workers.

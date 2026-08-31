@@ -56,6 +56,8 @@
 .modeler-properties input{width:64px;padding:7px;border:1px solid #bdb5aa;background:#fff;text-align:right}
 .modeler-properties input.modeler-room-name{width:145px;text-align:left}
 .modeler-properties select{max-width:150px;padding:7px;border:1px solid #bdb5aa;background:#fff;color:#45413b}
+.modeler-property-action{width:100%;margin:8px 0;padding:9px;border:1px solid #9e8d7d;background:#fff;color:#514a42;font-weight:800;cursor:pointer}
+.modeler-property-action:disabled{opacity:.45;cursor:not-allowed}
 .modeler-building{margin-top:22px;padding-top:16px;border-top:1px solid #cfc7bb}
 .modeler-building h3{margin:0 0 12px;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em}
 .modeler-building label{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;color:#655f56;font-size:.75rem;font-weight:700}

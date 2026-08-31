@@ -130,6 +130,18 @@ export function modelFootprint(model, padding = 0) {
   return { x: (minX + maxX) / 2, y: (minY + maxY) / 2, width: Math.max(0.1, maxX - minX), depth: Math.max(0.1, maxY - minY) }
 }
 
+export function cameraPositionForView(bounds, view = 'perspective') {
+  const distance = Math.max(8, bounds.span) * 1.6; const elevation = 1.4
+  const positions = {
+    front: [bounds.x, elevation, bounds.z + distance],
+    back: [bounds.x, elevation, bounds.z - distance],
+    left: [bounds.x - distance, elevation, bounds.z],
+    right: [bounds.x + distance, elevation, bounds.z],
+    perspective: [bounds.x + bounds.span, bounds.span * 0.75, bounds.z + bounds.span],
+  }
+  return positions[view] || positions.perspective
+}
+
 export function rememberModel(history, model, limit = 50) {
   return [...history.slice(-(limit - 1)), structuredClone(model)]
 }

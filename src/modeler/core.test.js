@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   appendWall,
+  cameraPositionForView,
   constrainOrthogonal,
   deleteElement,
   detectRectangularRooms,
@@ -86,6 +87,15 @@ test('calcula la huella y permite configurar cielorraso y techo', () => {
   assert.equal(ceiling.building.ceiling.enabled, true)
   assert.equal(roof.building.roof.overhang, 0.5)
   assert.deepEqual(modelFootprint(roof, roof.building.roof.overhang), { x: 2, y: 1.5, width: 5, depth: 4 })
+})
+
+test('calcula posiciones de cámara para vistas estándar', () => {
+  const bounds = { x: 2, z: 3, span: 10 }
+  assert.deepEqual(cameraPositionForView(bounds, 'front'), [2, 1.4, 19])
+  assert.deepEqual(cameraPositionForView(bounds, 'back'), [2, 1.4, -13])
+  assert.deepEqual(cameraPositionForView(bounds, 'left'), [-14, 1.4, 3])
+  assert.deepEqual(cameraPositionForView(bounds, 'right'), [18, 1.4, 3])
+  assert.deepEqual(cameraPositionForView(bounds, 'perspective'), [12, 7.5, 13])
 })
 
 test('detecta un ambiente rectangular cerrado y calcula su piso', () => {

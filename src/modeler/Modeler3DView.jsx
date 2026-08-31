@@ -2,14 +2,15 @@ import { useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { Shape } from 'three'
-import { DEFAULT_BUILDING, FLOOR_MATERIALS, FURNITURE, detectRectangularRooms, modelFootprint, openingTransform3D, wallSolidParts } from './core'
+import { DEFAULT_BUILDING, FLOOR_MATERIALS, FURNITURE, cameraPositionForView, detectRectangularRooms, modelFootprint, openingTransform3D, wallSolidParts } from './core'
 
-function CameraControls({ target }) {
+function CameraControls({ target, position }) {
   const { camera, gl } = useThree()
   const controlsRef = useRef(null)
 
   useEffect(() => {
     const controls = new OrbitControls(camera, gl.domElement)
+    camera.position.set(...position)
     controls.target.set(...target)
     controls.enableDamping = true
     controls.dampingFactor = 0.08
@@ -19,7 +20,7 @@ function CameraControls({ target }) {
     controls.update()
     controlsRef.current = controls
     return () => { controls.dispose(); controlsRef.current = null }
-  }, [camera, gl, target])
+  }, [camera, gl, position, target])
 
   useFrame(() => controlsRef.current?.update())
   return null
@@ -96,7 +97,7 @@ function BuildingSurfaces({ model, selection, onSelect }) {
   </>
 }
 
-export default function Modeler3DView({ model, selection, onSelect }) {
+export default function Modeler3DView({ model, selection, onSelect, cameraView = 'perspective', hiddenWallIds = [] }) {
   const bounds = useMemo(() => {
     const points = model.walls.flatMap((wall) => [wall.start, wall.end]).concat(model.furniture.map((item) => ({ x: item.x, y: item.y })))
     if (!points.length) return { x: 0, z: 0, span: 8 }
@@ -105,6 +106,8 @@ export default function Modeler3DView({ model, selection, onSelect }) {
     return { x: (minX + maxX) / 2, z: (minZ + maxZ) / 2, span: Math.max(8, maxX - minX, maxZ - minZ) }
   }, [model])
   const target = useMemo(() => [bounds.x, 1.2, bounds.z], [bounds.x, bounds.z])
+  const cameraPosition = useMemo(() => cameraPositionForView(bounds, cameraView), [bounds, cameraView])
+  const hiddenWalls = useMemo(() => new Set(hiddenWallIds), [hiddenWallIds])
 
   return <div className="modeler-three-view" aria-label="Vista tridimensional del proyecto">
     <Canvas shadows dpr={[1, 2]} camera={{ position: [bounds.x + bounds.span, bounds.span * 0.75, bounds.z + bounds.span], fov: 42, near: 0.1, far: 500 }} onPointerMissed={() => onSelect(null)}>
@@ -113,11 +116,11 @@ export default function Modeler3DView({ model, selection, onSelect }) {
       <directionalLight position={[8, 14, 6]} intensity={2.1} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
       <hemisphereLight args={['#fff8e8', '#756b61', 0.8]} />
       <gridHelper args={[80, 800, '#b86542', '#d4cec4']} position={[bounds.x, 0, bounds.z]} />
-      {model.walls.map((wall) => <WallMesh key={wall.id} wall={wall} openings={model.openings} selected={selection?.collection === 'walls' && selection.id === wall.id} onSelect={onSelect} />)}
-      {model.openings.map((opening) => { const wall = model.walls.find((item) => item.id === opening.wallId); return wall ? <OpeningMesh key={opening.id} opening={opening} wall={wall} selected={selection?.collection === 'openings' && selection.id === opening.id} onSelect={onSelect} /> : null })}
+      {model.walls.filter((wall)=>!hiddenWalls.has(wall.id)).map((wall) => <WallMesh key={wall.id} wall={wall} openings={model.openings} selected={selection?.collection === 'walls' && selection.id === wall.id} onSelect={onSelect} />)}
+      {model.openings.map((opening) => { const wall = model.walls.find((item) => item.id === opening.wallId); return wall&&!hiddenWalls.has(wall.id) ? <OpeningMesh key={opening.id} opening={opening} wall={wall} selected={selection?.collection === 'openings' && selection.id === opening.id} onSelect={onSelect} /> : null })}
       {model.furniture.map((item) => <FurnitureMesh key={item.id} item={item} selected={selection?.collection === 'furniture' && selection.id === item.id} onSelect={onSelect} />)}
       <BuildingSurfaces model={model} selection={selection} onSelect={onSelect} />
-      <CameraControls target={target} />
+      <CameraControls target={target} position={cameraPosition} />
     </Canvas>
   </div>
 }
