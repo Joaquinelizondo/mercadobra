@@ -206,18 +206,19 @@ Las formas actuales son representaciones geométricas livianas y no modelos foto
 
 1. Iniciar sesión en `/admin/login`.
 2. Abrir **Simulador 3D** o navegar a `/admin/modelador`.
-3. Asignar un nombre al proyecto.
-4. Seleccionar **Muro** y marcar puntos consecutivos sobre la rejilla.
-5. Presionar `Esc` para finalizar o cancelar la cadena de muros.
-6. Seleccionar **Puerta** o **Ventana**, configurar sus medidas y hacer clic sobre un muro.
-7. Seleccionar **Muebles**, elegir el tipo y hacer clic para ubicarlo.
-8. Usar **Seleccionar** para editar, arrastrar, rotar o eliminar elementos.
-9. Alternar entre **Planta** y **3D** para revisar el modelo.
-10. Presionar **Guardar** para persistirlo en PostgreSQL.
+3. Elegir un proyecto existente o presionar **Nuevo proyecto**.
+4. Asignar un nombre al proyecto.
+5. Seleccionar **Muro** y marcar puntos consecutivos sobre la rejilla.
+6. Presionar `Esc` para finalizar o cancelar la cadena de muros.
+7. Seleccionar **Puerta** o **Ventana**, configurar sus medidas y hacer clic sobre un muro.
+8. Seleccionar **Muebles**, elegir el tipo y hacer clic para ubicarlo.
+9. Usar **Seleccionar** para editar, arrastrar, rotar o eliminar elementos.
+10. Alternar entre **Planta** y **3D** para revisar el modelo.
+11. Presionar **Guardar** para persistirlo en PostgreSQL.
 
 ### Modelo de datos
 
-La tabla `modeler_projects`, creada mediante la migración `031_modeler_projects.sql`, almacena un proyecto por administrador en esta primera etapa:
+La tabla `modeler_projects`, creada en la migración `031_modeler_projects.sql` y ampliada por `032_modeler_multiple_projects.sql`, almacena varios proyectos por administrador. El proyecto anterior se conserva automáticamente al aplicar la migración.
 
 ```text
 modeler_projects
@@ -282,8 +283,11 @@ La integración con OpenAI utiliza salida estructurada restringida por JSON Sche
 
 Los endpoints disponibles son:
 
-- `GET /admin/modeler/project`: recupera el proyecto del administrador autenticado.
-- `PUT /admin/modeler/project`: valida y guarda el documento completo, incrementando su versión.
+- `GET /admin/modeler/projects`: lista los proyectos del administrador autenticado.
+- `POST /admin/modeler/projects`: crea un proyecto vacío independiente.
+- `GET /admin/modeler/projects/:projectId`: recupera un proyecto específico.
+- `PUT /admin/modeler/projects/:projectId`: valida y guarda el documento completo, incrementando su versión.
+- `GET|PUT /admin/modeler/project`: compatibilidad temporal con el proyecto actualizado más recientemente.
 - `POST /admin/modeler/interpret`: interpreta una instrucción y devuelve un plan de acciones sin ejecutarlo.
 
 Ambos requieren token Bearer y rol `admin`. El backend vuelve a validar todos los datos aunque el frontend ya los haya controlado:
@@ -310,6 +314,7 @@ La IA futura no ejecutará JavaScript ni código arbitrario. Los prompts se conv
 | `backend/src/server.js` | Autorización, validación y endpoints del simulador. |
 | `backend/src/repository.js` | Persistencia PostgreSQL y alternativa JSON local. |
 | `backend/src/migrations/031_modeler_projects.sql` | Tabla e índices del módulo. |
+| `backend/src/migrations/032_modeler_multiple_projects.sql` | Elimina la restricción de un único proyecto por administrador. |
 | `backend/src/dbCheck.js` | Verificación de la tabla durante el despliegue. |
 
 ### Extracción futura como aplicación independiente
@@ -539,7 +544,7 @@ Lanzamiento comercial
 - [x] Logo ÓXIDA corregido para escritorio y pantallas responsive.
 - [x] Panel de propiedades disponible en escritorio, ventanas pequeñas y móvil.
 - [ ] Relacionar cada modelo con una obra y un cliente específicos.
-- [ ] Admitir varios proyectos por administrador.
+- [x] Admitir varios proyectos por administrador, con creación, listado y apertura independiente.
 - [ ] Incorporar miniaturas, duplicación, archivado y recuperación de versiones.
 
 #### Muros y precisión de dibujo — próxima prioridad

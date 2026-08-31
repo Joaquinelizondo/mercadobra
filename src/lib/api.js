@@ -138,6 +138,22 @@ export function saveAdminModelerProject(payload, token) {
   return request('/admin/modeler/project', { method: 'PUT', token, body: JSON.stringify(payload) })
 }
 
+export function getAdminModelerProjects(token) {
+  return request('/admin/modeler/projects', { token })
+}
+
+export function getAdminModelerProjectById(projectId, token) {
+  return request(`/admin/modeler/projects/${projectId}`, { token })
+}
+
+export function createAdminModelerProject(payload, token) {
+  return request('/admin/modeler/projects', { method: 'POST', token, body: JSON.stringify(payload) })
+}
+
+export function saveAdminModelerProjectById(projectId, payload, token) {
+  return request(`/admin/modeler/projects/${projectId}`, { method: 'PUT', token, body: JSON.stringify(payload) })
+}
+
 export function interpretAdminModelerPrompt(payload, token) {
   return request('/admin/modeler/interpret', { method: 'POST', token, body: JSON.stringify(payload) })
 }

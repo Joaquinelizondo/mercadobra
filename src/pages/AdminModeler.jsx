@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import OxidaWordmark from '../components/OxidaWordmark'
-import { getAdminModelerProject, interpretAdminModelerPrompt, saveAdminModelerProject } from '../lib/api'
+import { createAdminModelerProject, getAdminModelerProjectById, getAdminModelerProjects, interpretAdminModelerPrompt, saveAdminModelerProjectById } from '../lib/api'
 import {
   EMPTY_MODEL,
   DOOR_SWINGS,
@@ -56,6 +56,7 @@ export default function AdminModeler() {
   const suppressAutosaveRef = useRef(false)
   const savingRef = useRef(false)
   const versionRef = useRef(null)
+  const projectIdRef = useRef(null)
   const modelRef = useRef(null)
   const projectNameRef = useRef('Proyecto sin nombre')
   const saveConflictRef = useRef(false)
@@ -74,6 +75,8 @@ export default function AdminModeler() {
   const [saveState, setSaveState] = useState('Cargando proyecto…')
   const [projectName, setProjectName] = useState('Proyecto sin nombre')
   const [projectVersion, setProjectVersion] = useState(null)
+  const [projectId, setProjectId] = useState(null)
+  const [projects, setProjects] = useState([])
   const [viewportRevision, setViewportRevision] = useState(0)
   const [chatOpen, setChatOpen] = useState(false)
   const [chatPrompt, setChatPrompt] = useState('')
@@ -93,26 +96,21 @@ export default function AdminModeler() {
   useEffect(() => {
     if (!adminToken || adminUser?.role !== 'admin') return
     let active = true
-    getAdminModelerProject(adminToken).then(({ project }) => {
-      if (!active) return
-      if (project) {
-        suppressAutosaveRef.current = true; versionRef.current = project.version; saveConflictRef.current = false
-        setModel(normalizeModel(project.model))
-        setProjectName(project.name || 'Proyecto sin nombre'); setProjectVersion(project.version); setSaveState(`Versión ${project.version} cargada`)
-      } else { versionRef.current = null; setSaveState('Proyecto nuevo') }
-      projectLoadedRef.current = true
-    }).catch((error) => { if (active) { projectLoadedRef.current = true; setSaveState(`Sin conexión: ${error.message}`) } })
+    ;(async()=>{try{let {projects:rows}=await getAdminModelerProjects(adminToken);if(!rows.length){const created=await createAdminModelerProject({name:'Proyecto sin nombre'},adminToken);rows=[created.project]}
+      const {project}=await getAdminModelerProjectById(rows[0].id,adminToken);if(!active)return;suppressAutosaveRef.current=true;versionRef.current=project.version;projectIdRef.current=project.id;saveConflictRef.current=false;setProjects(rows);setProjectId(project.id);setModel(normalizeModel(project.model));setProjectName(project.name||'Proyecto sin nombre');setProjectVersion(project.version);setSaveState(`Versión ${project.version} cargada`);projectLoadedRef.current=true
+    }catch(error){if(active){projectLoadedRef.current=true;setSaveState(`Sin conexión: ${error.message}`)}}})()
     return () => { active = false }
   }, [adminToken, adminUser?.role])
 
   const persistProject = useCallback(async (manual = false) => {
     const snapshot = modelRef.current; const name = projectNameRef.current
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...snapshot, updatedAt: new Date().toISOString() }))
-    if (savingRef.current || saveConflictRef.current || !adminToken) return
+    const backupKey=projectIdRef.current?`${STORAGE_KEY}:${projectIdRef.current}`:STORAGE_KEY
+    localStorage.setItem(backupKey, JSON.stringify({ ...snapshot, updatedAt: new Date().toISOString() }))
+    if (savingRef.current || saveConflictRef.current || !adminToken || !projectIdRef.current) return
     savingRef.current = true; setSaveState(manual ? 'Guardando…' : 'Guardando automáticamente…')
     try {
-      const { project: saved } = await saveAdminModelerProject({ name, model: snapshot, version: versionRef.current }, adminToken)
-      versionRef.current = saved.version; setProjectVersion(saved.version); setSaveState(`${manual ? 'Guardado' : 'Autoguardado'} · versión ${saved.version}`)
+      const { project: saved } = await saveAdminModelerProjectById(projectIdRef.current,{ name, model: snapshot, version: versionRef.current }, adminToken)
+      versionRef.current = saved.version; setProjectVersion(saved.version);setProjects((items)=>items.map((item)=>item.id===saved.id?{...item,name:saved.name,version:saved.version,updatedAt:saved.updatedAt}:item)); setSaveState(`${manual ? 'Guardado' : 'Autoguardado'} · versión ${saved.version}`)
     } catch (error) {
       if (error.code === 'MODELER_VERSION_CONFLICT' || error.status === 409) { saveConflictRef.current = true; setSaveState('Conflicto de versión · recargá antes de guardar') }
       else setSaveState(`Guardado local · ${error.message}`)
@@ -262,6 +260,15 @@ export default function AdminModeler() {
     setModel((current)=>{let next=current;for(const section of ['floor','ceiling','roof'])if(current.building?.[section]?.enabled&&!current.building[section].visible)next=updateBuilding(next,section,'visible',true);return next})
     setSaveState('Todos los elementos visibles')
   }
+  async function openProject(nextId){
+    const numericId=Number(nextId);if(!numericId||numericId===projectIdRef.current)return
+    if(savingRef.current){setSaveState('Esperá a que termine el guardado');return}await persistProject(true);if(saveConflictRef.current)return;setSaveState('Abriendo proyecto…')
+    try{const {project}=await getAdminModelerProjectById(numericId,adminToken);suppressAutosaveRef.current=true;projectIdRef.current=project.id;versionRef.current=project.version;saveConflictRef.current=false;setProjectId(project.id);setProjectName(project.name);setProjectVersion(project.version);setModel(normalizeModel(project.model));setHistory([]);setSelection(null);setHiddenWallIds([]);setWalkMode(false);setSaveState(`Versión ${project.version} cargada`)}catch(error){setSaveState(`No se pudo abrir: ${error.message}`)}
+  }
+  async function createProject(){
+    if(savingRef.current){setSaveState('Esperá a que termine el guardado');return}await persistProject(true);if(saveConflictRef.current)return;setSaveState('Creando proyecto…')
+    try{const {project}=await createAdminModelerProject({name:`Proyecto ${projects.length+1}`},adminToken);setProjects((items)=>[project,...items]);suppressAutosaveRef.current=true;projectIdRef.current=project.id;versionRef.current=project.version;saveConflictRef.current=false;setProjectId(project.id);setProjectName(project.name);setProjectVersion(project.version);setModel(normalizeModel(project.model));setHistory([]);setSelection(null);setHiddenWallIds([]);setWalkMode(false);setSaveState('Proyecto nuevo') }catch(error){setSaveState(`No se pudo crear: ${error.message}`)}
+  }
   function handlePointerDown(event){
     if(tool!=='select')return
     if(selection?.collection==='walls'){
@@ -328,6 +335,7 @@ export default function AdminModeler() {
     <aside className="modeler-properties"><p className="modeler-eyebrow">Propiedades</p><h2>{title}</h2>{tool==='wall'&&!selectedItem&&<><label>Altura <span><input type="number" min=".1" step=".1" value={settings.wallHeight} onChange={(e)=>setSettings({...settings,wallHeight:e.target.value})}/> m</span></label><label>Espesor <span><input type="number" min=".05" step=".01" value={settings.wallThickness} onChange={(e)=>setSettings({...settings,wallThickness:e.target.value})}/> m</span></label></>}{selection?.collection==='walls'&&selectedItem&&<><label>Longitud <span><input type="number" min=".1" step=".05" value={Number(wallLength(selectedItem).toFixed(3))} onFocus={remember} onChange={(e)=>updateSelectedWall('length',e.target.value)}/> m</span></label><label>Altura <span><input type="number" min=".1" step=".1" value={selectedItem.height} onFocus={remember} onChange={(e)=>updateSelectedWall('height',e.target.value)}/> m</span></label><label>Espesor <span><input type="number" min=".01" step=".01" value={selectedItem.thickness} onFocus={remember} onChange={(e)=>updateSelectedWall('thickness',e.target.value)}/> m</span></label><p className="modeler-property-note">Arrastrá los círculos del muro para mover sus extremos sobre la rejilla.</p></>}{selection?.collection==='openings'&&selectedItem&&<><label>Ancho <span><input type="number" min=".2" step=".05" value={selectedItem.width} onFocus={remember} onChange={(e)=>updateSelectedOpening('width',e.target.value)}/> m</span></label><label>Alto <span><input type="number" min=".2" step=".05" value={selectedItem.height} onFocus={remember} onChange={(e)=>updateSelectedOpening('height',e.target.value)}/> m</span></label>{selectedItem.type==='window'&&<label>Antepecho <span><input type="number" min="0" step=".05" value={selectedItem.sill} onFocus={remember} onChange={(e)=>updateSelectedOpening('sill',e.target.value)}/> m</span></label>}{selectedItem.type==='door'&&<label>Apertura <select value={selectedItem.swing||'left-in'} onFocus={remember} onChange={(e)=>updateSelectedDoorSwing(e.target.value)}><option value="left-in">Izquierda · interior</option><option value="right-in">Derecha · interior</option><option value="left-out">Izquierda · exterior</option><option value="right-out">Derecha · exterior</option></select></label>}<p className="modeler-property-note">Arrastrá el círculo para mover la abertura sin sacarla del muro.</p></>}{(tool==='door'||tool==='window')&&!selectedItem&&<><label>Ancho <span><input type="number" min=".3" step=".1" value={settings.openingWidth} onChange={(e)=>setSettings({...settings,openingWidth:e.target.value})}/> m</span></label><label>Alto <span><input type="number" min=".3" step=".1" value={settings.openingHeight} onChange={(e)=>setSettings({...settings,openingHeight:e.target.value})}/> m</span></label>{tool==='window'&&<label>Antepecho <span><input type="number" min="0" step=".1" value={settings.sill} onChange={(e)=>setSettings({...settings,sill:e.target.value})}/> m</span></label>}</>}{tool==='furniture'&&!selectedItem&&<label>Tipo <select value={settings.furnitureType} onChange={(e)=>setSettings({...settings,furnitureType:e.target.value})}>{Object.entries(FURNITURE).map(([key,item])=><option key={key} value={key}>{item.label}</option>)}</select></label>}{selection?.collection==='furniture'&&selectedItem&&<><label>Ancho <span><input type="number" min=".1" step=".1" value={selectedItem.width} onFocus={remember} onChange={(e)=>updateSelectedFurniture('width',e.target.value)}/> m</span></label><label>Profundidad <span><input type="number" min=".1" step=".1" value={selectedItem.depth} onFocus={remember} onChange={(e)=>updateSelectedFurniture('depth',e.target.value)}/> m</span></label><label>Altura <span><input type="number" min=".1" step=".1" value={selectedItem.height} onFocus={remember} onChange={(e)=>updateSelectedFurniture('height',e.target.value)}/> m</span></label><label>Posición X <span><input type="number" step=".25" value={selectedItem.x} onFocus={remember} onChange={(e)=>updateSelectedFurniture('x',e.target.value)}/> m</span></label><label>Posición Y <span><input type="number" step=".25" value={selectedItem.y} onFocus={remember} onChange={(e)=>updateSelectedFurniture('y',e.target.value)}/> m</span></label><label>Rotación <span><input type="number" min="-360" max="360" step="5" value={Math.round((selectedItem.rotation||0)*180/Math.PI)} onFocus={remember} onChange={(e)=>updateSelectedFurniture('rotation',e.target.value)}/> °</span></label><button className="modeler-property-action" onClick={rotateSelected}>Rotar 90°</button></>}
       {selection?.collection==='rooms'&&selectedItem&&<><label>Nombre <input className="modeler-room-name" value={selectedItem.name} maxLength="80" onFocus={remember} onChange={(e)=>updateSelectedRoom('name',e.target.value)}/></label><label>Tipo <select value={selectedItem.type} onFocus={remember} onChange={(e)=>updateSelectedRoom('type',e.target.value)}>{ROOM_TYPES.map((type)=><option key={type} value={type}>{({generic:'Ambiente',living:'Living',kitchen:'Cocina',bedroom:'Dormitorio',bathroom:'Baño',dining:'Comedor',garage:'Garaje',office:'Oficina'})[type]}</option>)}</select></label><label>Piso <select value={selectedItem.material} onFocus={remember} onChange={(e)=>updateSelectedRoom('material',e.target.value)}>{Object.entries(FLOOR_MATERIALS).map(([key,item])=><option key={key} value={key}>{item.label}</option>)}</select></label><label>Superficie <strong>{selectedItem.area.toFixed(2)} m²</strong></label><label>Perímetro <strong>{selectedItem.perimeter.toFixed(2)} m</strong></label><p className="modeler-property-note">El ambiente conserva sus datos mientras sus cuatro muros permanezcan cerrados.</p></>}
       {selection?.collection==='walls'&&selectedItem&&<button className="modeler-property-action" onClick={hideSelectedWall}>Ocultar este muro</button>}
+      <section className="modeler-building"><h3>Proyectos</h3><label><span>Proyecto activo</span><select value={projectId||''} onChange={(e)=>void openProject(e.target.value)}>{projects.map((item)=><option key={item.id} value={item.id}>{item.name} · v{item.version}</option>)}</select></label><button className="modeler-property-action" onClick={()=>void createProject()}>Nuevo proyecto</button><p>{projects.length} proyecto(s) disponibles.</p></section>
       <section className="modeler-building"><h3>Vistas y visibilidad</h3><label><span>Vista 3D</span><select value={cameraView} disabled={walkMode} onChange={(e)=>{setCameraView(e.target.value);setView('3d')}}><option value="perspective">Perspectiva</option><option value="front">Frente</option><option value="back">Fondo</option><option value="left">Lateral izquierdo</option><option value="right">Lateral derecho</option></select></label><button className="modeler-property-action" onClick={()=>{setView('3d');setWalkMode((active)=>!active)}}>{walkMode?'Salir del recorrido':'Recorrer interior'}</button><button className="modeler-property-action" onClick={showAll} disabled={!hiddenWallIds.length&&!['floor','ceiling','roof'].some((section)=>model.building?.[section]?.enabled&&!model.building[section].visible)}>Mostrar todo</button><p>{walkMode?'Clic en la escena para activar el mouse. Esc para salir.':`${hiddenWallIds.length} muro(s) oculto(s) temporalmente.`}</p></section>
       <section className="modeler-building"><h3>Construcción</h3>
         <label><span>Pisos automáticos</span><input type="checkbox" checked={model.building?.floor.enabled||false} onChange={(e)=>{remember();updateBuildingSetting('floor','enabled',e.target.checked)}}/></label>

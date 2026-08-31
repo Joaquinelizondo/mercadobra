@@ -799,13 +799,26 @@ async function getJsonRepo() {
     },
     async getModelerProject(ownerUserId) {
       const db = readDb()
-      return (db.modelerProjects || []).find((item) => Number(item.ownerUserId) === Number(ownerUserId)) || null
+      return (db.modelerProjects || []).filter((item) => Number(item.ownerUserId) === Number(ownerUserId)).sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt))[0] || null
     },
-    async saveModelerProject(ownerUserId, payload) {
+    async listModelerProjects(ownerUserId) {
+      const db = readDb()
+      return (db.modelerProjects || []).filter((item) => Number(item.ownerUserId) === Number(ownerUserId)).sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt))
+    },
+    async getModelerProjectById(ownerUserId, projectId) {
+      const db = readDb()
+      return (db.modelerProjects || []).find((item) => Number(item.ownerUserId) === Number(ownerUserId) && Number(item.id) === Number(projectId)) || null
+    },
+    async createModelerProject(ownerUserId, payload) {
+      const db = readDb(); if (!Array.isArray(db.modelerProjects)) db.modelerProjects = []; const now = new Date().toISOString()
+      const project = { id: nextId(db.modelerProjects), ownerUserId: Number(ownerUserId), name: payload.name, model: payload.model, version: 1, createdAt: now, updatedAt: now }
+      db.modelerProjects.push(project); writeDb(db); return project
+    },
+    async saveModelerProject(ownerUserId, payload, projectId = null) {
       const db = readDb()
       if (!Array.isArray(db.modelerProjects)) db.modelerProjects = []
       const now = new Date().toISOString()
-      let project = db.modelerProjects.find((item) => Number(item.ownerUserId) === Number(ownerUserId))
+      let project = projectId == null ? db.modelerProjects.filter((item) => Number(item.ownerUserId) === Number(ownerUserId)).sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt))[0] : db.modelerProjects.find((item) => Number(item.ownerUserId) === Number(ownerUserId) && Number(item.id) === Number(projectId))
       if (project) {
         if (payload.expectedVersion == null || Number(payload.expectedVersion) !== Number(project.version)) return null
         project.name = payload.name
@@ -1707,20 +1720,30 @@ async function getPgRepo() {
       }))
     },
     async getModelerProject(ownerUserId) {
-      const { rows } = await pool.query('SELECT * FROM modeler_projects WHERE owner_user_id = $1 LIMIT 1', [ownerUserId])
+      const { rows } = await pool.query('SELECT * FROM modeler_projects WHERE owner_user_id = $1 ORDER BY updated_at DESC LIMIT 1', [ownerUserId])
       if (!rows[0]) return null
       const row = rows[0]
       return { id: Number(row.id), ownerUserId: Number(row.owner_user_id), name: row.name, model: row.model, version: Number(row.version), createdAt: row.created_at, updatedAt: row.updated_at }
     },
-    async saveModelerProject(ownerUserId, payload) {
+    async listModelerProjects(ownerUserId) {
+      const { rows } = await pool.query('SELECT * FROM modeler_projects WHERE owner_user_id = $1 ORDER BY updated_at DESC', [ownerUserId])
+      return rows.map((row)=>({ id:Number(row.id), ownerUserId:Number(row.owner_user_id), name:row.name, model:row.model, version:Number(row.version), createdAt:row.created_at, updatedAt:row.updated_at }))
+    },
+    async getModelerProjectById(ownerUserId, projectId) {
+      const { rows } = await pool.query('SELECT * FROM modeler_projects WHERE owner_user_id = $1 AND id = $2 LIMIT 1',[ownerUserId,projectId]); const row=rows[0]
+      return row?{ id:Number(row.id), ownerUserId:Number(row.owner_user_id), name:row.name, model:row.model, version:Number(row.version), createdAt:row.created_at, updatedAt:row.updated_at }:null
+    },
+    async createModelerProject(ownerUserId, payload) {
+      const { rows } = await pool.query('INSERT INTO modeler_projects (owner_user_id,name,model) VALUES ($1,$2,$3::jsonb) RETURNING *',[ownerUserId,payload.name,JSON.stringify(payload.model)]); const row=rows[0]
+      return { id:Number(row.id), ownerUserId:Number(row.owner_user_id), name:row.name, model:row.model, version:Number(row.version), createdAt:row.created_at, updatedAt:row.updated_at }
+    },
+    async saveModelerProject(ownerUserId, payload, projectId = null) {
+      if(projectId!=null){
+        const { rows }=await pool.query(`UPDATE modeler_projects SET name=$3,model=$4::jsonb,version=version+1,updated_at=NOW() WHERE owner_user_id=$1 AND id=$2 AND version=$5 RETURNING *`,[ownerUserId,projectId,payload.name,JSON.stringify(payload.model),payload.expectedVersion]);const row=rows[0]
+        return row?{id:Number(row.id),ownerUserId:Number(row.owner_user_id),name:row.name,model:row.model,version:Number(row.version),createdAt:row.created_at,updatedAt:row.updated_at}:null
+      }
       const { rows } = await pool.query(
-        `INSERT INTO modeler_projects (owner_user_id, name, model)
-         VALUES ($1, $2, $3::jsonb)
-         ON CONFLICT (owner_user_id) DO UPDATE
-         SET name = EXCLUDED.name, model = EXCLUDED.model,
-             version = modeler_projects.version + 1, updated_at = NOW()
-         WHERE $4::integer IS NOT NULL AND modeler_projects.version = $4
-         RETURNING *`,
+        `INSERT INTO modeler_projects (owner_user_id,name,model) SELECT $1,$2,$3::jsonb WHERE $4::integer IS NULL RETURNING *`,
         [ownerUserId, payload.name, JSON.stringify(payload.model), payload.expectedVersion]
       )
       if (!rows[0]) return null

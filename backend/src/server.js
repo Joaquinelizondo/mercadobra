@@ -567,7 +567,23 @@ app.get('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async 
   return res.json({ project: await repo.getModelerProject(req.authUser.id) })
 }))
 
-app.put('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+app.get('/admin/modeler/projects', authMiddleware, adminOnly, asyncHandler(async (req,res)=>{
+  const repo=await getRepository();const projects=await repo.listModelerProjects(req.authUser.id)
+  return res.json({projects:projects.map((project)=>({id:project.id,name:project.name,version:project.version,createdAt:project.createdAt,updatedAt:project.updatedAt,wallCount:project.model?.walls?.length||0,openingCount:project.model?.openings?.length||0,furnitureCount:project.model?.furniture?.length||0}))})
+}))
+
+app.get('/admin/modeler/projects/:projectId', authMiddleware, adminOnly, asyncHandler(async(req,res)=>{
+  const projectId=validateNumber(req.params.projectId,'Proyecto',1,2147483647);const repo=await getRepository();const project=await repo.getModelerProjectById(req.authUser.id,projectId)
+  if(!project)throw new NotFoundError('Proyecto');return res.json({project})
+}))
+
+app.post('/admin/modeler/projects', authMiddleware, adminOnly, asyncHandler(async(req,res)=>{
+  const name=validateStringLength(req.body?.name||'Proyecto sin nombre','Nombre del proyecto',1,120);const repo=await getRepository()
+  const model={walls:[],openings:[],furniture:[],rooms:[],building:{floor:{enabled:true,visible:true,thickness:.12},ceiling:{enabled:false,visible:true,height:2.4,thickness:.05},roof:{enabled:false,visible:true,thickness:.15,overhang:.25}}}
+  return res.status(201).json({project:await repo.createModelerProject(req.authUser.id,{name,model})})
+}))
+
+const saveModelerProjectHandler = asyncHandler(async (req, res) => {
   const name = validateStringLength(req.body?.name || 'Proyecto sin nombre', 'Nombre del proyecto', 1, 120)
   const expectedVersion = req.body?.version == null ? null : validateNumber(req.body.version, 'Versión del proyecto', 1, 2147483647)
   const walls = req.body?.model?.walls
@@ -661,10 +677,15 @@ app.put('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async 
     material: validateEnum(room?.material ?? 'concrete', ['concrete', 'ceramic', 'wood', 'porcelain'], `Piso del ambiente ${index + 1}`),
   }))
   const repo = await getRepository()
-  const project = await repo.saveModelerProject(req.authUser.id, { name, model: { walls: normalizedWalls, openings: normalizedOpenings, furniture: normalizedFurniture, rooms: normalizedRooms, building: normalizedBuilding }, expectedVersion })
+  let projectId=req.params.projectId==null?null:validateNumber(req.params.projectId,'Proyecto',1,2147483647)
+  if(projectId==null){const current=await repo.getModelerProject(req.authUser.id);projectId=current?.id??null}
+  const project = await repo.saveModelerProject(req.authUser.id, { name, model: { walls: normalizedWalls, openings: normalizedOpenings, furniture: normalizedFurniture, rooms: normalizedRooms, building: normalizedBuilding }, expectedVersion },projectId)
   if (!project) throw new ConflictError('El proyecto fue modificado en otra pestaña o sesión. Recargalo antes de volver a guardar.', 'MODELER_VERSION_CONFLICT')
   return res.json({ project })
-}))
+})
+
+app.put('/admin/modeler/project', authMiddleware, adminOnly, saveModelerProjectHandler)
+app.put('/admin/modeler/projects/:projectId', authMiddleware, adminOnly, saveModelerProjectHandler)
 
 app.post('/admin/modeler/interpret', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const message = validateStringLength(req.body?.message, 'Instrucción', 1, 1200)
