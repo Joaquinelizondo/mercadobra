@@ -18,6 +18,10 @@ const REQUIRED_TABLES = [
   'customer_quote_messages',
   'customer_invitations',
   'modeler_projects',
+  'cost_variables',
+  'cost_variable_versions',
+  'exchange_rate_versions',
+  'cost_audit_events',
   'migrations',
 ]
 

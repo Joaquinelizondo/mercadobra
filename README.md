@@ -1544,6 +1544,193 @@ backend/.env.example → backend/.env
 - Administración puede operar catálogo, inventario, pedidos, pagos, devoluciones y clientes sin tocar código o base de datos.
 - El negocio puede medir conversión, ingresos, abandono, cumplimiento de entrega y satisfacción.
 
+## OXI Cotiza — cotizador paramétrico
+
+**Objetivo:** crear una herramienta paralela a OXI Modela para presupuestar productos y trabajos fabricables mediante variables, fórmulas, materiales, procesos y reglas comerciales administrables.
+
+OXI Modela seguirá enfocado en espacios, ambientes y documentación 2D/3D. OXI Cotiza resolverá objetos y trabajos como mesas, parrilleros, cercos, pérgolas, escaleras y estructuras personalizadas. Ambos módulos podrán intercambiar cantidades en el futuro, pero no compartirán editor ni dependerán uno del otro para funcionar.
+
+### Principio de cálculo
+
+El precio se determina con un motor matemático, determinístico, versionado y auditable. La inteligencia artificial no calcula ni decide por sí sola el precio final.
+
+- Las entradas son medidas, cantidades, opciones de diseño, materiales, procesos y condiciones del proyecto.
+- Las fórmulas convierten las entradas en superficies, longitudes, pesos, consumos, horas y subtotales.
+- Los precios unitarios y rendimientos provienen de un catálogo administrable.
+- Las reglas comerciales incorporan desperdicio, transporte, gastos generales, utilidad, impuestos y ajustes autorizados.
+- Cada cotización enviada conserva una copia histórica de entradas, fórmulas, precios y reglas para no cambiar cuando se actualice el catálogo.
+- Todo ajuste manual debe guardar valor anterior, valor nuevo, motivo, fecha y responsable.
+
+La IA será una capa de asistencia opcional. Podrá interpretar una descripción del cliente, sugerir una plantilla, proponer variables faltantes, detectar incoherencias, explicar el cálculo o redactar la propuesta. Sus sugerencias deberán convertirse en datos estructurados y ser confirmadas por una persona antes de afectar una cotización.
+
+### Modelo funcional
+
+#### Catálogo de variables
+
+Cada variable deberá tener:
+
+- Código estable y único.
+- Nombre, descripción y categoría.
+- Tipo: precio, rendimiento, porcentaje, constante o regla comercial.
+- Unidad de entrada y unidad de referencia.
+- Valor, moneda, proveedor o fuente y fecha de actualización.
+- Vigencia desde/hasta, estado y número de versión.
+- Desperdicio recomendado y notas técnicas cuando corresponda.
+- Historial completo de modificaciones.
+
+El panel administrativo permitirá editar variables individualmente, publicar una nueva versión e importar actualizaciones masivas desde un archivo validado. Una importación deberá mostrar diferencias antes de aplicarse y nunca sobrescribir cotizaciones históricas.
+
+#### Plantillas paramétricas
+
+Cada familia de producto tendrá una plantilla versionada compuesta por:
+
+- Datos generales y alcance de uso.
+- Campos de entrada con tipo, unidad, límites, valor inicial y obligatoriedad.
+- Opciones condicionales que muestran u ocultan variables según el diseño elegido.
+- Variables derivadas calculadas mediante fórmulas seguras.
+- Lista de materiales y consumibles.
+- Operaciones de taller, terminación, transporte y montaje.
+- Advertencias, supuestos y datos pendientes de confirmar.
+- Reglas de presentación comercial y exclusión de costos internos.
+
+Ejemplo inicial, **mesa circular**:
+
+```text
+area_tapa = PI * (diametro_m / 2) ^ 2
+perimetro_tapa = PI * diametro_m
+longitud_patas = altura_m * cantidad_patas
+costo_linea = cantidad * precio_unitario * (1 + desperdicio)
+costo_directo = materiales + consumibles + mano_obra + procesos + transporte
+costo_completo = costo_directo * (1 + gastos_generales)
+precio_antes_iva = costo_completo / (1 - margen_bruto_objetivo)
+precio_final = precio_antes_iva * (1 + iva)
+```
+
+La rentabilidad se define como **margen bruto sobre el precio de venta antes de IVA**, no como recargo sobre costo. El valor inicial de referencia será 35%. Por ejemplo, un costo completo de $100 con un margen bruto objetivo de 35% produce un precio antes de IVA de $153,85. Los gastos generales forman parte del costo completo; el IVA se aplica después de calcular el precio de venta.
+
+#### Motor de fórmulas
+
+- Aceptará únicamente operadores y funciones aprobados; nunca ejecutará código ingresado por el usuario.
+- Validará unidades, dependencias, divisiones por cero, ciclos y valores fuera de rango.
+- Mostrará el desglose y la procedencia de cada resultado para permitir auditoría.
+- Ejecutará los mismos casos de prueba en frontend y backend, pero el backend será la fuente autoritativa del precio.
+- Guardará versión de plantilla, versión de variables y resultado detallado utilizado en cada cálculo.
+
+#### Cotización comercial
+
+El flujo administrativo será:
+
+1. Seleccionar cliente y plantilla.
+2. Completar variables de diseño y confirmar supuestos.
+3. Revisar materiales, procesos, cantidades y advertencias.
+4. Calcular el costo interno y aplicar reglas comerciales.
+5. Autorizar ajustes manuales con motivo.
+6. Previsualizar la propuesta sin información sensible de costos.
+7. Guardar borrador, enviar, descargar PDF y registrar aceptación o rechazo.
+8. Configurar seña y convertir la cotización aceptada en proyecto.
+
+Estados propuestos: **borrador**, **calculada**, **en revisión**, **enviada**, **vista**, **aceptada**, **rechazada**, **vencida** y **convertida en proyecto**.
+
+### Arquitectura de datos propuesta
+
+| Entidad | Responsabilidad |
+| --- | --- |
+| `cost_variables` | Identidad y metadatos estables de materiales, rendimientos e indirectos. |
+| `cost_variable_versions` | Valor, moneda, fuente y vigencia de cada actualización. |
+| `quote_templates` | Familias de productos y versiones publicadas. |
+| `quote_template_inputs` | Variables solicitadas al usuario y condiciones de visibilidad. |
+| `quote_template_lines` | Fórmulas de cantidades, recursos y procesos que forman el costo. |
+| `quote_calculations` | Resultado detallado de cada ejecución del motor. |
+| `quote_snapshots` | Copia inmutable utilizada al enviar una propuesta. |
+| `quote_adjustments` | Ajustes manuales auditados y su justificación. |
+
+### Experiencia de administración
+
+La interfaz de escritorio se dividirá en:
+
+- **Variables:** catálogo, filtros, actualización, vigencia e historial.
+- **Plantillas:** campos, reglas condicionales, fórmulas y pruebas de ejemplo.
+- **Cotizador:** entradas a la izquierda, desglose técnico en el centro y resumen económico a la derecha.
+- **Importaciones:** comparación, validaciones, errores y aprobación de cambios masivos.
+- **Cotizaciones:** borradores, revisiones, documentos, mensajes, señas y seguimiento.
+
+En móvil, la creación se presentará como pasos consecutivos. Los costos internos, rendimientos, utilidad y proveedores nunca se expondrán en la propuesta pública.
+
+### Plan de implementación
+
+#### Orden de ejecución
+
+El desarrollo se realizará en este orden. No se iniciará una etapa posterior hasta verificar los criterios de la anterior, salvo trabajo técnico independiente que no comprometa decisiones pendientes.
+
+1. **Normalizar el archivo de variables.** Crear un inventario estructurado con código, categoría, unidad, tipo, valor, moneda, fuente, vigencia y estado de confirmación. Separar variables reutilizables de datos exclusivos de un proyecto.
+2. **Cerrar las reglas económicas.** Confirmar margen bruto, gastos generales, IVA, tratamiento del flete, moneda, precisión y redondeos. El margen bruto ya fue definido en 35% sobre venta antes de IVA.
+3. **Construir la base técnica.** Crear tablas y migraciones para variables, versiones, plantillas, cálculos, snapshots y ajustes auditados.
+4. **Implementar el motor matemático.** Resolver entradas, cantidades, costos, gastos generales, margen e IVA en el backend, con desglose explicable y pruebas automatizadas.
+5. **Crear la mesa circular como caso piloto.** Definir diámetro, altura, tapa, base, perfil, terminación, cantidad, transporte y montaje; validar el resultado contra un presupuesto manual conocido.
+6. **Diseñar la interfaz administrativa.** Construir catálogo de variables, editor de cotización, desglose técnico y resumen comercial sobre el motor ya verificado.
+7. **Integrar el flujo comercial.** Conectar clientes, PDF, envío, aceptación, seña, conversión a proyecto e historial inmutable.
+8. **Incorporar nuevas plantillas e IA asistiva.** Extender productos y agregar interpretación, detección de faltantes y redacción revisable sin delegar el precio final a la IA.
+
+**Paso activo:** base técnica de OXI Cotiza. Se generó un inventario inicial de 81 variables nombradas, en formatos CSV y JSON, junto con sus hallazgos en [Normalización inicial de variables](docs/OXI_COTIZA_NORMALIZACION.md). Los costos base se mantienen en UYU y las cotizaciones comerciales se emitirán en USD, usando el valor Dólar / Compra de la pizarra oficial del BROU como tipo de cambio UYU/USD versionado, con confirmación manual obligatoria al enviar. Las tablas de variables, versiones, tipo de cambio y auditoría ya están creadas y la siguiente acción es implementar el motor matemático seguro.
+
+#### Fase 0 — normalización y decisiones
+
+- [x] Clasificar las variables con nombre como reutilizables y separar las cantidades de Casa J como datos específicos de plantilla/cotización.
+- [x] Generar catálogo inicial con códigos, categorías, unidades, moneda, fórmulas de origen y fuente; queda pendiente aprobar las unidades canónicas al crear el importador.
+- [x] Definir la rentabilidad como margen bruto sobre venta antes de IVA: costo completo dividido entre `1 - margen`; aplicar IVA al final.
+- [x] Definir moneda: costos base en UYU, propuesta comercial en USD y cotización UYU/USD versionada dentro de cada presupuesto.
+- [x] Definir fuente cambiaria inicial: pizarra oficial del BROU, Dólar / Compra, actualizada diariamente y confirmada manualmente al emitir.
+- [ ] Identificar estimaciones y variables que requieren confirmación técnica.
+- [ ] Preparar casos de prueba con resultados esperados.
+
+#### Fase 1 — motor y catálogo
+
+- [x] Crear migraciones para variables, versiones, tipo de cambio y auditoría.
+- [x] Crear un importador validado e idempotente para la carga inicial de 81 variables.
+- [x] Implementar el núcleo determinístico de líneas de costo, desperdicio, gastos generales, margen bruto, dólar BROU e IVA, con pruebas unitarias.
+- [ ] Implementar el evaluador seguro de fórmulas y unidades para plantillas paramétricas.
+- [ ] Cubrir cálculos, versiones, redondeos y errores con pruebas automatizadas.
+- [ ] Crear la administración básica de variables y precios.
+
+#### Fase 2 — primera plantilla operativa
+
+- [ ] Implementar la plantilla paramétrica de mesa circular.
+- [ ] Incorporar diámetro, altura, tapa, base, perfil, terminación y cantidad.
+- [ ] Calcular materiales, consumibles, operaciones, desperdicio e indirectos.
+- [ ] Mostrar desglose técnico, advertencias y resumen comercial.
+- [ ] Validar el resultado contra un presupuesto manual conocido.
+
+#### Fase 3 — flujo comercial
+
+- [ ] Integrar el cálculo con clientes y cotizaciones existentes.
+- [ ] Guardar snapshots inmutables al enviar.
+- [ ] Incorporar previsualización, PDF, vigencia, condiciones, seña y aceptación.
+- [ ] Registrar eventos de envío, vista y decisión del cliente.
+
+#### Fase 4 — plantillas e importaciones administrables
+
+- [ ] Crear editor visual de plantillas y reglas condicionales.
+- [ ] Agregar importación masiva con vista previa y rollback lógico.
+- [ ] Extender a mesas rectangulares, parrilleros, cercos, pérgolas y estructuras.
+- [ ] Incorporar permisos separados para editar costos, fórmulas y propuestas.
+
+#### Fase 5 — asistencia con IA e integración
+
+- [ ] Interpretar descripciones y archivos para proponer entradas estructuradas.
+- [ ] Detectar datos faltantes, unidades sospechosas y resultados atípicos.
+- [ ] Redactar alcance, supuestos, exclusiones y mensajes comerciales revisables.
+- [ ] Permitir importar cantidades desde OXI Modela cuando exista una correspondencia verificable.
+- [ ] Medir precisión de sugerencias y exigir confirmación humana antes de calcular o enviar.
+
+### Criterio de salida del MVP
+
+- Una mesa circular puede cotizarse de punta a punta sin editar código ni fórmulas en la base de datos.
+- Cambiar un precio crea una nueva versión y afecta solamente cálculos nuevos o borradores actualizados explícitamente.
+- El backend reproduce el cálculo esperado y explica cada subtotal.
+- Una cotización enviada permanece inmutable y puede auditarse hasta sus variables originales.
+- El documento comercial oculta costos internos y coincide con el total autorizado.
+- Existen pruebas para valores normales, límites, datos faltantes, fórmulas inválidas y actualización de precios.
+
 ## Próximas prioridades inmediatas
 
 1. Cerrar reglas y costos de entrega antes del pago.
