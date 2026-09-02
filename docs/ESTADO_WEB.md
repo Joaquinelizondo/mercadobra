@@ -2,7 +2,7 @@
 
 Documento vivo para registrar el estado de la web, ordenar los pendientes y actualizar el avance en cada implementación.
 
-**Última revisión:** 2 de agosto de 2026
+**Última revisión:** 2 de septiembre de 2026
 
 **Producción:** <https://mercadobra.com>
 
@@ -102,6 +102,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | 2026-08-22 | Alertas y seguimiento automático de cotizaciones privadas. | Se notifican altas y nuevas solicitudes; el cliente recibe un recordatorio a los 7 días desde el envío de la propuesta y administración recibe una alerta a los 14 días. Los envíos quedan registrados para evitar duplicados. | Este cambio |
 | 2026-08-22 | Cobro de señas de proyectos. | Mercadobra configura porcentaje o monto fijo; el cliente paga con Mercado Pago o informa una transferencia. La confirmación activa el proyecto y crea hitos iniciales cuando no fueron definidos. | Este cambio |
 | 2026-08-23 | Generador de cotizaciones comerciales. | El administrador carga ítems, IVA y condiciones esenciales, y descarga una propuesta PDF breve de dos páginas con identidad Óxida Studio. Guardar un borrador no lo marca como enviado ni notifica al cliente. | Este cambio |
+| 2026-09-02 | Primer piloto de OXI Cotiza. | Se conectó el catálogo versionado al motor y se creó `/admin/cotiza` para calcular mesas circulares con desglose técnico, reglas comerciales, dólar e IVA. Queda pendiente validar los supuestos contra un presupuesto manual. | Este cambio |
 
 ## Forma de trabajo
 

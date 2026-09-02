@@ -130,6 +130,16 @@ export function getAdminCustomers(filters = {}, token) {
   return request(`/admin/customers${query ? `?${query}` : ''}`, { token })
 }
 
+export function getAdminCostVariables(token) {
+  return request('/admin/costing/variables', { token })
+}
+
+export function calculateCircularTable(payload, token) {
+  return request('/admin/costing/templates/circular-table/calculate', {
+    method: 'POST', token, body: JSON.stringify(payload),
+  })
+}
+
 export function getAdminModelerProject(token) {
   return request('/admin/modeler/project', { token })
 }

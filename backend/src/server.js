@@ -51,6 +51,7 @@ import {
 import { isCloudinaryConfigured, uploadProductImage } from './cloudinaryService.js'
 import { createQuotePdf } from './quotePdfService.js'
 import { interpretModelerPrompt } from './modelerChatService.js'
+import { calculateCircularTableWithCurrentVariables, getCurrentCostVariables } from './costingService.js'
 
 // Validar env vars antes de iniciar la app
 validateEnvVars()
@@ -560,6 +561,19 @@ app.get('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req, 
   const repo = await getRepository()
   const rows = await repo.getAdminCustomers({ q: req.query.q || '', status })
   return res.json({ rows, total: rows.length })
+}))
+
+app.get('/admin/costing/variables', authMiddleware, adminOnly, asyncHandler(async (_req, res) => {
+  const rows = await getCurrentCostVariables()
+  return res.json({ rows, total: rows.length })
+}))
+
+app.post('/admin/costing/templates/circular-table/calculate', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  try {
+    return res.json(await calculateCircularTableWithCurrentVariables(req.body || {}))
+  } catch (error) {
+    throw new ValidationError(error.message || 'No se pudo calcular la mesa circular.')
+  }
 }))
 
 app.get('/admin/modeler/project', authMiddleware, adminOnly, asyncHandler(async (req, res) => {

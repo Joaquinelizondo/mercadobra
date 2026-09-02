@@ -1671,7 +1671,7 @@ El desarrollo se realizará en este orden. No se iniciará una etapa posterior h
 7. **Integrar el flujo comercial.** Conectar clientes, PDF, envío, aceptación, seña, conversión a proyecto e historial inmutable.
 8. **Incorporar nuevas plantillas e IA asistiva.** Extender productos y agregar interpretación, detección de faltantes y redacción revisable sin delegar el precio final a la IA.
 
-**Paso activo:** base técnica de OXI Cotiza. Se generó un inventario inicial de 81 variables nombradas, en formatos CSV y JSON, junto con sus hallazgos en [Normalización inicial de variables](docs/OXI_COTIZA_NORMALIZACION.md). Los costos base se mantienen en UYU y las cotizaciones comerciales se emitirán en USD, usando el valor Dólar / Compra de la pizarra oficial del BROU como tipo de cambio UYU/USD versionado, con confirmación manual obligatoria al enviar. Las tablas de variables, versiones, tipo de cambio y auditoría ya están creadas y la siguiente acción es implementar el motor matemático seguro.
+**Paso activo:** primera plantilla operativa de OXI Cotiza. El panel `/admin/cotiza` ya permite calcular una mesa circular piloto desde medidas, 81 variables versionadas, flete y tipo de cambio confirmado manualmente. El backend arma el desglose y aplica gastos generales, margen bruto e IVA. Los supuestos de materiales, rendimientos y terminación todavía deben validarse contra un presupuesto manual antes de usar el resultado como propuesta comercial.
 
 #### Fase 0 — normalización y decisiones
 
@@ -1694,10 +1694,10 @@ El desarrollo se realizará en este orden. No se iniciará una etapa posterior h
 
 #### Fase 2 — primera plantilla operativa
 
-- [ ] Implementar la plantilla paramétrica de mesa circular.
-- [ ] Incorporar diámetro, altura, tapa, base, perfil, terminación y cantidad.
-- [ ] Calcular materiales, consumibles, operaciones, desperdicio e indirectos.
-- [ ] Mostrar desglose técnico, advertencias y resumen comercial.
+- [x] Implementar la plantilla paramétrica piloto de mesa circular.
+- [x] Incorporar diámetro, altura, tapa, base, perfil, terminación y cantidad.
+- [x] Calcular materiales, consumibles, operaciones, desperdicio e indirectos.
+- [x] Mostrar desglose técnico, advertencias y resumen comercial.
 - [ ] Validar el resultado contra un presupuesto manual conocido.
 
 #### Fase 3 — flujo comercial
