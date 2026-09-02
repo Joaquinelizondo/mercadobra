@@ -1,11 +1,41 @@
 import { getPool, isPostgresEnabled } from './db.js'
 import { calculateQuote } from './costCalculator.js'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const initialInventoryPath = path.resolve(__dirname, '../../docs/oxi-cotiza-variables-iniciales.json')
 
 const TABLE_VARIABLE_CODES = [
   'PU_CHAPA_PARRILLERO', 'PU_TUBO40', 'PU_CONS_SOLDADURA',
   'PU_HH_OFICIAL', 'PU_HH_AYUDANTE', 'PU_FONDO', 'PU_ESMALTE_PU',
   'PU_FLETE_VIAJE', 'PU_GASTOS_GRALES', 'PU_BENEFICIO', 'PU_IVA',
 ]
+
+function getInitialCostVariables() {
+  const inventory = JSON.parse(fs.readFileSync(initialInventoryPath, 'utf8'))
+  return (inventory.records || []).map((record) => ({
+    code: record.code,
+    description: record.description,
+    category: record.category,
+    variableType: record.variable_type,
+    semanticKey: record.semantic_key || null,
+    referenceUnit: record.reference_unit,
+    reviewStatus: record.review_status,
+    versionId: null,
+    value: Number(record.initial_value),
+    currency: ['precio_unitario', 'tarifa_mano_obra', 'costo_logistica'].includes(record.variable_type) ? record.currency : null,
+    sourceLabel: 'Inventario inicial de referencia',
+    isFallback: true,
+  }))
+}
+
+function completePilotCatalog(currentVariables) {
+  const currentByCode = new Map(currentVariables.map((variable) => [variable.code, variable]))
+  const initialByCode = new Map(getInitialCostVariables().map((variable) => [variable.code, variable]))
+  return TABLE_VARIABLE_CODES.map((code) => currentByCode.get(code) || initialByCode.get(code)).filter(Boolean)
+}
 
 export async function getCurrentCostVariables() {
   if (!isPostgresEnabled()) throw new Error('OXI Cotiza requiere PostgreSQL.')
@@ -96,6 +126,14 @@ export function calculateCircularTable(input, variables) {
 
 export async function calculateCircularTableWithCurrentVariables(input) {
   const variables = await getCurrentCostVariables()
-  const selected = variables.filter((variable) => TABLE_VARIABLE_CODES.includes(variable.code))
-  return calculateCircularTable(input, selected)
+  const selected = completePilotCatalog(variables)
+  const result = calculateCircularTable(input, selected)
+  const fallbackVariables = selected.filter((variable) => variable.isFallback).map((variable) => variable.code)
+  return {
+    ...result,
+    fallbackVariables,
+    assumptions: fallbackVariables.length
+      ? [`Se usaron valores iniciales de referencia para: ${fallbackVariables.join(', ')}. Confirmarlos antes de enviar.`, ...result.assumptions]
+      : result.assumptions,
+  }
 }
