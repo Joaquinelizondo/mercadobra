@@ -3,7 +3,7 @@ services:
     name: mercadobra
     runtime: node
     rootDir: backend
-    buildCommand: npm ci && npm run migrate && npm run db:check && npm run admin:bootstrap
+    buildCommand: npm ci && npm run migrate && npm run costs:seed && npm run db:check && npm run admin:bootstrap
     startCommand: npm start
     healthCheckPath: /health
     autoDeployTrigger: commit

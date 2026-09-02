@@ -351,7 +351,7 @@ npm --prefix backend run db:check
 npm --prefix backend run dev
 ```
 
-En producción, Render ejecuta `npm ci`, las migraciones, `db:check` y `admin:bootstrap` antes de iniciar el backend. Vercel compila y publica el frontend al recibir cambios en `main`.
+En producción, Render ejecuta `npm ci`, las migraciones, la carga idempotente de variables de costos, `db:check` y `admin:bootstrap` antes de iniciar el backend. Vercel compila y publica el frontend al recibir cambios en `main`.
 
 ### Estado reciente y hoja de ruta
 
@@ -1185,7 +1185,7 @@ Build Command:
 npm ci
 
 Start Command:
-npm run migrate && npm run db:check && npm run admin:bootstrap && node src/server.js
+npm run migrate && npm run costs:seed && npm run db:check && npm run admin:bootstrap && node src/server.js
 ```
 
 En un servicio que permita Pre-Deploy Command:
@@ -1195,7 +1195,7 @@ Build Command:
 npm ci
 
 Pre-Deploy Command:
-npm run migrate && npm run db:check && npm run admin:bootstrap
+npm run migrate && npm run costs:seed && npm run db:check && npm run admin:bootstrap
 
 Start Command:
 node src/server.js
