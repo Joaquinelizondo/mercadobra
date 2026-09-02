@@ -63,7 +63,7 @@ export default function AdminCosting() {
           <label className="costing-check"><input name="includeFreight" type="checkbox" checked={form.includeFreight} onChange={change} /><span>Incluir flete</span></label>
           {form.includeFreight && <label><span>Viajes</span><input name="freightTrips" type="number" min="1" max="20" step="1" value={form.freightTrips} onChange={change} required /></label>}
         </div>
-        <button className="costing-submit" disabled={loading || !catalog.length}>{loading ? 'Calculando…' : 'Calcular cotización'}</button>
+        <button className="costing-submit" disabled={loading}>{loading ? 'Calculando…' : 'Calcular cotización'}</button>
         <p className="costing-note">El tipo de cambio debe confirmarse manualmente antes de enviar una propuesta.</p>
       </form>
 
