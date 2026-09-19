@@ -2847,6 +2847,11 @@
   margin: 0;
 }
 
+.topbar-partner-link {
+  color: #ea580c !important;
+  font-weight: 600 !important;
+}
+
 /* Company badge with avatar */
 .company-badge {
   display: flex;

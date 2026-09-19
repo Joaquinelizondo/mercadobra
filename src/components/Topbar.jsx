@@ -26,6 +26,7 @@ export default function Topbar() {
         <Link to="/" onClick={showQuoteFinder}>Inicio</Link>
         <Link to="/quienes-somos" onClick={showQuoteFinder}>Quiénes somos</Link>
         <Link to="/oxida" className="topbar-oxida-link" onClick={showQuoteFinder}><span>Óxida Studio</span></Link>
+        <Link to="/partner" className="topbar-partner-link" onClick={showQuoteFinder}>Para Profesionales</Link>
         <Link to="/contacto" onClick={showQuoteFinder}>Contáctenos</Link>
       </nav>
 
