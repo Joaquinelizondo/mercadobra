@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS b2b_projects (
+  id SERIAL PRIMARY KEY,
+  customer_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  location TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE customer_quotes 
+  ADD COLUMN IF NOT EXISTS b2b_project_id INTEGER REFERENCES b2b_projects(id) ON DELETE SET NULL;
+

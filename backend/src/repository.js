@@ -120,6 +120,7 @@ function mapCustomerQuoteRow(row) {
   return {
     id: Number(row.id),
     customerId: Number(row.customer_user_id ?? row.customerId),
+    b2bProjectId: row.b2b_project_id ? Number(row.b2b_project_id) : null,
     referenceNumber: row.reference_number ?? row.referenceNumber,
     title: row.title,
     description: row.description || '',
@@ -355,6 +356,15 @@ async function getJsonRepo() {
     },
     async getCustomerQuoteById(id) {
       const quote=(readDb().customerQuotes||[]).find((item)=>Number(item.id)===Number(id)); return quote?mapCustomerQuoteRow(quote):null
+    },
+    async createB2bProject(payload) {
+      return { id: 1, customerUserId: payload.customerUserId, name: payload.name, location: payload.location || '', status: 'active', createdAt: new Date().toISOString() }
+    },
+    async getB2bProjects(customerUserId) {
+      return []
+    },
+    async assignQuoteToB2bProject(quoteId, projectId, customerUserId) {
+      return null
     },
     async createCustomerQuote(payload) {
       const db = readDb()
@@ -1038,6 +1048,27 @@ async function getPgRepo() {
     },
     async getCustomerQuoteById(id) {
       const {rows}=await pool.query('SELECT * FROM customer_quotes WHERE id=$1 LIMIT 1',[id]); return rows[0]?mapCustomerQuoteRow(rows[0]):null
+    },
+    async createB2bProject(payload) {
+      const { rows } = await pool.query(
+        `INSERT INTO b2b_projects (customer_user_id, name, location) VALUES ($1, $2, $3) RETURNING *`,
+        [payload.customerUserId, payload.name, payload.location || '']
+      )
+      return { id: Number(rows[0].id), customerUserId: Number(rows[0].customer_user_id), name: rows[0].name, location: rows[0].location, status: rows[0].status, createdAt: rows[0].created_at }
+    },
+    async getB2bProjects(customerUserId) {
+      const { rows } = await pool.query(
+        `SELECT * FROM b2b_projects WHERE customer_user_id = $1 ORDER BY created_at DESC`,
+        [customerUserId]
+      )
+      return rows.map(r => ({ id: Number(r.id), customerUserId: Number(r.customer_user_id), name: r.name, location: r.location, status: r.status, createdAt: r.created_at }))
+    },
+    async assignQuoteToB2bProject(quoteId, projectId, customerUserId) {
+      const { rows } = await pool.query(
+        `UPDATE customer_quotes SET b2b_project_id = $1 WHERE id = $2 AND customer_user_id = $3 RETURNING *`,
+        [projectId, quoteId, customerUserId]
+      )
+      return rows[0] ? mapCustomerQuoteRow(rows[0]) : null
     },
     async createCustomerQuote(payload) {
       const { rows } = await pool.query(

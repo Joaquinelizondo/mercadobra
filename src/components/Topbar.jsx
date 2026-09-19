@@ -87,9 +87,6 @@ export default function Topbar() {
             <Link to="/cliente/login" className="topbar-user-login-btn">
               Acceso clientes
             </Link>
-            <Link to="/proveedor/login" className="topbar-login-btn">
-              Soy proveedor
-            </Link>
           </div>
         ))}
       </div>

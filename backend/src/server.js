@@ -482,6 +482,30 @@ app.patch('/customer/profile', authMiddleware, customerOnly, asyncHandler(async 
   return res.json(updated)
 }))
 
+app.get('/customer/b2b-projects', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  const rows = await repo.getB2bProjects(req.authUser.id)
+  return res.json({ rows })
+}))
+
+app.post('/customer/b2b-projects', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  const body = req.body || {}
+  const name = validateStringLength(requireField(body.name, 'Nombre de la obra'), 'Nombre', 2, 120)
+  const location = validateStringLength(body.location || '', 'Ubicación', 0, 200)
+  const project = await repo.createB2bProject({ customerUserId: req.authUser.id, name, location })
+  return res.status(201).json(project)
+}))
+
+app.patch('/customer/quotes/:quoteId/b2b-project', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1)
+  const b2bProjectId = req.body.b2bProjectId ? validateNumber(req.body.b2bProjectId, 'ID de Obra', 1) : null
+  const quote = await repo.assignQuoteToB2bProject(quoteId, b2bProjectId, req.authUser.id)
+  if (!quote) throw new NotFoundError('Cotización')
+  return res.json(quote)
+}))
+
 app.get('/customer/quotes', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
   const repo = await getRepository(); const rows = await repo.getCustomerQuotes(req.authUser.id)
   return res.json({ rows, total: rows.length })

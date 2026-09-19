@@ -229,6 +229,9 @@ export function updateCustomerQuoteStatus(quoteId, status, token) {
 export function getCustomerProfile(token) { return request('/customer/profile', { token }) }
 export function updateCustomerProfile(payload, token) { return request('/customer/profile', { method: 'PATCH', token, body: JSON.stringify(payload) }) }
 export function getMyQuotes(token) { return request('/customer/quotes', { token }) }
+export function getB2bProjects(token) { return request('/customer/b2b-projects', { token }) }
+export function createB2bProject(payload, token) { return request('/customer/b2b-projects', { method: 'POST', token, body: JSON.stringify(payload) }) }
+export function assignQuoteToB2bProject(quoteId, b2bProjectId, token) { return request(`/customer/quotes/${quoteId}/b2b-project`, { method: 'PATCH', token, body: JSON.stringify({ b2bProjectId }) }) }
 export function createMyQuote(payload, token) { return request('/customer/quotes', { method: 'POST', token, body: JSON.stringify(payload) }) }
 export function getMyQuoteMessages(quoteId, token) { return request(`/customer/quotes/${quoteId}/messages`, { token }) }
 export function sendMyQuoteMessage(quoteId, payload, token) { return request(`/customer/quotes/${quoteId}/messages`, { method: 'POST', token, body: JSON.stringify(payload) }) }

@@ -86,14 +86,14 @@ Esta es la lista ordenada de tareas accionables para completar la transición a 
 - [ ] Permitir a los administradores generar presupuestos en PDF con la identidad de OXI Partner.
 
 #### 4. Integración con OXI Modela (Simulador 3D)
-- [ ] Interceptar la selección de elementos en el lienzo 3D (muros, aberturas) para enviarlos a la API de `OXI Quote`.
-- [ ] Mostrar en un panel lateral el costo estimado (USD) en tiempo real al diseñar.
+- [x] Interceptar la selección de elementos en el lienzo 3D (muros, aberturas) para enviarlos a la API de `OXI Quote`.
+- [x] Mostrar en un panel lateral el costo estimado (USD) en tiempo real al diseñar.
 
 #### 5. Portal Dashboard B2B (OXI OS)
-- [ ] Crear modelo de datos `b2b_projects` (Obras/Edificios vinculados a un cliente corporativo).
-- [ ] Crear rol y login dedicado para clientes corporativos (Constructoras / Estudios).
-- [ ] Pantalla "Mis Obras": listado de edificios en curso.
-- [ ] Barra de trazabilidad: mostrar en qué etapa está cada componente de la obra (Ingeniería → Fabricación → Pintura → Instalación).
+- [x] Crear modelo de datos `b2b_projects` (Obras/Edificios vinculados a un cliente corporativo).
+- [x] Crear rol y login dedicado para clientes corporativos (Constructoras / Estudios) - *Se integró con el portal de cliente actual (OXI OS).*
+- [x] Pantalla "Mis Obras": listado de edificios en curso, selectores y creación de obras.
+- [x] Barra de trazabilidad: mostrar en qué etapa está cada componente de la obra (Ingeniería -> Fabricación -> Pintura -> Instalación). *Integrada en el workspace de cotizaciones.*
 
 #### 6. OXI Network (Marketplace de Fabricantes)
 - [ ] Ampliar esquema de proveedores con: capacidad de producción, especialidades (herrería, pintura, vidrios) y zona.
