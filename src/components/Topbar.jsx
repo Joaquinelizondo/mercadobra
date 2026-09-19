@@ -84,6 +84,9 @@ export default function Topbar() {
           </div>
         ) : (
           <div className="topbar-access-links">
+            <Link to="/cliente/login" className="topbar-user-login-btn" style={{ fontWeight: '600' }}>
+              Ingresar
+            </Link>
           </div>
         ))}
       </div>
