@@ -14,11 +14,11 @@ export default function OxiPartner() {
             red de fabricación y la gestión de la instalación.
           </p>
           <div className="partner-actions">
-            <Link to="/admin/modelador" className="partner-btn primary">
-              Probar Simulador de Costos 3D
+            <Link to="/cliente/login" className="partner-btn primary">
+              Ingresar a Mis Obras (OXI OS)
             </Link>
-            <Link to="/admin/cotiza" className="partner-btn secondary">
-              Acceder al Cotizador Interno
+            <Link to="/admin/modelador" className="partner-btn secondary">
+              Simulador de Costos 3D
             </Link>
           </div>
         </div>
