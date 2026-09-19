@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import OxidaWordmark from '../components/OxidaWordmark'
 import { createAdminModelerProject, getAdminModelerProjectById, getAdminModelerProjects, interpretAdminModelerPrompt, saveAdminModelerProjectById } from '../lib/api'
+import { formatPrice } from '../utils/format'
 import {
   EMPTY_MODEL,
   DOOR_SWINGS,
@@ -84,6 +85,9 @@ export default function AdminModeler() {
   const [pendingPlan, setPendingPlan] = useState(null)
   const [chatLoading, setChatLoading] = useState(false)
   const [orthogonalLock, setOrthogonalLock] = useState(false)
+  
+  const [quoteResult, setQuoteResult] = useState(null)
+  const [quoteLoading, setQuoteLoading] = useState(false)
 
   const totalLength = useMemo(() => model.walls.reduce((sum, wall) => sum + wallLength(wall), 0), [model.walls])
   const detectedRooms = useMemo(() => detectRectangularRooms(model), [model])
@@ -92,6 +96,32 @@ export default function AdminModeler() {
   const selectedItem = selection && (selection.collection==='rooms'?detectedRooms:model[selection.collection])?.find((item) => item.id === selection.id)
   modelRef.current = model
   projectNameRef.current = projectName
+
+  useEffect(() => {
+    if (!selection || !selectedItem || selection.collection !== 'walls') {
+      setQuoteResult(null)
+      return
+    }
+    
+    const widthM = wallLength(selectedItem)
+    const heightM = selectedItem.height
+    
+    const payload = {
+      widthM,
+      heightM,
+      quantity: 1,
+      exchangeRateUyuPerUsd: 40,
+      includeFreight: false
+    }
+    
+    setQuoteLoading(true)
+    import('../lib/api').then(({ calculateTemplate }) => {
+      calculateTemplate('OXI_DIVIDER_D01', payload, adminToken)
+        .then(res => setQuoteResult(res))
+        .catch(err => { console.error(err); setQuoteResult(null); })
+        .finally(() => setQuoteLoading(false))
+    })
+  }, [selection?.id, selectedItem?.start?.x, selectedItem?.start?.y, selectedItem?.end?.x, selectedItem?.end?.y, selectedItem?.height, adminToken])
 
   useEffect(() => {
     if (!adminToken || adminUser?.role !== 'admin') return
@@ -335,6 +365,18 @@ export default function AdminModeler() {
     <aside className="modeler-properties"><p className="modeler-eyebrow">Propiedades</p><h2>{title}</h2>{tool==='wall'&&!selectedItem&&<><label>Altura <span><input type="number" min=".1" step=".1" value={settings.wallHeight} onChange={(e)=>setSettings({...settings,wallHeight:e.target.value})}/> m</span></label><label>Espesor <span><input type="number" min=".05" step=".01" value={settings.wallThickness} onChange={(e)=>setSettings({...settings,wallThickness:e.target.value})}/> m</span></label></>}{selection?.collection==='walls'&&selectedItem&&<><label>Longitud <span><input type="number" min=".1" step=".05" value={Number(wallLength(selectedItem).toFixed(3))} onFocus={remember} onChange={(e)=>updateSelectedWall('length',e.target.value)}/> m</span></label><label>Altura <span><input type="number" min=".1" step=".1" value={selectedItem.height} onFocus={remember} onChange={(e)=>updateSelectedWall('height',e.target.value)}/> m</span></label><label>Espesor <span><input type="number" min=".01" step=".01" value={selectedItem.thickness} onFocus={remember} onChange={(e)=>updateSelectedWall('thickness',e.target.value)}/> m</span></label><p className="modeler-property-note">Arrastrá los círculos del muro para mover sus extremos sobre la rejilla.</p></>}{selection?.collection==='openings'&&selectedItem&&<><label>Ancho <span><input type="number" min=".2" step=".05" value={selectedItem.width} onFocus={remember} onChange={(e)=>updateSelectedOpening('width',e.target.value)}/> m</span></label><label>Alto <span><input type="number" min=".2" step=".05" value={selectedItem.height} onFocus={remember} onChange={(e)=>updateSelectedOpening('height',e.target.value)}/> m</span></label>{selectedItem.type==='window'&&<label>Antepecho <span><input type="number" min="0" step=".05" value={selectedItem.sill} onFocus={remember} onChange={(e)=>updateSelectedOpening('sill',e.target.value)}/> m</span></label>}{selectedItem.type==='door'&&<label>Apertura <select value={selectedItem.swing||'left-in'} onFocus={remember} onChange={(e)=>updateSelectedDoorSwing(e.target.value)}><option value="left-in">Izquierda · interior</option><option value="right-in">Derecha · interior</option><option value="left-out">Izquierda · exterior</option><option value="right-out">Derecha · exterior</option></select></label>}<p className="modeler-property-note">Arrastrá el círculo para mover la abertura sin sacarla del muro.</p></>}{(tool==='door'||tool==='window')&&!selectedItem&&<><label>Ancho <span><input type="number" min=".3" step=".1" value={settings.openingWidth} onChange={(e)=>setSettings({...settings,openingWidth:e.target.value})}/> m</span></label><label>Alto <span><input type="number" min=".3" step=".1" value={settings.openingHeight} onChange={(e)=>setSettings({...settings,openingHeight:e.target.value})}/> m</span></label>{tool==='window'&&<label>Antepecho <span><input type="number" min="0" step=".1" value={settings.sill} onChange={(e)=>setSettings({...settings,sill:e.target.value})}/> m</span></label>}</>}{tool==='furniture'&&!selectedItem&&<label>Tipo <select value={settings.furnitureType} onChange={(e)=>setSettings({...settings,furnitureType:e.target.value})}>{Object.entries(FURNITURE).map(([key,item])=><option key={key} value={key}>{item.label}</option>)}</select></label>}{selection?.collection==='furniture'&&selectedItem&&<><label>Ancho <span><input type="number" min=".1" step=".1" value={selectedItem.width} onFocus={remember} onChange={(e)=>updateSelectedFurniture('width',e.target.value)}/> m</span></label><label>Profundidad <span><input type="number" min=".1" step=".1" value={selectedItem.depth} onFocus={remember} onChange={(e)=>updateSelectedFurniture('depth',e.target.value)}/> m</span></label><label>Altura <span><input type="number" min=".1" step=".1" value={selectedItem.height} onFocus={remember} onChange={(e)=>updateSelectedFurniture('height',e.target.value)}/> m</span></label><label>Posición X <span><input type="number" step=".25" value={selectedItem.x} onFocus={remember} onChange={(e)=>updateSelectedFurniture('x',e.target.value)}/> m</span></label><label>Posición Y <span><input type="number" step=".25" value={selectedItem.y} onFocus={remember} onChange={(e)=>updateSelectedFurniture('y',e.target.value)}/> m</span></label><label>Rotación <span><input type="number" min="-360" max="360" step="5" value={Math.round((selectedItem.rotation||0)*180/Math.PI)} onFocus={remember} onChange={(e)=>updateSelectedFurniture('rotation',e.target.value)}/> °</span></label><button className="modeler-property-action" onClick={rotateSelected}>Rotar 90°</button></>}
       {selection?.collection==='rooms'&&selectedItem&&<><label>Nombre <input className="modeler-room-name" value={selectedItem.name} maxLength="80" onFocus={remember} onChange={(e)=>updateSelectedRoom('name',e.target.value)}/></label><label>Tipo <select value={selectedItem.type} onFocus={remember} onChange={(e)=>updateSelectedRoom('type',e.target.value)}>{ROOM_TYPES.map((type)=><option key={type} value={type}>{({generic:'Ambiente',living:'Living',kitchen:'Cocina',bedroom:'Dormitorio',bathroom:'Baño',dining:'Comedor',garage:'Garaje',office:'Oficina'})[type]}</option>)}</select></label><label>Piso <select value={selectedItem.material} onFocus={remember} onChange={(e)=>updateSelectedRoom('material',e.target.value)}>{Object.entries(FLOOR_MATERIALS).map(([key,item])=><option key={key} value={key}>{item.label}</option>)}</select></label><label>Superficie <strong>{selectedItem.area.toFixed(2)} m²</strong></label><label>Perímetro <strong>{selectedItem.perimeter.toFixed(2)} m</strong></label><p className="modeler-property-note">El ambiente conserva sus datos mientras sus cuatro muros permanezcan cerrados.</p></>}
       {selection?.collection==='walls'&&selectedItem&&<button className="modeler-property-action" onClick={hideSelectedWall}>Ocultar este muro</button>}
+      
+      {selection?.collection==='walls'&&selectedItem&&<section className="modeler-building" style={{marginTop: '1.5rem', background: '#f5efe6', padding: '1rem', borderRadius: '8px', border: '1px solid #e1dcd4'}}>
+        <h3>OXI Quote (En tiempo real)</h3>
+        {quoteLoading ? <p>Calculando costo estructural...</p> : quoteResult ? (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}><span>Costo Directo</span><strong>{formatPrice(quoteResult.totals.directCostUyu, 'UYU')}</strong></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}><span>Precio Venta</span><strong>{formatPrice(quoteResult.totals.priceFinalUsd, 'USD')}</strong></div>
+            <button className="modeler-property-action" style={{ background: '#b85e39', color: '#fff', borderColor: '#9c4529' }} onClick={() => alert('Simulación: Se agregó "OXI Divider D01" al carrito de la obra.')}>Convertir a Divisor Metálico</button>
+          </div>
+        ) : <p>Error al cotizar.</p>}
+      </section>}
+
       <section className="modeler-building"><h3>Proyectos</h3><label><span>Proyecto activo</span><select value={projectId||''} onChange={(e)=>void openProject(e.target.value)}>{projects.map((item)=><option key={item.id} value={item.id}>{item.name} · v{item.version}</option>)}</select></label><button className="modeler-property-action" onClick={()=>void createProject()}>Nuevo proyecto</button><p>{projects.length} proyecto(s) disponibles.</p></section>
       <section className="modeler-building"><h3>Vistas y visibilidad</h3><label><span>Vista 3D</span><select value={cameraView} disabled={walkMode} onChange={(e)=>{setCameraView(e.target.value);setView('3d')}}><option value="perspective">Perspectiva</option><option value="front">Frente</option><option value="back">Fondo</option><option value="left">Lateral izquierdo</option><option value="right">Lateral derecho</option></select></label><button className="modeler-property-action" onClick={()=>{setView('3d');setWalkMode((active)=>!active)}}>{walkMode?'Salir del recorrido':'Recorrer interior'}</button><button className="modeler-property-action" onClick={showAll} disabled={!hiddenWallIds.length&&!['floor','ceiling','roof'].some((section)=>model.building?.[section]?.enabled&&!model.building[section].visible)}>Mostrar todo</button><p>{walkMode?'Clic en la escena para activar el mouse. Esc para salir.':`${hiddenWallIds.length} muro(s) oculto(s) temporalmente.`}</p></section>
       <section className="modeler-building"><h3>Construcción</h3>

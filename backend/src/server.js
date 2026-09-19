@@ -51,7 +51,7 @@ import {
 import { isCloudinaryConfigured, uploadProductImage } from './cloudinaryService.js'
 import { createQuotePdf } from './quotePdfService.js'
 import { interpretModelerPrompt } from './modelerChatService.js'
-import { calculateCircularTableWithCurrentVariables, getCurrentCostVariables } from './costingService.js'
+import { calculateTemplateWithCurrentVariables, calculateCircularTableWithCurrentVariables, getCurrentCostVariables } from './costingService.js'
 
 // Validar env vars antes de iniciar la app
 validateEnvVars()
@@ -573,6 +573,14 @@ app.post('/admin/costing/templates/circular-table/calculate', authMiddleware, ad
     return res.json(await calculateCircularTableWithCurrentVariables(req.body || {}))
   } catch (error) {
     throw new ValidationError(error.message || 'No se pudo calcular la mesa circular.')
+  }
+}))
+
+app.post('/admin/costing/templates/:templateCode/calculate', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  try {
+    return res.json(await calculateTemplateWithCurrentVariables(req.params.templateCode, req.body || {}))
+  } catch (error) {
+    throw new ValidationError(error.message || 'No se pudo calcular la plantilla.')
   }
 }))
 

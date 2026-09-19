@@ -39,6 +39,67 @@ El pie de página incluye un acceso administrativo discreto y minimalista con un
 
 Los accesos públicos **Mi cuenta** y **Soy proveedor** se encuentran temporalmente ocultos en el encabezado. No fueron eliminados: las rutas, pantallas y lógica de autenticación continúan activas para reintroducirlas cuando el producto lo requiera. Si existe una sesión iniciada, sus controles permanecen disponibles.
 
+## Visión Estratégica: OXI Platform
+
+El objetivo a largo plazo de Mercadobra y Óxida es trascender el modelo lineal de fabricación para convertirse en una **plataforma escalable de soluciones metálicas para la construcción (ConstructionTech)**. 
+
+La propuesta de valor central se basa en un modelo donde el cliente (constructoras, desarrolladores, estudios) define su necesidad, y la plataforma OXI cotiza, diseña, asigna fabricación, controla calidad y coordina instalación.
+
+Para lograr un modelo de negocio altamente escalable y atractivo, el ecosistema se proyecta sobre 5 pilares:
+
+1. **OXI Quote (Cotizador Inteligente):** Motor interno que procesa requerimientos, planos o descripciones para identificar productos, estimar materiales, horas, costos de proveedores y logística. Genera cotizaciones precisas de forma instantánea y alimenta un activo de datos históricos de costos.
+2. **Productización (Catálogo Paramétrico):** Estandarizar el 60-70% de la oferta a medida en familias parametrizables (OXI Doors, Dividers, Rail, etc.). Permite vender soluciones que el cliente percibe como personalizadas, operando sobre una arquitectura de fabricación repetible.
+3. **OXI Network (Red de Fabricación Distribuida):** Una plataforma (Marketplace de proveedores) que conecta la demanda con una red descentralizada de fabricantes, herreros e instaladores homologados. OXI adjudica trabajos basándose en precio, capacidad y calidad histórica, escalando la producción sin multiplicar la estructura fija.
+4. **OXI Partner (Metal Solutions as a Service):** Contratos B2B con constructoras para funcionar como proveedor transversal. Al entrar un edificio, la plataforma analiza planos, identifica todos los paquetes metálicos y gestiona su ejecución completa (desde la ingeniería hasta la garantía).
+5. **OXI OS (SaaS para Construcción):** Apertura de la tecnología para que las constructoras puedan cargar un plano y obtener automáticamente detección de elementos, estimaciones, solicitud de presupuestos (RFQ) a proveedores y seguimiento de ejecución.
+
+**Estrella Norte (North Star Metric):** En lugar de medir solo la facturación aislada, el objetivo es maximizar el **GMV (Gross Merchandise Value) anual gestionado**, capturando valor a través del margen de proyectos, fee de red de fabricación y contratos recurrentes.
+
+### Roadmap Comercial de Corto Plazo (90 Días)
+
+Para materializar esta visión técnica y comercial, el enfoque de desarrollo prioriza:
+
+1. **Estructurar la Lógica de OXI Quote (Back-end):** 
+   Crear los endpoints en Node.js que permitan cotizar cualquier requerimiento multiplicando cantidades (kg, horas) por la tabla de variables de costos (`cost_variable_versions`). Esto otorga flexibilidad para cotizar estándar o a medida sin atarse a un catálogo fijo.
+2. **Conexión de OXI Modela con el Motor de Costos:** 
+   Transformar el simulador 3D de una herramienta geométrica a una herramienta de viabilidad financiera. Al dibujar muros y aberturas, la plataforma debe estimar costos en tiempo real basados en la lógica de OXI Quote.
+3. **El Portal B2B (Dashboard de Constructoras / OXI Partner):** 
+   Desarrollar una interfaz dedicada para clientes corporativos donde puedan visualizar sus proyectos en curso (ej. edificios), subir planos, y monitorear el estado de ingeniería, fabricación e instalación de todas sus soluciones metálicas con total transparencia.
+4. **OXI Network (Desarrollo de Proveedores):** 
+   Ampliar el dashboard de proveedores existente para manejar RFQs (solicitudes de presupuesto) y asignaciones de trabajo a herreros u oficios homologados, descentralizando la producción.
+
+### Backlog de Ejecución (OXI Platform)
+
+Esta es la lista ordenada de tareas accionables para completar la transición a plataforma:
+
+#### 1. Landing OXI Partner (B2B)
+- [x] Crear ruta y carátula pública `/partner` diseñada para estudios y constructoras.
+
+#### 2. Motor OXI Quote (Backend)
+- [x] Base de datos de costos variables (`cost_variables`, `cost_variable_versions`).
+- [x] Servicio de costeo matemático en Node (`costingService.js`, `costCalculator.js`).
+- [ ] Crear endpoint de API (`POST /admin/quote/calculate`) para exponer el servicio a las interfaces.
+- [ ] Construir en código las "recetas" (plantillas) de familias paramétricas clave (OXI Divider, OXI Door, etc.).
+
+#### 3. Interfaz OXI Quote (Frontend)
+- [x] Desarrollar la pantalla del cotizador manual interno (`/admin/cotiza`) conectada al endpoint.
+- [ ] Permitir a los administradores generar presupuestos en PDF con la identidad de OXI Partner.
+
+#### 4. Integración con OXI Modela (Simulador 3D)
+- [ ] Interceptar la selección de elementos en el lienzo 3D (muros, aberturas) para enviarlos a la API de `OXI Quote`.
+- [ ] Mostrar en un panel lateral el costo estimado (USD) en tiempo real al diseñar.
+
+#### 5. Portal Dashboard B2B (OXI OS)
+- [ ] Crear modelo de datos `b2b_projects` (Obras/Edificios vinculados a un cliente corporativo).
+- [ ] Crear rol y login dedicado para clientes corporativos (Constructoras / Estudios).
+- [ ] Pantalla "Mis Obras": listado de edificios en curso.
+- [ ] Barra de trazabilidad: mostrar en qué etapa está cada componente de la obra (Ingeniería → Fabricación → Pintura → Instalación).
+
+#### 6. OXI Network (Marketplace de Fabricantes)
+- [ ] Ampliar esquema de proveedores con: capacidad de producción, especialidades (herrería, pintura, vidrios) y zona.
+- [ ] Desarrollar sistema de adjudicación (RFQ): permitir al admin fragmentar un proyecto y emitir órdenes de trabajo hacia el dashboard del proveedor.
+- [ ] Permitir al proveedor actualizar el % de avance de su orden desde `/proveedor`.
+
 ## Experiencia pública e identidad vigente
 
 ### Escritura de marca

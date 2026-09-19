@@ -124,10 +124,85 @@ export function calculateCircularTable(input, variables) {
   }
 }
 
+export function calculateOxiDivider(input, variables) {
+  const widthM = Number(input.widthM)
+  const heightM = Number(input.heightM)
+  const quantity = Number(input.quantity)
+  const exchangeRateUyuPerUsd = Number(input.exchangeRateUyuPerUsd)
+  
+  if (!Number.isFinite(widthM) || widthM < 0.3 || widthM > 5) throw new Error('El ancho debe estar entre 0,30 m y 5 m.')
+  if (!Number.isFinite(heightM) || heightM < 0.5 || heightM > 3.5) throw new Error('La altura debe estar entre 0,50 m y 3,50 m.')
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 50) throw new Error('La cantidad debe ser un entero entre 1 y 50.')
+
+  const catalog = new Map(variables.map((variable) => [variable.code, variable]))
+  
+  const perimeterM = (widthM + heightM) * 2
+  const internalDivisionsM = heightM * 3 + widthM * 2
+  const tubeLengthPerDividerM = perimeterM + internalDivisionsM
+  const tubeLengthM = tubeLengthPerDividerM * quantity
+  
+  const finishAreaM2 = (tubeLengthPerDividerM * 0.16) * quantity
+  const workshopHours = (4 + tubeLengthPerDividerM * 0.3) * quantity
+  const helperHours = workshopHours * 0.5
+  const weldingKg = tubeLengthM * 0.05
+
+  const lines = [
+    line(catalog, 'PU_TUBO40', tubeLengthM, 0.1),
+    line(catalog, 'PU_CONS_SOLDADURA', weldingKg, 0.1),
+    line(catalog, 'PU_HH_OFICIAL', workshopHours),
+    line(catalog, 'PU_HH_AYUDANTE', helperHours),
+    line(catalog, 'PU_FONDO', finishAreaM2, 0.1),
+    line(catalog, 'PU_ESMALTE_PU', finishAreaM2, 0.1),
+  ]
+  if (input.includeFreight) lines.push(line(catalog, 'PU_FLETE_VIAJE', Number(input.freightTrips || 1)))
+
+  const result = calculateQuote({
+    lines,
+    overheadRate: requireVariable(catalog, 'PU_GASTOS_GRALES').value,
+    grossMarginRate: requireVariable(catalog, 'PU_BENEFICIO').value,
+    exchangeRateUyuPerUsd,
+    taxRate: requireVariable(catalog, 'PU_IVA').value,
+  })
+
+  return {
+    template: { code: 'OXI_DIVIDER_D01', name: 'OXI Divider D01', version: 1 },
+    inputs: { widthM, heightM, quantity, includeFreight: Boolean(input.includeFreight), freightTrips: input.includeFreight ? Number(input.freightTrips || 1) : 0 },
+    derived: { tubeLengthM, finishAreaM2, workshopHours, helperHours, weldingKg },
+    ...result,
+    assumptions: [
+      'Cálculo de hierro basado en TUBO 40x40. Vidrios no incluidos en esta versión del piloto.',
+      'Horas y consumos son supuestos iniciales; validar contra un presupuesto manual antes de enviar.',
+    ],
+  }
+}
+
 export async function calculateCircularTableWithCurrentVariables(input) {
   const variables = await getCurrentCostVariables()
   const selected = completePilotCatalog(variables)
   const result = calculateCircularTable(input, selected)
+  const fallbackVariables = selected.filter((variable) => variable.isFallback).map((variable) => variable.code)
+  return {
+    ...result,
+    fallbackVariables,
+    assumptions: fallbackVariables.length
+      ? [`Se usaron valores iniciales de referencia para: ${fallbackVariables.join(', ')}. Confirmarlos antes de enviar.`, ...result.assumptions]
+      : result.assumptions,
+  }
+}
+
+export async function calculateTemplateWithCurrentVariables(templateCode, input) {
+  const variables = await getCurrentCostVariables()
+  const selected = completePilotCatalog(variables)
+  
+  let result
+  if (templateCode === 'MESA_CIRCULAR_001') {
+    result = calculateCircularTable(input, selected)
+  } else if (templateCode === 'OXI_DIVIDER_D01') {
+    result = calculateOxiDivider(input, selected)
+  } else {
+    throw new Error(`Plantilla no reconocida: ${templateCode}`)
+  }
+  
   const fallbackVariables = selected.filter((variable) => variable.isFallback).map((variable) => variable.code)
   return {
     ...result,

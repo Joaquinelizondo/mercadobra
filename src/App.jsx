@@ -27,6 +27,7 @@ import AdminQuoteWorkspace from './pages/AdminQuoteWorkspace'
 import AdminCustomerQuotes from './pages/AdminCustomerQuotes'
 import AdminModeler from './pages/AdminModeler'
 import AdminCosting from './pages/AdminCosting'
+import OxiPartner from './pages/OxiPartner'
 import './pages/AdminCustomRequests.css'
 import { useState } from 'react'
 import heroImg from './assets/hero.png'
@@ -891,6 +892,7 @@ export default function App() {
         <Route path="/proveedor" element={<SupplierDashboard />} />
         <Route path="/seguimiento/:trackingToken" element={<OrderTracking />} />
         <Route path="/admin/cotizaciones" element={<AdminQuoteConsultations />} />
+        <Route path="/partner" element={<OxiPartner />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

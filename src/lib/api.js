@@ -140,6 +140,12 @@ export function calculateCircularTable(payload, token) {
   })
 }
 
+export function calculateTemplate(templateCode, payload, token) {
+  return request(`/admin/costing/templates/${templateCode}/calculate`, {
+    method: 'POST', token, body: JSON.stringify(payload),
+  })
+}
+
 export function getAdminModelerProject(token) {
   return request('/admin/modeler/project', { token })
 }
