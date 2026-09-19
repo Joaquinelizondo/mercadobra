@@ -877,6 +877,7 @@ export default function App() {
         <Route path="/cliente/login" element={<CustomerLogin />} />
         <Route path="/cliente/registro" element={<CustomerRegister />} />
         <Route path="/cliente" element={<CustomerPortal />} />
+        <Route path="/cliente/modelador" element={<AdminModeler />} />
         <Route path="/cliente/invitacion/:token" element={<CustomerInvitation />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/productos" element={<AdminProducts />} />

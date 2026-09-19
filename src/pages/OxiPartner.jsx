@@ -15,10 +15,7 @@ export default function OxiPartner() {
           </p>
           <div className="partner-actions">
             <Link to="/cliente/login" className="partner-btn primary">
-              Ingresar a Mis Obras (OXI OS)
-            </Link>
-            <Link to="/admin/modelador" className="partner-btn secondary">
-              Simulador de Costos 3D
+              Iniciar Sesión en OXI OS
             </Link>
           </div>
         </div>

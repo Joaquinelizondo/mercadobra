@@ -49,7 +49,9 @@ function loadLocalModel() {
 }
 
 export default function AdminModeler() {
-  const { adminUser, adminToken, logoutAdmin } = useAuth()
+  const { adminUser, adminToken, customerUser, customerToken, logoutAdmin } = useAuth()
+  const token = adminToken || customerToken
+  const userRole = adminUser ? 'admin' : 'customer'
   const canvasRef = useRef(null)
   const dragRef = useRef(null)
   const suppressClickRef = useRef(false)
@@ -116,36 +118,36 @@ export default function AdminModeler() {
     
     setQuoteLoading(true)
     import('../lib/api').then(({ calculateTemplate }) => {
-      calculateTemplate('OXI_DIVIDER_D01', payload, adminToken)
+      calculateTemplate('OXI_DIVIDER_D01', payload, token)
         .then(res => setQuoteResult(res))
         .catch(err => { console.error(err); setQuoteResult(null); })
         .finally(() => setQuoteLoading(false))
     })
-  }, [selection?.id, selectedItem?.start?.x, selectedItem?.start?.y, selectedItem?.end?.x, selectedItem?.end?.y, selectedItem?.height, adminToken])
+  }, [selection?.id, selectedItem?.start?.x, selectedItem?.start?.y, selectedItem?.end?.x, selectedItem?.end?.y, selectedItem?.height, token])
 
   useEffect(() => {
-    if (!adminToken || adminUser?.role !== 'admin') return
+    if (!token || adminUser?.role !== 'admin') return
     let active = true
-    ;(async()=>{try{let {projects:rows}=await getAdminModelerProjects(adminToken);if(!rows.length){const created=await createAdminModelerProject({name:'Proyecto sin nombre'},adminToken);rows=[created.project]}
-      const {project}=await getAdminModelerProjectById(rows[0].id,adminToken);if(!active)return;suppressAutosaveRef.current=true;versionRef.current=project.version;projectIdRef.current=project.id;saveConflictRef.current=false;setProjects(rows);setProjectId(project.id);setModel(normalizeModel(project.model));setProjectName(project.name||'Proyecto sin nombre');setProjectVersion(project.version);setSaveState(`Versión ${project.version} cargada`);projectLoadedRef.current=true
+    ;(async()=>{try{let {projects:rows}=await getAdminModelerProjects(token);if(!rows.length){const created=await createAdminModelerProject({name:'Proyecto sin nombre'},token);rows=[created.project]}
+      const {project}=await getAdminModelerProjectById(rows[0].id,token);if(!active)return;suppressAutosaveRef.current=true;versionRef.current=project.version;projectIdRef.current=project.id;saveConflictRef.current=false;setProjects(rows);setProjectId(project.id);setModel(normalizeModel(project.model));setProjectName(project.name||'Proyecto sin nombre');setProjectVersion(project.version);setSaveState(`Versión ${project.version} cargada`);projectLoadedRef.current=true
     }catch(error){if(active){projectLoadedRef.current=true;setSaveState(`Sin conexión: ${error.message}`)}}})()
     return () => { active = false }
-  }, [adminToken, adminUser?.role])
+  }, [token, adminUser?.role])
 
   const persistProject = useCallback(async (manual = false) => {
     const snapshot = modelRef.current; const name = projectNameRef.current
     const backupKey=projectIdRef.current?`${STORAGE_KEY}:${projectIdRef.current}`:STORAGE_KEY
     localStorage.setItem(backupKey, JSON.stringify({ ...snapshot, updatedAt: new Date().toISOString() }))
-    if (savingRef.current || saveConflictRef.current || !adminToken || !projectIdRef.current) return
+    if (savingRef.current || saveConflictRef.current || !token || !projectIdRef.current) return
     savingRef.current = true; setSaveState(manual ? 'Guardando…' : 'Guardando automáticamente…')
     try {
-      const { project: saved } = await saveAdminModelerProjectById(projectIdRef.current,{ name, model: snapshot, version: versionRef.current }, adminToken)
+      const { project: saved } = await saveAdminModelerProjectById(projectIdRef.current,{ name, model: snapshot, version: versionRef.current }, token)
       versionRef.current = saved.version; setProjectVersion(saved.version);setProjects((items)=>items.map((item)=>item.id===saved.id?{...item,name:saved.name,version:saved.version,updatedAt:saved.updatedAt}:item)); setSaveState(`${manual ? 'Guardado' : 'Autoguardado'} · versión ${saved.version}`)
     } catch (error) {
       if (error.code === 'MODELER_VERSION_CONFLICT' || error.status === 409) { saveConflictRef.current = true; setSaveState('Conflicto de versión · recargá antes de guardar') }
       else setSaveState(`Guardado local · ${error.message}`)
     } finally { savingRef.current = false }
-  }, [adminToken])
+  }, [token])
 
   useEffect(() => {
     if (!projectLoadedRef.current) return
@@ -227,7 +229,7 @@ export default function AdminModeler() {
     }
   }, [model,selection,draftStart,cursor,orthogonalLock,project,view,zoom,viewportRevision,detectedRooms,hiddenWallIds])
 
-  if (!adminUser || !adminToken || adminUser.role !== 'admin') return <Navigate to="/admin/login?redirect=/admin/modelador" replace />
+  if (!adminUser || !token || adminUser.role !== 'admin') return <Navigate to="/admin/login?redirect=/admin/modelador" replace />
   const screenPoint=(event)=>{const rect=canvasRef.current.getBoundingClientRect();return{x:event.clientX-rect.left,y:event.clientY-rect.top}}
   const worldPoint=(event)=>{const p=screenPoint(event);return unproject(p.x,p.y)}
   const remember=()=>setHistory((items)=>rememberModel(items,model))
@@ -293,11 +295,11 @@ export default function AdminModeler() {
   async function openProject(nextId){
     const numericId=Number(nextId);if(!numericId||numericId===projectIdRef.current)return
     if(savingRef.current){setSaveState('Esperá a que termine el guardado');return}await persistProject(true);if(saveConflictRef.current)return;setSaveState('Abriendo proyecto…')
-    try{const {project}=await getAdminModelerProjectById(numericId,adminToken);suppressAutosaveRef.current=true;projectIdRef.current=project.id;versionRef.current=project.version;saveConflictRef.current=false;setProjectId(project.id);setProjectName(project.name);setProjectVersion(project.version);setModel(normalizeModel(project.model));setHistory([]);setSelection(null);setHiddenWallIds([]);setWalkMode(false);setSaveState(`Versión ${project.version} cargada`)}catch(error){setSaveState(`No se pudo abrir: ${error.message}`)}
+    try{const {project}=await getAdminModelerProjectById(numericId,token);suppressAutosaveRef.current=true;projectIdRef.current=project.id;versionRef.current=project.version;saveConflictRef.current=false;setProjectId(project.id);setProjectName(project.name);setProjectVersion(project.version);setModel(normalizeModel(project.model));setHistory([]);setSelection(null);setHiddenWallIds([]);setWalkMode(false);setSaveState(`Versión ${project.version} cargada`)}catch(error){setSaveState(`No se pudo abrir: ${error.message}`)}
   }
   async function createProject(){
     if(savingRef.current){setSaveState('Esperá a que termine el guardado');return}await persistProject(true);if(saveConflictRef.current)return;setSaveState('Creando proyecto…')
-    try{const {project}=await createAdminModelerProject({name:`Proyecto ${projects.length+1}`},adminToken);setProjects((items)=>[project,...items]);suppressAutosaveRef.current=true;projectIdRef.current=project.id;versionRef.current=project.version;saveConflictRef.current=false;setProjectId(project.id);setProjectName(project.name);setProjectVersion(project.version);setModel(normalizeModel(project.model));setHistory([]);setSelection(null);setHiddenWallIds([]);setWalkMode(false);setSaveState('Proyecto nuevo') }catch(error){setSaveState(`No se pudo crear: ${error.message}`)}
+    try{const {project}=await createAdminModelerProject({name:`Proyecto ${projects.length+1}`},token);setProjects((items)=>[project,...items]);suppressAutosaveRef.current=true;projectIdRef.current=project.id;versionRef.current=project.version;saveConflictRef.current=false;setProjectId(project.id);setProjectName(project.name);setProjectVersion(project.version);setModel(normalizeModel(project.model));setHistory([]);setSelection(null);setHiddenWallIds([]);setWalkMode(false);setSaveState('Proyecto nuevo') }catch(error){setSaveState(`No se pudo crear: ${error.message}`)}
   }
   function handlePointerDown(event){
     if(tool!=='select')return
@@ -331,7 +333,7 @@ export default function AdminModeler() {
   async function submitPrompt(event){
     event.preventDefault();const message=chatPrompt.trim();if(!message||chatLoading)return
     setChatMessages((items)=>[...items,{role:'user',content:message}]);setChatPrompt('');setPendingPlan(null);setChatLoading(true)
-    try{const plan=await interpretAdminModelerPrompt({message,model:{wallCount:model.walls.length,openingCount:model.openings.length,furnitureCount:model.furniture.length}},adminToken);setPendingPlan(plan);setChatMessages((items)=>[...items,{role:'assistant',content:plan.reply}])}
+    try{const plan=await interpretAdminModelerPrompt({message,model:{wallCount:model.walls.length,openingCount:model.openings.length,furnitureCount:model.furniture.length}},token);setPendingPlan(plan);setChatMessages((items)=>[...items,{role:'assistant',content:plan.reply}])}
     catch(error){setChatMessages((items)=>[...items,{role:'assistant',content:`No pude interpretar el pedido: ${error.message}`}])}
     finally{setChatLoading(false)}
   }

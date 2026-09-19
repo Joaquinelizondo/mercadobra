@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { 
   createMyQuote, getCustomerProfile, getMyQuoteMessages, getMyQuotes, 
@@ -112,6 +112,7 @@ export default function CustomerPortal() {
         <p>Gestioná tus obras, cotizaciones y proyectos desde un solo lugar.</p>
       </div>
       <div style={{display:'flex', gap:'1rem'}}>
+        <Link to="/cliente/modelador" className="outline-btn" style={{textDecoration: 'none', display: 'flex', alignItems: 'center'}}>Simulador 3D</Link>
         <button onClick={()=>setIsCreatingProject(true)} className="outline-btn">＋ Nueva Obra</button>
         <button onClick={()=>{setSelected(null); setIsCreatingProject(false)}}>＋ Nueva Cotización</button>
       </div>
