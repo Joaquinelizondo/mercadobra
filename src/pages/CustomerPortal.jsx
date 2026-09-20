@@ -140,18 +140,25 @@ export default function CustomerPortal() {
 
   return <div className="oxi-os-dashboard">
     <aside className="oxi-os-sidebar">
-      <div className="oxi-os-brand">
+      <div className="oxi-os-brand" style={{ marginBottom: '1.5rem' }}>
         <OxidaWordmark />
       </div>
       
-      <div className="oxi-os-user">
-        <strong>{profile?.name || 'Arquitecto'}</strong>
-        <span>{profile?.companyName || 'Constructora'}</span>
+      <div className="oxi-os-user" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
+        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#262626', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', flexShrink: 0 }}>
+          {profile?.name?.[0] || 'A'}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <strong>{profile?.name || 'Arquitecto'}</strong>
+          <span>{profile?.companyName || 'Constructora'}</span>
+        </div>
       </div>
       
       {b2bProjects.length > 0 && (
-        <div className="oxi-os-project-select">
-          <label>Obra seleccionada</label>
+        <div className="oxi-os-project-select" style={{ marginTop: '0.5rem' }}>
+          <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            Obra seleccionada
+          </label>
           <select 
             value={activeProjectId || ''} 
             onChange={(e) => {
@@ -159,6 +166,7 @@ export default function CustomerPortal() {
               setSelected(null);
               setIsCreatingProject(false);
               setIsCreatingQuote(false);
+              setIsEditingProfile(false);
             }}
           >
             <option value="">Todas las obras</option>
@@ -167,28 +175,28 @@ export default function CustomerPortal() {
         </div>
       )}
 
-      <div className="oxi-os-menu">
+      <div className="oxi-os-menu" style={{ marginTop: '2rem' }}>
         <button 
           className={`oxi-os-btn ${isCreatingProject ? 'secondary' : 'secondary'}`} 
           onClick={() => { setIsCreatingProject(true); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); }}
         >
-          ＋ Nueva Obra
+          <span style={{marginRight: '8px', fontWeight: 'bold'}}>＋</span> Nueva Obra
         </button>
 
         <button 
           className={`oxi-os-btn ${isCreatingQuote ? 'primary' : 'primary'}`} 
           onClick={() => { setIsCreatingQuote(true); setIsCreatingProject(false); setSelected(null); setIsEditingProfile(false); }}
         >
-          ＋ Nueva Cotización
+          <span style={{marginRight: '8px', fontWeight: 'bold'}}>＋</span> Nueva Cotización
         </button>
 
-        <Link to="/cliente/modelador" className="oxi-os-btn" style={{ border: '1px solid #404040', textAlign: 'center', marginTop: '10px', display: 'block', textDecoration: 'none' }}>
-          📐 Abrir Simulador 3D
+        <Link to="/cliente/modelador" className="oxi-os-btn" style={{ border: '1px solid #404040', textAlign: 'center', marginTop: '1rem', display: 'block', textDecoration: 'none' }}>
+          <span style={{marginRight: '8px'}}>📐</span> Abrir Simulador 3D
         </Link>
       </div>
 
       <button className="oxi-os-btn dark" onClick={() => { setIsEditingProfile(true); setIsCreatingProject(false); setIsCreatingQuote(false); setSelected(null); }} style={{ marginBottom: '10px' }}>
-        Configuración de Perfil
+        ⚙️ Configuración de Perfil
       </button>
 
       <button className="oxi-os-btn dark" onClick={logoutCustomer}>

@@ -43,3 +43,4 @@
 .oxi-os-main-header p { color: #525252; margin: 1rem 0 0; font-size: 1.1rem; }
 @media (max-width: 900px) { .oxi-os-dashboard { flex-direction: column; } .oxi-os-sidebar { width: 100%; padding: 1.5rem; border-right: none; border-bottom: 1px solid #262626; } .oxi-os-main { padding: 1.5rem; } .oxi-os-main-header h1 { font-size: 2.5rem; } }
 
+.oxi-os-sidebar .oxida-wordmark { color: #ffffff !important; transform: scale(0.6); transform-origin: left top; margin-bottom: -30px; }
