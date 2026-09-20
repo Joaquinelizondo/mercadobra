@@ -15,14 +15,20 @@ export default function Layout() {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [location.pathname])
 
+  const isOxiPlatform = location.pathname.startsWith('/cliente') || location.pathname.startsWith('/proveedor') || location.pathname.startsWith('/admin')
+
   return (
-    <main className="page">
-      <Topbar />
+    <main className="page" style={isOxiPlatform ? { padding: 0, width: '100%', maxWidth: '100%' } : {}}>
+      {!isOxiPlatform && <Topbar />}
       <Outlet />
-      <Footer />
-      <Cart />
-      {AI_CHAT_ENABLED && <ChatWidget />}
-      <WhatsAppButton />
+      {!isOxiPlatform && (
+        <>
+          <Footer />
+          <Cart />
+          {AI_CHAT_ENABLED && <ChatWidget />}
+          <WhatsAppButton />
+        </>
+      )}
     </main>
   )
 }
