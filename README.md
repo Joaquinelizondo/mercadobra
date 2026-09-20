@@ -1768,13 +1768,16 @@ El desarrollo se realizará en este orden. No se iniciará una etapa posterior h
 - [ ] Incorporar previsualización, PDF, vigencia, condiciones, seña y aceptación.
 - [ ] Registrar eventos de envío, vista y decisión del cliente.
 
-#### Fase 4 — plantillas e importaciones administrables
+#### Fase 4 — Plantillas Paramétricas y Escalabilidad Internacional (Camino A)
 
-- [ ] Crear editor visual de plantillas y reglas condicionales.
-- [ ] Agregar importación masiva con vista previa y rollback lógico.
-- [ ] Extender a mesas rectangulares, parrilleros, cercos, pérgolas y estructuras.
-- [ ] Incorporar permisos separados para editar costos, fórmulas y propuestas.
+**Objetivo:** Eliminar el código duro (hardcoding) de las fórmulas matemáticas para permitir escalabilidad a nuevos productos y expansión a otros países de forma 100% independiente de ingeniería.
 
+- [ ] **Constructor Visual de Plantillas:** Interfaz gráfica para que la administración cree nuevos productos desde cero, defina sus variables de entrada (Largo, Alto, Cantidad) y escriba fórmulas matemáticas (Ej: `(Largo * Alto) * 0.5`).
+- [ ] **Agnosticismo de Moneda y Región:** Desacoplar las fórmulas de monedas específicas (UYU/USD) o de catálogos locales, permitiendo crear "Regiones" (Ej: Chile) con sus propias tablas de variables, impuestos (IVA/VAT) y multiplicadores de riesgo.
+- [ ] **Administración Internacional:** Permitir que los precios de catálogo y las reglas de flete se configuren por país o zona operativa, haciendo que el mismo motor `OXI Cotiza` sirva globalmente.
+- [ ] Agregar importación masiva con vista previa y rollback lógico para actualizar listas de precios de acero de forma segura.
+- [ ] Extender el catálogo de plantillas iniciales sin intervención de programación (mesas rectangulares, parrilleros, cercos, pérgolas y aberturas).
+- [ ] Incorporar permisos separados: Editores de Fórmulas (Ingeniería) vs. Generadores de Propuestas (Comercial).
 #### Fase 5 — asistencia con IA e integración
 
 - [ ] Interpretar descripciones y archivos para proponer entradas estructuradas.
