@@ -6,7 +6,7 @@ import {
   createMyQuote, getCustomerProfile, getMyQuoteMessages, getMyQuotes, 
   reportQuoteDepositTransfer, respondToMyQuote, sendMyQuoteMessage, 
   startQuoteDepositCheckout, updateCustomerProfile, getB2bProjects, 
-  createB2bProject, assignQuoteToB2bProject, parseRequirementsWithAI
+  createB2bProject, assignQuoteToB2bProject
 } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import './CustomerPortal.css'
@@ -135,18 +135,7 @@ export default function CustomerPortal() {
     finally { setSaving(false) }
   }
 
-  const [isParsingAI, setIsParsingAI] = useState(false);
-  const [aiSuggestion, setAiSuggestion] = useState(null);
 
-  const parseWithAI = async () => {
-    if (!request.description) { setError('Escribí los detalles primero para que la IA los analice.'); return; }
-    setIsParsingAI(true); setError(''); setAiSuggestion(null);
-    try {
-      const res = await parseRequirementsWithAI(request.description, customerToken);
-      setAiSuggestion(res.data);
-    } catch(err) { setError(err.message); }
-    finally { setIsParsingAI(false); }
-  };
 
   if (!customerUser || !customerToken) return <Navigate to="/cliente/login?redirect=/cliente" replace />
   if (loading && !profile) return <div className="oxi-os-dashboard"><p style={{padding:'2rem'}}>Cargando OXI OS…</p></div>
@@ -287,36 +276,7 @@ export default function CustomerPortal() {
             </div>
             <form onSubmit={submitRequest}>
               <label>Título del proyecto<input value={request.title} onChange={e=>setRequest({...request,title:e.target.value})} required/></label>
-              <label>
-                Detalles
-                <textarea rows="5" value={request.description} onChange={e=>setRequest({...request,description:e.target.value})} required/>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-                  <small style={{ color: '#77736a', fontWeight: 'normal' }}>¿Tenés un texto largo o desordenado?</small>
-                  <button type="button" onClick={parseWithAI} disabled={isParsingAI} style={{ background: '#f8f5ef', color: '#ea580c', border: '1px solid #ea580c', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', cursor: 'pointer' }}>
-                    {isParsingAI ? '⏳ Analizando...' : '✨ Extraer datos con IA'}
-                  </button>
-                </div>
-              </label>
-
-              {aiSuggestion && (
-                <div style={{ background: '#f8f5ef', border: '1px solid #dcd4c9', padding: '1rem', borderRadius: '8px' }}>
-                  <h4 style={{ margin: '0 0 10px', color: '#ea580c', fontSize: '1rem' }}>🤖 OXI AI encontró:</h4>
-                  <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.9rem', color: '#1a1a1a', lineHeight: '1.5' }}>
-                    {aiSuggestion.detected_items?.map((item, idx) => (
-                      <li key={idx}>
-                        <strong>{item.quantity}x {item.product_type}</strong> — {item.material} 
-                        {item.dimensions?.length_m ? ` (${item.dimensions.length_m}m x ${item.dimensions.height_m || '?'}m)` : ''}
-                        {item.finish ? ` — ${item.finish}` : ''}
-                      </li>
-                    ))}
-                  </ul>
-                  {aiSuggestion.missing_critical_info?.length > 0 && (
-                    <div style={{ marginTop: '12px', color: '#b91c1c', fontSize: '0.85rem', background: '#fee2e2', padding: '8px', borderRadius: '4px' }}>
-                      <strong>Faltan datos clave:</strong> {aiSuggestion.missing_critical_info.join(', ')}
-                    </div>
-                  )}
-                </div>
-              )}
+              <label>Detalles<textarea rows="5" value={request.description} onChange={e=>setRequest({...request,description:e.target.value})} required/></label>
               <div>
                 <label>Presupuesto estimado<input type="number" min="0" value={request.budget} onChange={e=>setRequest({...request,budget:e.target.value})}/></label>
                 <label>Moneda<select value={request.currency} onChange={e=>setRequest({...request,currency:e.target.value})}><option>UYU</option><option>USD</option></select></label>
