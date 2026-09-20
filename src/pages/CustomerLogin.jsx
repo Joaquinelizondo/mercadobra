@@ -40,24 +40,25 @@ export default function CustomerLogin() {
   }
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <Link to="/">
-          <img src={logoImg} className="login-logo" alt="Mercadobra" />
-        </Link>
-
-        <div className="login-card-header">
-          <div className="login-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
-              <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.33 0-8 2.67-8 4v1h16v-1c0-1.33-2.67-4-8-4Z" fill="currentColor"/>
-            </svg>
+    <div className="oxi-login-layout">
+      <div className="oxi-login-cover">
+        <h1>OXI OS</h1>
+        <p>Architecture Solutions as a Service. La plataforma operativa para tus obras.</p>
+      </div>
+      <div className="oxi-login-form-container">
+        <div className="login-card" style={{ boxShadow: 'none', border: '1px solid #e5e5e5' }}>
+          <div className="login-card-header">
+            <div className="login-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+                <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.33 0-8 2.67-8 4v1h16v-1c0-1.33-2.67-4-8-4Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <h1 style={{ fontSize: '1.8rem' }}>Iniciar sesión</h1>
+            <p>Ingresá con tu cuenta corporativa.</p>
           </div>
-          <h1>Iniciar sesión</h1>
-          <p>Entrá para solicitar cotizaciones, adjuntar planos y conversar sobre cada proyecto.</p>
-        </div>
 
-        <form className="publish-form" onSubmit={handleSubmit} noValidate>
-          {error && <p className="login-error" role="alert">{error}</p>}
+          <form className="publish-form" onSubmit={handleSubmit} noValidate>
+            {error && <p className="login-error" role="alert">{error}</p>}
 
           <div className="form-row">
             <label className="form-label" htmlFor="customer-login-email">Correo electrónico</label>
@@ -101,6 +102,7 @@ export default function CustomerLogin() {
           </p>
         </form>
       </div>
+    </div>
     </div>
   )
 }

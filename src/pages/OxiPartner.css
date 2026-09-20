@@ -205,3 +205,10 @@
   }
 }
 
+.oxi-login-layout { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; background: #fff; }
+.oxi-login-cover { background: #1c1c1c; color: #fff; display: flex; flex-direction: column; justify-content: center; padding: 4rem; }
+.oxi-login-cover h1 { font-size: 5rem; letter-spacing: -0.04em; margin: 0 0 1rem; }
+.oxi-login-cover p { color: #a3a3a3; font-size: 1.25rem; max-width: 400px; line-height: 1.5; margin: 0; }
+.oxi-login-form-container { display: flex; align-items: center; justify-content: center; padding: 2rem; background: #fafafa; }
+@media (max-width: 900px) { .oxi-login-layout { grid-template-columns: 1fr; } .oxi-login-cover { padding: 3rem 2rem; min-height: 30vh; } }
+

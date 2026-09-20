@@ -57,24 +57,25 @@ export default function CustomerRegister() {
   }
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <Link to="/">
-          <img src={logoImg} className="login-logo" alt="Mercadobra" />
-        </Link>
-
-        <div className="login-card-header">
-          <div className="login-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
-              <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.33 0-8 2.67-8 4v1h16v-1c0-1.33-2.67-4-8-4Zm6-6h4v2h-4V4h-2v4h-4v2h4v4h2v-4Z" fill="currentColor"/>
-            </svg>
+    <div className="oxi-login-layout">
+      <div className="oxi-login-cover">
+        <h1>OXI OS</h1>
+        <p>Architecture Solutions as a Service. La plataforma operativa para tus obras.</p>
+      </div>
+      <div className="oxi-login-form-container">
+        <div className="login-card" style={{ boxShadow: 'none', border: '1px solid #e5e5e5' }}>
+          <div className="login-card-header">
+            <div className="login-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+                <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.33 0-8 2.67-8 4v1h16v-1c0-1.33-2.67-4-8-4Zm6-6h4v2h-4V4h-2v4h-4v2h4v4h2v-4Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <h1 style={{ fontSize: '1.8rem' }}>Crear cuenta</h1>
+            <p>Registrate para empezar a cotizar y gestionar proyectos.</p>
           </div>
-          <h1>Crear cuenta</h1>
-          <p>Registrate para guardar tus datos y cotizar más rápido en próximas compras.</p>
-        </div>
 
-        <form className="publish-form" onSubmit={handleSubmit} noValidate>
-          {error && <p className="login-error" role="alert">{error}</p>}
+          <form className="publish-form" onSubmit={handleSubmit} noValidate>
+            {error && <p className="login-error" role="alert">{error}</p>}
 
           <div className="form-row">
             <label className="form-label" htmlFor="customer-register-name">Nombre y apellido</label>
@@ -147,6 +148,7 @@ export default function CustomerRegister() {
           </p>
         </form>
       </div>
+    </div>
     </div>
   )
 }

@@ -35,24 +35,25 @@ export default function SupplierLogin() {
   }
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <Link to="/">
-          <img src={logoImg} className="login-logo" alt="Mercadobra" />
-        </Link>
-
-        <div className="login-card-header">
-          <div className="login-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
-              <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.33 0-8 2.67-8 4v1h16v-1c0-1.33-2.67-4-8-4Z" fill="currentColor"/>
-            </svg>
+    <div className="oxi-login-layout">
+      <div className="oxi-login-cover">
+        <h1>OXI Network</h1>
+        <p>Tu portal de fabricación. Recibí cotizaciones y gestioná tus pedidos.</p>
+      </div>
+      <div className="oxi-login-form-container">
+        <div className="login-card" style={{ boxShadow: 'none', border: '1px solid #e5e5e5' }}>
+          <div className="login-card-header">
+            <div className="login-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+                <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.33 0-8 2.67-8 4v1h16v-1c0-1.33-2.67-4-8-4Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <h1 style={{ fontSize: '1.8rem' }}>Red de Proveedores</h1>
+            <p>Ingresá con tu cuenta de fabricante.</p>
           </div>
-          <h1>Acceso proveedores</h1>
-          <p>Ingresá con las credenciales de tu empresa para gestionar tu catálogo.</p>
-        </div>
 
-        <form className="publish-form" onSubmit={handleSubmit} noValidate>
-          {error && <p className="login-error" role="alert">{error}</p>}
+          <form className="publish-form" onSubmit={handleSubmit} noValidate>
+            {error && <p className="login-error" role="alert">{error}</p>}
 
           <div className="form-row">
             <label className="form-label" htmlFor="login-email">Correo electrónico</label>
@@ -100,6 +101,7 @@ export default function SupplierLogin() {
           </p>
         </div>
       </div>
+    </div>
     </div>
   )
 }
