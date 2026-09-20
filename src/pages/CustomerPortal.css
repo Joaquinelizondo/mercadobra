@@ -16,3 +16,28 @@
 .kanban-card small { font-size: 0.75rem; color: #716d65; }
 .kanban-empty { color: #8a8177; font-size: 0.9rem; font-style: italic; text-align: center; margin-top: 20px; }
 
+.oxi-os-dashboard { display: flex; min-height: 100vh; background: #f3f0e8; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; }
+.oxi-os-sidebar { width: 300px; background: #eae1d6; border-right: 1px solid #dcd4c9; padding: 2rem; display: flex; flex-direction: column; gap: 2rem; }
+.oxi-os-brand { display: flex; align-items: center; gap: 8px; color: #13212f; font-weight: 700; font-size: 1.2rem; }
+.oxi-os-brand span { font-size: 0.8rem; letter-spacing: 0.05em; color: #a8522e; }
+.oxi-os-user { display: flex; flex-direction: column; gap: 4px; }
+.oxi-os-user strong { font-size: 1.1rem; color: #13212f; }
+.oxi-os-user span { font-size: 0.85rem; color: #716d65; text-transform: uppercase; letter-spacing: 0.05em; }
+.oxi-os-project-select { display: flex; flex-direction: column; gap: 12px; background: #e3d7cb; padding: 16px; border-radius: 8px; }
+.oxi-os-project-select label { font-size: 0.75rem; font-weight: 700; color: #a8522e; text-transform: uppercase; letter-spacing: 0.05em; }
+.oxi-os-project-select select { padding: 10px; border-radius: 6px; border: 1px solid #cfc7ba; background: #fff; width: 100%; font-size: 0.95rem; }
+.oxi-os-menu { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.oxi-os-btn { padding: 12px 16px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; font-weight: 600; font-size: 0.95rem; text-align: left; transition: all 0.2s; background: transparent; color: #13212f; }
+.oxi-os-btn:hover { background: rgba(0,0,0,0.05); }
+.oxi-os-btn.primary { background: #a8522e; color: #fff; text-align: center; }
+.oxi-os-btn.primary:hover { background: #812f23; }
+.oxi-os-btn.secondary { border: 1px solid #a8522e; color: #a8522e; text-align: center; }
+.oxi-os-btn.secondary:hover { background: rgba(168, 82, 46, 0.1); }
+.oxi-os-btn.dark { background: #1a1a1a; color: #fff; text-align: center; margin-top: auto; }
+.oxi-os-main { flex: 1; padding: 2rem 3rem; overflow-y: auto; }
+.oxi-os-main-header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #dcd4c9; padding-bottom: 1.5rem; }
+.oxi-os-main-header span { color: #a8522e; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.oxi-os-main-header h1 { font-size: 4.5rem; letter-spacing: -0.04em; margin: 0.5rem 0 0; color: #13212f; line-height: 1; }
+.oxi-os-main-header p { color: #716d65; margin: 1rem 0 0; font-size: 1.1rem; }
+@media (max-width: 900px) { .oxi-os-dashboard { flex-direction: column; } .oxi-os-sidebar { width: 100%; padding: 1.5rem; border-right: none; border-bottom: 1px solid #dcd4c9; } .oxi-os-main { padding: 1.5rem; } .oxi-os-main-header h1 { font-size: 3rem; } }
+

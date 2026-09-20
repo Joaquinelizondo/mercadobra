@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import OxidaWordmark from '../components/OxidaWordmark'
 import { 
   createMyQuote, getCustomerProfile, getMyQuoteMessages, getMyQuotes, 
   reportQuoteDepositTransfer, respondToMyQuote, sendMyQuoteMessage, 
@@ -134,62 +135,71 @@ export default function CustomerPortal() {
   }
 
   if (!customerUser || !customerToken) return <Navigate to="/cliente/login?redirect=/cliente" replace />
-  if (loading && !profile) return <section className="customer-portal"><p>Cargando OXI OS…</p></section>
+  if (loading && !profile) return <div className="oxi-os-dashboard"><p style={{padding:'2rem'}}>Cargando OXI OS…</p></div>
 
-  return <section className="customer-portal">
-    <header>
-      <div><span>OXI OS para Constructoras</span><h1>Mis Obras</h1><p>Gestioná tus proyectos, cotizaciones y seguimientos.</p></div>
-      <button onClick={logoutCustomer}>Cerrar sesión</button>
-    </header>
-    {error && <p className="customer-portal-error">{error}</p>}
-    <div className="customer-portal-layout">
-      <aside>
-        <div className="customer-profile-head">
-          <div className="customer-avatar" aria-hidden="true">{profile?.name?.[0]||'C'}</div>
-          <div><strong>{profile?.name||'Cliente'}</strong><span>{profile?.companyName||'Constructora'}</span></div>
+  return <div className="oxi-os-dashboard">
+    <aside className="oxi-os-sidebar">
+      <div className="oxi-os-brand">
+        <OxidaWordmark />
+      </div>
+      
+      <div className="oxi-os-user">
+        <strong>{profile?.name || 'Arquitecto'}</strong>
+        <span>{profile?.companyName || 'Constructora'}</span>
+      </div>
+      
+      {b2bProjects.length > 0 && (
+        <div className="oxi-os-project-select">
+          <label>Obra seleccionada</label>
+          <select 
+            value={activeProjectId || ''} 
+            onChange={(e) => {
+              setActiveProjectId(e.target.value ? Number(e.target.value) : null);
+              setSelected(null);
+              setIsCreatingProject(false);
+              setIsCreatingQuote(false);
+            }}
+          >
+            <option value="">Todas las obras</option>
+            {b2bProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
         </div>
-        
-        {b2bProjects.length > 0 && (
-          <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem', padding: '1rem', background: '#e8dfd1', borderRadius: '8px' }}>
-            <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#a8522e', margin: '0 0 10px' }}>Obra Seleccionada</h3>
-            <select 
-              value={activeProjectId || ''} 
-              onChange={(e) => {
-                setActiveProjectId(e.target.value ? Number(e.target.value) : null);
-                setSelected(null);
-                setIsCreatingProject(false);
-                setIsCreatingQuote(false);
-              }}
-              style={{width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', marginTop: '0.5rem'}}
-            >
-              <option value="">Todas las obras</option>
-              {b2bProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          </div>
-        )}
+      )}
 
+      <div className="oxi-os-menu">
         <button 
-          className={isCreatingProject ? 'is-active' : ''} 
+          className={`oxi-os-btn ${isCreatingProject ? 'secondary' : 'secondary'}`} 
           onClick={() => { setIsCreatingProject(true); setSelected(null); setIsCreatingQuote(false); }}
-          style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid #a8522e', color: '#a8522e', cursor: 'pointer', borderRadius: '6px', fontWeight: 'bold' }}
         >
           ＋ Nueva Obra
         </button>
 
         <button 
-          className={isCreatingQuote ? 'is-active' : ''} 
+          className={`oxi-os-btn ${isCreatingQuote ? 'primary' : 'primary'}`} 
           onClick={() => { setIsCreatingQuote(true); setIsCreatingProject(false); setSelected(null); }}
-          style={{ width: '100%', padding: '12px', background: '#a8522e', border: '1px solid #a8522e', color: '#fff', cursor: 'pointer', borderRadius: '6px', fontWeight: 'bold', marginTop: '10px' }}
         >
           ＋ Nueva Cotización
         </button>
 
-        <Link to="/cliente/modelador" style={{ display: 'block', textAlign: 'center', marginTop: '10px', textDecoration: 'none', color: '#13212f', fontWeight: '600', padding: '12px', border: '1px solid #d2cabc', borderRadius: '6px' }}>
+        <Link to="/cliente/modelador" className="oxi-os-btn" style={{ border: '1px solid #dcd4c9', textAlign: 'center', marginTop: '10px', display: 'block', textDecoration: 'none' }}>
           📐 Abrir Simulador 3D
         </Link>
-      </aside>
-      
-      <main>
+      </div>
+
+      <button className="oxi-os-btn dark" onClick={logoutCustomer}>
+        Cerrar sesión
+      </button>
+    </aside>
+
+    <main className="oxi-os-main">
+      <header className="oxi-os-main-header">
+        <div>
+          <span>OXI OS PARA CONSTRUCTORAS</span>
+          <h1>Mis Obras</h1>
+          <p>Gestioná tus proyectos, cotizaciones y seguimientos.</p>
+        </div>
+      </header>
+      {error && <p className="customer-portal-error" style={{color: 'red', marginBottom: '1rem'}}>{error}</p>}
         {isCreatingProject ? (
           <div className="customer-request">
             <div>
@@ -265,17 +275,18 @@ export default function CustomerPortal() {
             </div>
           </div>
         )}
-      </main>
-    </div>
     
-    <form className="customer-profile" onSubmit={saveProfile}>
-      <div><span>Mi perfil</span><h2>Datos de contacto</h2></div>
-      <input value={profile?.name||''} onChange={e=>setProfile({...profile,name:e.target.value})} placeholder="Nombre"/>
-      <input value={profile?.phone||''} onChange={e=>setProfile({...profile,phone:e.target.value})} placeholder="Teléfono"/>
-      <input value={profile?.companyName||''} onChange={e=>setProfile({...profile,companyName:e.target.value})} placeholder="Empresa (opcional)"/>
-      <input value={profile?.city||''} onChange={e=>setProfile({...profile,city:e.target.value})} placeholder="Localidad"/>
-      <input value={profile?.department||''} onChange={e=>setProfile({...profile,department:e.target.value})} placeholder="Departamento"/>
-      <button disabled={saving}>Guardar perfil</button>
+    <form className="customer-profile" onSubmit={saveProfile} style={{ marginTop: '3rem', padding: '2rem', borderTop: '1px solid #dcd4c9' }}>
+      <div><span style={{color: '#a8522e', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase'}}>Mi perfil</span><h2 style={{margin: '0 0 1rem'}}>Datos de contacto</h2></div>
+      <div style={{display: 'flex', gap: '10px', flexWrap: 'wrap'}}>
+        <input style={{padding: '10px', border: '1px solid #ccc', borderRadius: '4px'}} value={profile?.name||''} onChange={e=>setProfile({...profile,name:e.target.value})} placeholder="Nombre"/>
+        <input style={{padding: '10px', border: '1px solid #ccc', borderRadius: '4px'}} value={profile?.phone||''} onChange={e=>setProfile({...profile,phone:e.target.value})} placeholder="Teléfono"/>
+        <input style={{padding: '10px', border: '1px solid #ccc', borderRadius: '4px'}} value={profile?.companyName||''} onChange={e=>setProfile({...profile,companyName:e.target.value})} placeholder="Empresa (opcional)"/>
+        <input style={{padding: '10px', border: '1px solid #ccc', borderRadius: '4px'}} value={profile?.city||''} onChange={e=>setProfile({...profile,city:e.target.value})} placeholder="Localidad"/>
+        <input style={{padding: '10px', border: '1px solid #ccc', borderRadius: '4px'}} value={profile?.department||''} onChange={e=>setProfile({...profile,department:e.target.value})} placeholder="Departamento"/>
+        <button style={{padding: '10px 20px', background: '#13212f', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer'}} disabled={saving}>Guardar perfil</button>
+      </div>
     </form>
-  </section>
+    </main>
+  </div>
 }
