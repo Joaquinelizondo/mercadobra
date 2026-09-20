@@ -43,6 +43,7 @@ export default function CustomerPortal() {
   const [activeProjectId, setActiveProjectId] = useState(null) // null means "All" or "Unassigned"
   const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [isCreatingQuote, setIsCreatingQuote] = useState(false)
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectLocation, setNewProjectLocation] = useState('')
 
@@ -169,22 +170,26 @@ export default function CustomerPortal() {
       <div className="oxi-os-menu">
         <button 
           className={`oxi-os-btn ${isCreatingProject ? 'secondary' : 'secondary'}`} 
-          onClick={() => { setIsCreatingProject(true); setSelected(null); setIsCreatingQuote(false); }}
+          onClick={() => { setIsCreatingProject(true); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); }}
         >
           ＋ Nueva Obra
         </button>
 
         <button 
           className={`oxi-os-btn ${isCreatingQuote ? 'primary' : 'primary'}`} 
-          onClick={() => { setIsCreatingQuote(true); setIsCreatingProject(false); setSelected(null); }}
+          onClick={() => { setIsCreatingQuote(true); setIsCreatingProject(false); setSelected(null); setIsEditingProfile(false); }}
         >
           ＋ Nueva Cotización
         </button>
 
-        <Link to="/cliente/modelador" className="oxi-os-btn" style={{ border: '1px solid #dcd4c9', textAlign: 'center', marginTop: '10px', display: 'block', textDecoration: 'none' }}>
+        <Link to="/cliente/modelador" className="oxi-os-btn" style={{ border: '1px solid #404040', textAlign: 'center', marginTop: '10px', display: 'block', textDecoration: 'none' }}>
           📐 Abrir Simulador 3D
         </Link>
       </div>
+
+      <button className="oxi-os-btn dark" onClick={() => { setIsEditingProfile(true); setIsCreatingProject(false); setIsCreatingQuote(false); setSelected(null); }} style={{ marginBottom: '10px' }}>
+        Configuración de Perfil
+      </button>
 
       <button className="oxi-os-btn dark" onClick={logoutCustomer}>
         Cerrar sesión
@@ -200,7 +205,38 @@ export default function CustomerPortal() {
         </div>
       </header>
       {error && <p className="customer-portal-error" style={{color: 'red', marginBottom: '1rem'}}>{error}</p>}
-        {isCreatingProject ? (
+        {isEditingProfile ? (
+          <form className="oxi-os-profile-form" onSubmit={saveProfile} style={{maxWidth: '600px', background: '#fff', padding: '2rem', borderRadius: '12px', border: '1px solid #e5e5e5', boxShadow: '0 4px 20px rgba(0,0,0,0.03)'}}>
+            <h2 style={{margin: '0 0 1.5rem', fontSize: '1.5rem', color: '#1a1a1a'}}>Datos de contacto</h2>
+            <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
+              <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
+                Nombre completo
+                <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s'}} value={profile?.name||''} onChange={e=>setProfile({...profile,name:e.target.value})} placeholder="Tu nombre" />
+              </label>
+              <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
+                Teléfono de contacto
+                <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s'}} value={profile?.phone||''} onChange={e=>setProfile({...profile,phone:e.target.value})} placeholder="+598 99 123 456" />
+              </label>
+              <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
+                Empresa Constructora / Estudio (Opcional)
+                <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s'}} value={profile?.companyName||''} onChange={e=>setProfile({...profile,companyName:e.target.value})} placeholder="Estudio Arquitectura SRL" />
+              </label>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
+                <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
+                  Localidad
+                  <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s'}} value={profile?.city||''} onChange={e=>setProfile({...profile,city:e.target.value})} placeholder="Ciudad o Barrio" />
+                </label>
+                <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
+                  Departamento / Estado
+                  <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s'}} value={profile?.department||''} onChange={e=>setProfile({...profile,department:e.target.value})} placeholder="Montevideo" />
+                </label>
+              </div>
+              <button disabled={saving} style={{marginTop: '1rem', padding: '14px', background: '#ea580c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '700', cursor: 'pointer', transition: 'background 0.2s'}}>
+                {saving ? 'Guardando...' : 'Guardar configuración'}
+              </button>
+            </div>
+          </form>
+        ) : isCreatingProject ? (
           <div className="customer-request">
             <div>
               <span>Nueva Obra</span>
@@ -275,18 +311,6 @@ export default function CustomerPortal() {
             </div>
           </div>
         )}
-    
-    <form className="customer-profile" onSubmit={saveProfile} style={{ marginTop: '3rem', padding: '2rem', borderTop: '1px solid #dcd4c9' }}>
-      <div><span style={{color: '#a8522e', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase'}}>Mi perfil</span><h2 style={{margin: '0 0 1rem'}}>Datos de contacto</h2></div>
-      <div style={{display: 'flex', gap: '10px', flexWrap: 'wrap'}}>
-        <input style={{padding: '10px', border: '1px solid #ccc', borderRadius: '4px'}} value={profile?.name||''} onChange={e=>setProfile({...profile,name:e.target.value})} placeholder="Nombre"/>
-        <input style={{padding: '10px', border: '1px solid #ccc', borderRadius: '4px'}} value={profile?.phone||''} onChange={e=>setProfile({...profile,phone:e.target.value})} placeholder="Teléfono"/>
-        <input style={{padding: '10px', border: '1px solid #ccc', borderRadius: '4px'}} value={profile?.companyName||''} onChange={e=>setProfile({...profile,companyName:e.target.value})} placeholder="Empresa (opcional)"/>
-        <input style={{padding: '10px', border: '1px solid #ccc', borderRadius: '4px'}} value={profile?.city||''} onChange={e=>setProfile({...profile,city:e.target.value})} placeholder="Localidad"/>
-        <input style={{padding: '10px', border: '1px solid #ccc', borderRadius: '4px'}} value={profile?.department||''} onChange={e=>setProfile({...profile,department:e.target.value})} placeholder="Departamento"/>
-        <button style={{padding: '10px 20px', background: '#13212f', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer'}} disabled={saving}>Guardar perfil</button>
-      </div>
-    </form>
     </main>
   </div>
 }
