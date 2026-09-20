@@ -1,6 +1,5 @@
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 
-// Usamos el modelo rápido y costo-efectivo para extracción de texto
 let genAI;
 let model;
 
@@ -11,7 +10,7 @@ export async function parseConstructionRequirement(text) {
 
   if (!genAI) {
     genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
   }
 
   const prompt = `Eres un ingeniero cotizador experto en la plataforma OXI OS. 
