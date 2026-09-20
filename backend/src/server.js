@@ -344,6 +344,23 @@ function validateAttachments(value) {
   })
 }
 
+async function processAttachments(value) {
+  const validAttachments = validateAttachments(value)
+  if (!isCloudinaryConfigured()) return validAttachments
+  
+  const processed = []
+  for (const item of validAttachments) {
+    try {
+      const uploaded = await uploadAttachment(item.data, { name: item.name })
+      processed.push({ name: item.name, type: item.type, url: uploaded.url, format: uploaded.format })
+    } catch (err) {
+      console.error('[cloudinary:error]', err.message)
+      processed.push(item) // Fallback to base64 if upload fails
+    }
+  }
+  return processed
+}
+
 app.get('/health', (_req, res) => {
   res.json({
     ok: true,
@@ -513,6 +530,7 @@ app.get('/customer/quotes', authMiddleware, customerOnly, asyncHandler(async (re
 
 app.post('/customer/quotes', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
   const body = req.body || {}; const repo = await getRepository()
+  const processedAttachments = await processAttachments(body.attachments)
   const created = await repo.createCustomerQuote({
     customerId: req.authUser.id, referenceNumber: `SOL-${Date.now().toString(36).toUpperCase()}`,
     title: validateStringLength(requireField(body.title, 'Título'), 'Título', 2, 160),
@@ -521,7 +539,7 @@ app.post('/customer/quotes', authMiddleware, customerOnly, asyncHandler(async (r
     currency: validateEnum(body.currency || 'UYU', ['uyu', 'usd'], 'Moneda').toUpperCase(),
     desiredDate: body.desiredDate || null,
     budget: body.budget === '' || body.budget == null ? null : validateNumber(body.budget, 'Presupuesto', 0, 999999999999),
-    attachments: validateAttachments(body.attachments), internalNotes: '', createdBy: req.authUser.id,
+    attachments: processedAttachments, internalNotes: '', createdBy: req.authUser.id,
   })
   void notifyAdminNewQuoteRequest({customerName:req.authUser.company,quote:created}).catch((error)=>console.error('[new-quote-notification:error]',error.message))
   return res.status(201).json(created)
@@ -538,8 +556,9 @@ app.post('/customer/quotes/:quoteId/messages', authMiddleware, customerOnly, asy
   const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
   const quote = (await repo.getCustomerQuotes(req.authUser.id)).find((item) => item.id === quoteId)
   if (!quote) throw new NotFoundError('Cotización')
+  const processedAttachments = await processAttachments(req.body?.attachments)
   const created = await repo.createQuoteMessage({ quoteId, authorUserId: req.authUser.id, authorRole: 'customer',
-    message: validateStringLength(requireField(req.body?.message, 'Mensaje'), 'Mensaje', 1, 3000), attachments: validateAttachments(req.body?.attachments) })
+    message: validateStringLength(requireField(req.body?.message, 'Mensaje'), 'Mensaje', 1, 3000), attachments: processedAttachments })
   await notifyAdminCustomerReply({ customerName:req.authUser.company, quote }).catch((error)=>console.error('[quote-notification:error]',error.message))
   return res.status(201).json(created)
 }))
@@ -913,7 +932,8 @@ app.post('/customer/quotes/:quoteId/deposit/mercadopago',authMiddleware,customer
 app.post('/customer/quotes/:quoteId/deposit/transfer',authMiddleware,customerOnly,asyncHandler(async(req,res)=>{
   const quoteId=validateNumber(req.params.quoteId,'Cotización ID',1);const repo=await getRepository();const quote=(await repo.getCustomerQuotes(req.authUser.id)).find(item=>item.id===quoteId)
   if(!quote)throw new NotFoundError('Cotización');if(quote.status!=='accepted')throw new ValidationError('Primero debés aprobar la cotización');if(quote.depositAmount<=0)throw new ValidationError('Esta cotización no requiere seña');if(quote.depositStatus==='approved')throw new ConflictError('La seña ya fue confirmada')
-  const receipt=validateAttachments([req.body?.receipt])[0];const updated=await repo.updateCustomerQuoteDeposit(quote.id,{depositStatus:'reported',depositMethod:'transfer',depositReceipt:receipt,depositReportedAt:new Date().toISOString()})
+  const processedReceipts = await processAttachments([req.body?.receipt]); const receipt = processedReceipts[0]
+  const updated=await repo.updateCustomerQuoteDeposit(quote.id,{depositStatus:'reported',depositMethod:'transfer',depositReceipt:receipt,depositReportedAt:new Date().toISOString()})
   await notifyAdminTransferReported({customerName:req.authUser.company,quote:updated}).catch(error=>console.error('[transfer-notification:error]',error.message))
   return res.json(updated)
 }))
@@ -933,8 +953,9 @@ app.get('/admin/quotes/:quoteId/messages', authMiddleware, adminOnly, asyncHandl
 app.post('/admin/quotes/:quoteId/messages', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
   const quote=await repo.getCustomerQuoteById(quoteId); if(!quote)throw new NotFoundError('Cotización')
+  const processedAttachments = await processAttachments(req.body?.attachments)
   const created = await repo.createQuoteMessage({ quoteId, authorUserId: req.authUser.id, authorRole: 'admin',
-    message: validateStringLength(requireField(req.body?.message, 'Mensaje'), 'Mensaje', 1, 3000), attachments: validateAttachments(req.body?.attachments) })
+    message: validateStringLength(requireField(req.body?.message, 'Mensaje'), 'Mensaje', 1, 3000), attachments: processedAttachments })
   const customer=await repo.findUserById(quote.customerId)
   if(customer?.email)await notifyCustomerQuoteActivity({email:customer.email,customerName:customer.company,quote,kind:'message'}).catch((error)=>console.error('[quote-notification:error]',error.message))
   return res.status(201).json(created)

@@ -21,20 +21,22 @@ export default function CustomerLogin() {
     if (customerUser) navigate(redirect, { replace: true })
   }, [customerUser, navigate, redirect])
 
+  useEffect(() => {
+    if (customerAuthError) setError(customerAuthError)
+  }, [customerAuthError])
+
   function handleChange(e) {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
-    setError('')
+    if (error) setError('')
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     const account = await loginCustomer(form.email, form.password)
-    if (!account) {
-      setError(customerAuthError || 'Usuario o contraseña incorrectos.')
-      return
+    if (account) {
+      navigate(redirect, { replace: true })
     }
-    navigate(redirect, { replace: true })
   }
 
   return (

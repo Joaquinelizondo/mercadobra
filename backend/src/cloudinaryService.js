@@ -61,3 +61,45 @@ export async function uploadProductImage(dataUrl, { alt = '' } = {}) {
     clearTimeout(timeout)
   }
 }
+
+export async function uploadAttachment(dataUrl, { name = 'archivo' } = {}) {
+  if (!isCloudinaryConfigured()) throw new Error('Cloudinary no está configurado en el servidor.')
+
+  const form = new FormData()
+  form.set('file', String(dataUrl))
+  form.set('folder', `${config.cloudinaryFolder}/attachments`)
+  form.set('public_id', name.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 50))
+
+  const credentials = Buffer.from(`${config.cloudinaryApiKey}:${config.cloudinaryApiSecret}`).toString('base64')
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 60000)
+
+  try {
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${encodeURIComponent(config.cloudinaryCloudName)}/auto/upload`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Basic ${credentials}` },
+        body: form,
+        signal: controller.signal,
+      }
+    )
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok || !payload.secure_url) {
+      throw new Error(payload?.error?.message || `Cloudinary rechazó el archivo (${response.status}).`)
+    }
+
+    return {
+      url: payload.secure_url,
+      publicId: payload.public_id,
+      format: payload.format || '',
+      bytes: Number(payload.bytes) || null,
+      name: String(name),
+    }
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('Cloudinary tardó demasiado en subir el archivo.')
+    throw error
+  } finally {
+    clearTimeout(timeout)
+  }
+}

@@ -27,10 +27,14 @@ export default function CustomerRegister() {
     if (customerUser) navigate(redirect, { replace: true })
   }, [customerUser, navigate, redirect])
 
+  useEffect(() => {
+    if (customerAuthError) setError(customerAuthError)
+  }, [customerAuthError])
+
   function handleChange(e) {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
-    setError('')
+    if (error) setError('')
   }
 
   async function handleSubmit(e) {
@@ -47,12 +51,9 @@ export default function CustomerRegister() {
       password: form.password,
     })
 
-    if (!account) {
-      setError(customerAuthError || 'No se pudo crear la cuenta')
-      return
+    if (account) {
+      navigate(redirect, { replace: true })
     }
-
-    navigate(redirect, { replace: true })
   }
 
   return (
