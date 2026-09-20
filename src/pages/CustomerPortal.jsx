@@ -6,7 +6,7 @@ import {
   createMyQuote, getCustomerProfile, getMyQuoteMessages, getMyQuotes, 
   reportQuoteDepositTransfer, respondToMyQuote, sendMyQuoteMessage, 
   startQuoteDepositCheckout, updateCustomerProfile, getB2bProjects, 
-  createB2bProject, assignQuoteToB2bProject 
+  createB2bProject, assignQuoteToB2bProject, parseRequirementsWithAI
 } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import './CustomerPortal.css'
@@ -142,15 +142,8 @@ export default function CustomerPortal() {
     if (!request.description) { setError('Escribí los detalles primero para que la IA los analice.'); return; }
     setIsParsingAI(true); setError(''); setAiSuggestion(null);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-      const res = await fetch(`${apiUrl}/api/ai/parse-request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${customerToken}` },
-        body: JSON.stringify({ text: request.description })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error procesando con IA');
-      setAiSuggestion(data.data);
+      const res = await parseRequirementsWithAI(request.description, customerToken);
+      setAiSuggestion(res.data);
     } catch(err) { setError(err.message); }
     finally { setIsParsingAI(false); }
   };

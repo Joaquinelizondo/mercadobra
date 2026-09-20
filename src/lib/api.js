@@ -396,3 +396,13 @@ export function pingBackend() {
 }
 
 export { API_BASE_URL }
+
+export async function parseRequirementsWithAI(text, token) {
+  return apiCall('/api/ai/parse-request', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ text }),
+  })
+}
