@@ -9,6 +9,8 @@ import SupplierAssistant from '../components/SupplierAssistant'
 import { Badge } from '../components/Badge'
 import OxidaWordmark from '../components/OxidaWordmark'
 import { getOrders, updateOrderStatus } from '../lib/api'
+import './CustomerPortal.css'
+import './CustomerPortalMobile.css'
 
 const ORDER_STATUS_OPTIONS = [
   { value: 'pending', label: 'Pendiente' },
