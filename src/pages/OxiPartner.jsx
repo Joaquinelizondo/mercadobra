@@ -7,7 +7,7 @@ export default function OxiPartner() {
       <header className="partner-hero">
         <div className="partner-hero-content">
           <span className="partner-eyebrow">Para Constructoras y Estudios de Arquitectura</span>
-          <h1 className="partner-title">Metal & Madera Solutions as a Service</h1>
+          <h1 className="partner-title">Architecture Solutions as a Service</h1>
           <p className="partner-subtitle">
             OXI Partner es la plataforma que centraliza todas las soluciones en metal y madera de tu obra.
             Desde la detección de planos y cotización inteligente, hasta la adjudicación en nuestra
