@@ -1778,13 +1778,15 @@ El desarrollo se realizará en este orden. No se iniciará una etapa posterior h
 - [ ] Agregar importación masiva con vista previa y rollback lógico para actualizar listas de precios de acero de forma segura.
 - [ ] Extender el catálogo de plantillas iniciales sin intervención de programación (mesas rectangulares, parrilleros, cercos, pérgolas y aberturas).
 - [ ] Incorporar permisos separados: Editores de Fórmulas (Ingeniería) vs. Generadores de Propuestas (Comercial).
-#### Fase 5 — asistencia con IA e integración
+#### Fase 5 — Analítica e Inteligencia Artificial (IA)
 
-- [ ] Interpretar descripciones y archivos para proponer entradas estructuradas.
-- [ ] Detectar datos faltantes, unidades sospechosas y resultados atípicos.
-- [ ] Redactar alcance, supuestos, exclusiones y mensajes comerciales revisables.
-- [ ] Permitir importar cantidades desde OXI Modela cuando exista una correspondencia verificable.
-- [ ] Medir precisión de sugerencias y exigir confirmación humana antes de calcular o enviar.
+**Objetivo:** Transformar a OXI OS en un sistema experto y predictivo, acelerando la entrada de datos, previniendo errores humanos y explotando el valor de los datos históricos.
+
+- [ ] **Prioridad 1: Extracción con IA (Smart Parsing):** Interpretar texto desestructurado (emails) o archivos PDF/planos subidos por la constructora para proponer automáticamente parámetros estructurados en el cotizador (ej: extraer "Baranda", "30m", "Hierro negro").
+- [ ] **Prioridad 2: Redacción Automática de Propuestas (Auto-Scope):** Generar automáticamente con un LLM el documento comercial (alcance, supuestos, exclusiones y garantías) basado en la complejidad de las variables calculadas, listo para su revisión final.
+- [ ] **Prioridad 3: Detección de Anomalías (AI Auditor):** Auditar silenciosamente cada cálculo o respuesta de presupuesto de proveedores (OXI Network). Alertar si los consumos (ej. ratio de horas/kg, % de desperdicio) se desvían de la norma histórica de ese producto.
+- [ ] **Prioridad 4: Analítica de Costos (Proyecciones):** Crear dashboards para las constructoras que visualicen curvas históricas y proyecciones de impacto del acero/mano de obra, otorgando previsibilidad financiera.
+- [ ] Incorporar el feedback loop: Medir precisión de las sugerencias de la IA para retroalimentar el modelo y exigir siempre confirmación humana ("Human in the loop") antes de enviar.
 
 ### Criterio de salida del MVP
 
