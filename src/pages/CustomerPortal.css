@@ -7,37 +7,39 @@
 .project-tracker{margin:26px 0;padding:24px;border:1px solid #cfc7ba;background:#eee7dc}.project-tracker-heading span{color:#a8522e;font-size:.68rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.project-tracker-heading h3{margin:5px 0 20px;font-size:1.35rem}.project-tracker ol{display:grid;grid-template-columns:repeat(5,1fr);margin:0;padding:0;list-style:none}.project-tracker ol li{position:relative;display:grid;justify-items:center;gap:8px;color:#8b8378;text-align:center;font-size:.7rem;font-weight:800}.project-tracker ol li:before{content:"";position:absolute;z-index:0;top:15px;right:50%;width:100%;height:2px;background:#cfc7ba}.project-tracker ol li:first-child:before{display:none}.project-tracker ol i{position:relative;z-index:1;display:grid;place-items:center;width:32px;height:32px;border:2px solid #cfc7ba;border-radius:50%;background:#eee7dc;font-style:normal}.project-tracker ol .is-complete,.project-tracker ol .is-current{color:#24241f}.project-tracker ol .is-complete i{border-color:#a8522e;background:#a8522e;color:#fff}.project-tracker ol .is-complete:before,.project-tracker ol .is-current:before{background:#a8522e}.project-tracker ol .is-current i{border-color:#a8522e;color:#a8522e}.project-tracker-alert{margin:18px 0 0;padding:10px;background:#f8d7d0;color:#812f23}.project-milestones{display:grid;gap:8px;margin-top:28px;padding-top:22px;border-top:1px solid #cfc7ba}.project-milestones h4{margin:0 0 4px}.project-milestones article{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;padding:14px;background:#f8f5ef}.project-milestones article>i{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#ddd5c9;font-style:normal;font-weight:900}.project-milestones article>div{min-width:0}.project-milestones article p{margin:4px 0;color:#716d65}.project-milestones article small{color:#81796e}.project-milestones article>span{font-size:.68rem;font-weight:900;text-transform:uppercase}.project-milestones article.is-in_progress{box-shadow:inset 4px 0 #a8522e}.project-milestones article.is-completed>i{background:#a8522e;color:#fff}@media(max-width:700px){.project-tracker{padding:20px 14px}.project-tracker ol{grid-template-columns:1fr;gap:0}.project-tracker ol li{grid-template-columns:32px 1fr;justify-items:start;align-items:center;gap:12px;padding-bottom:14px;text-align:left}.project-tracker ol li:before{top:-14px;right:auto;left:15px;width:2px;height:28px}.project-milestones article{grid-template-columns:30px 1fr}.project-milestones article>span{grid-column:2}.project-milestones article p{overflow-wrap:anywhere}}
 .quote-deposit{display:grid;gap:14px;margin:22px 0;padding:24px;border:1px solid #a8522e;background:#f8f5ef}.quote-deposit>span{color:#a8522e;font-size:.68rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.quote-deposit h3,.quote-deposit p{margin:0}.quote-deposit>button,.quote-transfer button{padding:14px 18px;border:0;background:#a8522e;color:#fff;font-weight:900;cursor:pointer}.quote-transfer{display:grid;gap:10px;padding-top:16px;border-top:1px solid #d8cfc2}.quote-transfer input{width:100%;padding:10px;border:1px solid #c9c0b3;background:#fff}@media(max-width:700px){.quote-deposit{padding:20px 14px}.quote-deposit>button,.quote-transfer button{width:100%}}
 .kanban-board { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px; min-height: 500px; }
-.kanban-column { flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 12px; background: #e8dfd1; padding: 16px; border-radius: 12px; }
-.kanban-column h3 { margin: 0 0 10px; font-size: 1.1rem; color: #716d65; text-transform: uppercase; letter-spacing: 0.05em; }
-.kanban-card { background: #fff; padding: 16px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; border: 1px solid transparent; transition: border-color 0.2s; text-align: left; display: flex; flex-direction: column; gap: 6px; }
-.kanban-card:hover { border-color: #a8522e; }
-.kanban-card span { font-size: 0.7rem; color: #a8522e; font-weight: 900; }
-.kanban-card strong { font-size: 1.1rem; color: #13212f; }
-.kanban-card small { font-size: 0.75rem; color: #716d65; }
-.kanban-empty { color: #8a8177; font-size: 0.9rem; font-style: italic; text-align: center; margin-top: 20px; }
+.kanban-column { flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 12px; background: #fff; padding: 16px; border-radius: 12px; border: 1px solid #e5e5e5; }
+.kanban-column h3 { margin: 0 0 10px; font-size: 0.9rem; color: #525252; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+.kanban-card { background: #fafafa; padding: 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer; border: 1px solid #e5e5e5; transition: all 0.2s; text-align: left; display: flex; flex-direction: column; gap: 6px; }
+.kanban-card:hover { border-color: #ea580c; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-2px); }
+.kanban-card span { font-size: 0.75rem; color: #ea580c; font-weight: 700; }
+.kanban-card strong { font-size: 1.1rem; color: #1a1a1a; font-weight: 600; line-height: 1.3; }
+.kanban-card small { font-size: 0.8rem; color: #737373; }
+.kanban-empty { color: #a3a3a3; font-size: 0.9rem; font-style: normal; text-align: center; margin-top: 20px; }
 
-.oxi-os-dashboard { display: flex; min-height: 100vh; background: #f3f0e8; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; }
-.oxi-os-sidebar { width: 300px; background: #eae1d6; border-right: 1px solid #dcd4c9; padding: 2rem; display: flex; flex-direction: column; gap: 2rem; }
-.oxi-os-brand { display: flex; align-items: center; gap: 8px; color: #13212f; font-weight: 700; font-size: 1.2rem; }
-.oxi-os-brand span { font-size: 0.8rem; letter-spacing: 0.05em; color: #a8522e; }
-.oxi-os-user { display: flex; flex-direction: column; gap: 4px; }
-.oxi-os-user strong { font-size: 1.1rem; color: #13212f; }
-.oxi-os-user span { font-size: 0.85rem; color: #716d65; text-transform: uppercase; letter-spacing: 0.05em; }
-.oxi-os-project-select { display: flex; flex-direction: column; gap: 12px; background: #e3d7cb; padding: 16px; border-radius: 8px; }
-.oxi-os-project-select label { font-size: 0.75rem; font-weight: 700; color: #a8522e; text-transform: uppercase; letter-spacing: 0.05em; }
-.oxi-os-project-select select { padding: 10px; border-radius: 6px; border: 1px solid #cfc7ba; background: #fff; width: 100%; font-size: 0.95rem; }
-.oxi-os-menu { display: flex; flex-direction: column; gap: 10px; flex: 1; }
-.oxi-os-btn { padding: 12px 16px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; font-weight: 600; font-size: 0.95rem; text-align: left; transition: all 0.2s; background: transparent; color: #13212f; }
-.oxi-os-btn:hover { background: rgba(0,0,0,0.05); }
-.oxi-os-btn.primary { background: #a8522e; color: #fff; text-align: center; }
-.oxi-os-btn.primary:hover { background: #812f23; }
-.oxi-os-btn.secondary { border: 1px solid #a8522e; color: #a8522e; text-align: center; }
-.oxi-os-btn.secondary:hover { background: rgba(168, 82, 46, 0.1); }
-.oxi-os-btn.dark { background: #1a1a1a; color: #fff; text-align: center; margin-top: auto; }
-.oxi-os-main { flex: 1; padding: 2rem 3rem; overflow-y: auto; }
-.oxi-os-main-header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #dcd4c9; padding-bottom: 1.5rem; }
-.oxi-os-main-header span { color: #a8522e; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
-.oxi-os-main-header h1 { font-size: 4.5rem; letter-spacing: -0.04em; margin: 0.5rem 0 0; color: #13212f; line-height: 1; }
-.oxi-os-main-header p { color: #716d65; margin: 1rem 0 0; font-size: 1.1rem; }
-@media (max-width: 900px) { .oxi-os-dashboard { flex-direction: column; } .oxi-os-sidebar { width: 100%; padding: 1.5rem; border-right: none; border-bottom: 1px solid #dcd4c9; } .oxi-os-main { padding: 1.5rem; } .oxi-os-main-header h1 { font-size: 3rem; } }
+.oxi-os-dashboard { display: flex; min-height: 100vh; background: #f9f9f9; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; }
+.oxi-os-sidebar { width: 280px; background: #131313; border-right: 1px solid #262626; padding: 2rem; display: flex; flex-direction: column; gap: 2rem; color: #fff; }
+.oxi-os-brand { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 700; font-size: 1.2rem; }
+.oxi-os-brand span { font-size: 0.8rem; letter-spacing: 0.05em; color: #ea580c; }
+.oxi-os-user { display: flex; flex-direction: column; gap: 4px; padding-bottom: 1.5rem; border-bottom: 1px solid #262626; }
+.oxi-os-user strong { font-size: 1.1rem; color: #fff; font-weight: 600; }
+.oxi-os-user span { font-size: 0.8rem; color: #a3a3a3; text-transform: uppercase; letter-spacing: 0.05em; }
+.oxi-os-project-select { display: flex; flex-direction: column; gap: 10px; }
+.oxi-os-project-select label { font-size: 0.75rem; font-weight: 700; color: #a3a3a3; text-transform: uppercase; letter-spacing: 0.05em; }
+.oxi-os-project-select select { padding: 12px; border-radius: 6px; border: 1px solid #404040; background: #262626; color: #fff; width: 100%; font-size: 0.95rem; outline: none; }
+.oxi-os-project-select select:focus { border-color: #ea580c; }
+.oxi-os-menu { display: flex; flex-direction: column; gap: 10px; flex: 1; margin-top: 1rem; }
+.oxi-os-btn { padding: 12px 16px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; font-weight: 600; font-size: 0.95rem; text-align: left; transition: all 0.2s; background: transparent; color: #d4d4d4; }
+.oxi-os-btn:hover { background: #262626; color: #fff; }
+.oxi-os-btn.primary { background: #ea580c; color: #fff; text-align: center; border: 1px solid #ea580c; }
+.oxi-os-btn.primary:hover { background: #c2410c; border-color: #c2410c; }
+.oxi-os-btn.secondary { border: 1px solid #404040; color: #fff; text-align: center; }
+.oxi-os-btn.secondary:hover { border-color: #ea580c; background: transparent; }
+.oxi-os-btn.dark { background: transparent; color: #737373; text-align: center; margin-top: auto; border: 1px solid #262626; }
+.oxi-os-btn.dark:hover { color: #fff; background: #262626; }
+.oxi-os-main { flex: 1; padding: 2rem 3rem; overflow-y: auto; background: #fafafa; }
+.oxi-os-main-header { margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #e5e5e5; padding-bottom: 1.5rem; }
+.oxi-os-main-header span { color: #ea580c; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.oxi-os-main-header h1 { font-size: 3.5rem; letter-spacing: -0.04em; margin: 0.5rem 0 0; color: #1a1a1a; line-height: 1.1; font-weight: 800; }
+.oxi-os-main-header p { color: #525252; margin: 1rem 0 0; font-size: 1.1rem; }
+@media (max-width: 900px) { .oxi-os-dashboard { flex-direction: column; } .oxi-os-sidebar { width: 100%; padding: 1.5rem; border-right: none; border-bottom: 1px solid #262626; } .oxi-os-main { padding: 1.5rem; } .oxi-os-main-header h1 { font-size: 2.5rem; } }
 

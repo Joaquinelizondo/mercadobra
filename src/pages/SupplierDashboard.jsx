@@ -7,6 +7,7 @@ import PublishModal from '../components/PublishModal'
 import ProductCard from '../components/ProductCard'
 import SupplierAssistant from '../components/SupplierAssistant'
 import { Badge } from '../components/Badge'
+import OxidaWordmark from '../components/OxidaWordmark'
 import { getOrders, updateOrderStatus } from '../lib/api'
 
 const ORDER_STATUS_OPTIONS = [
@@ -127,38 +128,47 @@ export default function SupplierDashboard() {
 
   return (
     <>
-      <div className="dashboard-page">
-        {/* Welcome hero */}
-        <div className="dashboard-welcome">
-          <div className="dashboard-welcome-left">
-            <div className="dashboard-avatar">
-              {companyInitials(supplierUser.company)}
-            </div>
-            <div>
-              <p className="dashboard-eyebrow">Panel de proveedor</p>
-              <h1 className="dashboard-company">{supplierUser.company}</h1>
-              <p className="dashboard-email">{supplierUser.email}</p>
-            </div>
+      <div className="oxi-os-dashboard">
+        <aside className="oxi-os-sidebar">
+          <div className="oxi-os-brand">
+            <OxidaWordmark />
+            <span>NETWORK</span>
           </div>
-          <div className="dashboard-welcome-actions">
+
+          <div className="oxi-os-user">
+            <strong>{supplierUser.company}</strong>
+            <span>{supplierUser.email}</span>
+          </div>
+
+          <div className="oxi-os-menu">
             <button
-              className="publish-btn"
+              className="oxi-os-btn primary"
               onClick={() => {
                 setEditingProduct(null)
                 setPublishDraft(null)
                 setPublishOpen(true)
               }}
             >
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style={{ flexShrink: 0 }}>
-                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
-              Nuevo producto
+              ＋ Nuevo producto
             </button>
-            <button className="dashboard-logout-btn" onClick={logout}>
-              Cerrar sesión
-            </button>
+            <Link to="/explorar" className="oxi-os-btn secondary" style={{display: 'block', textDecoration: 'none'}}>
+              Ver catálogo público
+            </Link>
           </div>
-        </div>
+
+          <button className="oxi-os-btn dark" onClick={logout}>
+            Cerrar sesión
+          </button>
+        </aside>
+
+        <main className="oxi-os-main">
+          <header className="oxi-os-main-header">
+            <div>
+              <span>OXI NETWORK PARA TALLERES</span>
+              <h1>Panel de fabricante</h1>
+              <p>Gestioná tus productos publicados y recibí órdenes de trabajo.</p>
+            </div>
+          </header>
 
         {/* Stats */}
         <div className="dashboard-stats">
@@ -317,6 +327,7 @@ export default function SupplierDashboard() {
             </div>
           )}
         </div>
+        </main>
       </div>
 
       {publishOpen && (
