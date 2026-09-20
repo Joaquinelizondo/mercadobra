@@ -1712,6 +1712,9 @@ app.get('/orders', authMiddleware, providerOnly, async (req, res) => {
   res.json(orders)
 })
 
+import { parseRequest } from './aiController.js';
+app.post('/api/ai/parse-request', authMiddleware, parseRequest);
+
 app.post('/chat', asyncHandler(async (req, res) => {
   const { message = '', history = [] } = req.body || {}
 
