@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import logoImg from '../assets/mercadobra.png'
+import logoImg from '../assets/oxida/logo-clean.png'
 
 export default function CustomerRegister() {
   const {
