@@ -404,3 +404,11 @@ export async function parseRequirementsWithAI(text, token) {
     body: JSON.stringify({ text }),
   })
 }
+
+export async function generateProposalWithAI(quoteData, token) {
+  return request('/ai/generate-proposal', {
+    method: 'POST',
+    token: token,
+    body: JSON.stringify({ quoteData }),
+  })
+}
