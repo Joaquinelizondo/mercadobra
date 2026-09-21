@@ -65,7 +65,7 @@ export default function AdminCosting() {
   return <section className="costing-page">
     <header className="costing-header">
       <div className="costing-brand"><OxidaWordmark /><span>OXI Quote</span></div>
-      <nav><Link to="/admin/productos">Productos</Link><Link to="/admin/clientes">Clientes</Link><Link to="/admin/cotizaciones-clientes">Cotizaciones</Link><Link to="/admin/modelador">OXI Modela</Link></nav>
+      <nav><Link to="/admin/analitica">Analítica</Link><Link to="/admin/productos">Productos</Link><Link to="/admin/clientes">Clientes</Link><Link to="/admin/cotizaciones-clientes">Cotizaciones</Link><Link to="/admin/modelador">OXI Modela</Link></nav>
     </header>
 
     <div className="costing-intro">
