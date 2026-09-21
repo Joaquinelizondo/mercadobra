@@ -420,3 +420,7 @@ export async function auditQuoteWithAI(breakdownData, token) {
     body: JSON.stringify({ breakdownData }),
   })
 }
+
+export async function getAdminAnalytics(token) {
+  return request('/admin/analytics/metrics', { token })
+}

@@ -1713,9 +1713,11 @@ app.get('/orders', authMiddleware, providerOnly, async (req, res) => {
 })
 
 import { parseRequest, generateProposal, auditQuote } from './aiController.js';
+import { getAnalyticsMetrics } from './analyticsController.js';
 app.post('/ai/parse-request', authMiddleware, parseRequest);
 app.post('/ai/generate-proposal', authMiddleware, generateProposal);
 app.post('/ai/audit-quote', authMiddleware, auditQuote);
+app.get('/admin/analytics/metrics', authMiddleware, adminOnly, getAnalyticsMetrics);
 
 app.post('/chat', asyncHandler(async (req, res) => {
   const { message = '', history = [] } = req.body || {}
