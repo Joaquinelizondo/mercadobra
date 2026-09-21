@@ -890,6 +890,7 @@ export default function App() {
         <Route path="/admin/personalizaciones" element={<AdminCustomRequests />} />
         <Route path="/admin/modelador" element={<AdminModeler />} />
         <Route path="/admin/cotiza" element={<AdminCosting />} />
+        <Route path="/admin/analitica" element={<AdminAnalytics />} />
         <Route path="/proveedor/login" element={<SupplierLogin />} />
         <Route path="/proveedor" element={<SupplierDashboard />} />
         <Route path="/seguimiento/:trackingToken" element={<OrderTracking />} />
