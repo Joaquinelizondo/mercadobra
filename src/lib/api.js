@@ -412,3 +412,11 @@ export async function generateProposalWithAI(quoteData, token) {
     body: JSON.stringify({ quoteData }),
   })
 }
+
+export async function auditQuoteWithAI(breakdownData, token) {
+  return request('/ai/audit-quote', {
+    method: 'POST',
+    token: token,
+    body: JSON.stringify({ breakdownData }),
+  })
+}

@@ -41,3 +41,25 @@ export const generateProposal = async (req, res) => {
     res.status(500).json({ error: error.message || 'Error interno procesando con IA.' });
   }
 };
+
+import { auditQuoteBreakdown } from './aiAuditorService.js';
+
+export const auditQuote = async (req, res) => {
+  try {
+    const { breakdownData } = req.body;
+    
+    if (!breakdownData) {
+      return res.status(400).json({ error: 'Faltan datos del desglose para auditar.' });
+    }
+
+    const auditResult = await auditQuoteBreakdown(breakdownData);
+    
+    res.json({
+      success: true,
+      audit: auditResult
+    });
+  } catch (error) {
+    console.error('Error en auditQuote:', error);
+    res.status(500).json({ error: error.message || 'Error interno procesando auditoría con IA.' });
+  }
+};

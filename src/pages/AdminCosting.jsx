@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import OxidaWordmark from '../components/OxidaWordmark'
 import { useAuth } from '../context/AuthContext'
-import { calculateTemplate, getAdminCostVariables } from '../lib/api'
+import { calculateTemplate, getAdminCostVariables, auditQuoteWithAI } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import './AdminCosting.css'
 
@@ -17,6 +17,10 @@ export default function AdminCosting() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  
+  const [isAuditing, setIsAuditing] = useState(false)
+  const [auditResult, setAuditResult] = useState(null)
+  const [auditError, setAuditError] = useState('')
 
   useEffect(() => {
     if (!adminToken) return
@@ -38,10 +42,24 @@ export default function AdminCosting() {
   }
 
   async function submit(event) {
-    event.preventDefault(); setLoading(true); setError('')
+    event.preventDefault(); setLoading(true); setError(''); setAuditResult(null); setAuditError('')
     try { setResult(await calculateTemplate(templateCode, form, adminToken)) }
     catch (requestError) { setError(requestError.message || 'No se pudo calcular la cotización.') }
     finally { setLoading(false) }
+  }
+
+  async function handleAudit() {
+    if (!result) return
+    setIsAuditing(true)
+    setAuditError('')
+    try {
+      const res = await auditQuoteWithAI(result, adminToken)
+      setAuditResult(res.audit)
+    } catch (err) {
+      setAuditError(err.message || 'No se pudo auditar la cotización.')
+    } finally {
+      setIsAuditing(false)
+    }
   }
 
   return <section className="costing-page">
@@ -109,6 +127,31 @@ export default function AdminCosting() {
           <div className="costing-table-wrap"><table><thead><tr><th>Recurso</th><th>Cantidad</th><th>Unitario</th><th>Subtotal</th></tr></thead><tbody>{result.lines.map((item) => <tr key={item.code}><td><strong>{item.code}</strong><span>{item.description}</span></td><td>{number(item.quantity)} {item.unit}</td><td>{formatPrice(item.unitCostUyu, 'UYU')}</td><td>{formatPrice(item.subtotalUyu, 'UYU')}</td></tr>)}</tbody></table></div>
           <div className="costing-totals"><div><span>Costo directo</span><strong>{formatPrice(result.totals.directCostUyu, 'UYU')}</strong></div><div><span>Gastos generales ({number(result.rates.overheadRate * 100, 1)}%)</span><strong>{formatPrice(result.totals.overheadUyu, 'UYU')}</strong></div><div><span>Precio antes de IVA</span><strong>{formatPrice(result.totals.priceBeforeTaxUsd, 'USD')}</strong></div><div><span>IVA ({number(result.rates.taxRate * 100, 1)}%)</span><strong>{formatPrice(result.totals.taxUsd, 'USD')}</strong></div><div className="is-total"><span>Total</span><strong>{formatPrice(result.totals.priceFinalUsd, 'USD')}</strong></div></div>
           <div className="costing-warnings"><h3>Supuestos a validar</h3>{result.assumptions.map((text) => <p key={text}>• {text}</p>)}</div>
+          
+          <div className="costing-ai-auditor" style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8f5ef', border: '1px solid #dcd4c9', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#ea580c' }}>🤖 OXI AI Auditor</h3>
+              <button type="button" onClick={handleAudit} disabled={isAuditing} style={{ background: '#ea580c', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.85rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                {isAuditing ? '⏳ Auditando...' : '✨ Auditar Rentabilidad'}
+              </button>
+            </div>
+            {auditError && <p style={{ color: '#dc2626', fontSize: '0.9rem', margin: '0 0 1rem 0' }}>{auditError}</p>}
+            {auditResult && (
+              <div style={{ padding: '1rem', background: 'white', borderRadius: '4px', borderLeft: `4px solid ${auditResult.status === 'VERDE' ? '#16a34a' : auditResult.status === 'AMARILLO' ? '#eab308' : '#dc2626'}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <span style={{ fontWeight: 'bold', color: auditResult.status === 'VERDE' ? '#16a34a' : auditResult.status === 'AMARILLO' ? '#ca8a04' : '#dc2626' }}>
+                    {auditResult.status === 'VERDE' ? '✅ SANO' : auditResult.status === 'AMARILLO' ? '⚠️ RIESGO MEDIO' : '🚨 RIESGO ALTO'}
+                  </span>
+                </div>
+                <p style={{ margin: '0 0 8px 0', fontSize: '0.95rem', fontWeight: '500' }}>{auditResult.summary}</p>
+                {auditResult.risks?.length > 0 && (
+                  <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.85rem', color: '#4a4a4a' }}>
+                    {auditResult.risks.map((r, i) => <li key={i}>{r}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
         </>}
       </div>
     </div>

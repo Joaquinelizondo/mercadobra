@@ -1712,9 +1712,10 @@ app.get('/orders', authMiddleware, providerOnly, async (req, res) => {
   res.json(orders)
 })
 
-import { parseRequest, generateProposal } from './aiController.js';
+import { parseRequest, generateProposal, auditQuote } from './aiController.js';
 app.post('/ai/parse-request', authMiddleware, parseRequest);
 app.post('/ai/generate-proposal', authMiddleware, generateProposal);
+app.post('/ai/audit-quote', authMiddleware, auditQuote);
 
 app.post('/chat', asyncHandler(async (req, res) => {
   const { message = '', history = [] } = req.body || {}
