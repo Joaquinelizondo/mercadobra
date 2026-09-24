@@ -172,9 +172,11 @@ export default function AdminTemplates() {
 
             {testResult && (
               <div className="test-result">
-                <h4>Costo Directo: ${testResult.totals.directCostUyu} UYU</h4>
-                <h4>Precio Venta: ${testResult.totals.priceFinalUsd} USD</h4>
-                <div style={{fontSize: '0.8rem', marginTop: '1rem'}}>
+                <div className="totals-highlight">
+                  <h4>Costo Directo: ${testResult.totals.directCostUyu} UYU</h4>
+                  <h4>Precio Venta: ${testResult.totals.priceFinalUsd} USD</h4>
+                </div>
+                <div style={{fontSize: '0.85rem', color: '#666'}}>
                   {testResult.lines.map((l, i) => <div key={i}>- {l.description}: {l.quantity.toFixed(2)} {l.unit}</div>)}
                 </div>
               </div>

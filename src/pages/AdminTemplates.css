@@ -1,35 +1,52 @@
-.templates-page { padding: 2rem; max-width: 1200px; margin: 0 auto; font-family: system-ui, sans-serif; }
-.templates-page header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-.templates-page header span { font-size: 0.85rem; text-transform: uppercase; color: #666; }
-.templates-page header h1 { margin: 0.5rem 0 0; font-size: 2rem; color: #1a1a1a; }
-.templates-page nav { display: flex; gap: 1rem; }
-.templates-page nav a, .templates-page nav button { color: #ea580c; text-decoration: none; font-weight: 500; background: none; border: none; cursor: pointer; font-size: 1rem; }
+.templates-page { padding: 2.5rem; max-width: 1400px; margin: 0 auto; font-family: system-ui, sans-serif; }
+.templates-page header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem; }
+.templates-page header > div { display: flex; flex-direction: column; gap: 0.25rem; }
+.templates-page header span { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #ea580c; font-weight: 600; }
+.templates-page header h1 { margin: 0; font-size: 2.25rem; color: #1a1a1a; letter-spacing: -0.02em; }
+.templates-page nav { display: flex; gap: 1.5rem; align-items: center; }
+.templates-page nav a, .templates-page nav button { color: #666; text-decoration: none; font-weight: 500; background: none; border: none; cursor: pointer; font-size: 0.95rem; transition: color 0.2s; }
+.templates-page nav a:hover, .templates-page nav button:hover { color: #1a1a1a; }
 
-.templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
-.template-card { border: 1px solid #e5e5e5; padding: 1.5rem; border-radius: 8px; background: white; }
-.template-card h2 { margin: 0 0 0.5rem; font-size: 1.25rem; }
-.template-card code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; }
-.template-card p { color: #666; margin: 1rem 0; font-size: 0.9rem; }
-.template-card button { background: #1a1a1a; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+.templates-toolbar { margin-bottom: 2rem; display: flex; justify-content: flex-end; }
+.create-btn { background: #ea580c; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: background 0.2s; }
+.create-btn:hover { background: #c2410c; }
 
-.create-btn { background: #ea580c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 2rem; }
+.templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+.template-card { border: 1px solid #e5e5e5; padding: 1.75rem; border-radius: 12px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+.template-card h2 { margin: 0 0 0.5rem; font-size: 1.25rem; color: #1a1a1a; }
+.template-card code { background: #f3f4f6; color: #4b5563; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-family: monospace; align-self: flex-start; }
+.template-card p { color: #666; margin: 1.25rem 0; font-size: 0.95rem; line-height: 1.5; flex-grow: 1; }
+.template-card button { background: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s; align-self: flex-start; }
+.template-card button:hover { background: #f1f5f9; border-color: #cbd5e1; }
 
-.builder-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
-.builder-form fieldset { border: 1px solid #e5e5e5; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; background: white; }
-.builder-form legend { font-weight: bold; color: #ea580c; padding: 0 8px; }
-.builder-form label { display: block; margin-bottom: 1rem; }
-.builder-form label input, .builder-form label textarea { display: block; width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; }
-.builder-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
-.builder-row input, .builder-row select { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-.builder-row button { background: #dc2626; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
-.builder-form > button { background: #1a1a1a; color: white; padding: 4px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 8px; }
-.save-btn { background: #16a34a !important; padding: 12px 24px !important; font-size: 1.1rem !important; width: 100%; margin-top: 1rem; }
+.builder-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2.5rem; align-items: start; }
+.builder-form fieldset { border: 1px solid #e5e5e5; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+.builder-form legend { font-weight: 600; color: #1a1a1a; padding: 0 12px; font-size: 1.1rem; }
+.builder-form label { display: block; margin-bottom: 1.25rem; color: #374151; font-weight: 500; font-size: 0.9rem; }
+.builder-form label input, .builder-form label textarea { display: block; width: 100%; padding: 10px 12px; margin-top: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 0.95rem; }
+.builder-form label textarea { resize: vertical; min-height: 80px; }
+.builder-form label input:focus, .builder-form label textarea:focus, .builder-row input:focus, .builder-row select:focus { outline: none; border-color: #ea580c; box-shadow: 0 0 0 1px #ea580c; }
 
-.builder-test { background: #f8f5ef; padding: 1.5rem; border-radius: 8px; border: 1px solid #e5e5e5; height: fit-content; }
-.builder-test label { display: block; margin-bottom: 1rem; font-size: 0.9rem; }
-.builder-test label input { display: block; width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; }
-.builder-test button { background: #ea580c; color: white; border: none; width: 100%; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-.test-result { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #ccc; }
-.test-result h4 { margin: 0 0 0.5rem; color: #1a1a1a; }
-.error { color: #dc2626; background: #fee2e2; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; }
-.success { color: #16a34a; background: #dcfce7; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; }
+.builder-row { display: flex; gap: 12px; margin-bottom: 12px; align-items: stretch; }
+.builder-row input, .builder-row select { flex: 1; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; background: white; }
+.builder-row button { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 0 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+.builder-row button:hover { background: #fecaca; border-color: #fca5a5; }
+.builder-form > button { background: #f8fafc; color: #0f172a; padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; margin-top: 12px; font-weight: 500; transition: all 0.2s; }
+.builder-form > button:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.save-btn { background: #16a34a !important; color: white !important; border: none !important; padding: 14px 24px !important; font-size: 1.1rem !important; font-weight: 600 !important; width: 100%; margin-top: 1.5rem !important; border-radius: 8px !important; transition: background 0.2s !important; }
+.save-btn:hover { background: #15803d !important; }
+
+.builder-test { background: #fafaf9; padding: 2rem; border-radius: 12px; border: 1px solid #e5e5e5; height: fit-content; position: sticky; top: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+.builder-test h3 { margin: 0 0 1rem; color: #1a1a1a; font-size: 1.25rem; }
+.builder-test p { color: #666; margin-bottom: 1.5rem; font-size: 0.95rem; }
+.builder-test label { display: block; margin-bottom: 1.25rem; color: #374151; font-weight: 500; font-size: 0.9rem; }
+.builder-test label input { display: block; width: 100%; padding: 10px 12px; margin-top: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; }
+.builder-test label input:focus { outline: none; border-color: #ea580c; box-shadow: 0 0 0 1px #ea580c; }
+.builder-test > button { background: #ea580c; color: white; border: none; width: 100%; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; margin-top: 1rem; transition: background 0.2s; }
+.builder-test > button:hover { background: #c2410c; }
+.test-result { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e5e5e5; }
+.test-result h4 { margin: 0 0 0.75rem; color: #1a1a1a; font-size: 1.15rem; }
+.test-result .totals-highlight { background: #ecfdf5; border: 1px solid #d1fae5; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
+.test-result .totals-highlight h4 { margin: 0; }
+.error { color: #dc2626; background: #fee2e2; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #fecaca; font-weight: 500; }
+.success { color: #16a34a; background: #dcfce7; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #bbf7d0; font-weight: 500; }
