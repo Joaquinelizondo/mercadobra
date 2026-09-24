@@ -1714,10 +1714,17 @@ app.get('/orders', authMiddleware, providerOnly, async (req, res) => {
 
 import { parseRequest, generateProposal, auditQuote } from './aiController.js';
 import { getAnalyticsMetrics } from './analyticsController.js';
+import { listTemplates, getTemplate, saveTemplate, calculateTemplate } from './parametricController.js';
+
 app.post('/ai/parse-request', authMiddleware, parseRequest);
 app.post('/ai/generate-proposal', authMiddleware, generateProposal);
 app.post('/ai/audit-quote', authMiddleware, auditQuote);
 app.get('/admin/analytics/metrics', authMiddleware, adminOnly, getAnalyticsMetrics);
+
+app.get('/admin/parametric-templates', authMiddleware, adminOnly, listTemplates);
+app.get('/admin/parametric-templates/:code', authMiddleware, adminOnly, getTemplate);
+app.post('/admin/parametric-templates', authMiddleware, adminOnly, saveTemplate);
+app.post('/admin/parametric-templates/:code/calculate', authMiddleware, adminOnly, calculateTemplate);
 
 app.post('/chat', asyncHandler(async (req, res) => {
   const { message = '', history = [] } = req.body || {}

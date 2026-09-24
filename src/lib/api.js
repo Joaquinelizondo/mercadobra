@@ -424,3 +424,8 @@ export async function auditQuoteWithAI(breakdownData, token) {
 export async function getAdminAnalytics(token) {
   return request('/admin/analytics/metrics', { token })
 }
+
+export function listParametricTemplates(token) { return request('/admin/parametric-templates', { token }) }
+export function getParametricTemplate(code, token) { return request(`/admin/parametric-templates/${code}`, { token }) }
+export function saveParametricTemplate(payload, token) { return request('/admin/parametric-templates', { method: 'POST', token, body: JSON.stringify(payload) }) }
+export function calculateDynamicTemplate(code, payload, token) { return request(`/admin/parametric-templates/${code}/calculate`, { method: 'POST', token, body: JSON.stringify(payload) }) }

@@ -28,6 +28,7 @@ import AdminCustomerQuotes from './pages/AdminCustomerQuotes'
 import AdminModeler from './pages/AdminModeler'
 import AdminCosting from './pages/AdminCosting'
 import AdminAnalytics from './pages/AdminAnalytics'
+import AdminTemplates from './pages/AdminTemplates'
 import OxiPartner from './pages/OxiPartner'
 import './pages/AdminCustomRequests.css'
 import { useState } from 'react'
@@ -890,6 +891,7 @@ export default function App() {
         <Route path="/admin/personalizaciones" element={<AdminCustomRequests />} />
         <Route path="/admin/modelador" element={<AdminModeler />} />
         <Route path="/admin/cotiza" element={<AdminCosting />} />
+        <Route path="/admin/plantillas" element={<AdminTemplates />} />
         <Route path="/admin/analitica" element={<AdminAnalytics />} />
         <Route path="/proveedor/login" element={<SupplierLogin />} />
         <Route path="/proveedor" element={<SupplierDashboard />} />
