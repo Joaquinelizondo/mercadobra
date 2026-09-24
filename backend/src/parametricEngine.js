@@ -1,6 +1,7 @@
 import * as math from 'mathjs';
 import { getPool } from './db.js';
-import { getCurrentCostVariables, completePilotCatalog, calculateQuote } from './costingService.js';
+import { getCurrentCostVariables, completePilotCatalog } from './costingService.js';
+import { calculateQuote } from './costCalculator.js';
 
 export async function getParametricTemplate(templateCode) {
   const pool = getPool();

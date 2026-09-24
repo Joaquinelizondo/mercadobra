@@ -31,7 +31,7 @@ function getInitialCostVariables() {
   }))
 }
 
-function completePilotCatalog(currentVariables) {
+export function completePilotCatalog(currentVariables) {
   const currentByCode = new Map(currentVariables.map((variable) => [variable.code, variable]))
   const initialByCode = new Map(getInitialCostVariables().map((variable) => [variable.code, variable]))
   return TABLE_VARIABLE_CODES.map((code) => currentByCode.get(code) || initialByCode.get(code)).filter(Boolean)
