@@ -1,52 +1,56 @@
-.templates-page { padding: 2.5rem; max-width: 1400px; margin: 0 auto; font-family: system-ui, sans-serif; }
-.templates-page header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem; }
-.templates-page header > div { display: flex; flex-direction: column; gap: 0.25rem; }
-.templates-page header span { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #ea580c; font-weight: 600; }
-.templates-page header h1 { margin: 0; font-size: 2.25rem; color: #1a1a1a; letter-spacing: -0.02em; }
-.templates-page nav { display: flex; gap: 1.5rem; align-items: center; }
-.templates-page nav a, .templates-page nav button { color: #666; text-decoration: none; font-weight: 500; background: none; border: none; cursor: pointer; font-size: 0.95rem; transition: color 0.2s; }
-.templates-page nav a:hover, .templates-page nav button:hover { color: #1a1a1a; }
+.templates-page { min-height: 100vh; padding: 34px clamp(18px, 4vw, 64px) 72px; background: #eee9e0; color: #25221e; }
+.templates-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-bottom: 22px; border-bottom: 1px solid #cfc6b8; }
+.templates-brand { display: flex; align-items: center; gap: 18px; }
+.templates-brand .oxida-wordmark { width: 120px; }
+.templates-brand > span { padding-left: 18px; border-left: 1px solid #b9afa1; color: #a8522e; font-size: .68rem; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.templates-header nav { display: flex; flex-wrap: wrap; gap: 7px; }
+.templates-header nav a, .templates-header nav button { padding: 8px 11px; border: 1px solid #cfc6b8; border-radius: 999px; color: #4c4740; background: none; text-decoration: none; font-size: .72rem; font-weight: 800; cursor: pointer; }
 
-.templates-toolbar { margin-bottom: 2rem; display: flex; justify-content: flex-end; }
-.create-btn { background: #ea580c; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: background 0.2s; }
-.create-btn:hover { background: #c2410c; }
+.templates-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; padding: 48px 0 30px; }
+.templates-intro > div:first-child > span { color: #a8522e; font-size: .7rem; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; }
+.templates-intro h1 { margin: 5px 0; font-size: clamp(2.8rem, 6vw, 5.4rem); line-height: .95; }
+.templates-intro p { margin: 12px 0 0; color: #716a61; max-width: 600px; line-height: 1.5; }
 
-.templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
-.template-card { border: 1px solid #e5e5e5; padding: 1.75rem; border-radius: 12px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
-.template-card h2 { margin: 0 0 0.5rem; font-size: 1.25rem; color: #1a1a1a; }
-.template-card code { background: #f3f4f6; color: #4b5563; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-family: monospace; align-self: flex-start; }
-.template-card p { color: #666; margin: 1.25rem 0; font-size: 0.95rem; line-height: 1.5; flex-grow: 1; }
-.template-card button { background: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s; align-self: flex-start; }
-.template-card button:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.create-btn { background: #282520 !important; color: white !important; border: none !important; padding: 15px 30px !important; border-radius: 4px; cursor: pointer; font-weight: 900; }
 
-.builder-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2.5rem; align-items: start; }
-.builder-form fieldset { border: 1px solid #e5e5e5; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-.builder-form legend { font-weight: 600; color: #1a1a1a; padding: 0 12px; font-size: 1.1rem; }
-.builder-form label { display: block; margin-bottom: 1.25rem; color: #374151; font-weight: 500; font-size: 0.9rem; }
-.builder-form label input, .builder-form label textarea { display: block; width: 100%; padding: 10px 12px; margin-top: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 0.95rem; }
-.builder-form label textarea { resize: vertical; min-height: 80px; }
-.builder-form label input:focus, .builder-form label textarea:focus, .builder-row input:focus, .builder-row select:focus { outline: none; border-color: #ea580c; box-shadow: 0 0 0 1px #ea580c; }
+.templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+.template-card { border: 1px solid #d4cbbf; padding: 24px; background: #faf8f3; display: flex; flex-direction: column; }
+.template-card h2 { margin: 0 0 12px; font-size: 1.25rem; color: #25221e; }
+.template-card code { background: #eee9e0; color: #8a542f; padding: 4px 8px; font-size: 0.8rem; font-family: monospace; align-self: flex-start; }
+.template-card p { color: #716a61; margin: 18px 0; font-size: 0.95rem; line-height: 1.5; flex-grow: 1; }
+.template-card button { background: white; color: #282520; border: 1px solid #cfc6b8; padding: 10px 16px; font-weight: 800; cursor: pointer; align-self: flex-start; transition: all 0.2s; }
+.template-card button:hover { background: #f0eadd; }
 
-.builder-row { display: flex; gap: 12px; margin-bottom: 12px; align-items: stretch; }
-.builder-row input, .builder-row select { flex: 1; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; background: white; }
-.builder-row button { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 0 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
-.builder-row button:hover { background: #fecaca; border-color: #fca5a5; }
-.builder-form > button { background: #f8fafc; color: #0f172a; padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; margin-top: 12px; font-weight: 500; transition: all 0.2s; }
-.builder-form > button:hover { background: #f1f5f9; border-color: #cbd5e1; }
-.save-btn { background: #16a34a !important; color: white !important; border: none !important; padding: 14px 24px !important; font-size: 1.1rem !important; font-weight: 600 !important; width: 100%; margin-top: 1.5rem !important; border-radius: 8px !important; transition: background 0.2s !important; }
-.save-btn:hover { background: #15803d !important; }
+.builder-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
+.builder-form, .builder-test { border: 1px solid #d4cbbf; background: #faf8f3; padding: 24px; }
+.builder-form fieldset { border: none; border-bottom: 1px solid #e1dad0; padding: 0 0 24px 0; margin: 0 0 24px 0; }
+.builder-form fieldset:last-of-type { border: none; margin-bottom: 0; padding-bottom: 0; }
+.builder-form legend { font-weight: 900; color: #a8522e; font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 18px; }
+.builder-form label { display: block; margin-bottom: 16px; }
+.builder-form label > span { display: block; color: #675f56; font-size: .68rem; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; }
+.builder-form input, .builder-form textarea, .builder-form select { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #c8bfb2; background: white; font: 700 .88rem inherit; }
+.builder-form textarea { min-height: 80px; resize: vertical; }
 
-.builder-test { background: #fafaf9; padding: 2rem; border-radius: 12px; border: 1px solid #e5e5e5; height: fit-content; position: sticky; top: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-.builder-test h3 { margin: 0 0 1rem; color: #1a1a1a; font-size: 1.25rem; }
-.builder-test p { color: #666; margin-bottom: 1.5rem; font-size: 0.95rem; }
-.builder-test label { display: block; margin-bottom: 1.25rem; color: #374151; font-weight: 500; font-size: 0.9rem; }
-.builder-test label input { display: block; width: 100%; padding: 10px 12px; margin-top: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; }
-.builder-test label input:focus { outline: none; border-color: #ea580c; box-shadow: 0 0 0 1px #ea580c; }
-.builder-test > button { background: #ea580c; color: white; border: none; width: 100%; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; margin-top: 1rem; transition: background 0.2s; }
-.builder-test > button:hover { background: #c2410c; }
-.test-result { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e5e5e5; }
-.test-result h4 { margin: 0 0 0.75rem; color: #1a1a1a; font-size: 1.15rem; }
-.test-result .totals-highlight { background: #ecfdf5; border: 1px solid #d1fae5; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
-.test-result .totals-highlight h4 { margin: 0; }
-.error { color: #dc2626; background: #fee2e2; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #fecaca; font-weight: 500; }
-.success { color: #16a34a; background: #dcfce7; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #bbf7d0; font-weight: 500; }
+.builder-row { display: flex; gap: 11px; margin-bottom: 11px; }
+.builder-row input, .builder-row select { flex: 1; }
+.builder-row .remove-btn { flex: 0 0 auto; background: #c77561; color: white; border: none; width: 44px; font-weight: bold; cursor: pointer; }
+.builder-form > button { background: #e6dfd3; color: #25221e; padding: 10px 16px; border: 1px solid #cfc6b8; font-weight: 800; cursor: pointer; margin-top: 4px; }
+
+.save-btn { background: #282520 !important; color: white !important; padding: 15px !important; width: 100%; font-weight: 900 !important; margin-top: 24px !important; border: none !important; }
+
+.builder-test { position: sticky; top: 20px; }
+.builder-test h3 { margin: 0 0 16px; font-size: 1.05rem; }
+.builder-test p { color: #81786e; font-size: .72rem; margin-top: -10px; margin-bottom: 24px; }
+.builder-test label { display: block; margin-bottom: 16px; }
+.builder-test label > span { display: block; color: #675f56; font-size: .68rem; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; }
+.builder-test input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #c8bfb2; background: white; font: 700 .88rem inherit; }
+.builder-test .test-btn { background: #a8522e; color: white; width: 100%; padding: 15px; font-weight: 900; border: none; cursor: pointer; margin-top: 8px; }
+
+.test-result { margin-top: 24px; padding-top: 24px; border-top: 1px solid #ddd5ca; }
+.test-result h4 { margin: 0 0 8px; font-size: 1.1rem; }
+.test-result .totals-highlight { background: #282520; color: white; padding: 16px; margin-bottom: 18px; }
+.test-result .totals-highlight h4 { margin: 0; color: white; }
+.test-result .totals-highlight h4:last-child { margin-top: 8px; font-size: 1.4rem; }
+
+.error { padding: 13px 16px; border: 1px solid #c77561; background: #fff0eb; color: #8d2f20; margin-bottom: 24px; font-weight: bold; }
+.success { padding: 13px 16px; border: 1px solid #829f79; background: #f0f7ef; color: #2e4d25; margin-bottom: 24px; font-weight: bold; }
