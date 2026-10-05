@@ -75,9 +75,9 @@ export default function OxidaStudio() {
         <div className="oxida-hero-copy">
           <OxidaWordmark className="oxida-hero-brand-lockup" showByline />
           <p className="oxida-label">Hierro & Madera · Construcción · Planos & Costos</p>
-          <h1 style={{fontSize: 'clamp(2.5rem, 5vw, 4.5rem)'}}>Expertos en hierro y madera.<br /><em>Construcción de todo tipo.</em></h1>
+          <h1 style={{fontSize: 'clamp(2.5rem, 5vw, 4.5rem)'}}>Lo que imaginás,<br /><em>en hierro y madera.</em></h1>
           <p className="oxida-hero-intro" style={{fontWeight: 500}}>
-            Hacemos proyectos integrales: planos, anteproyectos, asesoramiento de costos y construcción completa. Del primer trazo a la obra terminada, en un solo lugar.
+            Tu idea. Una cotización a medida. Proyectos de construcción integrales de todo tipo: planos, anteproyectos, asesoramiento y ejecución.
           </p>
           <div className="oxida-hero-actions">
             <a href="#cotizar" className="oxida-hero-custom-link">Empezar proyecto ↘</a>

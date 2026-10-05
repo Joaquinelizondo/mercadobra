@@ -49,9 +49,9 @@ export default function Storefront() {
             <strong>Óxida Studio</strong>
           </div>
           <p className="store-kicker">Construcción · Diseño en Hierro y Madera · Fabricación</p>
-          <h1>Expertos en hierro y madera.<br /><em>Construcción de todo tipo.</em></h1>
+          <h1 style={{fontSize: 'clamp(2.5rem, 5vw, 4.5rem)'}}>Lo que imaginás,<br /><em>en hierro y madera.</em></h1>
           <p className="store-hero-text">
-            Proyectos de construcción integrales: <strong>planos, anteproyectos, asesoramiento de costos y ejecución.</strong> Además, descubrí nuestra colección de muebles de diseño en la tienda.
+            <strong>Tu idea. Una cotización a medida.</strong> Proyectos de construcción integrales de todo tipo: planos, anteproyectos, asesoramiento y ejecución.
           </p>
           <div className="store-hero-actions">
             <a href="#cotizar" className="store-button store-button--primary">Empezar proyecto a medida</a>
