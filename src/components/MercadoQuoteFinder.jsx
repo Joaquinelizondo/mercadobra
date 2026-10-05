@@ -122,17 +122,17 @@ export default function MercadoQuoteFinder() {
   return (
     <section className="mqf" id="cotizar">
       <div className="mqf-heading">
-        <h2>Lo que imaginás, en hierro.</h2>
+        <h2>Lo que imaginás, construido a medida.</h2>
       </div>
 
       <form className="mqf-search" onSubmit={prepareQuote}>
-        <label htmlFor="mercado-quote-query">Tu idea. Una cotización a medida.</label>
+        <label htmlFor="mercado-quote-query">Tu idea en hierro, madera o construcción integral. Una cotización precisa.</label>
         <div className="mqf-search-box">
           <textarea
             id="mercado-quote-query"
             value={query}
             onChange={updateQuery}
-            placeholder="Ej: escalera, parrillero, estructura o pieza a medida…"
+            placeholder="Ej: planos y obra, asesoramiento de costos, escalera de hierro y madera, parrillero…"
             rows="1"
           />
           <button type="submit" disabled={loadingProducts || results.length === 0}>
