@@ -130,6 +130,14 @@ export function getAdminCustomers(filters = {}, token) {
   return request(`/admin/customers${query ? `?${query}` : ''}`, { token })
 }
 
+export function deleteAdminCustomer(id, token) {
+  return request(`/admin/customers/${id}`, { method: 'DELETE', token })
+}
+
+export function importAdminCustomers(customers, token) {
+  return request('/admin/customers/import', { method: 'POST', token, body: JSON.stringify({ customers }) })
+}
+
 export function getAdminCostVariables(token) {
   return request('/admin/costing/variables', { token })
 }

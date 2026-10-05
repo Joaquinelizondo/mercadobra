@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { createCustomerInvitation, getAdminCustomers, updateAdminCustomer } from '../lib/api'
+import { createCustomerInvitation, getAdminCustomers, updateAdminCustomer, deleteAdminCustomer, importAdminCustomers } from '../lib/api'
 import './AdminCustomers.css'
 
 const EMPTY_FORM = {
@@ -23,6 +23,7 @@ export default function AdminCustomers() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState('')
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (!adminToken) return
@@ -100,6 +101,68 @@ export default function AdminCustomers() {
     }
   }
 
+  function handleExport() {
+    const header = ['ID', 'Nombre', 'Email', 'Telefono', 'Empresa', 'Localidad', 'Estado']
+    const rows = filtered.map(c => [
+      c.id, `"${c.name || ''}"`, c.email, `"${c.phone || ''}"`, `"${c.companyName || ''}"`, `"${c.city || ''}"`, c.status
+    ])
+    const csvContent = "data:text/csv;charset=utf-8," + [header.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", `clientes_oxi_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  async function handleImport(event) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const text = e.target.result
+      const lines = text.split('\n').filter(l => l.trim())
+      const customersToImport = []
+      for (let i = 1; i < lines.length; i++) {
+        const parts = lines[i].split(',').map(s => s.replace(/"/g, '').trim())
+        if (parts.length >= 2) {
+          const [email, name, companyName, phone] = parts
+          if (email && name) {
+            customersToImport.push({ email, name, companyName, phone })
+          }
+        }
+      }
+      try {
+        setLoading(true)
+        const res = await importAdminCustomers(customersToImport, adminToken)
+        setSuccess(`Se importaron ${res.imported} clientes correctamente.`)
+        const refreshed = await getAdminCustomers({}, adminToken)
+        setCustomers(refreshed.rows || [])
+      } catch (err) {
+        setError(err.message || 'Error al importar')
+      } finally {
+        setLoading(false)
+        event.target.value = null
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  async function handleDelete(customer) {
+    if (!window.confirm(`¿Estás seguro de que querés borrar a ${customer.name || customer.email}?`)) return
+    try {
+      setLoading(true)
+      await deleteAdminCustomer(customer.id, adminToken)
+      setCustomers(prev => prev.filter(c => c.id !== customer.id))
+      setSuccess('Cliente eliminado.')
+    } catch (err) {
+      setError(err.message || 'No se pudo eliminar al cliente.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <section className="admin-customers-page">
       <header className="admin-customers-header">
@@ -107,12 +170,20 @@ export default function AdminCustomers() {
         <nav><Link to="/admin/analitica">Analítica</Link><Link to="/admin/cotizaciones-clientes">Cotizaciones</Link><Link to="/admin/modelador">Simulador 3D</Link><Link to="/admin/productos">Productos</Link><Link to="/admin/pedidos">Pedidos</Link><Link to="/admin/cotizaciones">Consultas web</Link><Link to="/admin/personalizaciones">Personalizaciones</Link><Link to="/">Ver tienda ↗</Link></nav>
       </header>
 
-      <div className="admin-customers-title-row"><div className="admin-customers-metrics" aria-label="Resumen de clientes">
-        <div><strong>{metrics.total}</strong><span>Total</span></div>
-        <div><strong>{metrics.active}</strong><span>Activos</span></div>
-        <div><strong>{metrics.withOrders}</strong><span>Con pedidos</span></div>
-        <div><strong>{metrics.blocked}</strong><span>Bloqueados</span></div>
-      </div><button type="button" onClick={openCreate}>✉ Invitar cliente</button></div>
+      <div className="admin-customers-title-row">
+        <div className="admin-customers-metrics" aria-label="Resumen de clientes">
+          <div><strong>{metrics.total}</strong><span>Total</span></div>
+          <div><strong>{metrics.active}</strong><span>Activos</span></div>
+          <div><strong>{metrics.withOrders}</strong><span>Con pedidos</span></div>
+          <div><strong>{metrics.blocked}</strong><span>Bloqueados</span></div>
+        </div>
+        <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+          <input type="file" accept=".csv" ref={fileInputRef} style={{display: 'none'}} onChange={handleImport} />
+          <button type="button" onClick={() => fileInputRef.current?.click()} style={{background: 'white', color: '#1a1a1a', border: '1px solid #ccc'}}>Importar CSV</button>
+          <button type="button" onClick={handleExport} style={{background: 'white', color: '#1a1a1a', border: '1px solid #ccc'}}>Exportar CSV</button>
+          <button type="button" onClick={openCreate}>✉ Invitar cliente</button>
+        </div>
+      </div>
 
       <div className="admin-customers-toolbar">
         <label><span>Buscar clientes</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, email, teléfono, localidad…" /></label>
@@ -131,7 +202,7 @@ export default function AdminCustomers() {
               <div className="admin-customer-avatar" aria-hidden="true">{String(customer.name || customer.email || 'C').trim().charAt(0).toUpperCase()}</div>
               <div className="admin-customer-main"><div><h2>{customer.name || 'Cliente sin nombre'}</h2><span className={`admin-customer-status is-${customer.status}`}>{customer.invitationStatus==='sent'?'Invitación enviada':customer.invitationStatus==='accepted'?'Invitación aceptada':STATUS_LABELS[customer.status]}</span></div><a href={`mailto:${customer.email}`}>{customer.email}</a><p>{[customer.phone, customer.city, customer.department].filter(Boolean).join(' · ') || 'Contacto pendiente de completar'}</p></div>
               <div className="admin-customer-activity"><strong>{customer.orderCount || 0}</strong><span>pedido{Number(customer.orderCount) === 1 ? '' : 's'}</span>{customer.lastOrderAt && <small>Último: {new Date(customer.lastOrderAt).toLocaleDateString('es-UY')}</small>}</div>
-              <div className="admin-customer-actions"><Link to={`/admin/clientes/${customer.id}`}>Abrir cliente</Link><button type="button" onClick={() => openEditor(customer)}>Editar datos</button></div>
+              <div className="admin-customer-actions"><Link to={`/admin/clientes/${customer.id}`}>Abrir cliente</Link><button type="button" onClick={() => openEditor(customer)}>Editar datos</button><button type="button" onClick={() => handleDelete(customer)} style={{color: '#dc2626', background: 'transparent', border: '1px solid #fecaca'}}>Eliminar</button></div>
             </article>
           ))}
         </div>

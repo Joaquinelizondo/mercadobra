@@ -323,6 +323,16 @@ async function getJsonRepo() {
       writeDb(db)
       return mapAdminCustomerRow({ ...profile, id: user.id, name: user.company, email: user.email })
     },
+    async deleteAdminCustomer(id) {
+      const db = readDb()
+      const userIndex = db.users.findIndex((item) => Number(item.id) === Number(id) && item.role === 'customer')
+      if (userIndex === -1) return false
+      db.users.splice(userIndex, 1)
+      db.customerProfiles = (db.customerProfiles || []).filter(p => Number(p.userId) !== Number(id))
+      db.authSessions = (db.authSessions || []).filter((session) => Number(session.userId) !== Number(id))
+      writeDb(db)
+      return true
+    },
     async createAdminCustomer(payload) {
       const db = readDb()
       const user = {
@@ -977,6 +987,22 @@ async function getPgRepo() {
         }
         await client.query('COMMIT')
         return mapAdminCustomerRow({ ...users[0], ...profiles[0] })
+      } catch (error) {
+        await client.query('ROLLBACK')
+        throw error
+      } finally {
+        client.release()
+      }
+    },
+    async deleteAdminCustomer(id) {
+      const client = await pool.connect()
+      try {
+        await client.query('BEGIN')
+        await client.query('DELETE FROM auth_sessions WHERE user_id = $1', [id])
+        await client.query('DELETE FROM customer_profiles WHERE user_id = $1', [id])
+        const result = await client.query("DELETE FROM users WHERE id = $1 AND role = 'customer'", [id])
+        await client.query('COMMIT')
+        return (result.rowCount ?? 0) > 0
       } catch (error) {
         await client.query('ROLLBACK')
         throw error

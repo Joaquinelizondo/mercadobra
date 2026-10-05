@@ -837,6 +837,37 @@ app.patch('/admin/customers/:id', authMiddleware, adminOnly, asyncHandler(async 
   return res.json(updated)
 }))
 
+app.delete('/admin/customers/:id', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const id = validateNumber(req.params.id, 'Cliente ID', 1)
+  const repo = await getRepository()
+  const deleted = await repo.deleteAdminCustomer(id)
+  if (!deleted) throw new NotFoundError('Cliente')
+  return res.json({ success: true })
+}))
+
+app.post('/admin/customers/import', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const { customers } = req.body
+  if (!Array.isArray(customers)) throw new BadRequestError('El cuerpo debe tener un array "customers".')
+  
+  const repo = await getRepository()
+  let imported = 0
+  for (const c of customers) {
+    if (!c.email || !c.name) continue
+    const exists = await repo.findUserByEmail(c.email)
+    if (!exists) {
+      await repo.createAdminCustomerInvitation({
+        email: c.email,
+        name: c.name,
+        companyName: c.companyName || '',
+        phone: c.phone || '',
+        internalNotes: c.internalNotes || 'Importado via CSV'
+      })
+      imported++
+    }
+  }
+  return res.json({ imported })
+}))
+
 app.get('/admin/customers/:id', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const id = validateNumber(req.params.id, 'Cliente ID', 1)
   const repo = await getRepository()
