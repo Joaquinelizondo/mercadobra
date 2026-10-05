@@ -840,9 +840,16 @@ app.patch('/admin/customers/:id', authMiddleware, adminOnly, asyncHandler(async 
 app.delete('/admin/customers/:id', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const id = validateNumber(req.params.id, 'Cliente ID', 1)
   const repo = await getRepository()
-  const deleted = await repo.deleteAdminCustomer(id)
-  if (!deleted) throw new NotFoundError('Cliente')
-  return res.json({ success: true })
+  try {
+    const deleted = await repo.deleteAdminCustomer(id)
+    if (!deleted) throw new NotFoundError('Cliente')
+    return res.json({ success: true })
+  } catch (error) {
+    if (error.code === '23503') {
+      throw new ConflictError('No se puede eliminar un cliente con cotizaciones, pedidos o actividad. Cambiá su estado a Inactivo o Bloqueado.')
+    }
+    throw error
+  }
 }))
 
 app.post('/admin/customers/import', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
