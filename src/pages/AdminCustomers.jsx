@@ -177,10 +177,10 @@ export default function AdminCustomers() {
           <div><strong>{metrics.withOrders}</strong><span>Con pedidos</span></div>
           <div><strong>{metrics.blocked}</strong><span>Bloqueados</span></div>
         </div>
-        <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+        <div className="admin-customers-actions">
           <input type="file" accept=".csv" ref={fileInputRef} style={{display: 'none'}} onChange={handleImport} />
-          <button type="button" onClick={() => fileInputRef.current?.click()} style={{background: 'white', color: '#1a1a1a', border: '1px solid #ccc'}}>Importar CSV</button>
-          <button type="button" onClick={handleExport} style={{background: 'white', color: '#1a1a1a', border: '1px solid #ccc'}}>Exportar CSV</button>
+          <button type="button" onClick={() => fileInputRef.current?.click()} className="btn-secondary">⇡ Importar CSV</button>
+          <button type="button" onClick={handleExport} className="btn-secondary">⇣ Exportar CSV</button>
           <button type="button" onClick={openCreate}>✉ Invitar cliente</button>
         </div>
       </div>
@@ -202,7 +202,7 @@ export default function AdminCustomers() {
               <div className="admin-customer-avatar" aria-hidden="true">{String(customer.name || customer.email || 'C').trim().charAt(0).toUpperCase()}</div>
               <div className="admin-customer-main"><div><h2>{customer.name || 'Cliente sin nombre'}</h2><span className={`admin-customer-status is-${customer.status}`}>{customer.invitationStatus==='sent'?'Invitación enviada':customer.invitationStatus==='accepted'?'Invitación aceptada':STATUS_LABELS[customer.status]}</span></div><a href={`mailto:${customer.email}`}>{customer.email}</a><p>{[customer.phone, customer.city, customer.department].filter(Boolean).join(' · ') || 'Contacto pendiente de completar'}</p></div>
               <div className="admin-customer-activity"><strong>{customer.orderCount || 0}</strong><span>pedido{Number(customer.orderCount) === 1 ? '' : 's'}</span>{customer.lastOrderAt && <small>Último: {new Date(customer.lastOrderAt).toLocaleDateString('es-UY')}</small>}</div>
-              <div className="admin-customer-actions"><Link to={`/admin/clientes/${customer.id}`}>Abrir cliente</Link><button type="button" onClick={() => openEditor(customer)}>Editar datos</button><button type="button" onClick={() => handleDelete(customer)} style={{color: '#dc2626', background: 'transparent', border: '1px solid #fecaca'}}>Eliminar</button></div>
+              <div className="admin-customer-actions"><Link to={`/admin/clientes/${customer.id}`}>Abrir cliente</Link><button type="button" onClick={() => openEditor(customer)}>Editar datos</button><button type="button" className="btn-danger" onClick={() => handleDelete(customer)}>Eliminar</button></div>
             </article>
           ))}
         </div>
