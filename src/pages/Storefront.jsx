@@ -48,15 +48,14 @@ export default function Storefront() {
             <span>presenta</span>
             <strong>Óxida Studio</strong>
           </div>
-          <p className="store-kicker">Óxida Collection · Diseño · Fabricación · Envíos en Uruguay</p>
-          <h1>Objetos firmes.<br /><em>Espacios propios.</em></h1>
+          <p className="store-kicker">Construcción · Diseño en Hierro y Madera · Fabricación</p>
+          <h1>Expertos en hierro y madera.<br /><em>Construcción de todo tipo.</em></h1>
           <p className="store-hero-text">
-            Mercadobra presenta Óxida Collection: muebles y objetos de diseño
-            en hierro y madera, listos para comprar o adaptar a tu espacio.
+            Proyectos de construcción integrales: <strong>planos, anteproyectos, asesoramiento de costos y ejecución.</strong> Además, descubrí nuestra colección de muebles de diseño en la tienda.
           </p>
           <div className="store-hero-actions">
-            <Link to="/explorar#catalog-results" className="store-button store-button--primary">Ver la colección</Link>
-            <a href="#cotizar" className="store-button store-button--secondary">Hacer a medida</a>
+            <a href="#cotizar" className="store-button store-button--primary">Empezar proyecto a medida</a>
+            <Link to="/explorar#catalog-results" className="store-button store-button--secondary">Ver catálogo</Link>
           </div>
           <div className="store-trust">
             <span>Compra segura</span><span>Fabricación local</span><span>Atención directa</span>

@@ -24,9 +24,9 @@ const projects = [
 const capabilities = [
   {
     number: '01', id: 'oxida-projects',
-    name: 'Óxida Projects',
-    description: 'Desarrollo integral de proyectos: diseño, coordinación y ejecución.',
-    services: ['Diseño y ejecución de obras de arquitectura', 'Dirección de obra representando al cliente', 'Coordinación integral de proyecto'],
+    name: 'Construcción & Arquitectura',
+    description: 'Construcción integral de todo tipo de proyectos. Somos especialistas en hierro y madera.',
+    services: ['Construcción de obras desde cero', 'Confección de planos y anteproyectos', 'Asesoramiento de costos', 'Dirección de obra'],
   },
   {
     number: '02', id: 'oxida-pro',
@@ -74,15 +74,14 @@ export default function OxidaStudio() {
         </div>
         <div className="oxida-hero-copy">
           <OxidaWordmark className="oxida-hero-brand-lockup" showByline />
-          <p className="oxida-label">Diseño · Cotización · Fabricación</p>
-          <h1>Ideas firmes.<br /><em>Espacios únicos.</em></h1>
-          <p className="oxida-hero-intro">
-            Transformamos hierro y madera en soluciones que pertenecen a tu espacio.
-            Del primer trazo a la instalación, en un solo lugar.
+          <p className="oxida-label">Hierro & Madera · Construcción · Planos & Costos</p>
+          <h1 style={{fontSize: 'clamp(2.5rem, 5vw, 4.5rem)'}}>Expertos en hierro y madera.<br /><em>Construcción de todo tipo.</em></h1>
+          <p className="oxida-hero-intro" style={{fontWeight: 500}}>
+            Hacemos proyectos integrales: planos, anteproyectos, asesoramiento de costos y construcción completa. Del primer trazo a la obra terminada, en un solo lugar.
           </p>
           <div className="oxida-hero-actions">
-            <a href="#tienda" className="oxida-arrow-link">Comprar colección <span>↓</span></a>
-            <a href="#cotizar" className="oxida-hero-custom-link">Hacer a medida ↘</a>
+            <a href="#cotizar" className="oxida-hero-custom-link">Empezar proyecto ↘</a>
+            <a href="#tienda" className="oxida-arrow-link">Ver catálogo <span>↓</span></a>
           </div>
         </div>
         <div className="oxida-scroll-note">DESLIZÁ PARA EXPLORAR</div>
