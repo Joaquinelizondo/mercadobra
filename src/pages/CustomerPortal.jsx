@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Navigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import OxidaWordmark from '../components/OxidaWordmark'
+import OxiProSuite from '../components/OxiProSuite'
 import { 
   createMyQuote, getCustomerProfile, getMyQuoteMessages, getMyQuotes, 
   reportQuoteDepositTransfer, respondToMyQuote, sendMyQuoteMessage, 
@@ -21,40 +22,62 @@ const TRACK_STAGES = [
   { status:'completed', label:'Trabajo terminado' },
 ]
 const TRACK_INDEX = Object.fromEntries(TRACK_STAGES.map((stage,index)=>[stage.status,index]))
-const EMPTY_REQUEST = { title:'', description:'', budget:'', currency:'UYU', desiredDate:'', attachments:[], b2bProjectId: null }
+const EMPTY_REQUEST = { 
+  title: '', 
+  description: '', 
+  budget: '', 
+  currency: 'UYU', 
+  desiredDate: '', 
+  attachments: [], 
+  b2bProjectId: null 
+}
 
-function readFiles(files) {
-  return Promise.all(Array.from(files || []).slice(0, 3).map((file) => new Promise((resolve, reject) => {
-    if (file.size > 2 * 1024 * 1024) return reject(new Error('Cada archivo debe pesar menos de 2 MB.'))
-    const reader = new FileReader(); reader.onload = () => resolve({ name:file.name, type:file.type, data:reader.result }); reader.onerror = reject; reader.readAsDataURL(file)
+function readFiles(files, category = 'archivo') {
+  return Promise.all(Array.from(files || []).slice(0, 10).map((file) => new Promise((resolve, reject) => {
+    if (file.size > 10 * 1024 * 1024) return reject(new Error('Cada archivo debe pesar menos de 10 MB.'))
+    const reader = new FileReader()
+    reader.onload = () => resolve({ name: file.name, type: file.type, category, data: reader.result })
+    reader.onerror = reject
+    reader.readAsDataURL(file)
   })))
 }
 
 function shortDate(value) {
   if (!value) return ''
-  const text=String(value); const date=new Date(/^\d{4}-\d{2}-\d{2}$/.test(text)?`${text}T00:00:00`:text)
-  return Number.isNaN(date.getTime())?'':date.toLocaleDateString('es-UY')
+  const text = String(value)
+  const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(text) ? `${text}T00:00:00` : text)
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('es-UY')
 }
 
 export default function CustomerPortal() {
   const { customerUser, customerToken, logoutCustomer } = useAuth()
-  const [profile,setProfile] = useState(null); const [quotes,setQuotes] = useState([]); const [selected,setSelected] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [quotes, setQuotes] = useState([])
+  const [selected, setSelected] = useState(null)
   const [b2bProjects, setB2bProjects] = useState([])
   const [activeProjectId, setActiveProjectId] = useState(null) // null means "All" or "Unassigned"
+  
+  // Platform tier mode: 'classic' | 'pro'
+  const [platformMode, setPlatformMode] = useState('classic')
+
   const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [isCreatingQuote, setIsCreatingQuote] = useState(false)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectLocation, setNewProjectLocation] = useState('')
 
-  const [messages,setMessages] = useState([]); const [request,setRequest] = useState(EMPTY_REQUEST); const [message,setMessage] = useState('')
-  const [error,setError] = useState(''); const [loading,setLoading] = useState(true); const [saving,setSaving] = useState(false)
-  const [depositReceipt,setDepositReceipt] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [request, setRequest] = useState(EMPTY_REQUEST)
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [depositReceipt, setDepositReceipt] = useState(null)
 
   useEffect(() => { 
     if (!customerToken) return; 
     Promise.all([getCustomerProfile(customerToken), getMyQuotes(customerToken), getB2bProjects(customerToken)])
-      .then(([p,q, b2b]) => { 
+      .then(([p, q, b2b]) => { 
         setProfile(p); 
         setQuotes(q.rows || []);
         setB2bProjects(b2b.rows || []);
@@ -64,9 +87,13 @@ export default function CustomerPortal() {
       .finally(() => setLoading(false)) 
   }, [customerToken])
 
+  const activeProject = useMemo(() => {
+    return b2bProjects.find(p => p.id === activeProjectId) || b2bProjects[0] || { id: 1, name: 'Obra Principal (Sede)' }
+  }, [b2bProjects, activeProjectId])
+
   const filteredQuotes = activeProjectId 
     ? quotes.filter(q => q.b2bProjectId === activeProjectId)
-    : quotes;
+    : quotes
 
   // Kanban groupings
   const requestedQuotes = filteredQuotes.filter(q => ['in_progress', 'reviewing'].includes(q.status))
@@ -74,14 +101,18 @@ export default function CustomerPortal() {
   const completedQuotes = filteredQuotes.filter(q => ['completed', 'cancelled', 'rejected'].includes(q.status))
 
   useEffect(() => { 
-    if (selected) getQuoteMessages(selected.id, customerToken).then(r => setMessages(r.rows || [])).catch(()=>{}) 
+    if (selected && customerToken) {
+      getMyQuoteMessages(selected.id, customerToken)
+        .then(r => setMessages(r.rows || []))
+        .catch(() => {})
+    }
   }, [selected, customerToken])
 
   async function submitRequest(e) {
     e.preventDefault(); setSaving(true); setError('')
     try {
       const payload = { ...request, b2bProjectId: activeProjectId }
-      const res = await createCustomerQuote(payload, customerToken)
+      const res = await createMyQuote(payload, customerToken)
       setQuotes([res, ...quotes]); setRequest(EMPTY_REQUEST); setIsCreatingQuote(false)
     } catch(err) { setError(err.message) }
     finally { setSaving(false) }
@@ -102,7 +133,7 @@ export default function CustomerPortal() {
   async function sendMessage(e) {
     e.preventDefault(); if(!message.trim()) return; setSaving(true); setError('')
     try {
-      const res = await sendQuoteMessage(selected.id, { message }, customerToken)
+      const res = await sendMyQuoteMessage(selected.id, { message }, customerToken)
       setMessages([...messages, res]); setMessage('')
     } catch(err) { setError(err.message) }
     finally { setSaving(false) }
@@ -111,7 +142,7 @@ export default function CustomerPortal() {
   async function respond(decision) {
     if(!window.confirm('¿Confirmar esta decisión?')) return; setSaving(true); setError('')
     try {
-      const res = await updateCustomerQuoteStatus(selected.id, decision, customerToken)
+      const res = await respondToMyQuote(selected.id, decision, customerToken)
       setQuotes(quotes.map(q => q.id === selected.id ? res : q)); setSelected(res)
     } catch(err) { setError(err.message) }
     finally { setSaving(false) }
@@ -135,192 +166,479 @@ export default function CustomerPortal() {
     finally { setSaving(false) }
   }
 
-
-
   if (!customerUser || !customerToken) return <Navigate to="/cliente/login?redirect=/cliente" replace />
   if (loading && !profile) return <div className="oxi-os-dashboard"><p style={{padding:'2rem'}}>Cargando OXI OS…</p></div>
 
-  return <div className="oxi-os-dashboard">
-    <aside className="oxi-os-sidebar">
-      <div className="oxi-os-brand" style={{ marginBottom: '1.5rem' }}>
-        <OxidaWordmark />
-      </div>
-      
-      <div className="oxi-os-user" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
-        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#262626', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', flexShrink: 0 }}>
-          {profile?.name?.[0] || 'A'}
+  return (
+    <div className="oxi-os-dashboard">
+      <aside className="oxi-os-sidebar">
+        <div className="oxi-os-brand" style={{ marginBottom: '1.5rem' }}>
+          <OxidaWordmark />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <strong>{profile?.name || 'Arquitecto'}</strong>
-          <span>{profile?.companyName || 'Constructora'}</span>
-        </div>
-      </div>
-      
-      {b2bProjects.length > 0 && (
-        <div className="oxi-os-project-select" style={{ marginTop: '0.5rem' }}>
-          <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            Obra seleccionada
-          </label>
-          <select 
-            value={activeProjectId || ''} 
-            onChange={(e) => {
-              setActiveProjectId(e.target.value ? Number(e.target.value) : null);
-              setSelected(null);
-              setIsCreatingProject(false);
-              setIsCreatingQuote(false);
-              setIsEditingProfile(false);
-            }}
-          >
-            <option value="">Todas las obras</option>
-            {b2bProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </div>
-      )}
-
-      <div className="oxi-os-menu" style={{ marginTop: '2rem' }}>
-        <button 
-          className={`oxi-os-btn ${isCreatingProject ? 'secondary' : 'secondary'}`} 
-          onClick={() => { setIsCreatingProject(true); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); }}
-        >
-          <span style={{marginRight: '8px', fontWeight: 'bold'}}>＋</span> Nueva Obra
-        </button>
-
-        <button 
-          className={`oxi-os-btn ${isCreatingQuote ? 'primary' : 'primary'}`} 
-          onClick={() => { setIsCreatingQuote(true); setIsCreatingProject(false); setSelected(null); setIsEditingProfile(false); }}
-        >
-          <span style={{marginRight: '8px', fontWeight: 'bold'}}>＋</span> Nueva Cotización
-        </button>
-
-        <Link to="/cliente/modelador" className="oxi-os-btn" style={{ border: '1px solid #404040', textAlign: 'center', marginTop: '1rem', display: 'block', textDecoration: 'none' }}>
-          <span style={{marginRight: '8px'}}>📐</span> Abrir Simulador 3D
-        </Link>
-      </div>
-
-      <button className="oxi-os-btn dark" onClick={() => { setIsEditingProfile(true); setIsCreatingProject(false); setIsCreatingQuote(false); setSelected(null); }} style={{ marginBottom: '10px' }}>
-        ⚙️ Configuración de Perfil
-      </button>
-
-      <button className="oxi-os-btn dark" onClick={logoutCustomer}>
-        Cerrar sesión
-      </button>
-    </aside>
-
-    <main className="oxi-os-main">
-      <header className="oxi-os-main-header">
-        <div>
-          <span>OXI OS PARA CONSTRUCTORAS</span>
-          <h1>Mis Obras</h1>
-          <p>Gestioná tus proyectos, cotizaciones y seguimientos.</p>
-        </div>
-      </header>
-      {error && <p className="customer-portal-error" style={{color: 'red', marginBottom: '1rem'}}>{error}</p>}
-        {isEditingProfile ? (
-          <form className="oxi-os-profile-form" onSubmit={saveProfile} style={{maxWidth: '600px', background: '#fff', padding: '2rem', borderRadius: '12px', border: '1px solid #e5e5e5', boxShadow: '0 4px 20px rgba(0,0,0,0.03)'}}>
-            <h2 style={{margin: '0 0 1.5rem', fontSize: '1.5rem', color: '#1a1a1a'}}>Datos de contacto</h2>
-            <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-              <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
-                Nombre completo
-                <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s'}} value={profile?.name||''} onChange={e=>setProfile({...profile,name:e.target.value})} placeholder="Tu nombre" />
-              </label>
-              <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
-                Teléfono de contacto
-                <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s'}} value={profile?.phone||''} onChange={e=>setProfile({...profile,phone:e.target.value})} placeholder="+598 99 123 456" />
-              </label>
-              <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
-                Empresa Constructora / Estudio (Opcional)
-                <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s'}} value={profile?.companyName||''} onChange={e=>setProfile({...profile,companyName:e.target.value})} placeholder="Estudio Arquitectura SRL" />
-              </label>
-              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
-                <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
-                  Localidad
-                  <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s'}} value={profile?.city||''} onChange={e=>setProfile({...profile,city:e.target.value})} placeholder="Ciudad o Barrio" />
-                </label>
-                <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
-                  Departamento / Estado
-                  <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s'}} value={profile?.department||''} onChange={e=>setProfile({...profile,department:e.target.value})} placeholder="Montevideo" />
-                </label>
-              </div>
-              <button disabled={saving} style={{marginTop: '1rem', padding: '14px', background: '#ea580c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '700', cursor: 'pointer', transition: 'background 0.2s'}}>
-                {saving ? 'Guardando...' : 'Guardar configuración'}
-              </button>
-            </div>
-          </form>
-        ) : isCreatingProject ? (
-          <div className="customer-request">
-            <div>
-              <span>Nueva Obra</span>
-              <h2>Dar de alta un nuevo proyecto</h2>
-              <p>Creá una obra para agrupar todas las cotizaciones y pedidos correspondientes.</p>
-            </div>
-            <form onSubmit={submitNewProject}>
-              <label>Nombre de la Obra (Ej: Torre Libertador)<input value={newProjectName} onChange={e=>setNewProjectName(e.target.value)} required/></label>
-              <label>Ubicación / Dirección<input value={newProjectLocation} onChange={e=>setNewProjectLocation(e.target.value)}/></label>
-              <button disabled={saving}>{saving?'Creando...':'Crear Obra'}</button>
-            </form>
+        
+        <div className="oxi-os-user" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#262626', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', flexShrink: 0 }}>
+            {profile?.name?.[0] || 'C'}
           </div>
-        ) : selected ? (
-          <div className="quote-workspace"><button className="quote-back" onClick={()=>setSelected(null)}>← Volver al tablero</button><div className="quote-workspace-head"><div><span>{selected.referenceNumber} · {STATUS[selected.status]}</span><h2>{selected.title}</h2><p>{selected.description}</p></div>{selected.totalAmount>0&&<strong>{formatPrice(selected.totalAmount,selected.currency)}</strong>}</div>
-          {selected.proposalDescription&&<div className="quote-proposal-copy"><strong>Propuesta de Mercadobra</strong><p>{selected.proposalDescription}</p></div>}{selected.attachments?.length>0&&<div className="quote-files">{selected.attachments.map((f,i)=><a key={i} href={f.url || f.data} target="_blank" rel="noreferrer" download={!f.url ? f.name : undefined}>📎 {f.name}</a>)}</div>}
-          <section className="project-tracker"><div className="project-tracker-heading"><span>Seguimiento</span><h3>Estado de tu proyecto</h3></div><ol>{TRACK_STAGES.map((stage,index)=>{const current=TRACK_INDEX[selected.status]??0;const state=index<current?'is-complete':index===current?'is-current':'';return <li key={stage.status} className={state}><i aria-hidden="true">{index<current?'✓':index+1}</i><span>{stage.label}</span></li>})}</ol>{['rejected','cancelled'].includes(selected.status)&&<p className="project-tracker-alert">Esta cotización está {STATUS[selected.status].toLowerCase()}.</p>}{(selected.milestones||[]).length>0&&<div className="project-milestones"><h4>Etapas de la obra</h4>{selected.milestones.map((item,index)=><article key={item.id||index} className={`is-${item.status}`}><i>{item.status==='completed'?'✓':index+1}</i><div><strong>{item.title}</strong>{item.description&&<p>{item.description}</p>}<small>{item.status==='completed'&&item.completedAt?`Terminado el ${shortDate(item.completedAt)}`:[item.plannedStartAt,item.plannedEndAt].filter(Boolean).map(shortDate).join(' — ')||'Fecha a confirmar'}</small></div><span>{item.status==='completed'?'Terminado':item.status==='in_progress'?'En proceso':'Pendiente'}</span></article>)}</div>}</section>
-          {selected.status==='sent'&&<div className="quote-decision"><p>¿Cómo querés continuar con esta propuesta?</p><button onClick={()=>respond('accepted')}>Aceptar cotización</button><button onClick={()=>respond('rejected')}>Solicitar nueva propuesta</button></div>}
-          {selected.status==='accepted'&&selected.depositAmount>0&&<section className="quote-deposit"><span>Reserva del proyecto</span><h3>Confirmá la seña de {formatPrice(selected.depositAmount,selected.currency)}</h3>{selected.depositStatus==='reported'?<p>Recibimos tu comprobante. Mercadobra confirmará la transferencia.</p>:selected.depositStatus==='approved'?<p>Pago confirmado. Tu proyecto ya está activo.</p>:<><button type="button" onClick={payDeposit} disabled={saving}>Pagar con Mercado Pago</button><div className="quote-transfer"><strong>¿Pagaste por transferencia?</strong><input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={async e=>{try{setDepositReceipt((await readFiles(e.target.files))[0]||null)}catch(err){setError(err.message)}}}/><button type="button" onClick={reportTransfer} disabled={saving||!depositReceipt}>Informar transferencia</button></div></>}</section>}
-          <div className="quote-thread">{messages.length===0?<p className="quote-thread-empty">Todavía no hay mensajes. Podés escribir tu primera consulta.</p>:messages.map(m=><article key={m.id} className={m.authorRole==='customer'?'is-customer':'is-admin'}><small>{m.authorRole==='customer'?'Vos':'Mercadobra'}</small><p>{m.message}</p><time>{new Date(m.createdAt).toLocaleString('es-UY')}</time></article>)}</div>
-          <form className="quote-message-form" onSubmit={sendMessage}><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Escribí un mensaje sobre esta cotización…"/><button>Enviar</button></form></div>
-        ) : isCreatingQuote ? (
-          <div className="customer-request">
-            <div>
-              <span>Nueva cotización {activeProjectId ? `para la obra seleccionada` : ''}</span>
-              <h2>Contanos qué necesitás.</h2>
-              <p>Podés adjuntar hasta 3 imágenes o PDF de 2 MB cada uno.</p>
-            </div>
-            <form onSubmit={submitRequest}>
-              <label>Título del proyecto<input value={request.title} onChange={e=>setRequest({...request,title:e.target.value})} required/></label>
-              <label>Detalles<textarea rows="5" value={request.description} onChange={e=>setRequest({...request,description:e.target.value})} required/></label>
-              <div>
-                <label>Presupuesto estimado<input type="number" min="0" value={request.budget} onChange={e=>setRequest({...request,budget:e.target.value})}/></label>
-                <label>Moneda<select value={request.currency} onChange={e=>setRequest({...request,currency:e.target.value})}><option>UYU</option><option>USD</option></select></label>
-                <label>Fecha deseada<input type="date" value={request.desiredDate} onChange={e=>setRequest({...request,desiredDate:e.target.value})}/></label>
-              </div>
-              <label>Fotos o planos<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple onChange={async e=>{try{setRequest({...request,attachments:await readFiles(e.target.files)})}catch(err){setError(err.message)}}}/></label>
-              {request.attachments.length>0&&<small>{request.attachments.map(f=>f.name).join(' · ')}</small>}
-              <button disabled={saving}>{saving?'Enviando…':'Enviar solicitud'}</button>
-            </form>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <strong>{profile?.name || 'Constructora / Estudio'}</strong>
+            <span>{profile?.companyName || 'Arquitectura & Obra'}</span>
           </div>
-        ) : (
-          <div className="kanban-board">
-            <div className="kanban-column">
-              <h3>Solicitadas</h3>
-              {requestedQuotes.length === 0 ? <p className="kanban-empty">No hay solicitudes en espera.</p> : requestedQuotes.map(q => (
-                <button key={q.id} className="kanban-card" onClick={() => setSelected(q)}>
-                  <span>{q.referenceNumber}</span>
-                  <strong>{q.title}</strong>
-                  <small>{STATUS[q.status]}</small>
-                </button>
-              ))}
-            </div>
-            <div className="kanban-column">
-              <h3>En Proceso</h3>
-              {inProgressQuotes.length === 0 ? <p className="kanban-empty">No hay cotizaciones aprobadas.</p> : inProgressQuotes.map(q => (
-                <button key={q.id} className="kanban-card" onClick={() => setSelected(q)}>
-                  <span>{q.referenceNumber}</span>
-                  <strong>{q.title}</strong>
-                  <small>{STATUS[q.status]}</small>
-                </button>
-              ))}
-            </div>
-            <div className="kanban-column">
-              <h3>Finalizadas</h3>
-              {completedQuotes.length === 0 ? <p className="kanban-empty">No hay trabajos terminados.</p> : completedQuotes.map(q => (
-                <button key={q.id} className="kanban-card" onClick={() => setSelected(q)}>
-                  <span>{q.referenceNumber}</span>
-                  <strong>{q.title}</strong>
-                  <small>{STATUS[q.status]}</small>
-                </button>
-              ))}
-            </div>
+        </div>
+
+        {/* ── PLATFORM SWITCHER SIDEBAR ── */}
+        <div className="oxi-sidebar-platform-switch">
+          <label>Nivel de Plataforma</label>
+          <div className="platform-toggle-group">
+            <button
+              type="button"
+              className={`platform-toggle-btn ${platformMode === 'classic' ? 'is-active' : ''}`}
+              onClick={() => { setPlatformMode('classic'); setSelected(null); }}
+            >
+              🛠️ OxI Clásico
+            </button>
+            <button
+              type="button"
+              className={`platform-toggle-btn ${platformMode === 'pro' ? 'is-active' : ''}`}
+              onClick={() => { setPlatformMode('pro'); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); setIsCreatingProject(false); }}
+            >
+              ⚡ OxI Pro
+            </button>
+          </div>
+        </div>
+        
+        {b2bProjects.length > 0 && (
+          <div className="oxi-os-project-select" style={{ marginTop: '0.5rem' }}>
+            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              Obra seleccionada
+            </label>
+            <select 
+              value={activeProjectId || ''} 
+              onChange={(e) => {
+                setActiveProjectId(e.target.value ? Number(e.target.value) : null);
+                setSelected(null);
+                setIsCreatingProject(false);
+                setIsCreatingQuote(false);
+                setIsEditingProfile(false);
+              }}
+            >
+              <option value="">Todas las obras</option>
+              {b2bProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
           </div>
         )}
-    </main>
-  </div>
+
+        <div className="oxi-os-menu" style={{ marginTop: '1.5rem' }}>
+          <button 
+            className="oxi-os-btn secondary"
+            onClick={() => { setIsCreatingProject(true); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); setPlatformMode('classic'); }}
+          >
+            <span style={{marginRight: '8px', fontWeight: 'bold'}}>＋</span> Nueva Obra
+          </button>
+
+          <button 
+            className="oxi-os-btn primary"
+            onClick={() => { setIsCreatingQuote(true); setIsCreatingProject(false); setSelected(null); setIsEditingProfile(false); setPlatformMode('classic'); }}
+          >
+            <span style={{marginRight: '8px', fontWeight: 'bold'}}>＋</span> Nueva Cotización
+          </button>
+
+          <Link to="/cliente/modelador" className="oxi-os-btn" style={{ border: '1px solid #404040', textAlign: 'center', marginTop: '0.5rem', display: 'block', textDecoration: 'none' }}>
+            <span style={{marginRight: '8px'}}>📐</span> Simulador 3D Óxida
+          </Link>
+        </div>
+
+        <button className="oxi-os-btn dark" onClick={() => { setIsEditingProfile(true); setIsCreatingProject(false); setIsCreatingQuote(false); setSelected(null); }} style={{ marginBottom: '10px' }}>
+          ⚙️ Perfil de Constructora
+        </button>
+
+        <button className="oxi-os-btn dark" onClick={logoutCustomer}>
+          Cerrar sesión
+        </button>
+      </aside>
+
+      <main className="oxi-os-main">
+        {/* If in PRO mode and not editing profile or project, render OxiProSuite */}
+        {platformMode === 'pro' && !isEditingProfile && !isCreatingProject ? (
+          <OxiProSuite 
+            project={activeProject} 
+            onBackToClassic={() => setPlatformMode('classic')} 
+          />
+        ) : (
+          /* PLATAFORMA OXI CLÁSICO */
+          <>
+            <header className="oxi-os-main-header">
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                  <span>PLATAFORMA OXI CLÁSICO</span>
+                  <span className="classic-tag">OPERATIVA CONSTRUCTORAS & ESTUDIOS</span>
+                </div>
+                <h1>Gestión de Obras & Cotizaciones</h1>
+                <p>Carga de planos, memorias, fotos, archivos y seguimiento en tiempo real de cotizaciones.</p>
+              </div>
+
+              <div className="header-platform-toggle">
+                <button 
+                  className="switch-to-pro-btn"
+                  onClick={() => setPlatformMode('pro')}
+                >
+                  ⚡ Abrir Suite OxI Pro (Ingeniería & Costos) →
+                </button>
+              </div>
+            </header>
+
+            {error && <p className="customer-portal-error" style={{color: 'red', marginBottom: '1rem'}}>{error}</p>}
+
+            {isEditingProfile ? (
+              <form className="oxi-os-profile-form" onSubmit={saveProfile} style={{maxWidth: '640px', background: '#fff', padding: '2rem', borderRadius: '12px', border: '1px solid #e5e5e5', boxShadow: '0 4px 20px rgba(0,0,0,0.03)'}}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h2 style={{margin: 0, fontSize: '1.5rem', color: '#1a1a1a'}}>Perfil de Cliente / Constructora</h2>
+                  <button type="button" onClick={() => setIsEditingProfile(false)} style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer', fontSize: '1rem' }}>✕ Cerrar</button>
+                </div>
+                <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
+                  <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
+                    Nombre del Responsable / Contacto
+                    <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none'}} value={profile?.name||''} onChange={e=>setProfile({...profile,name:e.target.value})} placeholder="Ej: Arq. Juan Pérez" />
+                  </label>
+                  <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
+                    Empresa Constructora / Estudio de Arquitectura
+                    <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none'}} value={profile?.companyName||''} onChange={e=>setProfile({...profile,companyName:e.target.value})} placeholder="Constructora del Plata SRL" />
+                  </label>
+                  <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
+                    Teléfono directo de obra
+                    <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none'}} value={profile?.phone||''} onChange={e=>setProfile({...profile,phone:e.target.value})} placeholder="+598 99 123 456" />
+                  </label>
+                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
+                    <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
+                      Localidad / Barrio
+                      <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none'}} value={profile?.city||''} onChange={e=>setProfile({...profile,city:e.target.value})} placeholder="Pocitos / Carrasco" />
+                    </label>
+                    <label style={{display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: '600', color: '#525252'}}>
+                      Departamento
+                      <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none'}} value={profile?.department||''} onChange={e=>setProfile({...profile,department:e.target.value})} placeholder="Montevideo" />
+                    </label>
+                  </div>
+                  <button disabled={saving} style={{marginTop: '1rem', padding: '14px', background: '#ea580c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '700', cursor: 'pointer'}}>
+                    {saving ? 'Guardando...' : 'Guardar Perfil'}
+                  </button>
+                </div>
+              </form>
+            ) : isCreatingProject ? (
+              <div className="customer-request">
+                <div>
+                  <span>Nueva Obra</span>
+                  <h2>Dar de alta un nuevo proyecto</h2>
+                  <p>Creá una obra para organizar sus planos, memorias, cronograma y pedidos.</p>
+                </div>
+                <form onSubmit={submitNewProject}>
+                  <label>Nombre de la Obra (Ej: Torre Libertador, Complejo Solís)<input value={newProjectName} onChange={e=>setNewProjectName(e.target.value)} required/></label>
+                  <label>Ubicación / Dirección exacta<input value={newProjectLocation} onChange={e=>setNewProjectLocation(e.target.value)} placeholder="Ej: Av. Brasil 2450, Montevideo"/></label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button type="button" className="btn-secondary" onClick={() => setIsCreatingProject(false)}>Cancelar</button>
+                    <button disabled={saving}>{saving?'Creando...':'Crear Obra'}</button>
+                  </div>
+                </form>
+              </div>
+            ) : selected ? (
+              <div className="quote-workspace">
+                <button className="quote-back" onClick={()=>setSelected(null)}>← Volver al tablero</button>
+                <div className="quote-workspace-head">
+                  <div>
+                    <span>{selected.referenceNumber} · {STATUS[selected.status]}</span>
+                    <h2>{selected.title}</h2>
+                    <p>{selected.description}</p>
+                  </div>
+                  {selected.totalAmount>0 && <strong>{formatPrice(selected.totalAmount, selected.currency)}</strong>}
+                </div>
+
+                {selected.proposalDescription && (
+                  <div className="quote-proposal-copy">
+                    <strong>Propuesta de Mercadobra / Óxida</strong>
+                    <p>{selected.proposalDescription}</p>
+                  </div>
+                )}
+
+                {/* Attachments categorizados */}
+                {selected.attachments?.length > 0 && (
+                  <div className="quote-files">
+                    <strong>Archivos adjuntos:</strong>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
+                      {selected.attachments.map((f, i) => (
+                        <a key={i} href={f.url || f.data} target="_blank" rel="noreferrer" download={!f.url ? f.name : undefined} className="attachment-badge">
+                          {f.category === 'plano' ? '📐' : f.category === 'memoria' ? '📄' : f.category === 'foto' ? '📷' : '📎'} {f.name}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tracker de 5 etapas */}
+                <section className="project-tracker">
+                  <div className="project-tracker-heading">
+                    <span>Seguimiento en Vivo</span>
+                    <h3>Estado de tu proyecto</h3>
+                  </div>
+                  <ol>
+                    {TRACK_STAGES.map((stage, index) => {
+                      const current = TRACK_INDEX[selected.status] ?? 0;
+                      const state = index < current ? 'is-complete' : index === current ? 'is-current' : '';
+                      return (
+                        <li key={stage.status} className={state}>
+                          <i aria-hidden="true">{index < current ? '✓' : index + 1}</i>
+                          <span>{stage.label}</span>
+                        </li>
+                      )
+                    })}
+                  </ol>
+                  {['rejected','cancelled'].includes(selected.status) && (
+                    <p className="project-tracker-alert">Esta cotización está {STATUS[selected.status].toLowerCase()}.</p>
+                  )}
+                  {(selected.milestones || []).length > 0 && (
+                    <div className="project-milestones">
+                      <h4>Etapas del proyecto</h4>
+                      {selected.milestones.map((item, index) => (
+                        <article key={item.id || index} className={`is-${item.status}`}>
+                          <i>{item.status === 'completed' ? '✓' : index + 1}</i>
+                          <div>
+                            <strong>{item.title}</strong>
+                            {item.description && <p>{item.description}</p>}
+                            <small>{item.status === 'completed' && item.completedAt ? `Terminado el ${shortDate(item.completedAt)}` : [item.plannedStartAt, item.plannedEndAt].filter(Boolean).map(shortDate).join(' — ') || 'Fecha a confirmar'}</small>
+                          </div>
+                          <span>{item.status === 'completed' ? 'Terminado' : item.status === 'in_progress' ? 'En proceso' : 'Pendiente'}</span>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                {selected.status === 'sent' && (
+                  <div className="quote-decision">
+                    <p>¿Cómo deseás continuar con esta propuesta comercial?</p>
+                    <button onClick={() => respond('accepted')}>✓ Aceptar cotización</button>
+                    <button onClick={() => respond('rejected')}>Solicitar ajuste / nueva propuesta</button>
+                  </div>
+                )}
+
+                {selected.status === 'accepted' && selected.depositAmount > 0 && (
+                  <section className="quote-deposit">
+                    <span>Reserva del proyecto</span>
+                    <h3>Confirmá la seña de {formatPrice(selected.depositAmount, selected.currency)}</h3>
+                    {selected.depositStatus === 'reported' ? (
+                      <p>Recibimos tu comprobante de transferencia. El equipo confirmará en breve.</p>
+                    ) : selected.depositStatus === 'approved' ? (
+                      <p>Pago confirmado. Tu proyecto ya pasó a producción / obra.</p>
+                    ) : (
+                      <>
+                        <button type="button" onClick={payDeposit} disabled={saving}>Pagar con Mercado Pago</button>
+                        <div className="quote-transfer">
+                          <strong>¿Pagaste por transferencia bancaria?</strong>
+                          <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={async e => {
+                            try { setDepositReceipt((await readFiles(e.target.files))[0] || null) } catch(err) { setError(err.message) }
+                          }} />
+                          <button type="button" onClick={reportTransfer} disabled={saving || !depositReceipt}>Informar transferencia</button>
+                        </div>
+                      </>
+                    )}
+                  </section>
+                )}
+
+                <div className="quote-thread">
+                  <h4>Mensajes y consultas con el equipo técnico</h4>
+                  {messages.length === 0 ? (
+                    <p className="quote-thread-empty">Todavía no hay mensajes. Podés escribir tu primera consulta sobre esta cotización.</p>
+                  ) : (
+                    messages.map(m => (
+                      <article key={m.id} className={m.authorRole === 'customer' ? 'is-customer' : 'is-admin'}>
+                        <small>{m.authorRole === 'customer' ? 'Tu Estudio / Constructora' : 'Ingeniería Óxida'}</small>
+                        <p>{m.message}</p>
+                        <time>{new Date(m.createdAt).toLocaleString('es-UY')}</time>
+                      </article>
+                    ))
+                  )}
+                </div>
+
+                <form className="quote-message-form" onSubmit={sendMessage}>
+                  <textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="Escribí una consulta sobre esta cotización o modificaciones al diseño…" />
+                  <button>Enviar mensaje</button>
+                </form>
+              </div>
+            ) : isCreatingQuote ? (
+              /* ENRICHED QUOTE REQUEST: PLANOS, MEMORIAS, FOTOS, ARCHIVOS */
+              <div className="customer-request">
+                <div>
+                  <span>Plataforma OxI Clásico</span>
+                  <h2>Solicitar Cotización de Obra</h2>
+                  <p>
+                    Cargá planos (CAD, PDF), memorias descriptivas, fotos de referencia o archivos técnicos.
+                    Analizamos las piezas y te enviamos la propuesta detallada.
+                  </p>
+                </div>
+
+                <form onSubmit={submitRequest}>
+                  <label>
+                    Título del proyecto o pieza
+                    <input 
+                      value={request.title} 
+                      onChange={e => setRequest({...request, title: e.target.value})} 
+                      placeholder="Ej: Barandas de balcones, Escalera caracol, Pérgola de hierro y madera"
+                      required
+                    />
+                  </label>
+
+                  <label>
+                    Memoria y detalles técnicos
+                    <textarea 
+                      rows="4" 
+                      value={request.description} 
+                      onChange={e => setRequest({...request, description: e.target.value})} 
+                      placeholder="Medidas aproximadas, especificaciones de perfiles, tipos de madera, tratamiento de pintura..."
+                      required
+                    />
+                  </label>
+
+                  <div>
+                    <label>
+                      Presupuesto estimado
+                      <input type="number" min="0" value={request.budget} onChange={e => setRequest({...request, budget: e.target.value})} placeholder="Opcional" />
+                    </label>
+                    <label>
+                      Moneda
+                      <select value={request.currency} onChange={e => setRequest({...request, currency: e.target.value})}>
+                        <option>UYU</option>
+                        <option>USD</option>
+                      </select>
+                    </label>
+                    <label>
+                      Fecha deseada
+                      <input type="date" value={request.desiredDate} onChange={e => setRequest({...request, desiredDate: e.target.value})} />
+                    </label>
+                  </div>
+
+                  {/* Carga diferenciada de archivos */}
+                  <div className="upload-sections-box">
+                    <strong>📁 Carga de Documentación:</strong>
+                    
+                    <div className="upload-grid-row">
+                      <div className="upload-col">
+                        <label className="upload-btn-label">
+                          📐 Cargar Planos (PDF / CAD)
+                          <input 
+                            type="file" 
+                            accept=".pdf,.dwg,.dxf,image/*" 
+                            multiple 
+                            style={{ display: 'none' }}
+                            onChange={async e => {
+                              try {
+                                const newFiles = await readFiles(e.target.files, 'plano')
+                                setRequest(prev => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }))
+                              } catch(err) { setError(err.message) }
+                            }}
+                          />
+                        </label>
+                      </div>
+
+                      <div className="upload-col">
+                        <label className="upload-btn-label">
+                          📄 Cargar Memoria Descriptiva
+                          <input 
+                            type="file" 
+                            accept=".pdf,.doc,.docx,.txt" 
+                            multiple 
+                            style={{ display: 'none' }}
+                            onChange={async e => {
+                              try {
+                                const newFiles = await readFiles(e.target.files, 'memoria')
+                                setRequest(prev => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }))
+                              } catch(err) { setError(err.message) }
+                            }}
+                          />
+                        </label>
+                      </div>
+
+                      <div className="upload-col">
+                        <label className="upload-btn-label">
+                          📷 Cargar Fotos de Obra / Sitio
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            multiple 
+                            style={{ display: 'none' }}
+                            onChange={async e => {
+                              try {
+                                const newFiles = await readFiles(e.target.files, 'foto')
+                                setRequest(prev => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }))
+                              } catch(err) { setError(err.message) }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    {request.attachments.length > 0 && (
+                      <div className="uploaded-list">
+                        <small>Archivos listos para enviar ({request.attachments.length}):</small>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                          {request.attachments.map((f, idx) => (
+                            <span key={idx} className="file-chip">
+                              {f.category === 'plano' ? '📐' : f.category === 'memoria' ? '📄' : f.category === 'foto' ? '📷' : '📎'} {f.name}
+                              <button 
+                                type="button" 
+                                onClick={() => setRequest(prev => ({ ...prev, attachments: prev.attachments.filter((_, i) => i !== idx) }))}
+                                style={{ background: 'none', border: 'none', color: '#991b1b', cursor: 'pointer', padding: 0 }}
+                              >
+                                ✕
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
+                    <button type="button" className="btn-secondary" onClick={() => setIsCreatingQuote(false)}>Cancelar</button>
+                    <button disabled={saving}>{saving ? 'Enviando solicitud…' : 'Enviar Solicitud a Cotizar'}</button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              /* TABLERO KANBAN DE COTIZACIONES */
+              <div className="kanban-board">
+                <div className="kanban-column">
+                  <h3>Solicitadas ({requestedQuotes.length})</h3>
+                  {requestedQuotes.length === 0 ? <p className="kanban-empty">No hay solicitudes en espera.</p> : requestedQuotes.map(q => (
+                    <button key={q.id} className="kanban-card" onClick={() => setSelected(q)}>
+                      <span>{q.referenceNumber}</span>
+                      <strong>{q.title}</strong>
+                      <small>{STATUS[q.status]}</small>
+                    </button>
+                  ))}
+                </div>
+                <div className="kanban-column">
+                  <h3>En Proceso ({inProgressQuotes.length})</h3>
+                  {inProgressQuotes.length === 0 ? <p className="kanban-empty">No hay cotizaciones aprobadas.</p> : inProgressQuotes.map(q => (
+                    <button key={q.id} className="kanban-card" onClick={() => setSelected(q)}>
+                      <span>{q.referenceNumber}</span>
+                      <strong>{q.title}</strong>
+                      <small>{STATUS[q.status]}</small>
+                    </button>
+                  ))}
+                </div>
+                <div className="kanban-column">
+                  <h3>Finalizadas ({completedQuotes.length})</h3>
+                  {completedQuotes.length === 0 ? <p className="kanban-empty">No hay trabajos terminados.</p> : completedQuotes.map(q => (
+                    <button key={q.id} className="kanban-card" onClick={() => setSelected(q)}>
+                      <span>{q.referenceNumber}</span>
+                      <strong>{q.title}</strong>
+                      <small>{STATUS[q.status]}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </main>
+    </div>
+  )
 }

@@ -42,3 +42,168 @@
 .oxi-os-main-header h1 { font-size: 3.5rem; letter-spacing: -0.04em; margin: 0.5rem 0 0; color: #1a1a1a; line-height: 1.1; font-weight: 800; }
 .oxi-os-main-header p { color: #525252; margin: 1rem 0 0; font-size: 1.1rem; }
 
+
+/* ── OxI Platform Switcher Styles ── */
+.oxi-sidebar-platform-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #1c1c1c;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.oxi-sidebar-platform-switch label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #a3a3a3;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.platform-toggle-group {
+  display: flex;
+  background: #111;
+  border-radius: 6px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.platform-toggle-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #a3a3a3;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.platform-toggle-btn:hover {
+  color: #fff;
+}
+
+.platform-toggle-btn.is-active {
+  background: #ea580c;
+  color: #fff;
+}
+
+.classic-tag {
+  background: #e5e5e5;
+  color: #404040;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.header-platform-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.switch-to-pro-btn {
+  background: linear-gradient(135deg, #171717 0%, #262626 100%);
+  color: #ea580c;
+  border: 1px solid #404040;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+}
+
+.switch-to-pro-btn:hover {
+  border-color: #ea580c;
+  background: #111;
+  transform: translateY(-1px);
+}
+
+.upload-sections-box {
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.upload-sections-box strong {
+  font-size: 0.85rem;
+  color: #262626;
+}
+
+.upload-grid-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.upload-btn-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px;
+  background: #fff;
+  border: 1px dashed #d4d4d4;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #404040;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upload-btn-label:hover {
+  border-color: #ea580c;
+  color: #ea580c;
+  background: #fffaf6;
+}
+
+.uploaded-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e5e5;
+}
+
+.file-chip {
+  background: #fff;
+  border: 1px solid #d4d4d4;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.attachment-badge {
+  background: #fff;
+  border: 1px solid #d4d4d4;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #171717;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.attachment-badge:hover {
+  border-color: #ea580c;
+  color: #ea580c;
+}
