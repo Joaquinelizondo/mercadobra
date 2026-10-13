@@ -59,6 +59,7 @@ export default function CustomerPortal() {
   
   // Platform tier mode: 'classic' | 'pro'
   const [platformMode, setPlatformMode] = useState('classic')
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [isCreatingQuote, setIsCreatingQuote] = useState(false)
@@ -79,6 +80,7 @@ export default function CustomerPortal() {
     Promise.all([getCustomerProfile(customerToken), getMyQuotes(customerToken), getB2bProjects(customerToken)])
       .then(([p, q, b2b]) => { 
         setProfile(p); 
+        if (p?.tier === 'pro') setPlatformMode('pro');
         setQuotes(q.rows || []);
         setB2bProjects(b2b.rows || []);
         if (b2b.rows && b2b.rows.length > 0) setActiveProjectId(b2b.rows[0].id)
@@ -86,6 +88,8 @@ export default function CustomerPortal() {
       .catch(e => setError(e.message))
       .finally(() => setLoading(false)) 
   }, [customerToken])
+
+  const isProUser = profile?.tier === 'pro'
 
   const activeProject = useMemo(() => {
     return b2bProjects.find(p => p.id === activeProjectId) || b2bProjects[0] || { id: 1, name: 'Obra Principal (Sede)' }
@@ -183,6 +187,20 @@ export default function CustomerPortal() {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <strong>{profile?.name || 'Constructora / Estudio'}</strong>
             <span>{profile?.companyName || 'Arquitectura & Obra'}</span>
+            <div style={{ marginTop: '6px' }}>
+              <span style={{
+                fontSize: '0.68rem',
+                fontWeight: '800',
+                letterSpacing: '0.04em',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                background: isProUser ? '#ea580c' : '#2a2a2a',
+                color: isProUser ? '#fff' : '#a3a3a3',
+                display: 'inline-block'
+              }}>
+                {isProUser ? '⚡ PLAN OXI PRO' : '🛠️ PLAN OXI CLÁSICO'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -200,9 +218,15 @@ export default function CustomerPortal() {
             <button
               type="button"
               className={`platform-toggle-btn ${platformMode === 'pro' ? 'is-active' : ''}`}
-              onClick={() => { setPlatformMode('pro'); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); setIsCreatingProject(false); }}
+              onClick={() => {
+                if (isProUser) {
+                  setPlatformMode('pro'); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); setIsCreatingProject(false);
+                } else {
+                  setShowUpgradeModal(true)
+                }
+              }}
             >
-              ⚡ OxI Pro
+              ⚡ OxI Pro {!isProUser && '🔒'}
             </button>
           </div>
         </div>
@@ -280,9 +304,15 @@ export default function CustomerPortal() {
               <div className="header-platform-toggle">
                 <button 
                   className="switch-to-pro-btn"
-                  onClick={() => setPlatformMode('pro')}
+                  onClick={() => {
+                    if (isProUser) {
+                      setPlatformMode('pro')
+                    } else {
+                      setShowUpgradeModal(true)
+                    }
+                  }}
                 >
-                  ⚡ Abrir Suite OxI Pro (Ingeniería & Costos) →
+                  {isProUser ? '⚡ Abrir Suite OxI Pro (Ingeniería & Costos) →' : '🔒 Solicitar Suite OxI Pro (Constructoras) →'}
                 </button>
               </div>
             </header>
@@ -639,6 +669,59 @@ export default function CustomerPortal() {
           </>
         )}
       </main>
+
+      {/* ── MODAL: ACCESO EXCLUSIVO OXI PRO ── */}
+      {showUpgradeModal && (
+        <div className="oxi-modal-backdrop" onClick={() => setShowUpgradeModal(false)}>
+          <div className="oxi-modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+              <span style={{ fontSize: '2rem' }}>🔒</span>
+              <h3 style={{ margin: 0, fontSize: '1.4rem' }}>Acceso Exclusivo a Plataforma OxI Pro</h3>
+            </div>
+            
+            <p style={{ lineHeight: 1.5, color: '#525252', fontSize: '0.95rem' }}>
+              Tu usuario tiene actualmente asignado el nivel <strong>Plataforma OxI Clásico</strong> para solicitar y seguir cotizaciones.
+            </p>
+
+            <div style={{ background: '#fffaf6', border: '1px solid #fed7aa', borderRadius: '8px', padding: '14px', marginBottom: '1.25rem' }}>
+              <strong style={{ color: '#c2410c', display: 'block', marginBottom: '6px', fontSize: '0.88rem' }}>
+                La Suite OxI Pro incluye para Constructoras:
+              </strong>
+              <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.85rem', color: '#431407', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <li>📁 Gestor de planos técnicos con control de versiones e iteraciones</li>
+                <li>📅 Cronograma de obra editable con asignación de recursos y mano de obra</li>
+                <li>📊 Curva S semanal (% Avance Real vs Presupuesto Cero)</li>
+                <li>🚨 Control presupuestario por rubro con alertas automáticas de sobrecosto</li>
+              </ul>
+            </div>
+
+            <p style={{ fontSize: '0.85rem', color: '#737373', margin: '0 0 1.5rem' }}>
+              Para habilitar OxI Pro en tu cuenta o tus obras, comunicate con la administración de Mercadobra / Óxida o enviá una solicitud directa.
+            </p>
+
+            <div className="modal-actions">
+              <button type="button" className="btn-cancel" onClick={() => setShowUpgradeModal(false)}>
+                Continuar en OxI Clásico
+              </button>
+              <button 
+                type="button" 
+                className="oxi-btn-primary" 
+                onClick={() => {
+                  setShowUpgradeModal(false)
+                  setIsCreatingQuote(true)
+                  setRequest(prev => ({
+                    ...prev,
+                    title: 'Solicitud de Habilitación a Suite OxI Pro',
+                    description: 'Solicito la habilitación de mi cuenta de constructora / estudio al nivel OxI Pro para control técnico de obra y costos.'
+                  }))
+                }}
+              >
+                ✉ Solicitar Habilitación de OxI Pro
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

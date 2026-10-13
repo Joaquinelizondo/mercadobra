@@ -94,6 +94,7 @@ function mapAdminCustomerRow(row) {
     city: row.city || '',
     department: row.department || '',
     status: row.status || 'active',
+    tier: row.tier || 'classic',
     internalNotes: row.internal_notes ?? row.internalNotes ?? '',
     createdAt: row.created_at ?? row.createdAt ?? null,
     updatedAt: row.updated_at ?? row.updatedAt ?? null,
@@ -312,6 +313,7 @@ async function getJsonRepo() {
         city: payload.city,
         department: payload.department,
         status: payload.status,
+        tier: payload.tier || (index >= 0 ? db.customerProfiles[index].tier : 'classic') || 'classic',
         internalNotes: payload.internalNotes,
         updatedAt: new Date().toISOString(),
       }
@@ -344,7 +346,7 @@ async function getJsonRepo() {
       const profile = {
         userId: user.id, phone: payload.phone, companyName: payload.companyName,
         address: payload.address, city: payload.city, department: payload.department,
-        status: 'inactive', internalNotes: payload.internalNotes, updatedAt: new Date().toISOString(),
+        status: 'inactive', tier: payload.tier || 'classic', internalNotes: payload.internalNotes, updatedAt: new Date().toISOString(),
       }
       db.customerProfiles.push(profile)
       writeDb(db)
@@ -935,6 +937,7 @@ async function getPgRepo() {
                 customer_profiles.phone, customer_profiles.company_name, customer_profiles.address,
                 customer_profiles.city, customer_profiles.department,
                 COALESCE(customer_profiles.status, 'active') AS status,
+                COALESCE(customer_profiles.tier, 'classic') AS tier,
                 customer_profiles.internal_notes, customer_profiles.updated_at,
                 COALESCE(order_summary.order_count, 0)::int AS order_count,
                 order_summary.last_order_at, latest_invitation.status AS invitation_status,
@@ -973,14 +976,15 @@ async function getPgRepo() {
         }
         const { rows: profiles } = await client.query(
           `INSERT INTO customer_profiles
-             (user_id, phone, company_name, address, city, department, status, internal_notes, updated_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
+             (user_id, phone, company_name, address, city, department, status, tier, internal_notes, updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
            ON CONFLICT (user_id) DO UPDATE SET
              phone=EXCLUDED.phone, company_name=EXCLUDED.company_name, address=EXCLUDED.address,
              city=EXCLUDED.city, department=EXCLUDED.department, status=EXCLUDED.status,
+             tier=COALESCE(EXCLUDED.tier, customer_profiles.tier, 'classic'),
              internal_notes=EXCLUDED.internal_notes, updated_at=NOW()
            RETURNING *`,
-          [id, payload.phone, payload.companyName, payload.address, payload.city, payload.department, payload.status, payload.internalNotes]
+          [id, payload.phone, payload.companyName, payload.address, payload.city, payload.department, payload.status, payload.tier || 'classic', payload.internalNotes]
         )
         if (payload.status === 'blocked') {
           await client.query('DELETE FROM auth_sessions WHERE user_id = $1', [id])
@@ -1022,10 +1026,10 @@ async function getPgRepo() {
         )
         const { rows: profiles } = await client.query(
           `INSERT INTO customer_profiles
-             (user_id, phone, company_name, address, city, department, status, internal_notes)
-           VALUES ($1,$2,$3,$4,$5,$6,'inactive',$7)
+             (user_id, phone, company_name, address, city, department, status, tier, internal_notes)
+           VALUES ($1,$2,$3,$4,$5,$6,'inactive',$7,$8)
            RETURNING *`,
-          [users[0].id, payload.phone, payload.companyName, payload.address, payload.city, payload.department, payload.internalNotes]
+          [users[0].id, payload.phone, payload.companyName, payload.address, payload.city, payload.department, payload.tier || 'classic', payload.internalNotes]
         )
         await client.query('COMMIT')
         return mapAdminCustomerRow({ ...users[0], ...profiles[0] })
@@ -1042,6 +1046,7 @@ async function getPgRepo() {
                 customer_profiles.phone, customer_profiles.company_name, customer_profiles.address,
                 customer_profiles.city, customer_profiles.department,
                 COALESCE(customer_profiles.status, 'active') AS status,
+                COALESCE(customer_profiles.tier, 'classic') AS tier,
                 customer_profiles.internal_notes, customer_profiles.updated_at,
                 COALESCE(order_summary.order_count, 0)::int AS order_count,
                 order_summary.last_order_at, latest_invitation.status AS invitation_status,

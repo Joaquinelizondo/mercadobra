@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { createCustomerQuote, getAdminCustomer, getCustomerQuotes, updateCustomerQuoteStatus } from '../lib/api'
+import { createCustomerQuote, getAdminCustomer, getCustomerQuotes, updateCustomerQuoteStatus, updateAdminCustomer } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import './AdminCustomerDetail.css'
 
@@ -65,7 +65,42 @@ export default function AdminCustomerDetail() {
 
   return (
     <section className="admin-client-detail">
-      <header><div><Link to="/admin/clientes">← Clientes</Link><span>Ficha comercial</span><h1>{customer?.name || 'Cliente'}</h1><p>{customer?.email}{customer?.phone ? ` · ${customer.phone}` : ''}</p></div><nav><Link to="/admin/cotizaciones-clientes">Cotizaciones</Link><Link to="/admin/productos">Productos</Link><Link to="/admin/pedidos">Pedidos</Link><Link to="/">Ver tienda ↗</Link></nav></header>
+      <header>
+        <div>
+          <Link to="/admin/clientes">← Clientes</Link>
+          <span>Ficha comercial & OXI OS</span>
+          <h1>{customer?.name || 'Cliente'}</h1>
+          <p>{customer?.email}{customer?.phone ? ` · ${customer.phone}` : ''}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#737373', textTransform: 'uppercase' }}>Nivel de Plataforma:</span>
+            <select
+              value={customer?.tier || 'classic'}
+              onChange={async (e) => {
+                const newTier = e.target.value
+                try {
+                  const updated = await updateAdminCustomer(id, { ...customer, tier: newTier }, adminToken)
+                  setCustomer(updated)
+                } catch (err) {
+                  setError(err.message || 'Error al actualizar el nivel.')
+                }
+              }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontWeight: 'bold',
+                border: '1px solid #d4d4d4',
+                background: customer?.tier === 'pro' ? '#fffaf6' : '#fff',
+                color: customer?.tier === 'pro' ? '#ea580c' : '#171717',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="classic">🛠️ OxI Clásico</option>
+              <option value="pro">⚡ OxI Pro (Constructoras & Arq)</option>
+            </select>
+          </div>
+        </div>
+        <nav><Link to="/admin/cotizaciones-clientes">Cotizaciones</Link><Link to="/admin/productos">Productos</Link><Link to="/admin/pedidos">Pedidos</Link><Link to="/">Ver tienda ↗</Link></nav>
+      </header>
 
       {error && <p className="admin-client-detail-error" role="alert">{error}</p>}
       {loading ? <p className="admin-client-detail-empty">Cargando ficha comercial…</p> : <>

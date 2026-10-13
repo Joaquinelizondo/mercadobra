@@ -769,6 +769,7 @@ app.post('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req,
   const repo = await getRepository()
   if (await repo.findUserByEmail(email)) throw new ConflictError('Ya existe una cuenta con ese correo')
   const generatedSecret = createSessionCredentials().token
+  const tier = body.tier ? validateEnum(body.tier, ['classic', 'pro'], 'Nivel de plataforma') : 'classic'
   const created = await repo.createAdminCustomer({
     email,
     name,
@@ -778,6 +779,7 @@ app.post('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req,
     address: validateStringLength(body.address || '', 'Dirección', 0, 180),
     city: validateStringLength(body.city || '', 'Localidad', 0, 100),
     department: validateStringLength(body.department || '', 'Departamento', 0, 100),
+    tier,
     internalNotes: validateStringLength(body.internalNotes || '', 'Notas internas', 0, 1000),
   })
   return res.status(201).json(created)
@@ -785,9 +787,11 @@ app.post('/admin/customers', authMiddleware, adminOnly, asyncHandler(async (req,
 
 app.post('/admin/customer-invitations', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const body=req.body||{}; const firstName=validateStringLength(requireField(body.firstName,'Nombre'),'Nombre',2,60); const lastName=validateStringLength(requireField(body.lastName,'Apellido'),'Apellido',2,60); const email=validateEmail(body.email); const validatedPhone=body.phone?validatePhone(body.phone):''; const phone=validatedPhone.startsWith('0')?`598${validatedPhone.slice(1)}`:validatedPhone; const repo=await getRepository()
+  const tier = body.tier ? validateEnum(body.tier, ['classic', 'pro'], 'Nivel de plataforma') : 'classic'
   let user=await repo.findUserByEmail(email)
   if(user&&user.role!=='customer')throw new ConflictError('Ese correo pertenece a otro tipo de cuenta')
-  if(!user){user=await repo.createAdminCustomer({email,name:`${firstName} ${lastName}`,password:hashPassword(createSessionCredentials().token),phone,companyName:validateStringLength(body.companyName||'','Empresa',0,120),address:'',city:'',department:'',internalNotes:''})}
+  if(!user){user=await repo.createAdminCustomer({email,name:`${firstName} ${lastName}`,password:hashPassword(createSessionCredentials().token),phone,companyName:validateStringLength(body.companyName||'','Empresa',0,120),address:'',city:'',department:'',tier,internalNotes:''})}
+  else if (body.tier) { await repo.updateAdminCustomer(user.id, { ...user, tier }) }
   const credentials=createSessionCredentials(); const expiresAt=new Date(Date.now()+72*60*60*1000).toISOString()
   const invitation=await repo.createCustomerInvitation({userId:user.id,email,tokenHash:credentials.tokenHash,expiresAt,createdBy:req.authUser.id})
   const inviteUrl=`${FRONTEND_PUBLIC_URL}/cliente/invitacion/${encodeURIComponent(credentials.token)}`
@@ -817,6 +821,7 @@ app.patch('/admin/customers/:id', authMiddleware, adminOnly, asyncHandler(async 
   const email = validateEmail(body.email)
   const name = validateStringLength(requireField(body.name, 'Nombre'), 'Nombre', 2, 120)
   const status = validateEnum(body.status || 'active', ['active', 'inactive', 'blocked'], 'Estado')
+  const tier = body.tier ? validateEnum(body.tier, ['classic', 'pro'], 'Nivel de plataforma') : undefined
   const repo = await getRepository()
   const emailOwner = await repo.findUserByEmail(email)
   if (emailOwner && Number(emailOwner.id) !== Number(id)) {
@@ -826,6 +831,7 @@ app.patch('/admin/customers/:id', authMiddleware, adminOnly, asyncHandler(async 
     email,
     name,
     status,
+    tier,
     phone: validateStringLength(body.phone || '', 'Teléfono', 0, 40),
     companyName: validateStringLength(body.companyName || '', 'Empresa', 0, 120),
     address: validateStringLength(body.address || '', 'Dirección', 0, 180),
