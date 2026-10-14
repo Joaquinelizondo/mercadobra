@@ -236,11 +236,11 @@ function validateCheckoutDetails(body = {}) {
 // SECURITY MIDDLEWARES (orden es importante)
 // ============================================================================
 
-// 1. Helmet - Headers de seguridad HTTP (debe ser primero)
-setupSecurityMiddleware(app)
-
-// 2. CORS
+// 1. CORS (debe ser primero para que OPTIONS preflight y cualquier respuesta 429/error lleven headers CORS)
 app.use(cors(createCorsMiddleware({ allowedOrigins, credentials: false })))
+
+// 2. Helmet & Rate Limiters
+setupSecurityMiddleware(app)
 
 // 3. Body parser
 app.use(express.json({ limit: '12mb' })) // Permite galerías de hasta cinco imágenes optimizadas

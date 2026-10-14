@@ -4,23 +4,13 @@ import { hashPassword } from './authService.js'
 
 async function run() {
   if (!isPostgresEnabled()) {
-    throw new Error('DATABASE_URL no configurada')
-  }
-
-  const email = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase()
-  const password = String(process.env.ADMIN_PASSWORD || '')
-  const company = String(process.env.ADMIN_COMPANY || 'Mercadobra').trim()
-
-  if (!email || !email.includes('@')) {
-    throw new Error('ADMIN_EMAIL no configurado o inválido')
-  }
-
-  if (password.length < 10) {
-    throw new Error('ADMIN_PASSWORD debe tener al menos 10 caracteres')
+    console.log('DATABASE_URL no configurada. Se omite bootstrap admin.')
+    return
   }
 
   const pool = getPool()
   try {
+    // 1. Garantizar admin principal: admin@mercadobra.com / admin123
     await pool.query(
       `INSERT INTO users (email, password, role, provider_id, company)
        VALUES ($1, $2, 'admin', NULL, $3)
@@ -29,15 +19,32 @@ async function run() {
            role = 'admin',
            provider_id = NULL,
            company = EXCLUDED.company`,
-      [email, hashPassword(password), company]
+      ['admin@mercadobra.com', hashPassword('admin123'), 'Mercadobra Admin']
     )
-    console.log('Usuario administrador verificado.')
+    console.log('Usuario admin@mercadobra.com asegurado con éxito.')
+
+    // 2. Garantizar contacto@mercadobra.com (también con admin123 o ADMIN_PASSWORD si está definido)
+    const envPassword = process.env.ADMIN_PASSWORD && process.env.ADMIN_PASSWORD.length >= 6
+      ? process.env.ADMIN_PASSWORD
+      : 'admin123'
+
+    await pool.query(
+      `INSERT INTO users (email, password, role, provider_id, company)
+       VALUES ($1, $2, 'admin', NULL, $3)
+       ON CONFLICT (email) DO UPDATE
+       SET password = EXCLUDED.password,
+           role = 'admin',
+           provider_id = NULL,
+           company = EXCLUDED.company`,
+      ['contacto@mercadobra.com', hashPassword(envPassword), 'Mercadobra Oficial']
+    )
+    console.log('Usuario contacto@mercadobra.com asegurado con éxito.')
   } finally {
     await pool.end()
   }
 }
 
 run().catch((error) => {
-  console.error(error.message)
+  console.error('Error en bootstrapAdmin:', error.message)
   process.exit(1)
 })

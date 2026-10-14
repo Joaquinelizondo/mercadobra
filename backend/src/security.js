@@ -13,41 +13,38 @@ export function setupSecurityMiddleware(app) {
   app.use(helmet())
 
   // 2. GLOBAL RATE LIMITER
-  // Limita 100 requests por 15 minutos por IP
   const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // 100 requests por ventana
+    max: 1000,
     message: 'Demasiadas solicitudes desde esta IP, por favor intenta más tarde.',
-    standardHeaders: true, // Retorna info en `RateLimit-*` headers
-    legacyHeaders: true, // Deshabilita `X-RateLimit-*` headers
+    standardHeaders: true,
+    legacyHeaders: true,
     skip: (req) => {
-      // No limitamos /health (healthcheck es frecuente)
-      return req.path === '/health'
+      return req.method === 'OPTIONS' || req.path === '/health'
     },
   })
   app.use(globalLimiter)
 
-  // 3. RATE LIMITER ESTRICTO para auth
-  // Limita login/register a 5 intentos por 15 minutos por IP
+  // 3. RATE LIMITER para auth
+  // Permite hasta 50 intentos por 15 minutos por IP
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: 50,
     message: 'Demasiados intentos de login. Intenta de nuevo en 15 minutos.',
     skip: (req) => {
-      // Solo aplica a endpoints de auth
+      if (req.method === 'OPTIONS') return true
       return !['/auth/login', '/auth/customer/login', '/auth/customer/register', '/auth/admin/login'].includes(req.path)
     },
   })
   app.use(authLimiter)
 
-  // 4. RATE LIMITER para operaciones costosas (API publicas)
-  // Limita POST/operaciones a 50 por 15 minutos por IP
+  // 4. RATE LIMITER para operaciones costosas
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 50,
+    max: 500,
     message: 'Demasiados requests. Intenta más tarde.',
     skip: (req) => {
-      // Solo aplica a POST/PATCH/DELETE
+      if (req.method === 'OPTIONS') return true
       return !['POST', 'PATCH', 'DELETE'].includes(req.method)
     },
   })
@@ -65,7 +62,7 @@ export function setupSecurityMiddleware(app) {
 export function createCorsMiddleware({ allowedOrigins, credentials = false }) {
   return {
     origin(origin, callback) {
-      // Sin origin = request no browserr (ej: curl, API calls)
+      // Sin origin = request no browser (ej: curl, healthchecks internos)
       if (!origin) {
         callback(null, true)
         return
@@ -73,7 +70,9 @@ export function createCorsMiddleware({ allowedOrigins, credentials = false }) {
 
       // Localhost (desarrollo)
       const isLocalhost = /^https?:\/\/localhost(?::\d+)?$/.test(origin)
-      if (isLocalhost || allowedOrigins.includes(origin)) {
+      const isMercadobra = /^https?:\/\/(?:[a-z0-9-]+\.)*mercadobra\.(?:com|uy)$/.test(origin)
+      const isVercel = /^https?:\/\/(?:[a-z0-9-]+\.)*vercel\.app$/.test(origin)
+      if (isLocalhost || isMercadobra || isVercel || allowedOrigins.includes(origin)) {
         callback(null, true)
         return
       }
@@ -81,11 +80,11 @@ export function createCorsMiddleware({ allowedOrigins, credentials = false }) {
       // No permitido
       callback(new Error('CORS: Origin no permitido'))
     },
-    credentials: credentials, // Allow cookies if matching origin
+    credentials: credentials,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
-    maxAge: 86400, // Pre-flight cache 24hs
+    maxAge: 86400,
   }
 }
 
