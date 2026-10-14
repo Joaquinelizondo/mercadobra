@@ -795,9 +795,60 @@ app.post('/admin/customer-invitations', authMiddleware, adminOnly, asyncHandler(
   const credentials=createSessionCredentials(); const expiresAt=new Date(Date.now()+72*60*60*1000).toISOString()
   const invitation=await repo.createCustomerInvitation({userId:user.id,email,tokenHash:credentials.tokenHash,expiresAt,createdBy:req.authUser.id})
   const inviteUrl=`${FRONTEND_PUBLIC_URL}/cliente/invitacion/${encodeURIComponent(credentials.token)}`
-  const [emailDelivery,whatsappDelivery]=await Promise.all([sendCustomerInvitationEmail({email,firstName,inviteUrl}),sendCustomerInvitationWhatsapp({phone,firstName,inviteUrl})])
-  if(!emailDelivery.sent&&!whatsappDelivery.sent)throw new ServiceUnavailableError('No se pudo enviar la invitación')
-  return res.status(201).json({id:Number(invitation.id),email,phone,status:'sent',expiresAt,delivery:{email:emailDelivery.channel,whatsapp:whatsappDelivery.channel}})
+  const [emailDelivery,whatsappDelivery]=await Promise.all([
+    sendCustomerInvitationEmail({email,firstName,inviteUrl}).catch(err => ({ sent: false, channel: 'failed', error: err.message })),
+    sendCustomerInvitationWhatsapp({phone,firstName,inviteUrl}).catch(err => ({ sent: false, channel: 'failed', error: err.message }))
+  ])
+  return res.status(201).json({
+    id:Number(invitation.id),
+    email,
+    phone,
+    status:'sent',
+    expiresAt,
+    inviteUrl,
+    delivery:{
+      email:emailDelivery?.channel || 'none',
+      whatsapp:whatsappDelivery?.channel || 'none',
+      emailSent:Boolean(emailDelivery?.sent),
+      whatsappSent:Boolean(whatsappDelivery?.sent)
+    }
+  })
+}))
+
+app.post('/admin/customers/:id/resend-invitation', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const customerId = validateNumber(req.params.id, 'Cliente ID', 1)
+  const repo = await getRepository()
+  const customer = await repo.getAdminCustomerById(customerId)
+  if (!customer) throw new NotFoundError('Cliente')
+
+  const credentials = createSessionCredentials()
+  const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+  const invitation = await repo.createCustomerInvitation({
+    userId: customer.id,
+    email: customer.email,
+    tokenHash: credentials.tokenHash,
+    expiresAt,
+    createdBy: req.authUser.id
+  })
+
+  const inviteUrl = `${FRONTEND_PUBLIC_URL}/cliente/invitacion/${encodeURIComponent(credentials.token)}`
+  const firstName = String(customer.name || customer.email).split(' ')[0]
+  const phone = customer.phone || ''
+
+  const [emailDelivery, whatsappDelivery] = await Promise.all([
+    sendCustomerInvitationEmail({ email: customer.email, firstName, inviteUrl }).catch(err => ({ sent: false, channel: 'failed', error: err.message })),
+    sendCustomerInvitationWhatsapp({ phone, firstName, inviteUrl }).catch(err => ({ sent: false, channel: 'failed', error: err.message }))
+  ])
+
+  return res.json({
+    success: true,
+    inviteUrl,
+    expiresAt,
+    delivery: {
+      emailSent: Boolean(emailDelivery?.sent),
+      whatsappSent: Boolean(whatsappDelivery?.sent)
+    }
+  })
 }))
 
 app.get('/customer-invitations/:token', asyncHandler(async (req,res)=>{

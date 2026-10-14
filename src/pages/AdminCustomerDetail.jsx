@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { createCustomerQuote, getAdminCustomer, getCustomerQuotes, updateCustomerQuoteStatus, updateAdminCustomer } from '../lib/api'
+import { createCustomerQuote, getAdminCustomer, getCustomerQuotes, updateCustomerQuoteStatus, updateAdminCustomer, resendCustomerInvitation, deleteAdminCustomer } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import './AdminCustomerDetail.css'
 
@@ -71,7 +71,7 @@ export default function AdminCustomerDetail() {
           <span>Ficha comercial & OXI OS</span>
           <h1>{customer?.name || 'Cliente'}</h1>
           <p>{customer?.email}{customer?.phone ? ` · ${customer.phone}` : ''}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#737373', textTransform: 'uppercase' }}>Nivel de Plataforma:</span>
             <select
               value={customer?.tier || 'classic'}
@@ -97,6 +97,63 @@ export default function AdminCustomerDetail() {
               <option value="classic">🛠️ OxI Clásico</option>
               <option value="pro">⚡ OxI Pro (Constructoras & Arq)</option>
             </select>
+
+            <button
+              type="button"
+              onClick={async () => {
+                if (!window.confirm(`¿Reenviar invitación a ${customer?.email}? Se generará un nuevo enlace válido por 72 horas.`)) return
+                try {
+                  setError('')
+                  const res = await resendCustomerInvitation(id, adminToken)
+                  if (res?.inviteUrl) {
+                    try { await navigator.clipboard.writeText(res.inviteUrl) } catch {}
+                    alert(`¡Invitación regenerada con éxito!\n\nEnlace copiado al portapapeles:\n${res.inviteUrl}`)
+                  } else {
+                    alert('Invitación enviada con éxito.')
+                  }
+                } catch (err) {
+                  setError(err.message || 'Error al reenviar invitación.')
+                }
+              }}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '6px',
+                border: '1px solid #171717',
+                background: '#171717',
+                color: '#fff',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '0.82rem'
+              }}
+            >
+              ✉ Reenviar Invitación
+            </button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                if (!window.confirm(`¿Estás seguro de que querés borrar al cliente ${customer?.name || customer?.email}? Se eliminarán sus accesos y cotizaciones asociadas.`)) return
+                try {
+                  await deleteAdminCustomer(id, adminToken)
+                  alert('Cliente eliminado con éxito.')
+                  window.location.href = '/admin/clientes'
+                } catch (err) {
+                  setError(err.message || 'No se pudo eliminar al cliente.')
+                }
+              }}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '6px',
+                border: '1px solid #fca5a5',
+                background: '#fef2f2',
+                color: '#b91c1c',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '0.82rem'
+              }}
+            >
+              🗑 Borrar Cliente
+            </button>
           </div>
         </div>
         <nav><Link to="/admin/cotizaciones-clientes">Cotizaciones</Link><Link to="/admin/productos">Productos</Link><Link to="/admin/pedidos">Pedidos</Link><Link to="/">Ver tienda ↗</Link></nav>

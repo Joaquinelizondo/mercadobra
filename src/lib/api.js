@@ -293,6 +293,7 @@ export function registerCustomer(payload) {
   })
 }
 export function createCustomerInvitation(payload, token) { return request('/admin/customer-invitations', { method:'POST', token, body:JSON.stringify(payload) }) }
+export function resendCustomerInvitation(customerId, token) { return request(`/admin/customers/${customerId}/resend-invitation`, { method:'POST', token }) }
 export function getCustomerInvitation(token) { return request(`/customer-invitations/${encodeURIComponent(token)}`) }
 export function acceptCustomerInvitation(token, password) { return request(`/customer-invitations/${encodeURIComponent(token)}/accept`, { method:'POST', body:JSON.stringify({password}) }) }
 

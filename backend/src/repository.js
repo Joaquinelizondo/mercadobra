@@ -332,6 +332,8 @@ async function getJsonRepo() {
       db.users.splice(userIndex, 1)
       db.customerProfiles = (db.customerProfiles || []).filter(p => Number(p.userId) !== Number(id))
       db.authSessions = (db.authSessions || []).filter((session) => Number(session.userId) !== Number(id))
+      db.customerInvitations = (db.customerInvitations || []).filter(inv => Number(inv.userId || inv.user_id) !== Number(id))
+      db.customerQuotes = (db.customerQuotes || []).filter(q => Number(q.customerId || q.customer_user_id) !== Number(id))
       writeDb(db)
       return true
     },
@@ -1003,6 +1005,12 @@ async function getPgRepo() {
       try {
         await client.query('BEGIN')
         await client.query('DELETE FROM auth_sessions WHERE user_id = $1', [id])
+        await client.query('DELETE FROM customer_invitations WHERE user_id = $1', [id])
+        await client.query('DELETE FROM quote_reminders WHERE quote_id IN (SELECT id FROM customer_quotes WHERE customer_user_id = $1)', [id])
+        await client.query('DELETE FROM customer_quote_messages WHERE quote_id IN (SELECT id FROM customer_quotes WHERE customer_user_id = $1) OR author_user_id = $1', [id])
+        await client.query('DELETE FROM customer_quotes WHERE customer_user_id = $1', [id])
+        await client.query('DELETE FROM b2b_projects WHERE customer_user_id = $1', [id])
+        await client.query('DELETE FROM modeler_projects WHERE owner_user_id = $1', [id])
         await client.query('DELETE FROM customer_profiles WHERE user_id = $1', [id])
         const result = await client.query("DELETE FROM users WHERE id = $1 AND role = 'customer'", [id])
         await client.query('COMMIT')

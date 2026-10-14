@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { createCustomerInvitation, getAdminCustomers, updateAdminCustomer, deleteAdminCustomer, importAdminCustomers } from '../lib/api'
+import { createCustomerInvitation, resendCustomerInvitation, getAdminCustomers, updateAdminCustomer, deleteAdminCustomer, importAdminCustomers } from '../lib/api'
 import './AdminCustomers.css'
 
 const EMPTY_FORM = {
@@ -103,10 +103,15 @@ export default function AdminCustomers() {
     setSuccess('')
     try {
       if (creating) {
-        await createCustomerInvitation(form, adminToken)
+        const res = await createCustomerInvitation(form, adminToken)
         const refreshed = await getAdminCustomers({}, adminToken)
         setCustomers(refreshed.rows || [])
-        setSuccess(`Invitación enviada por email y WhatsApp con nivel ${form.tier === 'pro' ? 'OxI Pro' : 'OxI Clásico'}.`)
+        if (res?.inviteUrl) {
+          try { await navigator.clipboard.writeText(res.inviteUrl) } catch {}
+          setSuccess(`¡Invitación creada! Enlace copiado al portapapeles: ${res.inviteUrl}`)
+        } else {
+          setSuccess(`Invitación enviada por email y WhatsApp con nivel ${form.tier === 'pro' ? 'OxI Pro' : 'OxI Clásico'}.`)
+        }
       } else {
         const updated = await updateAdminCustomer(editing.id, form, adminToken)
         setCustomers((previous) => previous.map((customer) => customer.id === updated.id ? { ...customer, ...updated } : customer))
@@ -166,6 +171,27 @@ export default function AdminCustomers() {
       }
     }
     reader.readAsText(file)
+  }
+
+  async function handleResendInvite(customer) {
+    if (!window.confirm(`¿Reenviar invitación de acceso para ${customer.name || customer.email}? Se generará un nuevo enlace válido por 72 horas.`)) return
+    try {
+      setLoading(true)
+      setError('')
+      const res = await resendCustomerInvitation(customer.id, adminToken)
+      if (res?.inviteUrl) {
+        try { await navigator.clipboard.writeText(res.inviteUrl) } catch {}
+        setSuccess(`¡Invitación regenerada para ${customer.email}! Enlace copiado al portapapeles: ${res.inviteUrl}`)
+      } else {
+        setSuccess(`Invitación enviada con éxito a ${customer.email}.`)
+      }
+      const refreshed = await getAdminCustomers({}, adminToken)
+      setCustomers(refreshed.rows || [])
+    } catch (err) {
+      setError(err.message || 'No se pudo reenviar la invitación.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleDelete(customer) {
@@ -293,6 +319,7 @@ export default function AdminCustomers() {
                 </div>
                 <div className="admin-customer-actions">
                   <Link to={`/admin/clientes/${customer.id}`}>Abrir ficha</Link>
+                  <button type="button" onClick={() => handleResendInvite(customer)} title="Generar nuevo enlace de invitación">Reenviar invite</button>
                   <button type="button" onClick={() => openEditor(customer)}>Editar</button>
                   <button type="button" className="btn-danger" onClick={() => handleDelete(customer)}>Borrar</button>
                 </div>
