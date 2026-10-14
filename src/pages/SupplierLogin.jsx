@@ -100,8 +100,15 @@ export default function SupplierLogin() {
 
         <div className="login-demo-hint">
           <p>
-            <strong>Cuenta seed:</strong> proveedor@mercadobra.com con contraseña 123456
+            <strong>Cuenta proveedor:</strong> proveedor@mercadobra.com con contraseña 123456
           </p>
+          <button
+            type="button"
+            onClick={() => { setForm({ email: 'proveedor@mercadobra.com', password: '123456' }); setError(''); }}
+            style={{ display: 'block', margin: '0.5rem auto 0', padding: '0.35rem 0.85rem', background: '#0f172a', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }}
+          >
+            Completar datos proveedor
+          </button>
         </div>
       </div>
     </div>

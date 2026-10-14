@@ -87,6 +87,18 @@ export default function AdminLogin() {
           <button type="submit" className="cart-confirm-btn" disabled={adminAuthLoading}>
             {adminAuthLoading ? 'Validando...' : 'Entrar al panel admin'}
           </button>
+
+          <div style={{ marginTop: '1.25rem', padding: '0.85rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem', color: '#475569', textAlign: 'center' }}>
+            <span style={{ fontWeight: 600, display: 'block', marginBottom: '0.3rem', color: '#0f172a' }}>Credenciales de Administrador</span>
+            <span style={{ fontSize: '0.8rem' }}>admin@mercadobra.com / admin123</span>
+            <button
+              type="button"
+              onClick={() => { setForm({ email: 'admin@mercadobra.com', password: 'admin123' }); setError(''); }}
+              style={{ display: 'block', margin: '0.5rem auto 0', padding: '0.35rem 0.85rem', background: '#0f172a', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }}
+            >
+              Completar datos admin
+            </button>
+          </div>
         </form>
       </div>
     </div>

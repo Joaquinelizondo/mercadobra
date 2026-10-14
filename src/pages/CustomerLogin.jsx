@@ -97,6 +97,26 @@ export default function CustomerLogin() {
             {customerAuthLoading ? 'Ingresando...' : 'Ingresar'}
           </button>
 
+          <div style={{ marginTop: '1.25rem', padding: '0.85rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem', color: '#475569', textAlign: 'center' }}>
+            <span style={{ fontWeight: 600, display: 'block', marginBottom: '0.3rem', color: '#0f172a' }}>Cuentas de prueba Plataforma OxI</span>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => { setForm({ email: 'pro@mercadobra.com', password: 'pro123' }); setError(''); }}
+                style={{ padding: '0.35rem 0.75rem', background: '#ea580c', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Probar OxI Pro
+              </button>
+              <button
+                type="button"
+                onClick={() => { setForm({ email: 'cliente@mercadobra.com', password: 'cliente123' }); setError(''); }}
+                style={{ padding: '0.35rem 0.75rem', background: '#0f172a', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Probar OxI Clásico
+              </button>
+            </div>
+          </div>
+
           <p className="login-signup-hint">
             ¿No tenés cuenta? <Link to="/cliente/registro">Crear cuenta</Link>
           </p>
