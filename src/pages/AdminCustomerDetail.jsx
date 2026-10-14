@@ -104,7 +104,7 @@ export default function AdminCustomerDetail() {
                 if (!window.confirm(`¿Reenviar invitación a ${customer?.email}? Se generará un nuevo enlace válido por 72 horas.`)) return
                 try {
                   setError('')
-                  const res = await resendCustomerInvitation(id, adminToken)
+                  const res = await resendCustomerInvitation(customer || id, adminToken)
                   if (res?.inviteUrl) {
                     try { await navigator.clipboard.writeText(res.inviteUrl) } catch {}
                     alert(`¡Invitación regenerada con éxito!\n\nEnlace copiado al portapapeles:\n${res.inviteUrl}`)

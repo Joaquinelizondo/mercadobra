@@ -293,7 +293,28 @@ export function registerCustomer(payload) {
   })
 }
 export function createCustomerInvitation(payload, token) { return request('/admin/customer-invitations', { method:'POST', token, body:JSON.stringify(payload) }) }
-export function resendCustomerInvitation(customerId, token) { return request(`/admin/customers/${customerId}/resend-invitation`, { method:'POST', token }) }
+export async function resendCustomerInvitation(customerOrId, token) {
+  const customerId = typeof customerOrId === 'object' ? customerOrId.id : customerOrId
+  try {
+    return await request(`/admin/customers/${customerId}/resend-invitation`, { method: 'POST', token })
+  } catch (err) {
+    if (typeof customerOrId === 'object' && customerOrId.email) {
+      const fullName = customerOrId.name || customerOrId.companyName || customerOrId.email
+      const parts = fullName.trim().split(' ')
+      const firstName = parts[0] || 'Cliente'
+      const lastName = parts.slice(1).join(' ') || ' '
+      return await createCustomerInvitation({
+        firstName,
+        lastName,
+        email: customerOrId.email,
+        phone: customerOrId.phone || '',
+        companyName: customerOrId.companyName || '',
+        tier: customerOrId.tier || 'classic'
+      }, token)
+    }
+    throw err
+  }
+}
 export function getCustomerInvitation(token) { return request(`/customer-invitations/${encodeURIComponent(token)}`) }
 export function acceptCustomerInvitation(token, password) { return request(`/customer-invitations/${encodeURIComponent(token)}/accept`, { method:'POST', body:JSON.stringify({password}) }) }
 
