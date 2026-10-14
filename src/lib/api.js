@@ -28,7 +28,8 @@ async function request(path, options = {}) {
   let requestUrl = `${baseCandidates[0]}${path}`
 
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 25000)
+  // 65 segundos para tolerar el arranque en frío (cold start) del plan Free de Render
+  const timeoutId = setTimeout(() => controller.abort(), 65000)
 
   try {
     response = await fetch(requestUrl, {
