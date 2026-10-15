@@ -300,21 +300,22 @@ async function getJsonRepo() {
       const db = readDb()
       const user = db.users.find((item) => Number(item.id) === Number(id) && item.role === 'customer')
       if (!user) return null
-      user.email = payload.email
-      user.company = payload.name
+      if (payload.email) user.email = payload.email
+      if (payload.name) user.company = payload.name
       if (!Array.isArray(db.customerProfiles)) db.customerProfiles = []
       const index = db.customerProfiles.findIndex((item) => Number(item.userId) === Number(id))
+      const prev = index >= 0 ? db.customerProfiles[index] : {}
       const profile = {
-        ...(index >= 0 ? db.customerProfiles[index] : {}),
+        ...prev,
         userId: Number(id),
-        phone: payload.phone,
-        companyName: payload.companyName,
-        address: payload.address,
-        city: payload.city,
-        department: payload.department,
-        status: payload.status,
-        tier: payload.tier || (index >= 0 ? db.customerProfiles[index].tier : 'classic') || 'classic',
-        internalNotes: payload.internalNotes,
+        phone: payload.phone ?? prev.phone ?? '',
+        companyName: payload.companyName ?? prev.companyName ?? '',
+        address: payload.address ?? prev.address ?? '',
+        city: payload.city ?? prev.city ?? '',
+        department: payload.department ?? prev.department ?? '',
+        status: payload.status ?? prev.status ?? 'active',
+        tier: payload.tier || prev.tier || 'classic',
+        internalNotes: payload.internalNotes ?? prev.internalNotes ?? '',
         updatedAt: new Date().toISOString(),
       }
       if (index >= 0) db.customerProfiles[index] = profile
@@ -967,26 +968,44 @@ async function getPgRepo() {
       try {
         await client.query('BEGIN')
         const { rows: users } = await client.query(
-          `UPDATE users SET email = $1, company = $2
+          `UPDATE users SET
+             email = COALESCE($1, email),
+             company = COALESCE($2, company)
            WHERE id = $3 AND role = 'customer'
            RETURNING id, email, company AS name, created_at`,
-          [payload.email, payload.name, id]
+          [payload.email || null, payload.name || null, id]
         )
         if (!users[0]) {
           await client.query('ROLLBACK')
           return null
         }
+        const validStatus = ['active', 'inactive', 'blocked'].includes(payload.status) ? payload.status : 'active'
         const { rows: profiles } = await client.query(
           `INSERT INTO customer_profiles
              (user_id, phone, company_name, address, city, department, status, tier, internal_notes, updated_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
            ON CONFLICT (user_id) DO UPDATE SET
-             phone=EXCLUDED.phone, company_name=EXCLUDED.company_name, address=EXCLUDED.address,
-             city=EXCLUDED.city, department=EXCLUDED.department, status=EXCLUDED.status,
+             phone=COALESCE(NULLIF(EXCLUDED.phone, ''), customer_profiles.phone, ''),
+             company_name=COALESCE(NULLIF(EXCLUDED.company_name, ''), customer_profiles.company_name, ''),
+             address=COALESCE(NULLIF(EXCLUDED.address, ''), customer_profiles.address, ''),
+             city=COALESCE(NULLIF(EXCLUDED.city, ''), customer_profiles.city, ''),
+             department=COALESCE(NULLIF(EXCLUDED.department, ''), customer_profiles.department, ''),
+             status=COALESCE(NULLIF(EXCLUDED.status, ''), customer_profiles.status, 'active'),
              tier=COALESCE(EXCLUDED.tier, customer_profiles.tier, 'classic'),
-             internal_notes=EXCLUDED.internal_notes, updated_at=NOW()
+             internal_notes=COALESCE(NULLIF(EXCLUDED.internal_notes, ''), customer_profiles.internal_notes, ''),
+             updated_at=NOW()
            RETURNING *`,
-          [id, payload.phone, payload.companyName, payload.address, payload.city, payload.department, payload.status, payload.tier || 'classic', payload.internalNotes]
+          [
+            id,
+            payload.phone ?? '',
+            payload.companyName ?? '',
+            payload.address ?? '',
+            payload.city ?? '',
+            payload.department ?? '',
+            validStatus,
+            payload.tier || 'classic',
+            payload.internalNotes ?? ''
+          ]
         )
         if (payload.status === 'blocked') {
           await client.query('DELETE FROM auth_sessions WHERE user_id = $1', [id])

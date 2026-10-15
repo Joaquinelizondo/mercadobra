@@ -790,8 +790,34 @@ app.post('/admin/customer-invitations', authMiddleware, adminOnly, asyncHandler(
   const tier = body.tier ? validateEnum(body.tier, ['classic', 'pro'], 'Nivel de plataforma') : 'classic'
   let user=await repo.findUserByEmail(email)
   if(user&&user.role!=='customer')throw new ConflictError('Ese correo pertenece a otro tipo de cuenta')
-  if(!user){user=await repo.createAdminCustomer({email,name:`${firstName} ${lastName}`,password:hashPassword(createSessionCredentials().token),phone,companyName:validateStringLength(body.companyName||'','Empresa',0,120),address:'',city:'',department:'',tier,internalNotes:''})}
-  else if (body.tier) { await repo.updateAdminCustomer(user.id, { ...user, tier }) }
+  if (!user) {
+    user = await repo.createAdminCustomer({
+      email,
+      name: `${firstName} ${lastName}`.trim(),
+      password: hashPassword(createSessionCredentials().token),
+      phone,
+      companyName: validateStringLength(body.companyName || '', 'Empresa', 0, 120),
+      address: '',
+      city: '',
+      department: '',
+      tier,
+      internalNotes: ''
+    })
+  } else if (body.tier) {
+    const existing = await repo.getAdminCustomerById(user.id)
+    await repo.updateAdminCustomer(user.id, {
+      email: user.email,
+      name: existing?.name || user.company || `${firstName} ${lastName}`.trim(),
+      phone: phone || existing?.phone || '',
+      companyName: body.companyName || existing?.companyName || '',
+      address: existing?.address || '',
+      city: existing?.city || '',
+      department: existing?.department || '',
+      status: existing?.status || 'inactive',
+      tier,
+      internalNotes: existing?.internalNotes || ''
+    })
+  }
   const credentials=createSessionCredentials(); const expiresAt=new Date(Date.now()+72*60*60*1000).toISOString()
   const invitation=await repo.createCustomerInvitation({userId:user.id,email,tokenHash:credentials.tokenHash,expiresAt,createdBy:req.authUser.id})
   const inviteUrl=`${FRONTEND_PUBLIC_URL}/cliente/invitacion/${encodeURIComponent(credentials.token)}`
