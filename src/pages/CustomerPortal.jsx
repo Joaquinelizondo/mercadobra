@@ -60,6 +60,9 @@ export default function CustomerPortal() {
   // Platform tier mode: 'classic' | 'pro'
   const [platformMode, setPlatformMode] = useState('classic')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [proNotes, setProNotes] = useState('')
+  const [proRequestSuccess, setProRequestSuccess] = useState(false)
+  const [savingProRequest, setSavingProRequest] = useState(false)
 
   const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [isCreatingQuote, setIsCreatingQuote] = useState(false)
@@ -120,6 +123,33 @@ export default function CustomerPortal() {
       setQuotes([res, ...quotes]); setRequest(EMPTY_REQUEST); setIsCreatingQuote(false)
     } catch(err) { setError(err.message) }
     finally { setSaving(false) }
+  }
+
+  async function submitProUpgradeRequest(e) {
+    if (e) e.preventDefault()
+    setSavingProRequest(true)
+    setError('')
+    try {
+      const notes = proNotes.trim()
+        ? `Solicitud de habilitación OxI Pro: ${proNotes.trim()}`
+        : 'Solicito la habilitación de mi cuenta de constructora / estudio al nivel OxI Pro para control técnico de obra y costos.'
+      
+      const payload = {
+        title: 'Solicitud de Habilitación a Suite OxI Pro',
+        description: notes,
+        currency: 'UYU',
+        b2bProjectId: activeProjectId
+      }
+      const res = await createMyQuote(payload, customerToken)
+      setQuotes([res, ...quotes])
+      setProNotes('')
+      setShowUpgradeModal(false)
+      setProRequestSuccess(true)
+    } catch(err) {
+      setError(err.message)
+    } finally {
+      setSavingProRequest(false)
+    }
   }
 
   async function submitNewProject(e) {
@@ -253,7 +283,14 @@ export default function CustomerPortal() {
           <button 
             type="button"
             className="oxi-os-btn primary"
-            onClick={() => { setIsCreatingQuote(true); setIsCreatingProject(false); setSelected(null); setIsEditingProfile(false); setPlatformMode('classic'); }}
+            onClick={() => { 
+              setIsCreatingQuote(true); 
+              setIsCreatingProject(false); 
+              setSelected(null); 
+              setIsEditingProfile(false); 
+              setPlatformMode('classic');
+              setRequest(EMPTY_REQUEST);
+            }}
           >
             <span className="oxi-btn-icon">＋</span> Nueva Cotización
           </button>
@@ -319,6 +356,36 @@ export default function CustomerPortal() {
             </header>
 
             {error && <p className="customer-portal-error" style={{color: 'red', marginBottom: '1rem'}}>{error}</p>}
+
+            {proRequestSuccess && (
+              <div style={{
+                background: '#f0fdf4',
+                border: '1px solid #86efac',
+                borderRadius: '8px',
+                padding: '16px 20px',
+                marginBottom: '1.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+              }}>
+                <div>
+                  <strong style={{ color: '#166534', display: 'block', fontSize: '1rem', marginBottom: '2px' }}>
+                    ✅ Solicitud de Suite OxI Pro enviada con éxito
+                  </strong>
+                  <p style={{ margin: 0, color: '#15803d', fontSize: '0.88rem' }}>
+                    Recibimos tu solicitud. El equipo técnico y de administración de Óxida / Mercadobra activará las herramientas de control de obra en tu cuenta en breve.
+                  </p>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => setProRequestSuccess(false)}
+                  style={{ background: 'none', border: 'none', color: '#166534', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold' }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             {isEditingProfile ? (
               <form className="oxi-os-profile-form" onSubmit={saveProfile} style={{maxWidth: '640px', background: '#fff', padding: '2rem', borderRadius: '12px', border: '1px solid #e5e5e5', boxShadow: '0 4px 20px rgba(0,0,0,0.03)'}}>
@@ -497,11 +564,15 @@ export default function CustomerPortal() {
               /* ENRICHED QUOTE REQUEST: PLANOS, MEMORIAS, FOTOS, ARCHIVOS */
               <div className="customer-request">
                 <div>
-                  <span>Plataforma OxI Clásico</span>
-                  <h2>Solicitar Cotización de Obra</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <span style={{ color: '#ea580c', fontWeight: '800', fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                      Plataforma OxI Clásico
+                    </span>
+                    <span className="classic-tag">COTIZACIÓN DE FABRICACIÓN</span>
+                  </div>
+                  <h2>Solicitar Cotización de Herrería & Piezas</h2>
                   <p>
-                    Cargá planos (CAD, PDF), memorias descriptivas, fotos de referencia o archivos técnicos.
-                    Analizamos las piezas y te enviamos la propuesta detallada.
+                    Cargá planos (CAD, PDF), memorias descriptivas o fotos de referencia para cotizar barandas, escaleras, pérgolas, aberturas o piezas especiales de tu obra.
                   </p>
                 </div>
 
@@ -628,7 +699,7 @@ export default function CustomerPortal() {
 
                   <div style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
                     <button type="button" className="btn-secondary" onClick={() => setIsCreatingQuote(false)}>Cancelar</button>
-                    <button disabled={saving}>{saving ? 'Enviando solicitud…' : 'Enviar Solicitud a Cotizar'}</button>
+                    <button disabled={saving}>{saving ? 'Enviando solicitud…' : 'Enviar Solicitud de Cotización'}</button>
                   </div>
                 </form>
               </div>
@@ -674,52 +745,82 @@ export default function CustomerPortal() {
       {/* ── MODAL: ACCESO EXCLUSIVO OXI PRO ── */}
       {showUpgradeModal && (
         <div className="oxi-modal-backdrop" onClick={() => setShowUpgradeModal(false)}>
-          <div className="oxi-modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+          <div className="oxi-modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '540px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
               <span style={{ fontSize: '2rem' }}>🔒</span>
-              <h3 style={{ margin: 0, fontSize: '1.4rem' }}>Acceso Exclusivo a Plataforma OxI Pro</h3>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.35rem', color: '#1a1a1a' }}>Solicitud de Habilitación a Suite OxI Pro</h3>
+                <span style={{ fontSize: '0.72rem', color: '#ea580c', fontWeight: '800', letterSpacing: '0.06em' }}>
+                  CONTROL TÉCNICO, CRONOGRAMA & CURVA S
+                </span>
+              </div>
             </div>
             
-            <p style={{ lineHeight: 1.5, color: '#525252', fontSize: '0.95rem' }}>
-              Tu usuario tiene actualmente asignado el nivel <strong>Plataforma OxI Clásico</strong> para solicitar y seguir cotizaciones.
+            <p style={{ lineHeight: 1.5, color: '#525252', fontSize: '0.92rem', margin: '0.6rem 0 1rem' }}>
+              Tu cuenta tiene actualmente el nivel <strong>OxI Clásico</strong> (solicitud y seguimiento de cotizaciones). Para activar las herramientas de ingeniería en tu constructora o estudio, enviá tu solicitud:
             </p>
 
-            <div style={{ background: '#fffaf6', border: '1px solid #fed7aa', borderRadius: '8px', padding: '14px', marginBottom: '1.25rem' }}>
-              <strong style={{ color: '#c2410c', display: 'block', marginBottom: '6px', fontSize: '0.88rem' }}>
-                La Suite OxI Pro incluye para Constructoras:
+            <div style={{ background: '#fffaf6', border: '1px solid #fed7aa', borderRadius: '8px', padding: '12px 14px', marginBottom: '1.25rem' }}>
+              <strong style={{ color: '#c2410c', display: 'block', marginBottom: '6px', fontSize: '0.86rem' }}>
+                La Suite OxI Pro incluye:
               </strong>
-              <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.85rem', color: '#431407', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <li>📁 Gestor de planos técnicos con control de versiones e iteraciones</li>
-                <li>📅 Cronograma de obra editable con asignación de recursos y mano de obra</li>
-                <li>📊 Curva S semanal (% Avance Real vs Presupuesto Cero)</li>
-                <li>🚨 Control presupuestario por rubro con alertas automáticas de sobrecosto</li>
+              <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.84rem', color: '#431407', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <li>📁 <strong>Gestor de Planos & Docs</strong> con iteraciones y control de versiones</li>
+                <li>📅 <strong>Cronograma de Obra Gantt</strong> con asignación de cuadrillas y recursos</li>
+                <li>📊 <strong>Curva S semanal</strong> (% Avance Real vs Presupuesto Cero P0)</li>
+                <li>🚨 <strong>Alertas de Sobrecosto</strong> y desvíos financieros por rubro</li>
               </ul>
             </div>
 
-            <p style={{ fontSize: '0.85rem', color: '#737373', margin: '0 0 1.5rem' }}>
-              Para habilitar OxI Pro en tu cuenta o tus obras, comunicate con la administración de Mercadobra / Óxida o enviá una solicitud directa.
-            </p>
-
-            <div className="modal-actions">
-              <button type="button" className="btn-cancel" onClick={() => setShowUpgradeModal(false)}>
-                Continuar en OxI Clásico
-              </button>
-              <button 
-                type="button" 
-                className="oxi-btn-primary" 
-                onClick={() => {
-                  setShowUpgradeModal(false)
-                  setIsCreatingQuote(true)
-                  setRequest(prev => ({
-                    ...prev,
-                    title: 'Solicitud de Habilitación a Suite OxI Pro',
-                    description: 'Solicito la habilitación de mi cuenta de constructora / estudio al nivel OxI Pro para control técnico de obra y costos.'
-                  }))
+            <form onSubmit={submitProUpgradeRequest}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', color: '#333', marginBottom: '6px' }}>
+                Obras o detalles para la habilitación (opcional):
+              </label>
+              <textarea
+                rows="2"
+                value={proNotes}
+                onChange={e => setProNotes(e.target.value)}
+                placeholder="Ej: Deseamos habilitar OxI Pro para el control de la obra Torre Libertador..."
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #d4d4d4',
+                  fontSize: '0.88rem',
+                  boxSizing: 'border-box',
+                  fontFamily: 'inherit',
+                  marginBottom: '1.25rem',
+                  outline: 'none'
                 }}
-              >
-                ✉ Solicitar Habilitación de OxI Pro
-              </button>
-            </div>
+              />
+
+              <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button 
+                  type="button" 
+                  className="btn-cancel" 
+                  onClick={() => setShowUpgradeModal(false)}
+                  disabled={savingProRequest}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className="oxi-btn-primary" 
+                  disabled={savingProRequest}
+                  style={{
+                    background: '#ea580c',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '10px 18px',
+                    borderRadius: '6px',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {savingProRequest ? 'Enviando solicitud…' : '✉ Enviar Solicitud de OxI Pro'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
