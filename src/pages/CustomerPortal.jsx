@@ -176,28 +176,19 @@ export default function CustomerPortal() {
   return (
     <div className="oxi-os-dashboard">
       <aside className="oxi-os-sidebar">
-        <div className="oxi-os-brand" style={{ marginBottom: '1.5rem' }}>
+        <div className="oxi-os-brand">
           <OxidaWordmark />
         </div>
         
-        <div className="oxi-os-user" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#262626', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', flexShrink: 0 }}>
+        <div className="oxi-os-user">
+          <div className="oxi-os-avatar">
             {profile?.name?.[0] || 'C'}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <strong>{profile?.name || 'Constructora / Estudio'}</strong>
-            <span>{profile?.companyName || 'Arquitectura & Obra'}</span>
-            <div style={{ marginTop: '6px' }}>
-              <span style={{
-                fontSize: '0.68rem',
-                fontWeight: '800',
-                letterSpacing: '0.04em',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                background: isProUser ? '#ea580c' : '#2a2a2a',
-                color: isProUser ? '#fff' : '#a3a3a3',
-                display: 'inline-block'
-              }}>
+          <div className="oxi-os-user-info">
+            <strong className="oxi-os-user-name">{profile?.name || 'Constructora / Estudio'}</strong>
+            <span className="oxi-os-user-company">{profile?.companyName || 'Arquitectura & Obra'}</span>
+            <div className="oxi-os-badge-wrap">
+              <span className={`oxi-os-badge ${isProUser ? 'is-pro' : 'is-classic'}`}>
                 {isProUser ? '⚡ PLAN OXI PRO' : '🛠️ PLAN OXI CLÁSICO'}
               </span>
             </div>
@@ -232,10 +223,8 @@ export default function CustomerPortal() {
         </div>
         
         {b2bProjects.length > 0 && (
-          <div className="oxi-os-project-select" style={{ marginTop: '0.5rem' }}>
-            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              Obra seleccionada
-            </label>
+          <div className="oxi-os-project-select">
+            <label>Obra seleccionada</label>
             <select 
               value={activeProjectId || ''} 
               onChange={(e) => {
@@ -252,33 +241,45 @@ export default function CustomerPortal() {
           </div>
         )}
 
-        <div className="oxi-os-menu" style={{ marginTop: '1.5rem' }}>
+        <div className="oxi-os-menu">
           <button 
+            type="button"
             className="oxi-os-btn secondary"
             onClick={() => { setIsCreatingProject(true); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); setPlatformMode('classic'); }}
           >
-            <span style={{marginRight: '8px', fontWeight: 'bold'}}>＋</span> Nueva Obra
+            <span className="oxi-btn-icon">＋</span> Nueva Obra
           </button>
 
           <button 
+            type="button"
             className="oxi-os-btn primary"
             onClick={() => { setIsCreatingQuote(true); setIsCreatingProject(false); setSelected(null); setIsEditingProfile(false); setPlatformMode('classic'); }}
           >
-            <span style={{marginRight: '8px', fontWeight: 'bold'}}>＋</span> Nueva Cotización
+            <span className="oxi-btn-icon">＋</span> Nueva Cotización
           </button>
 
-          <Link to="/cliente/modelador" className="oxi-os-btn" style={{ border: '1px solid #404040', textAlign: 'center', marginTop: '0.5rem', display: 'block', textDecoration: 'none' }}>
-            <span style={{marginRight: '8px'}}>📐</span> Simulador 3D Óxida
+          <Link to="/cliente/modelador" className="oxi-os-btn simulator">
+            <span className="oxi-btn-icon">📐</span> Simulador 3D Óxida
           </Link>
         </div>
 
-        <button className="oxi-os-btn dark" onClick={() => { setIsEditingProfile(true); setIsCreatingProject(false); setIsCreatingQuote(false); setSelected(null); }} style={{ marginBottom: '10px' }}>
-          ⚙️ Perfil de Constructora
-        </button>
+        <div className="oxi-os-footer-actions">
+          <button 
+            type="button"
+            className="oxi-os-btn dark" 
+            onClick={() => { setIsEditingProfile(true); setIsCreatingProject(false); setIsCreatingQuote(false); setSelected(null); }}
+          >
+            ⚙️ Perfil de Constructora
+          </button>
 
-        <button className="oxi-os-btn dark" onClick={logoutCustomer}>
-          Cerrar sesión
-        </button>
+          <button 
+            type="button"
+            className="oxi-os-btn dark" 
+            onClick={logoutCustomer}
+          >
+            Cerrar sesión
+          </button>
+        </div>
       </aside>
 
       <main className="oxi-os-main">

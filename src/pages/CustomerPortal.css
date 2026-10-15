@@ -16,81 +16,366 @@
 .kanban-card small { font-size: 0.8rem; color: #737373; }
 .kanban-empty { color: #a3a3a3; font-size: 0.9rem; font-style: normal; text-align: center; margin-top: 20px; }
 
-.oxi-os-dashboard { display: flex; min-height: 100vh; background: #f9f9f9; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; }
-.oxi-os-sidebar { width: 280px; background: #131313; border-right: 1px solid #262626; padding: 2rem; display: flex; flex-direction: column; gap: 2rem; color: #fff; }
-.oxi-os-brand { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 700; font-size: 1.2rem; }
-.oxi-os-brand span { font-size: 0.8rem; letter-spacing: 0.05em; color: #ea580c; }
-.oxi-os-user { display: flex; flex-direction: column; gap: 4px; padding-bottom: 1.5rem; border-bottom: 1px solid #262626; }
-.oxi-os-user strong { font-size: 1.1rem; color: #fff; font-weight: 600; }
-.oxi-os-user span { font-size: 0.8rem; color: #a3a3a3; text-transform: uppercase; letter-spacing: 0.05em; }
-.oxi-os-project-select { display: flex; flex-direction: column; gap: 10px; }
-.oxi-os-project-select label { font-size: 0.75rem; font-weight: 700; color: #a3a3a3; text-transform: uppercase; letter-spacing: 0.05em; }
-.oxi-os-project-select select { padding: 12px; border-radius: 6px; border: 1px solid #404040; background: #262626; color: #fff; width: 100%; font-size: 0.95rem; outline: none; }
-.oxi-os-project-select select:focus { border-color: #ea580c; }
-.oxi-os-menu { display: flex; flex-direction: column; gap: 10px; flex: 1; margin-top: 1rem; }
-.oxi-os-btn { padding: 12px 16px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; font-weight: 600; font-size: 0.95rem; text-align: left; transition: all 0.2s; background: transparent; color: #d4d4d4; }
-.oxi-os-btn:hover { background: #262626; color: #fff; }
-.oxi-os-btn.primary { background: #ea580c; color: #fff; text-align: center; border: 1px solid #ea580c; }
-.oxi-os-btn.primary:hover { background: #c2410c; border-color: #c2410c; }
-.oxi-os-btn.secondary { border: 1px solid #404040; color: #fff; text-align: center; }
-.oxi-os-btn.secondary:hover { border-color: #ea580c; background: transparent; }
-.oxi-os-btn.dark { background: transparent; color: #737373; text-align: center; margin-top: auto; border: 1px solid #262626; }
-.oxi-os-btn.dark:hover { color: #fff; background: #262626; }
-.oxi-os-main { flex: 1; padding: 2rem 3rem; overflow-y: auto; background: #fafafa; }
-.oxi-os-main-header { margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #e5e5e5; padding-bottom: 1.5rem; }
-.oxi-os-main-header span { color: #ea580c; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
-.oxi-os-main-header h1 { font-size: 3.5rem; letter-spacing: -0.04em; margin: 0.5rem 0 0; color: #1a1a1a; line-height: 1.1; font-weight: 800; }
-.oxi-os-main-header p { color: #525252; margin: 1rem 0 0; font-size: 1.1rem; }
+/* ── OXI OS DASHBOARD & SIDEBAR ── */
+.oxi-os-dashboard {
+  display: flex;
+  min-height: 100vh;
+  background: #f9f9f9;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1a1a1a;
+}
 
+.oxi-os-sidebar {
+  width: 300px;
+  min-width: 300px;
+  background: #131313;
+  border-right: 1px solid #262626;
+  padding: 1.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  color: #fff;
+  box-sizing: border-box;
+}
 
-/* ── OxI Platform Switcher Styles ── */
+/* Brand Wordmark */
+.oxi-os-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 0.25rem;
+}
+
+.oxi-os-brand .oxida-wordmark {
+  width: 140px;
+  align-items: stretch;
+}
+
+.oxi-os-brand .oxida-wordmark-name {
+  font-size: 1.65rem;
+  letter-spacing: -0.07em;
+  justify-content: flex-start;
+}
+
+.oxi-os-brand .oxida-wordmark-line {
+  margin: 3px 0 4px;
+}
+
+.oxi-os-brand .oxida-wordmark-studio {
+  font-size: 0.54rem;
+  letter-spacing: 0.32em;
+  padding-left: 0.32em;
+  text-align: center;
+}
+
+/* User Card */
+.oxi-os-user {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #262626;
+  box-sizing: border-box;
+}
+
+.oxi-os-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #222;
+  border: 1px solid #383838;
+  color: #ea580c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.oxi-os-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.oxi-os-user-name {
+  font-size: 0.96rem;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.oxi-os-user-company {
+  font-size: 0.74rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.oxi-os-badge-wrap {
+  margin-top: 6px;
+}
+
+.oxi-os-badge {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.oxi-os-badge.is-classic {
+  background: #222;
+  color: #a3a3a3;
+  border: 1px solid #333;
+}
+
+.oxi-os-badge.is-pro {
+  background: #ea580c;
+  color: #fff;
+  border: 1px solid #c2410c;
+}
+
+/* Platform Switcher */
 .oxi-sidebar-platform-switch {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: #1c1c1c;
-  padding: 12px;
+  background: #181818;
+  padding: 10px 12px;
   border-radius: 8px;
-  border: 1px solid #333;
+  border: 1px solid #2a2a2a;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .oxi-sidebar-platform-switch label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #a3a3a3;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #737373;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 
 .platform-toggle-group {
-  display: flex;
-  background: #111;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #0f0f0f;
   border-radius: 6px;
   padding: 3px;
-  gap: 3px;
+  gap: 4px;
+  border: 1px solid #222;
+  box-sizing: border-box;
 }
 
 .platform-toggle-btn {
-  flex: 1;
-  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 4px;
   border-radius: 4px;
   border: none;
   background: transparent;
-  color: #a3a3a3;
-  font-size: 0.8rem;
+  color: #888;
+  font-size: 0.74rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .platform-toggle-btn:hover {
   color: #fff;
+  background: #1c1c1c;
 }
 
 .platform-toggle-btn.is-active {
   background: #ea580c;
   color: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+/* Obra select */
+.oxi-os-project-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.oxi-os-project-select label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #737373;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.oxi-os-project-select select {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #333;
+  background: #1c1c1c;
+  color: #fff;
+  width: 100%;
+  font-size: 0.88rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.oxi-os-project-select select:focus {
+  border-color: #ea580c;
+}
+
+/* Menu Actions */
+.oxi-os-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.oxi-os-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-align: center;
+  transition: all 0.2s;
+  background: transparent;
+  color: #d4d4d4;
+  text-decoration: none;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.oxi-os-btn .oxi-btn-icon {
+  font-weight: 800;
+}
+
+.oxi-os-btn.primary {
+  background: #ea580c;
+  color: #fff;
+  border: 1px solid #ea580c;
+}
+
+.oxi-os-btn.primary:hover {
+  background: #c2410c;
+  border-color: #c2410c;
+}
+
+.oxi-os-btn.secondary {
+  border: 1px solid #383838;
+  background: #1c1c1c;
+  color: #fff;
+}
+
+.oxi-os-btn.secondary:hover {
+  border-color: #ea580c;
+  background: #242424;
+}
+
+.oxi-os-btn.simulator {
+  border: 1px solid #333;
+  background: transparent;
+  color: #ccc;
+}
+
+.oxi-os-btn.simulator:hover {
+  border-color: #666;
+  color: #fff;
+  background: #1c1c1c;
+}
+
+.oxi-os-footer-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 1rem;
+}
+
+.oxi-os-btn.dark {
+  background: transparent;
+  color: #737373;
+  text-align: center;
+  border: 1px solid #262626;
+  padding: 9px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.oxi-os-btn.dark:hover {
+  color: #fff;
+  background: #1c1c1c;
+  border-color: #383838;
+}
+
+/* Main Area */
+.oxi-os-main {
+  flex: 1;
+  padding: 2.25rem 3rem;
+  overflow-y: auto;
+  background: #fafafa;
+  box-sizing: border-box;
+}
+
+.oxi-os-main-header {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 1.5rem;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.oxi-os-main-header span {
+  color: #ea580c;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.oxi-os-main-header h1 {
+  font-size: clamp(2rem, 3vw, 3rem);
+  letter-spacing: -0.03em;
+  margin: 0.4rem 0 0;
+  color: #1a1a1a;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.oxi-os-main-header p {
+  color: #666;
+  margin: 0.6rem 0 0;
+  font-size: 1rem;
+  max-width: 650px;
+  line-height: 1.5;
 }
 
 .classic-tag {
