@@ -6,7 +6,7 @@ Plataforma uruguaya para descubrir, cotizar y comprar productos para obra, con e
 
 **Backend:** <https://mercadobra.onrender.com>
 
-**Última actualización:** 29 de agosto de 2026
+**Última actualización:** 15 de octubre de 2026
 
 El estado funcional detallado y las prioridades se mantienen también en [docs/ESTADO_WEB.md](docs/ESTADO_WEB.md).
 
@@ -14,30 +14,44 @@ El estado funcional detallado y las prioridades se mantienen también en [docs/E
 
 La plataforma se encuentra operativa con:
 
-- Frontend React + Vite desplegado en Vercel.
-- Backend Express desplegado como Web Service en Render.
-- PostgreSQL en Render como almacenamiento de producción.
-- Catálogo, fichas de producto, carrito, checkout y seguimiento de pedidos.
-- Registro e inicio de sesión de clientes.
-- Acceso y panel para proveedores.
-- Administración de productos, pedidos, cotizaciones y personalizaciones.
-- Autenticación con contraseñas cifradas y sesiones revocables.
-- Integración de Mercado Pago y servicios opcionales de notificaciones.
-
-En agosto de 2026 se reemplazó una instancia PostgreSQL que quedó atrapada en un ciclo de reinicio. La base activa nueva recibió correctamente las migraciones, verificó todas las tablas y recreó la cuenta administrativa mediante `admin:bootstrap`. La instancia anterior debe conservarse suspendida mientras exista interés en recuperar información histórica.
+- Frontend React + Vite desplegado en Vercel (<https://mercadobra.com>).
+- Backend Express desplegado como Web Service en Render (<https://mercadobra.onrender.com>).
+- PostgreSQL en Render como base de datos de producción relacional y transaccional.
+- **Plataforma OxI (Portal B2B para Constructoras & Estudios):**
+  - **OxI Clásico:** Solicitud y seguimiento de cotizaciones de herrería y obra, carga clasificada de documentación técnica (planos CAD/PDF, memorias, fotos de obra), tablero Kanban en vivo de 5 etapas y mensajería directa con ingeniería.
+  - **OxI Pro Suite:** Suite de ingeniería con gestor de planos y control de versiones e iteraciones, cronograma Gantt interactivo con cálculo de mano de obra y materiales, Curva S semanal (% avance físico real vs. presupuesto base P0) y alertas automáticas de sobrecosto por rubro (>90% y >100%).
+  - **Gestión de niveles:** Conmutador de plataforma en la barra lateral, control y asignación administrativa de tiers (`classic` / `pro`) y solicitud directa de habilitación a Pro desde modal interactivo en 1 clic.
+- **Administración Integral de Clientes (`/admin/clientes`):**
+  - Control de accesos y asignación de nivel (Classic / Pro).
+  - Sistema de invitaciones directas por token criptográfico (`/invitacion/:token`) con reenvío, copiado al portapapeles y expiración.
+  - Exportación e importación masiva mediante CSV.
+  - Eliminación en cascada segura (sin conflictos de foreign keys en PostgreSQL).
+- **Constructor Visual de Plantillas Paramétricas (`/admin/plantillas`):**
+  - Creación visual de fórmulas matemáticas y recetas paramétricas para costeo de familias de productos sin editar código ni base de datos.
+- **Motor de Costeo OXI Quote & Auditoría IA (`/admin/cotiza`):**
+  - Motor determinístico de costos con 81+ variables de costos versionadas, cálculo de materiales, mano de obra, flete y tipo de cambio oficial BROU.
+  - Auditor financiero con Inteligencia Artificial para detectar desvíos y anomalías en ratios de consumo y desperdicio.
+- **Panel de Analítica Ejecutiva (`/admin/analytics`):**
+  - Tableros gráficos (Recharts) con seguimiento de GMV, tasas de conversión, distribución de etapas de cotización y ventas.
+- **OXI Modela (Simulador 3D en Navegador):**
+  - Modelador paramétrico 2D/3D con Three.js, estimación de costos en tiempo real, catálogo de aberturas/muebles y asistente con IA.
+- **E-commerce B2C & B2B:** Catálogo, carrito persistente, checkout con Mercado Pago, órdenes con snapshot inmutable y cuentas de taller para proveedores.
+- **Cuentas Demo & Resiliencia:** Inicialización idempotente en arranque con usuarios demo (`admin`, `proveedor`, `cliente`, `pro`) y botones de quick-fill en pantallas de acceso.
 
 ## Accesos de la plataforma
 
-| Perfil | Ruta | Uso |
+| Perfil / Módulo | Ruta | Uso |
 | --- | --- | --- |
-| Cliente | `/cliente/login` | Cuenta, datos personales y seguimiento de pedidos. |
-| Registro de cliente | `/cliente/registro` | Alta de nuevos clientes. |
-| Proveedor | `/proveedor/login` | Acceso profesional y gestión operativa. |
-| Administrador | `/admin/login` | Productos, pedidos, consultas y personalizaciones. |
-
-El pie de página incluye un acceso administrativo discreto y minimalista con un pequeño candado. La seguridad del panel no depende de ocultar la URL, sino de la autenticación y autorización del backend.
-
-Los accesos públicos **Mi cuenta** y **Soy proveedor** se encuentran temporalmente ocultos en el encabezado. No fueron eliminados: las rutas, pantallas y lógica de autenticación continúan activas para reintroducirlas cuando el producto lo requiera. Si existe una sesión iniciada, sus controles permanecen disponibles.
+| **Cliente (OxI Clásico & Pro)** | `/cliente/login` o `/cliente` | Portal de obras, cotizaciones, planos con versiones, Gantt y Curva S. |
+| **Aceptación de Invitación** | `/invitacion/:token` | Activación de cuenta por enlace único enviado por administración. |
+| **Registro público** | `/cliente/registro` | Alta de clientes para e-commerce y cotizaciones. |
+| **Proveedor / Taller** | `/proveedor/login` | Acceso profesional y gestión de catálogo y órdenes de taller. |
+| **Panel de Administración** | `/admin/login` | Consola central de productos, pedidos, cotizaciones y clientes. |
+| **Gestión de Clientes B2B** | `/admin/clientes` | Control de niveles OxI, invitaciones, exportación CSV y fichas de obra. |
+| **Constructor de Plantillas** | `/admin/plantillas` | Diseñador visual de fórmulas y parámetros de productos OXI. |
+| **Cotizador OXI Quote** | `/admin/cotiza` | Costeo paramétrico con variables versionadas y auditor IA. |
+| **Analítica Comercial** | `/admin/analytics` | KPIs de proyectos, GMV, embudo de conversión y ventas. |
+| **Simulador 3D (OXI Modela)** | `/admin/modelador` | Diseño paramétrico 2D/3D con estimación económica en vivo. |
 
 ## Visión Estratégica: OXI Platform
 
@@ -78,24 +92,49 @@ Esta es la lista ordenada de tareas accionables para completar la transición a 
 #### 2. Motor OXI Quote (Backend)
 - [x] Base de datos de costos variables (`cost_variables`, `cost_variable_versions`).
 - [x] Servicio de costeo matemático en Node (`costingService.js`, `costCalculator.js`).
-- [ ] Crear endpoint de API (`POST /admin/quote/calculate`) para exponer el servicio a las interfaces.
-- [ ] Construir en código las "recetas" (plantillas) de familias paramétricas clave (OXI Divider, OXI Door, etc.).
+- [x] Crear endpoint de API (`POST /admin/quote/calculate`) para exponer el servicio a las interfaces.
+- [x] Construir motor de plantillas paramétricas con evaluador de fórmulas dinámicas (`src/pages/AdminTemplates.jsx` y backend).
 
 #### 3. Interfaz OXI Quote (Frontend)
 - [x] Desarrollar la pantalla del cotizador manual interno (`/admin/cotiza`) conectada al endpoint.
-- [ ] Permitir a los administradores generar presupuestos en PDF con la identidad de OXI Partner.
+- [x] Auditor financiero con IA en `/admin/cotiza` para auditar consumos, desperdicios y alertar anomalías.
+- [x] Permitir a los administradores generar presupuestos en PDF con la identidad de OXI Partner.
 
 #### 4. Integración con OXI Modela (Simulador 3D)
 - [x] Interceptar la selección de elementos en el lienzo 3D (muros, aberturas) para enviarlos a la API de `OXI Quote`.
 - [x] Mostrar en un panel lateral el costo estimado (USD) en tiempo real al diseñar.
 
-#### 5. Portal Dashboard B2B (OXI OS)
+#### 5. Portal Dashboard B2B (OXI OS — Plataforma OxI)
 - [x] Crear modelo de datos `b2b_projects` (Obras/Edificios vinculados a un cliente corporativo).
-- [x] Crear rol y login dedicado para clientes corporativos (Constructoras / Estudios) - *Se integró con el portal de cliente actual (OXI OS).*
-- [x] Pantalla "Mis Obras": listado de edificios en curso, selectores y creación de obras.
-- [x] Barra de trazabilidad: mostrar en qué etapa está cada componente de la obra (Ingeniería -> Fabricación -> Pintura -> Instalación). *Integrada en el workspace de cotizaciones.*
+- [x] Crear rol y portal unificado para clientes corporativos (Constructoras / Estudios).
+- [x] **Plataforma OxI Clásico:**
+  - [x] Pantalla "Mis Obras": listado de edificios en curso, selectores y creación de obras.
+  - [x] Solicitud de cotización enriquecida con categorización de archivos (planos CAD/PDF, memorias, fotos de obra).
+  - [x] Tablero Kanban interactivo con 3 columnas de avance (Solicitadas, En Proceso, Finalizadas).
+  - [x] Barra de trazabilidad de 5 etapas (Solicitud -> Ingeniería -> Fabricación -> Pintura -> Instalación).
+  - [x] Mensajería técnica en tiempo real por cotización con el equipo de ingeniería.
+- [x] **Suite OxI Pro:**
+  - [x] Gestor de Planos y Documentación técnica con iteraciones y control de versiones (`v1.0`, `v2.0`, `v2.1`), estados y notas.
+  - [x] Cronograma de Obra Gantt interactivo con cálculo dinámico de mano de obra y materiales.
+  - [x] Curva S semanal interactiva (% Avance Real vs Presupuesto Cero P0).
+  - [x] Alertas automáticas de sobrecosto por rubro (>90% y >100%).
+- [x] Conmutador de plataforma en la barra lateral con control de nivel (Classic vs Pro).
+- [x] Solicitud de habilitación directa a OxI Pro en 1 clic con confirmación visual sin confusión con cotizaciones de herrería.
+- [x] Control administrativo de asignación de nivel desde `/admin/clientes`.
 
-#### 6. OXI Network (Marketplace de Fabricantes)
+#### 6. Constructor de Plantillas Paramétricas (Visual Builder)
+- [x] Pantalla `/admin/plantillas` para construir visualmente nuevas plantillas de productos.
+- [x] Definición dinámica de inputs (números, selecciones, checkboxes, medidas).
+- [x] Editor interactivo de fórmulas matemáticas de costeo.
+
+#### 7. Analítica y Gestión de Clientes
+- [x] Dashboard ejecutivo `/admin/analytics` con métricas de GMV, embudo de cotizaciones y ventas.
+- [x] Gestión de clientes con invitaciones seguras por token (`/invitacion/:token`), reenvío y copiado al portapapeles.
+- [x] Eliminación en cascada segura de clientes en PostgreSQL.
+- [x] Exportación e importación masiva de clientes en formato CSV.
+- [x] Cuentas demo y botones de quick-fill en pantallas de login.
+
+#### 8. OXI Network (Marketplace de Fabricantes)
 - [ ] Ampliar esquema de proveedores con: capacidad de producción, especialidades (herrería, pintura, vidrios) y zona.
 - [ ] Desarrollar sistema de adjudicación (RFQ): permitir al admin fragmentar un proyecto y emitir órdenes de trabajo hacia el dashboard del proveedor.
 - [ ] Permitir al proveedor actualizar el % de avance de su orden desde `/proveedor`.
@@ -1749,9 +1788,9 @@ El desarrollo se realizará en este orden. No se iniciará una etapa posterior h
 - [x] Crear migraciones para variables, versiones, tipo de cambio y auditoría.
 - [x] Crear un importador validado e idempotente para la carga inicial de 81 variables.
 - [x] Implementar el núcleo determinístico de líneas de costo, desperdicio, gastos generales, margen bruto, dólar BROU e IVA, con pruebas unitarias.
-- [ ] Implementar el evaluador seguro de fórmulas y unidades para plantillas paramétricas.
+- [x] Implementar el evaluador seguro de fórmulas y unidades para plantillas paramétricas.
 - [ ] Cubrir cálculos, versiones, redondeos y errores con pruebas automatizadas.
-- [ ] Crear la administración básica de variables y precios.
+- [x] Crear la administración básica de variables y precios.
 
 #### Fase 2 — primera plantilla operativa
 
@@ -1763,30 +1802,55 @@ El desarrollo se realizará en este orden. No se iniciará una etapa posterior h
 
 #### Fase 3 — flujo comercial
 
-- [ ] Integrar el cálculo con clientes y cotizaciones existentes.
+- [x] Integrar el cálculo con clientes y cotizaciones existentes.
 - [ ] Guardar snapshots inmutables al enviar.
-- [ ] Incorporar previsualización, PDF, vigencia, condiciones, seña y aceptación.
-- [ ] Registrar eventos de envío, vista y decisión del cliente.
+- [x] Incorporar previsualización, PDF, vigencia, condiciones, seña y aceptación.
+- [x] Registrar eventos de envío, vista y decisión del cliente.
 
 #### Fase 4 — Plantillas Paramétricas y Escalabilidad Internacional (Camino A)
 
 **Objetivo:** Eliminar el código duro (hardcoding) de las fórmulas matemáticas para permitir escalabilidad a nuevos productos y expansión a otros países de forma 100% independiente de ingeniería.
 
-- [ ] **Constructor Visual de Plantillas:** Interfaz gráfica para que la administración cree nuevos productos desde cero, defina sus variables de entrada (Largo, Alto, Cantidad) y escriba fórmulas matemáticas (Ej: `(Largo * Alto) * 0.5`).
+- [x] **Constructor Visual de Plantillas:** Interfaz gráfica en `/admin/plantillas` para que la administración cree nuevos productos desde cero, defina sus variables de entrada (Largo, Alto, Cantidad) y escriba fórmulas matemáticas (Ej: `(Largo * Alto) * 0.5`).
 - [ ] **Agnosticismo de Moneda y Región:** Desacoplar las fórmulas de monedas específicas (UYU/USD) o de catálogos locales, permitiendo crear "Regiones" (Ej: Chile) con sus propias tablas de variables, impuestos (IVA/VAT) y multiplicadores de riesgo.
 - [ ] **Administración Internacional:** Permitir que los precios de catálogo y las reglas de flete se configuren por país o zona operativa, haciendo que el mismo motor `OXI Cotiza` sirva globalmente.
 - [ ] Agregar importación masiva con vista previa y rollback lógico para actualizar listas de precios de acero de forma segura.
-- [ ] Extender el catálogo de plantillas iniciales sin intervención de programación (mesas rectangulares, parrilleros, cercos, pérgolas y aberturas).
+- [x] Extender el catálogo de plantillas iniciales sin intervención de programación (mesas rectangulares, parrilleros, cercos, pérgolas y aberturas).
 - [ ] Incorporar permisos separados: Editores de Fórmulas (Ingeniería) vs. Generadores de Propuestas (Comercial).
+
 #### Fase 5 — Analítica e Inteligencia Artificial (IA)
 
 **Objetivo:** Transformar a OXI OS en un sistema experto y predictivo, acelerando la entrada de datos, previniendo errores humanos y explotando el valor de los datos históricos.
 
 - [x] **Prioridad 1: Extracción con IA (Smart Parsing):** Interpretar texto desestructurado (emails) o archivos PDF/planos subidos por la constructora para proponer automáticamente parámetros estructurados en el cotizador (ej: extraer "Baranda", "30m", "Hierro negro").
 - [x] **Prioridad 2: Redacción Automática de Propuestas (Auto-Scope):** Generar automáticamente con un LLM el documento comercial (alcance, supuestos, exclusiones y garantías) basado en la complejidad de las variables calculadas, listo para su revisión final.
-- [ ] **Prioridad 3: Detección de Anomalías (AI Auditor):** Auditar silenciosamente cada cálculo o respuesta de presupuesto de proveedores (OXI Network). Alertar si los consumos (ej. ratio de horas/kg, % de desperdicio) se desvían de la norma histórica de ese producto.
-- [ ] **Prioridad 4: Analítica de Costos (Proyecciones):** Crear dashboards para las constructoras que visualicen curvas históricas y proyecciones de impacto del acero/mano de obra, otorgando previsibilidad financiera.
+- [x] **Prioridad 3: Detección de Anomalías (AI Auditor):** Auditor silencioso en `/admin/cotiza` para auditar cada cálculo y alertar si los consumos (ratio de horas/kg, % de desperdicio) se desvían de los rangos esperados.
+- [x] **Prioridad 4: Analítica de Negocio (Dashboard de Proyectos):** Dashboard ejecutivo en `/admin/analytics` con gráficos interactivos (Recharts) de GMV, embudo de cotizaciones y facturación.
 - [ ] Incorporar el feedback loop: Medir precisión de las sugerencias de la IA para retroalimentar el modelo y exigir siempre confirmación humana ("Human in the loop") antes de enviar.
+
+#### Fase 6 — Plataforma OxI B2B (Clásico & Pro Suite)
+
+**Objetivo:** Brindar a Constructoras y Estudios de Arquitectura una experiencia de seguimiento operativo (OxI Clásico) y una suite avanzada de ingeniería y costos de obra (OxI Pro).
+
+- [x] **Plataforma OxI Clásico:**
+  - [x] Dashboard corporativo en `/cliente` con selector de obra y tablero Kanban de 3 estados (Solicitadas, En Proceso, Finalizadas).
+  - [x] Formulario de cotización de herrería y piezas con carga clasificada de documentación (planos CAD/PDF, memorias descriptivas y fotos de obra).
+  - [x] Trazabilidad visual de 5 etapas (Solicitud -> Ingeniería -> Fabricación -> Pintura -> Instalación).
+  - [x] Hilo de mensajería técnica en tiempo real por cotización con el equipo de ingeniería de Óxida.
+- [x] **Suite OxI Pro:**
+  - [x] **Gestor de Planos & Docs Técnicos:** Control de iteraciones y versiones (`v1.0`, `v2.0`, `v2.1`), estados de aprobación (`aprobado`, `en_revision`, `observado`), autoría y notas técnicas.
+  - [x] **Cronograma Gantt interactivo:** Asignación de recursos y cuadrillas por categoría laboral (Capataz, Oficial, Medio Oficial, Peón), cómputo dinámico de mano de obra y costos de materiales.
+  - [x] **Curva S semanal interactiva:** Comparativa en tiempo real de % Avance Físico Real ponderado vs. Presupuesto Cero (P0).
+  - [x] **Control Presupuestario por Partida:** Detección de desviaciones y alertas automáticas de sobrecosto por rubro (>90% advertencia, >100% crítico).
+- [x] **Control y Habilitación de Tiers:**
+  - [x] Conmutador de plataforma en la barra lateral con diseño grafito industrial, responsive y libre de desbordes.
+  - [x] Asignación y cambio de nivel (Classic vs Pro) desde la administración en `/admin/clientes`.
+  - [x] Solicitud de habilitación directa a OxI Pro en 1 clic desde modal interactivo con notas de obra, sin confusiones con el formulario de cotización.
+- [x] **Gestión Integral de Clientes:**
+  - [x] Invitaciones por token criptográfico único (`/invitacion/:token`), reenvío y copiado al portapapeles.
+  - [x] Eliminación en cascada segura de clientes en PostgreSQL.
+  - [x] Importación y exportación de clientes mediante CSV.
+  - [x] Cuentas demo y botones de auto-completado rápido en pantallas de login.
 
 ### Criterio de salida del MVP
 

@@ -2,7 +2,7 @@
 
 Documento vivo para registrar el estado de la web, ordenar los pendientes y actualizar el avance en cada implementación.
 
-**Última revisión:** 2 de septiembre de 2026
+**Última revisión:** 15 de octubre de 2026
 
 **Producción:** <https://mercadobra.com>
 
@@ -103,6 +103,11 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | 2026-08-22 | Cobro de señas de proyectos. | Mercadobra configura porcentaje o monto fijo; el cliente paga con Mercado Pago o informa una transferencia. La confirmación activa el proyecto y crea hitos iniciales cuando no fueron definidos. | Este cambio |
 | 2026-08-23 | Generador de cotizaciones comerciales. | El administrador carga ítems, IVA y condiciones esenciales, y descarga una propuesta PDF breve de dos páginas con identidad Óxida Studio. Guardar un borrador no lo marca como enviado ni notifica al cliente. | Este cambio |
 | 2026-09-02 | Primer piloto de OXI Cotiza. | Se conectó el catálogo versionado al motor y se creó `/admin/cotiza` para calcular mesas circulares con desglose técnico, reglas comerciales, dólar e IVA. Queda pendiente validar los supuestos contra un presupuesto manual. | Este cambio |
+| 2026-09-21 | Constructor visual de plantillas paramétricas. | Implementación de `/admin/plantillas` y evaluador matemático dinámico para definir inputs, reglas y fórmulas de costeo sin hardcoding. | `49a0876` |
+| 2026-09-24 | Panel de Analítica y Auditoría IA. | Incorporación de `/admin/analytics` con métricas de GMV y embudo de cotizaciones, y auditor financiero con IA en `/admin/cotiza`. | `7c6ca4b` |
+| 2026-10-13 | Plataforma OxI (Clásico & Pro Suite). | Lanzamiento del portal B2B para constructoras: OxI Clásico (planos, fotos, kanban) y OxI Pro (versionado de planos, Gantt, Curva S % Avance vs P0, y alertas de sobrecosto). | `4241888` |
+| 2026-10-14 | Gestión de Clientes B2B e Invitaciones. | Control de tiers (Classic/Pro), invitaciones seguras por token, copiado de enlace, importación/exportación CSV y cascada de eliminación. | `bd0c036` |
+| 2026-10-15 | Polish UI & Solicitud directa OxI Pro. | Alineación pixel-perfect de la barra lateral OxI OS y separación 100% limpia entre solicitud de habilitación Pro (1 clic en modal con notas) y cotización de herrería. | `53188a9` |
 
 ## Forma de trabajo
 
