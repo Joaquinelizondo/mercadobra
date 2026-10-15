@@ -19,8 +19,18 @@ La plataforma se encuentra operativa con:
 - PostgreSQL en Render como base de datos de producción relacional y transaccional.
 - **Plataforma OxI (Portal B2B para Constructoras & Estudios):**
   - **OxI Clásico:** Solicitud y seguimiento de cotizaciones de herrería y obra, carga clasificada de documentación técnica (planos CAD/PDF, memorias, fotos de obra), tablero Kanban en vivo de 5 etapas y mensajería directa con ingeniería.
-  - **OxI Pro Suite:** Suite de ingeniería con gestor de planos y control de versiones e iteraciones, cronograma Gantt interactivo con cálculo de mano de obra y materiales, Curva S semanal (% avance físico real vs. presupuesto base P0) y alertas automáticas de sobrecosto por rubro (>90% y >100%).
+  - **OxI Pro Suite (Los 4 Pilares de Control de Obra):**
+    - *Pilar 1 (Proyectos):* Conmutador directo de obras en cabecera con persistencia reactiva, visualización de dirección y vinculación estricta en base de datos (`b2b_project_id`).
+    - *Pilar 2 (Schedule Gantt):* Cronograma interactivo con cálculo dinámico de días hábiles, mano de obra estimada por cuadrilla y categoría laboral, badges de estado en vivo (`✓ Terminado`, `⚡ En curso`, `⏳ Pendiente`) y descarga a Excel con `📥 Exportar Cronograma (CSV)`.
+    - *Pilar 3 (Presupuestos & Costos):* Partidas presupuestarias editables y personalizadas (`＋ Agregar Rubro / Partida`), alertas de sobrecosto por rubro (Normal, Advertencia $\ge 85\%$, Crítico $> 100\%$), comparativa semanal (% Real vs P0) y descarga con `📥 Exportar Balance (CSV)`.
+    - *Pilar 4 (Gestor Documental):* Selector drag-and-drop con lectura real Base64 y cálculo de peso, descargas directas (`⬇ Descargar`), modal de nuevas iteraciones (`+ Iteración`) y soporte ampliado en backend para formatos técnicos (.dwg, .dxf, .cad, .pdf, .docx, .xlsx, imágenes) hasta 15 MB.
   - **Gestión de niveles:** Conmutador de plataforma en la barra lateral, control y asignación administrativa de tiers (`classic` / `pro`) y solicitud directa de habilitación a Pro desde modal interactivo en 1 clic.
+- **OXI Network (Marketplace de Fabricación Distribuida):**
+  - Adjudicación de piezas y proyectos desde el espacio de cotización administrativo (`/admin/cotizaciones/:id`) a talleres asociados homologados con precio objetivo, moneda y fecha límite.
+  - Panel operativo de taller en `/proveedor` (`SupplierDashboard.jsx`): recepción de órdenes, transiciones de estado (`pending` -> `accepted` -> `in_progress` -> `ready` -> `delivered`), slider de avance en tiempo real (0–100%) y notas técnicas de taller.
+- **Exportación Comercial OXI PDF & Conversión a Cotización Oficial:**
+  - Generador de presupuestos oficiales en PDF de 2 páginas (`POST /admin/costing/pdf`) con identidad institucional, portada ejecutiva, desglose de costos y datos de pago.
+  - Conversión directa de costeo paramétrico a cotización oficial del cliente en 1 clic (`POST /admin/costing/convert-to-quote`).
 - **Administración Integral de Clientes (`/admin/clientes`):**
   - Control de accesos y asignación de nivel (Classic / Pro).
   - Sistema de invitaciones directas por token criptográfico (`/invitacion/:token`) con reenvío, copiado al portapapeles y expiración.
@@ -95,29 +105,30 @@ Esta es la lista ordenada de tareas accionables para completar la transición a 
 - [x] Crear endpoint de API (`POST /admin/quote/calculate`) para exponer el servicio a las interfaces.
 - [x] Construir motor de plantillas paramétricas con evaluador de fórmulas dinámicas (`src/pages/AdminTemplates.jsx` y backend).
 
-#### 3. Interfaz OXI Quote (Frontend)
+#### 3. Interfaz OXI Quote & Propuestas Comerciales
 - [x] Desarrollar la pantalla del cotizador manual interno (`/admin/cotiza`) conectada al endpoint.
 - [x] Auditor financiero con IA en `/admin/cotiza` para auditar consumos, desperdicios y alertar anomalías.
-- [x] Permitir a los administradores generar presupuestos en PDF con la identidad de OXI Partner.
+- [x] Generador de presupuestos oficiales en PDF de 2 páginas (`POST /admin/costing/pdf`) con identidad OXI Partner y carátula profesional.
+- [x] Conversión directa de costeo paramétrico a cotización oficial de cliente (`POST /admin/costing/convert-to-quote`).
 
 #### 4. Integración con OXI Modela (Simulador 3D)
 - [x] Interceptar la selección de elementos en el lienzo 3D (muros, aberturas) para enviarlos a la API de `OXI Quote`.
 - [x] Mostrar en un panel lateral el costo estimado (USD) en tiempo real al diseñar.
 
-#### 5. Portal Dashboard B2B (OXI OS — Plataforma OxI)
-- [x] Crear modelo de datos `b2b_projects` (Obras/Edificios vinculados a un cliente corporativo).
+#### 5. Portal Dashboard B2B (OXI OS — Plataforma OxI & OxI Pro)
+- [x] Crear modelo de datos `b2b_projects` (Obras/Edificios vinculados a un cliente corporativo y cotizaciones con `b2b_project_id`).
 - [x] Crear rol y portal unificado para clientes corporativos (Constructoras / Estudios).
 - [x] **Plataforma OxI Clásico:**
   - [x] Pantalla "Mis Obras": listado de edificios en curso, selectores y creación de obras.
   - [x] Solicitud de cotización enriquecida con categorización de archivos (planos CAD/PDF, memorias, fotos de obra).
   - [x] Tablero Kanban interactivo con 3 columnas de avance (Solicitadas, En Proceso, Finalizadas).
-  - [x] Barra de trazabilidad de 5 etapas (Solicitud -> Ingeniería -> Fabricación -> Pintura -> Instalación).
+  - [x] Barra de trazabilidad de 5 etapas (Solicitud -> Cotizada -> Aceptada -> En ejecución -> Finalizada).
   - [x] Mensajería técnica en tiempo real por cotización con el equipo de ingeniería.
-- [x] **Suite OxI Pro:**
-  - [x] Gestor de Planos y Documentación técnica con iteraciones y control de versiones (`v1.0`, `v2.0`, `v2.1`), estados y notas.
-  - [x] Cronograma de Obra Gantt interactivo con cálculo dinámico de mano de obra y materiales.
-  - [x] Curva S semanal interactiva (% Avance Real vs Presupuesto Cero P0).
-  - [x] Alertas automáticas de sobrecosto por rubro (>90% y >100%).
+- [x] **Suite OxI Pro (Los 4 Pilares de Control de Obra):**
+  - [x] **Pilar 1 — Proyectos:** Conmutador directo de obras en el encabezado de OxI Pro, aislamiento de estado, visualización de dirección y recarga reactiva.
+  - [x] **Pilar 2 — Cronograma Gantt & Recursos:** Plazos, cálculo dinámico de días hábiles y mano de obra por operario/categoría, pills de estado (`✓ Terminado`, `⚡ En curso`, `⏳ Pendiente`) y exportación a Excel con `📥 Exportar Cronograma (CSV)`.
+  - [x] **Pilar 3 — Presupuestos vs. Ejecutados & Curva S:** Partidas personalizables (`＋ Agregar Rubro / Partida`), edición de base vs. ejecutado, cálculo de desviaciones, alertas de sobrecosto (normal, advertencia $\ge 85\%$, crítico $> 100\%$), comparativa semanal (% Real vs P0) y descarga con `📥 Exportar Balance (CSV)`.
+  - [x] **Pilar 4 — Gestor Documental & Planos:** Selector drag-and-drop de archivos reales (`.dwg`, `.dxf`, `.cad`, `.pdf`, `.docx`, `.xlsx`, imágenes) hasta 15 MB, botón de descarga directa (`⬇ Descargar`) en cada fila, modal estructurado de nuevas iteraciones (`+ Iteración`) y registro de historial cronológico de cambios.
 - [x] Conmutador de plataforma en la barra lateral con control de nivel (Classic vs Pro).
 - [x] Solicitud de habilitación directa a OxI Pro en 1 clic con confirmación visual sin confusión con cotizaciones de herrería.
 - [x] Control administrativo de asignación de nivel desde `/admin/clientes`.
@@ -134,10 +145,11 @@ Esta es la lista ordenada de tareas accionables para completar la transición a 
 - [x] Exportación e importación masiva de clientes en formato CSV.
 - [x] Cuentas demo y botones de quick-fill en pantallas de login.
 
-#### 8. OXI Network (Marketplace de Fabricantes)
-- [ ] Ampliar esquema de proveedores con: capacidad de producción, especialidades (herrería, pintura, vidrios) y zona.
-- [ ] Desarrollar sistema de adjudicación (RFQ): permitir al admin fragmentar un proyecto y emitir órdenes de trabajo hacia el dashboard del proveedor.
-- [ ] Permitir al proveedor actualizar el % de avance de su orden desde `/proveedor`.
+#### 8. OXI Network (Marketplace de Fabricación Distribuida)
+- [x] Esquema relacional de órdenes de fabricación distribuida (`fabrication_orders`) en PostgreSQL y repositorio JSON.
+- [x] Sistema de adjudicación en `/admin/cotizaciones/:id`: asignación de piezas y proyectos a talleres homologados con precio objetivo, moneda y plazo.
+- [x] Dashboard operativo de taller en `/proveedor` (`SupplierDashboard.jsx`): recepción de órdenes, transiciones de estado (`pending` -> `accepted` -> `in_progress` -> `ready` -> `delivered`), slider de avance en tiempo real (0–100%) y notas técnicas de taller.
+- [x] Trazabilidad y visibilidad bidireccional entre la administración de Óxida y los talleres fabricantes.
 
 ## Experiencia pública e identidad vigente
 
@@ -1835,22 +1847,56 @@ El desarrollo se realizará en este orden. No se iniciará una etapa posterior h
 - [x] **Plataforma OxI Clásico:**
   - [x] Dashboard corporativo en `/cliente` con selector de obra y tablero Kanban de 3 estados (Solicitadas, En Proceso, Finalizadas).
   - [x] Formulario de cotización de herrería y piezas con carga clasificada de documentación (planos CAD/PDF, memorias descriptivas y fotos de obra).
-  - [x] Trazabilidad visual de 5 etapas (Solicitud -> Ingeniería -> Fabricación -> Pintura -> Instalación).
+  - [x] Trazabilidad visual de 5 etapas (Solicitud -> Cotizada -> Aceptada -> En ejecución -> Finalizada).
   - [x] Hilo de mensajería técnica en tiempo real por cotización con el equipo de ingeniería de Óxida.
-- [x] **Suite OxI Pro:**
-  - [x] **Gestor de Planos & Docs Técnicos:** Control de iteraciones y versiones (`v1.0`, `v2.0`, `v2.1`), estados de aprobación (`aprobado`, `en_revision`, `observado`), autoría y notas técnicas.
-  - [x] **Cronograma Gantt interactivo:** Asignación de recursos y cuadrillas por categoría laboral (Capataz, Oficial, Medio Oficial, Peón), cómputo dinámico de mano de obra y costos de materiales.
-  - [x] **Curva S semanal interactiva:** Comparativa en tiempo real de % Avance Físico Real ponderado vs. Presupuesto Cero (P0).
-  - [x] **Control Presupuestario por Partida:** Detección de desviaciones y alertas automáticas de sobrecosto por rubro (>90% advertencia, >100% crítico).
+- [x] **Suite OxI Pro (Los 4 Pilares de Control de Obra):**
+  - [x] **Pilar 1 — Carga y Gestión de Proyectos:**
+    - Conmutador directo de obras en el encabezado de OxI Pro y selector lateral.
+    - Persistencia reactiva aislada por obra (`localStorage` key dinámico por `projectId`).
+    - Vinculación relacional estricta en PostgreSQL (`b2b_project_id` en `customer_quotes` y `fabrication_orders`).
+  - [x] **Pilar 2 — Schedule / Cronograma Gantt & Recursos:**
+    - Asignación de cuadrillas y operarios por categoría salarial (Capataz, Oficial Especializado, Oficial, Medio Oficial, Peón Práctico).
+    - Calculador dinámico de días hábiles entre fechas de inicio y fin con cómputo de mano de obra en vivo.
+    - Pills de estado en vivo (`✓ Terminado`, `⚡ En curso`, `⏳ Pendiente`) con control de progreso editable.
+    - Exportación a planilla Excel mediante `📥 Exportar Cronograma (CSV)` con UTF-8 BOM.
+  - [x] **Pilar 3 — Presupuestos vs. Ejecutados & Curva S:**
+    - Partidas presupuestarias editables y personalizadas mediante modal `＋ Agregar Rubro / Partida`.
+    - Detección de desviaciones y semáforo automático de sobrecosto (Normal, Advertencia $\ge 85\%$, Crítico $> 100\%$).
+    - Curva S semanal (% Avance Real ponderado vs Presupuesto Cero P0) y mensual devengado vs presupuestado.
+    - Exportación a planilla Excel mediante `📥 Exportar Balance (CSV)`.
+  - [x] **Pilar 4 — Carga de Documentación Técnica & Versionado:**
+    - Selector drag-and-drop de archivos reales (`.dwg`, `.dxf`, `.cad`, `.pdf`, `.docx`, `.xlsx`, imágenes) con lectura Base64 y peso en MB.
+    - Botón de descarga directa (`⬇ Descargar`) en cada fila con generación de ficha técnica homologada.
+    - Modal de nuevas iteraciones (`+ Iteración`) con reemplazo de archivo, versión incremental (`v1.0` -> `v2.0`) y memoria técnica de cambios.
+    - Soporte en backend ampliado hasta 15 archivos y 15 MB con categorización (`plano`, `memoria`, `foto`, `archivo`).
 - [x] **Control y Habilitación de Tiers:**
   - [x] Conmutador de plataforma en la barra lateral con diseño grafito industrial, responsive y libre de desbordes.
   - [x] Asignación y cambio de nivel (Classic vs Pro) desde la administración en `/admin/clientes`.
-  - [x] Solicitud de habilitación directa a OxI Pro en 1 clic desde modal interactivo con notas de obra, sin confusiones con el formulario de cotización.
+  - [x] Solicitud de habilitación directa a OxI Pro en 1 clic desde modal interactivo con notas de obra, sin confusiones con cotizaciones de herrería.
 - [x] **Gestión Integral de Clientes:**
   - [x] Invitaciones por token criptográfico único (`/invitacion/:token`), reenvío y copiado al portapapeles.
   - [x] Eliminación en cascada segura de clientes en PostgreSQL.
   - [x] Importación y exportación de clientes mediante CSV.
   - [x] Cuentas demo y botones de auto-completado rápido en pantallas de login.
+
+#### Fase 7 — OXI Network & Fabricación Distribuida
+
+**Objetivo:** Conectar cotizaciones y proyectos aprobados con la red descentralizada de talleres metalúrgicos y fabricantes homologados.
+
+- [x] **Modelo relacional de órdenes de fabricación (`fabrication_orders`):**
+  - Campos: `id`, `quote_id`, `b2b_project_id`, `supplier_id`, `project_name`, `title`, `description`, `target_price`, `currency`, `deadline`, `status`, `progress_percent`, `technical_notes`.
+  - Estados soportados: `pending` (asignada) -> `accepted` (aceptada por taller) -> `in_progress` (en fabricación) -> `ready` (lista en taller) -> `delivered` (entregada en obra).
+- [x] **Adjudicación desde Administración (`/admin/cotizaciones/:id`):**
+  - Modal interactivo para asignar piezas o proyectos a talleres homologados con precio objetivo y plazo de entrega.
+  - Trazabilidad y seguimiento del avance físico del taller directamente desde el expediente comercial.
+- [x] **Panel Operativo de Taller (`/proveedor`):**
+  - Tarjetas de órdenes de fabricación activas con métricas de precio, moneda y fecha límite.
+  - Selector de avance físico interactivo (slider de 0 a 100%).
+  - Bitácora de notas técnicas de taller para comunicación de ingeniería.
+  - Botón de avance de fase (`Aceptar trabajo`, `Comenzar fabricación`, `Marcar pieza lista`, `Confirmar entrega`).
+- [x] **Presupuestos Ejecutivos & Conversión Comercial:**
+  - Endpoint `POST /admin/costing/pdf` para generar presupuestos formales de 2 páginas en PDF con identidad corporativa Óxida / Mercadobra.
+  - Endpoint `POST /admin/costing/convert-to-quote` para convertir cualquier cálculo paramétrico en cotización oficial para el cliente.
 
 ### Criterio de salida del MVP
 
