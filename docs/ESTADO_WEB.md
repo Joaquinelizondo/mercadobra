@@ -74,6 +74,16 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | Monitoreo y respaldos | Pendiente | Alertas de errores, healthchecks, backups verificados y procedimiento de recuperación. |
 | Pruebas automatizadas | Pendiente | Casos críticos de autenticación, stock, carrito, órdenes, pagos y cotizador cubiertos. |
 
+### P4 — Innovación Disruptiva ConstructionTech
+
+| Punto | Estado | Criterio para darlo por terminado |
+| --- | --- | --- |
+| Configurador 3D Público para Clientes | Pendiente | Modelado 3D interactivo para pérgolas, barandas y escaleras con recálculo de precio en tiempo real y pedido directo de fabricación. |
+| Cotizador Instantáneo de Planos por IA | Pendiente | Carga de PDF/DWG con extracción automática de paquetes metálicos (BOM) y presupuesto estimado en < 45 segundos. |
+| Optimizador de Corte (Nesting) para Talleres | Pendiente | Algoritmo de corte de barras de 6m (< 5% desperdicio) con emisión de planillas técnicas y QR para OXI Network. |
+| Certificaciones Móviles con Fotos en Obra | Pendiente | PWA/interfaz móvil para directores de obra con fotos georreferenciadas (GPS) y firma táctil para aprobar hitos. |
+| Smart Matching de Talleres & Escrow | Pendiente | Asignación automática por capacidad ociosa y especialidad, con custodia de señas liberadas contra hito certificado. |
+
 ## Decisiones pendientes
 
 1. Definir cuáles productos tendrán precio y compra directa.

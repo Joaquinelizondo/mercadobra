@@ -79,7 +79,48 @@ Para lograr un modelo de negocio altamente escalable y atractivo, el ecosistema 
 
 **Estrella Norte (North Star Metric):** En lugar de medir solo la facturación aislada, el objetivo es maximizar el **GMV (Gross Merchandise Value) anual gestionado**, capturando valor a través del margen de proyectos, fee de red de fabricación y contratos recurrentes.
 
-### Roadmap Comercial de Corto Plazo (90 Días)
+### 🚀 Ejes de Innovación Disruptiva (De Software Administrativo a Plataforma ConstructionTech)
+
+Para trascender el modelo de un simple ERP administrativo y convertir a Mercadobra / Óxida en un ecosistema ConstructionTech de clase mundial (inspirado en referentes globales como Xometry, Procore y Kojo), la plataforma orienta su desarrollo hacia **5 ejes de disrupción técnica y operativa**:
+
+#### 1. 🤖 Cotizador Instantáneo de Planos por IA (AI Blueprints to BOM)
+* **Objetivo:** Reducir el tiempo de cotización técnica de 5 días hábiles a 45 segundos.
+* **Mecánica:**
+  - El arquitecto o constructora arrastra su plano en PDF o DWG.
+  - Un modelo de visión multimodal (Gemini / OCR avanzado) analiza la planimetría para identificar automáticamente los ítems metálicos: barandas, escaleras helicoidales/rectas, pérgolas, aberturas y marcos.
+  - Generación instantánea de Cómputo Métrico Preliminar (BOM - Bill of Materials) con metrajes lineales, kilos estimados de acero y horas de mano de obra.
+  - Emisión inmediata de una propuesta preliminar orientativa en pantalla con opción de solicitar validación final de ingeniería en 1 clic.
+
+#### 2. 📐 Configurador 3D Paramétrico para Clientes (Self-Serve Metal Configurator)
+* **Objetivo:** Permitir al cliente o arquitecto diseñar, presupuestar y encargar estructuras metálicas en vivo desde el navegador.
+* **Mecánica:**
+  - Módulo web 3D interactivo para familias estandarizables: Pérgolas bioclimáticas, Barandas de balcón, Escaleras caracol y Cerramientos de hierro y vidrio.
+  - Controles paramétricos en tiempo real: sliders de ancho, largo, altura, tipo de perfiles tubulares, acabados (óxido natural, negro mate, galvanizado) y maderas tratadas.
+  - Conexión biunívoca con el motor de costos OXI Quote: cada centímetro modificado recalcula en vivo el precio exacto en pantalla.
+  - Botón directo "Encargar Fabricación": genera la orden técnica y despiece para el taller sin requerir reuniones de especificación.
+
+#### 3. ⚡ Generador de Listas de Corte y Nesting para Talleres (Digital CAM Pipeline)
+* **Objetivo:** Eliminar el error humano en taller y reducir el desperdicio de perfiles metálicos al < 5%.
+* **Mecánica:**
+  - A partir de la cotización o modelo aprobado, el algoritmo resuelve el problema de corte unidimensional (1D Cutting Stock / Nesting Optimizer) sobre barras comerciales estándar de 6 metros.
+  - Generación automática de la Planilla de Corte y Fabricación en PDF con esquemas visuales, medidas de corte, ángulos de inglete y códigos QR de trazabilidad por pieza.
+  - El taller en OXI Network recibe la orden con el plano de despiece optimizado, reduciendo tiempos muertos y costos de materia prima.
+
+#### 4. 📱 Certificaciones Digitales de Obra con Fotos Georreferenciadas (Mobile-First Field Inspection)
+* **Objetivo:** Llevar la plataforma al andamio y a la obra real, reemplazando la carga de escritorio por validación móvil fehaciente.
+* **Mecánica:**
+  - Interfaz web móvil ultraliviana para Directores de Obra, Inspectores y Capataces en sitio.
+  - Flujo de certificación de hitos: al completar un montaje, el usuario toma fotografías del elemento instalado; el sistema captura geolocalización GPS, orientación y timestamp inmutable.
+  - Firma digital táctil en pantalla del "Certificado de Avance Físico".
+  - Disparador automático: la aprobación digital del hito desbloquea la siguiente etapa del cronograma y libera el pago correspondiente al taller en OXI Network.
+
+#### 5. 🔄 Asignación Inteligente de Talleres & Custodia Segura de Fondos (Smart Matching & Escrow)
+* **Objetivo:** Escalar la capacidad productiva sin multiplicar la estructura fija, mitigando el riesgo financiero de compradores y fabricantes.
+* **Mecánica:**
+  - **Smart Matching Algorítmico:** Al confirmarse un proyecto, el sistema analiza la red de talleres homologados según capacidad ociosa en calendario, especialidad técnica (soldadura TIG, corte láser, pintura electrostática) y cercanía geográfica a la obra.
+  - **Sistema de Escrow (Custodia de Señas):** La constructora deposita la seña en Mercadobra; los fondos quedan en garantía y se transfieren al taller de forma progresiva únicamente contra certificados de avance aprobados con evidencia fotográfica.
+
+### Roadmap Comercial y de Desarrollo (90 Días)
 
 Para materializar esta visión técnica y comercial, el enfoque de desarrollo prioriza:
 
@@ -1907,18 +1948,21 @@ El desarrollo se realizará en este orden. No se iniciará una etapa posterior h
 - El documento comercial oculta costos internos y coincide con el total autorizado.
 - Existen pruebas para valores normales, límites, datos faltantes, fórmulas inválidas y actualización de precios.
 
-## Próximas prioridades inmediatas
+## Próximas prioridades de desarrollo
 
-1. Cerrar reglas y costos de entrega antes del pago.
-2. Publicar textos legales y condiciones comerciales.
-3. Migrar imágenes Base64 a almacenamiento/CDN.
-4. Proteger el carrito contra mezcla de monedas.
-5. Implementar emails transaccionales de pedido y pago.
-6. Agregar pruebas E2E del flujo de compra y webhooks.
-7. Configurar backups y probar restauración.
-8. Completar SEO técnico e indexación de productos.
-9. Integrar analytics y monitoreo de errores.
-10. Eliminar falsos éxitos offline y profesionalizar inventario/administración.
+### 🚀 Ejes de Innovación Disruptiva (ConstructionTech)
+1. **Configurador 3D Paramétrico Público para Clientes**: Abrir el motor 3D interactivo para familias de herrería estandarizada (Pérgolas, Barandas de vidrio y hierro, Escaleras y Cerramientos) con sliders de medidas, materiales, precio exacto en vivo y botón directo de encargo de fabricación.
+2. **Cotizador Instantáneo de Planos por IA (AI Blueprints to BOM)**: Extracción automática con visión multimodal y OCR sobre planos técnicos (PDF / DWG) para generar el cómputo métrico preliminar de acero, metros lineales y horas de taller en < 45 segundos.
+3. **Optimizador de Corte (Nesting) y Despiece para Talleres**: Algoritmo de optimización de barras de 6m para reducir desperdicio al < 5% y generación de planillas técnicas de corte en PDF con códigos QR para talleres en OXI Network.
+4. **Certificaciones Digitales de Obra con Fotos Georreferenciadas (Mobile-First)**: Interfaz móvil de obra para directores e inspectores con captura de fotos geolocalizadas (GPS + timestamp inmutable) y firma táctil de certificados de avance físico.
+5. **Smart Matching Algorítmico y Custodia Segura de Fondos (Escrow)**: Asignación automática de órdenes de trabajo a talleres según especialidad y capacidad ociosa, con retención en garantía de señas y pagos liberados contra hito certificado.
+
+### 🛠️ Estabilidad Operativa y Ecommerce
+6. Implementar emails transaccionales de cotizaciones, invitaciones, pedidos y transferencias (Resend / SendGrid).
+7. Definir reglas y cálculo dinámico de costos de flete y entrega antes del checkout.
+8. Publicar textos legales, términos comerciales y políticas de garantía de obra.
+9. Migración física de imágenes históricas Base64 a CDN / Cloudinary.
+10. Pruebas E2E de flujos críticos de compra, cotizaciones y webhooks.
 
 ## Verificación antes de publicar
 
