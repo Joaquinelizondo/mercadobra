@@ -160,6 +160,7 @@ export default function CustomerPortal() {
       setActiveProjectId(res.id)
       setIsCreatingProject(false)
       setNewProjectName(''); setNewProjectLocation('')
+      if (isProUser) setPlatformMode('pro')
     } catch(err) { setError(err.message) }
     finally { setSaving(false) }
   }
@@ -324,6 +325,8 @@ export default function CustomerPortal() {
         {platformMode === 'pro' && !isEditingProfile && !isCreatingProject ? (
           <OxiProSuite 
             project={activeProject} 
+            projects={b2bProjects}
+            onSelectProject={(id) => setActiveProjectId(id)}
             onBackToClassic={() => setPlatformMode('classic')} 
           />
         ) : (

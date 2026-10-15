@@ -1258,8 +1258,8 @@ async function getPgRepo() {
       const { rows } = await pool.query(
         `INSERT INTO customer_quotes
            (customer_user_id, reference_number, title, description, status, total_amount, currency,
-            sent_at, estimated_start_at, estimated_end_at, internal_notes, created_by, attachments, desired_date, budget)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+            sent_at, estimated_start_at, estimated_end_at, internal_notes, created_by, attachments, desired_date, budget, b2b_project_id)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
          RETURNING *`,
         [
           payload.customerId, payload.referenceNumber, payload.title, payload.description,
@@ -1267,7 +1267,7 @@ async function getPgRepo() {
           payload.status === 'sent' ? new Date() : null,
           payload.estimatedStartAt || null, payload.estimatedEndAt || null,
           payload.internalNotes, payload.createdBy, JSON.stringify(payload.attachments || []),
-          payload.desiredDate || null, payload.budget ?? null,
+          payload.desiredDate || null, payload.budget ?? null, payload.b2bProjectId ?? null,
         ]
       )
       return mapCustomerQuoteRow(rows[0])

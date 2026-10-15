@@ -333,14 +333,23 @@ const adminOnly = requireRoleOrAdmin('admin')
 const customerOnly = requireRoleOrAdmin('customer')
 
 function validateAttachments(value) {
-  const items = Array.isArray(value) ? value.slice(0, 3) : []
+  const items = Array.isArray(value) ? value.slice(0, 15) : []
+  const ALLOWED_EXTS = /\.(pdf|dwg|dxf|cad|rvt|ifc|doc|docx|xls|xlsx|txt|csv|png|jpe?g|webp|svg)$/i
+  const ALLOWED_MIME_PREFIXES = ['application/', 'image/', 'text/']
   return items.map((item) => {
-    const name = validateStringLength(item?.name || 'archivo', 'Nombre del archivo', 1, 160)
-    const type = validateStringLength(item?.type || 'application/octet-stream', 'Tipo de archivo', 1, 100)
-    const data = String(item?.data || '')
-    if (!data.startsWith('data:') || data.length > 2800000) throw new ValidationError('Cada archivo debe pesar menos de 2 MB')
-    if (!['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(type)) throw new ValidationError('Solo se permiten PDF, JPG, PNG o WEBP')
-    return { name, type, data }
+    const name = validateStringLength(item?.name || 'archivo', 'Nombre del archivo', 1, 200)
+    const type = validateStringLength(item?.type || 'application/octet-stream', 'Tipo de archivo', 1, 120)
+    const category = item?.category || 'archivo'
+    const data = String(item?.data || item?.url || '')
+    if (data.startsWith('data:') && data.length > 20000000) {
+      throw new ValidationError('Cada archivo debe pesar menos de 15 MB')
+    }
+    const isAllowedExt = ALLOWED_EXTS.test(name)
+    const isAllowedMime = ALLOWED_MIME_PREFIXES.some(prefix => type.startsWith(prefix))
+    if (!isAllowedExt && !isAllowedMime) {
+      throw new ValidationError('Formato de archivo no soportado. Se admiten PDF, DWG, DXF, DOC/DOCX, XLS/XLSX e imágenes.')
+    }
+    return { name, type, category, data }
   })
 }
 
@@ -350,9 +359,13 @@ async function processAttachments(value) {
   
   const processed = []
   for (const item of validAttachments) {
+    if (!item.data || !item.data.startsWith('data:')) {
+      processed.push(item)
+      continue
+    }
     try {
       const uploaded = await uploadAttachment(item.data, { name: item.name })
-      processed.push({ name: item.name, type: item.type, url: uploaded.url, format: uploaded.format })
+      processed.push({ name: item.name, type: item.type, category: item.category, url: uploaded.url, format: uploaded.format })
     } catch (err) {
       console.error('[cloudinary:error]', err.message)
       processed.push(item) // Fallback to base64 if upload fails
@@ -540,6 +553,7 @@ app.post('/customer/quotes', authMiddleware, customerOnly, asyncHandler(async (r
     desiredDate: body.desiredDate || null,
     budget: body.budget === '' || body.budget == null ? null : validateNumber(body.budget, 'Presupuesto', 0, 999999999999),
     attachments: processedAttachments, internalNotes: '', createdBy: req.authUser.id,
+    b2bProjectId: body.b2bProjectId ? Number(body.b2bProjectId) : null,
   })
   void notifyAdminNewQuoteRequest({customerName:req.authUser.company,quote:created}).catch((error)=>console.error('[new-quote-notification:error]',error.message))
   return res.status(201).json(created)
