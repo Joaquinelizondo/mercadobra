@@ -155,6 +155,29 @@ function mapCustomerQuoteRow(row) {
   }
 }
 
+function mapFabricationOrderRow(row) {
+  if (!row) return null
+  return {
+    id: Number(row.id),
+    quoteId: row.quote_id ? Number(row.quote_id) : (row.quoteId ? Number(row.quoteId) : null),
+    b2bProjectId: row.b2b_project_id ? Number(row.b2b_project_id) : (row.b2bProjectId ? Number(row.b2bProjectId) : null),
+    supplierId: Number(row.supplier_id ?? row.supplierId),
+    supplierCompany: row.supplier_company ?? row.supplierCompany ?? '',
+    projectName: row.project_name ?? row.projectName ?? '',
+    title: row.title ?? '',
+    description: row.description ?? '',
+    specifications: typeof row.specifications === 'string' ? JSON.parse(row.specifications) : (row.specifications || {}),
+    targetPrice: Number(row.target_price ?? row.targetPrice ?? 0),
+    currency: String(row.currency || 'USD').toUpperCase() === 'UYU' ? 'UYU' : 'USD',
+    deadline: row.deadline ? (typeof row.deadline === 'string' ? row.deadline.slice(0, 10) : new Date(row.deadline).toISOString().slice(0, 10)) : null,
+    status: row.status || 'pending',
+    progressPercent: Number(row.progress_percent ?? row.progressPercent ?? 0),
+    workshopNotes: row.workshop_notes ?? row.workshopNotes ?? '',
+    createdAt: row.created_at ?? row.createdAt ?? null,
+    updatedAt: row.updated_at ?? row.updatedAt ?? null,
+  }
+}
+
 function generateTrackingToken() {
   return randomBytes(16).toString('hex')
 }
@@ -435,6 +458,75 @@ async function getJsonRepo() {
     },
     async getProviders() {
       return readDb().providers
+    },
+    async getFabricationSuppliers() {
+      const db = readDb()
+      return (db.users || [])
+        .filter((u) => u.role === 'provider')
+        .map((u) => ({
+          id: Number(u.id),
+          email: u.email,
+          company: u.company || u.email,
+          providerId: u.providerId ? Number(u.providerId) : null,
+        }))
+    },
+    async createFabricationOrder(payload) {
+      const db = readDb()
+      if (!Array.isArray(db.fabricationOrders)) db.fabricationOrders = []
+      const order = {
+        id: nextId(db.fabricationOrders),
+        quoteId: payload.quoteId ? Number(payload.quoteId) : null,
+        b2bProjectId: payload.b2bProjectId ? Number(payload.b2bProjectId) : null,
+        supplierId: Number(payload.supplierId),
+        supplierCompany: payload.supplierCompany || '',
+        projectName: payload.projectName || '',
+        title: payload.title,
+        description: payload.description || '',
+        specifications: payload.specifications || {},
+        targetPrice: Number(payload.targetPrice || 0),
+        currency: String(payload.currency || 'USD').toUpperCase() === 'UYU' ? 'UYU' : 'USD',
+        deadline: payload.deadline || null,
+        status: payload.status || 'pending',
+        progressPercent: Number(payload.progressPercent || 0),
+        workshopNotes: payload.workshopNotes || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      db.fabricationOrders.push(order)
+      writeDb(db)
+      return mapFabricationOrderRow(order)
+    },
+    async getFabricationOrders(filters = {}) {
+      const db = readDb()
+      let list = db.fabricationOrders || []
+      if (filters.supplierId) {
+        list = list.filter((o) => Number(o.supplierId) === Number(filters.supplierId))
+      }
+      if (filters.quoteId) {
+        list = list.filter((o) => Number(o.quoteId) === Number(filters.quoteId))
+      }
+      return list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(mapFabricationOrderRow)
+    },
+    async getFabricationOrderById(id) {
+      const db = readDb()
+      const found = (db.fabricationOrders || []).find((o) => Number(o.id) === Number(id))
+      return found ? mapFabricationOrderRow(found) : null
+    },
+    async updateFabricationOrder(id, updates) {
+      const db = readDb()
+      if (!Array.isArray(db.fabricationOrders)) db.fabricationOrders = []
+      const index = db.fabricationOrders.findIndex((o) => Number(o.id) === Number(id))
+      if (index === -1) return null
+      const existing = db.fabricationOrders[index]
+      const updated = {
+        ...existing,
+        ...updates,
+        progressPercent: updates.progressPercent !== undefined ? Math.min(100, Math.max(0, Number(updates.progressPercent))) : existing.progressPercent,
+        updatedAt: new Date().toISOString(),
+      }
+      db.fabricationOrders[index] = updated
+      writeDb(db)
+      return mapFabricationOrderRow(updated)
     },
     async getProviderProducts(providerId) {
       return readDb().products.filter((p) => Number(p.providerId) === Number(providerId) && p.status !== 'archived')
@@ -860,6 +952,40 @@ async function getJsonRepo() {
   }
 }
 
+let fabricationTableChecked = false
+async function ensureFabricationOrdersTable(pool) {
+  if (fabricationTableChecked) return
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS fabrication_orders (
+        id SERIAL PRIMARY KEY,
+        quote_id INTEGER REFERENCES customer_quotes(id) ON DELETE SET NULL,
+        b2b_project_id INTEGER REFERENCES b2b_projects(id) ON DELETE SET NULL,
+        supplier_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        supplier_company TEXT NOT NULL,
+        project_name TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        specifications JSONB DEFAULT '{}'::jsonb,
+        target_price NUMERIC(12, 2) DEFAULT 0,
+        currency VARCHAR(3) DEFAULT 'USD',
+        deadline DATE,
+        status TEXT NOT NULL DEFAULT 'pending',
+        progress_percent INTEGER NOT NULL DEFAULT 0,
+        workshop_notes TEXT DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_fabrication_orders_supplier_id ON fabrication_orders(supplier_id);
+      CREATE INDEX IF NOT EXISTS idx_fabrication_orders_quote_id ON fabrication_orders(quote_id);
+      CREATE INDEX IF NOT EXISTS idx_fabrication_orders_status ON fabrication_orders(status);
+    `)
+  } catch (err) {
+    console.error('[ensureFabricationOrdersTable:warning]', err.message)
+  }
+  fabricationTableChecked = true
+}
+
 async function getPgRepo() {
   const pool = getPool()
   return {
@@ -1205,6 +1331,108 @@ async function getPgRepo() {
     async getProviders() {
       const { rows } = await pool.query('SELECT * FROM providers ORDER BY name ASC')
       return rows.map(mapProviderRow)
+    },
+    async getFabricationSuppliers() {
+      const { rows } = await pool.query(`
+        SELECT id, email, company, provider_id
+        FROM users
+        WHERE role = 'provider'
+        ORDER BY COALESCE(NULLIF(company, ''), email) ASC
+      `)
+      return rows.map((r) => ({
+        id: Number(r.id),
+        email: r.email,
+        company: r.company || r.email,
+        providerId: r.provider_id ? Number(r.provider_id) : null,
+      }))
+    },
+    async createFabricationOrder(payload) {
+      await ensureFabricationOrdersTable(pool)
+      const { rows } = await pool.query(`
+        INSERT INTO fabrication_orders (
+          quote_id, b2b_project_id, supplier_id, supplier_company,
+          project_name, title, description, specifications,
+          target_price, currency, deadline, status, progress_percent, workshop_notes
+        ) VALUES (
+          $1, $2, $3, $4,
+          $5, $6, $7, $8::jsonb,
+          $9, $10, $11, $12, $13, $14
+        ) RETURNING *
+      `, [
+        payload.quoteId ? Number(payload.quoteId) : null,
+        payload.b2bProjectId ? Number(payload.b2bProjectId) : null,
+        Number(payload.supplierId),
+        payload.supplierCompany || '',
+        payload.projectName || '',
+        payload.title,
+        payload.description || '',
+        JSON.stringify(payload.specifications || {}),
+        Number(payload.targetPrice || 0),
+        String(payload.currency || 'USD').toUpperCase() === 'UYU' ? 'UYU' : 'USD',
+        payload.deadline || null,
+        payload.status || 'pending',
+        Number(payload.progressPercent || 0),
+        payload.workshopNotes || '',
+      ])
+      return mapFabricationOrderRow(rows[0])
+    },
+    async getFabricationOrders(filters = {}) {
+      await ensureFabricationOrdersTable(pool)
+      let query = 'SELECT * FROM fabrication_orders'
+      const params = []
+      const clauses = []
+      if (filters.supplierId) {
+        params.push(Number(filters.supplierId))
+        clauses.push(`supplier_id = $${params.length}`)
+      }
+      if (filters.quoteId) {
+        params.push(Number(filters.quoteId))
+        clauses.push(`quote_id = $${params.length}`)
+      }
+      if (clauses.length > 0) {
+        query += ` WHERE ${clauses.join(' AND ')}`
+      }
+      query += ' ORDER BY created_at DESC'
+      const { rows } = await pool.query(query, params)
+      return rows.map(mapFabricationOrderRow)
+    },
+    async getFabricationOrderById(id) {
+      await ensureFabricationOrdersTable(pool)
+      const { rows } = await pool.query('SELECT * FROM fabrication_orders WHERE id = $1 LIMIT 1', [id])
+      return rows[0] ? mapFabricationOrderRow(rows[0]) : null
+    },
+    async updateFabricationOrder(id, updates) {
+      await ensureFabricationOrdersTable(pool)
+      const existing = await this.getFabricationOrderById(id)
+      if (!existing) return null
+
+      const updated = {
+        ...existing,
+        ...updates,
+        progressPercent: updates.progressPercent !== undefined ? Math.min(100, Math.max(0, Number(updates.progressPercent))) : existing.progressPercent,
+      }
+
+      const { rows } = await pool.query(`
+        UPDATE fabrication_orders
+        SET status = $2,
+            progress_percent = $3,
+            workshop_notes = $4,
+            target_price = $5,
+            deadline = $6,
+            specifications = $7::jsonb,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+      `, [
+        id,
+        updated.status,
+        updated.progressPercent,
+        updated.workshopNotes,
+        updated.targetPrice,
+        updated.deadline,
+        JSON.stringify(updated.specifications || {}),
+      ])
+      return rows[0] ? mapFabricationOrderRow(rows[0]) : null
     },
     async getProviderProducts(providerId) {
       const { rows } = await pool.query(

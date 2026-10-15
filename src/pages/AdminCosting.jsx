@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import OxidaWordmark from '../components/OxidaWordmark'
 import { useAuth } from '../context/AuthContext'
-import { calculateTemplate, getAdminCostVariables, auditQuoteWithAI } from '../lib/api'
+import { calculateTemplate, getAdminCostVariables, auditQuoteWithAI, downloadCostingPdf, convertCostingToQuote, getAdminCustomers } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import './AdminCosting.css'
 
@@ -22,10 +22,66 @@ export default function AdminCosting() {
   const [auditResult, setAuditResult] = useState(null)
   const [auditError, setAuditError] = useState('')
 
+  const [customers, setCustomers] = useState([])
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
+  const [showConvertModal, setShowConvertModal] = useState(false)
+  const [convertForm, setConvertForm] = useState({ customerId: '', customTitle: '', notes: '' })
+  const [isConverting, setIsConverting] = useState(false)
+  const [convertError, setConvertError] = useState('')
+  const [convertSuccess, setConvertSuccess] = useState(null)
+
   useEffect(() => {
     if (!adminToken) return
     getAdminCostVariables(adminToken).then((data) => setCatalog(data.rows || [])).catch((requestError) => setError(requestError.message))
+    getAdminCustomers({}, adminToken).then((data) => setCustomers(data.rows || [])).catch(() => {})
   }, [adminToken])
+
+  async function handleDownloadPdf() {
+    if (!result) return
+    setIsDownloadingPdf(true)
+    setError('')
+    try {
+      await downloadCostingPdf({
+        result: { ...result, form },
+        customerName: 'Propuesta Comercial B2B',
+        clientRef: `COT-${result.template?.code || 'PARAM'}`
+      }, adminToken)
+    } catch (err) {
+      setError(err.message || 'Error al generar el PDF del presupuesto.')
+    } finally {
+      setIsDownloadingPdf(false)
+    }
+  }
+
+  async function handleConvertSubmit(e) {
+    e.preventDefault()
+    if (!convertForm.customerId) {
+      setConvertError('Debes seleccionar un cliente.')
+      return
+    }
+    setIsConverting(true)
+    setConvertError('')
+    try {
+      const created = await convertCostingToQuote({
+        customerId: Number(convertForm.customerId),
+        result: { ...result, form },
+        customTitle: convertForm.customTitle || result.template?.name || result.template?.code,
+        notes: convertForm.notes
+      }, adminToken)
+      const selectedCustomer = customers.find((c) => c.id === Number(convertForm.customerId))
+      setConvertSuccess({
+        id: created.id,
+        customerId: convertForm.customerId,
+        referenceNumber: created.referenceNumber,
+        customerName: selectedCustomer?.name || 'Cliente'
+      })
+      setShowConvertModal(false)
+    } catch (err) {
+      setConvertError(err.message || 'No se pudo convertir a cotización.')
+    } finally {
+      setIsConverting(false)
+    }
+  }
 
   const pendingReview = useMemo(() => catalog.filter((item) => item.reviewStatus === 'requiere_revision').length, [catalog])
   if (!adminUser || !adminToken) return <Navigate to="/admin/login?redirect=/admin/cotiza" replace />
@@ -152,8 +208,161 @@ export default function AdminCosting() {
               </div>
             )}
           </div>
+
+          {/* COMMERCIAL EXPORT & ACTIONS */}
+          <div style={{ marginTop: '1.5rem', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+              style={{
+                flex: 1,
+                minWidth: '200px',
+                padding: '12px 20px',
+                background: '#131313',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontWeight: 600,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              📄 {isDownloadingPdf ? 'Generando PDF...' : 'Descargar Presupuesto PDF'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowConvertModal(true)
+                setConvertSuccess(null)
+                setConvertForm({
+                  customerId: customers[0]?.id || '',
+                  customTitle: result.template?.name || result.template?.code,
+                  notes: ''
+                })
+              }}
+              style={{
+                flex: 1,
+                minWidth: '200px',
+                padding: '12px 20px',
+                background: '#ea580c',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontWeight: 600,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              💼 Convertir en Cotización Oficial
+            </button>
+          </div>
+
+          {convertSuccess && (
+            <div style={{ marginTop: '1rem', padding: '1rem', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '6px', color: '#065f46', fontSize: '0.9rem' }}>
+              ✓ Cotización creada exitosamente para <strong>{convertSuccess.customerName}</strong> (#{convertSuccess.referenceNumber}).
+              <Link to={`/admin/clientes/${convertSuccess.customerId}/cotizaciones/${convertSuccess.id}`} style={{ marginLeft: '10px', color: '#047857', fontWeight: 'bold', textDecoration: 'underline' }}>
+                Abrir Ficha de Cotización en OXI Studio →
+              </Link>
+            </div>
+          )}
         </>}
       </div>
     </div>
+
+    {/* MODAL DE CONVERSIÓN A COTIZACIÓN COMERCIAL */}
+    {showConvertModal && (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+        <div style={{ background: 'white', borderRadius: '10px', maxWidth: '500px', width: '100%', padding: '1.75rem', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '0.75rem' }}>
+            <div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#ea580c', textTransform: 'uppercase' }}>OXI QUOTE</span>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#131313' }}>Convertir en Cotización Oficial</h3>
+            </div>
+            <button type="button" onClick={() => setShowConvertModal(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#999' }}>×</button>
+          </div>
+
+          {convertError && <p style={{ color: '#dc2626', fontSize: '0.85rem', marginBottom: '10px' }}>{convertError}</p>}
+
+          <form onSubmit={handleConvertSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem' }}>
+              <span style={{ fontWeight: 600 }}>Asociar a Cliente</span>
+              <select
+                value={convertForm.customerId}
+                onChange={(e) => setConvertForm({ ...convertForm, customerId: e.target.value })}
+                required
+                style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid #ccc' }}
+              >
+                <option value="">Seleccioná un cliente...</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} {c.companyName ? `(${c.companyName})` : ''} · {c.email}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem' }}>
+              <span style={{ fontWeight: 600 }}>Título de la Propuesta</span>
+              <input
+                type="text"
+                value={convertForm.customTitle}
+                onChange={(e) => setConvertForm({ ...convertForm, customTitle: e.target.value })}
+                required
+                style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid #ccc' }}
+              />
+            </label>
+
+            <div style={{ background: '#f9f8f6', padding: '10px 14px', borderRadius: '6px', fontSize: '0.85rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ color: '#666' }}>Monto total (USD):</span>
+                <strong style={{ color: '#131313' }}>{formatPrice(result.totals.priceFinalUsd, 'USD')}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#666' }}>Líneas de insumos calculadas:</span>
+                <strong>{result.lines?.length || 0} ítems</strong>
+              </div>
+            </div>
+
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem' }}>
+              <span style={{ fontWeight: 600 }}>Notas internas o condiciones de obra</span>
+              <textarea
+                rows="3"
+                value={convertForm.notes}
+                onChange={(e) => setConvertForm({ ...convertForm, notes: e.target.value })}
+                placeholder="Observaciones de sitio o logística..."
+                style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid #ccc', resize: 'vertical' }}
+              />
+            </label>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setShowConvertModal(false)}
+                style={{ padding: '8px 14px', background: '#f5f5f5', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={isConverting}
+                style={{ padding: '8px 16px', background: '#ea580c', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 600, cursor: 'pointer' }}
+              >
+                {isConverting ? 'Creando...' : 'Crear Cotización en OXI Studio'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
   </section>
 }

@@ -460,3 +460,70 @@ export function listParametricTemplates(token) { return request('/admin/parametr
 export function getParametricTemplate(code, token) { return request(`/admin/parametric-templates/${code}`, { token }) }
 export function saveParametricTemplate(payload, token) { return request('/admin/parametric-templates', { method: 'POST', token, body: JSON.stringify(payload) }) }
 export function calculateDynamicTemplate(code, payload, token) { return request(`/admin/parametric-templates/${code}/calculate`, { method: 'POST', token, body: JSON.stringify(payload) }) }
+
+export async function downloadCostingPdf(payload, token) {
+  const response = await fetch(`${getApiBaseCandidates()[0]}/admin/costing/pdf`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+  if (!response.ok) throw new Error('No se pudo generar el PDF de la cotización')
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `Presupuesto-OXI-${payload.result?.template?.code || 'Calculo'}.pdf`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+export function convertCostingToQuote(payload, token) {
+  return request('/admin/costing/convert-to-quote', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getFabricationSuppliers(token) {
+  return request('/admin/fabrication/suppliers', { token })
+}
+
+export function getAdminFabricationOrders(token, params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/admin/fabrication/orders${query ? `?${query}` : ''}`, { token })
+}
+
+export function createFabricationOrder(payload, token) {
+  return request('/admin/fabrication/orders', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateAdminFabricationOrder(orderId, updates, token) {
+  return request(`/admin/fabrication/orders/${orderId}`, {
+    method: 'PATCH',
+    token,
+    body: JSON.stringify(updates),
+  })
+}
+
+export function getSupplierFabricationOrders(token) {
+  return request('/supplier/fabrication/orders', { token })
+}
+
+export function updateSupplierFabricationOrder(orderId, updates, token) {
+  return request(`/supplier/fabrication/orders/${orderId}`, {
+    method: 'PATCH',
+    token,
+    body: JSON.stringify(updates),
+  })
+}
+

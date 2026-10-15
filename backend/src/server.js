@@ -1847,6 +1847,203 @@ app.get('/admin/parametric-templates/:code', authMiddleware, adminOnly, getTempl
 app.post('/admin/parametric-templates', authMiddleware, adminOnly, saveTemplate);
 app.post('/admin/parametric-templates/:code/calculate', authMiddleware, adminOnly, calculateTemplate);
 
+// ============================================================================
+// OXI QUOTE / COSTING PDF & CONVERSION
+// ============================================================================
+
+app.post('/admin/costing/pdf', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const { result, customerName, clientRef, customTitle, notes } = req.body || {}
+  if (!result || !result.totals) throw new ValidationError('Resultado de cotización inválido')
+
+  const exchangeRate = Number(result.form?.exchangeRateUyuPerUsd || 40)
+  const overheadRate = Number(result.rates?.overheadRate || 0.15)
+  const marginRate = Number(result.rates?.marginRate || 0.30)
+  const markup = (1 + overheadRate) * (1 + marginRate)
+
+  const items = (result.lines || []).map((line, idx) => ({
+    code: line.code || String(idx + 1).padStart(2, '0'),
+    description: `${line.description} (${line.quantity} ${line.unit})`,
+    subtotal: Math.round(((Number(line.subtotalUyu || 0) / exchangeRate) * markup) * 100) / 100,
+  }))
+
+  const quote = {
+    referenceNumber: clientRef || `OXI-${Date.now().toString().slice(-6)}`,
+    title: customTitle || result.template?.name || result.template?.code || 'Estructura Paramétrica',
+    currency: 'USD',
+    totalAmount: Number(result.totals.priceFinalUsd || 0),
+    taxRate: Math.round((Number(result.rates?.taxRate || 0.22)) * 100),
+    documentItems: items.length > 0 ? items : [{ code: '01', description: 'Fabricación de pieza paramétrica', subtotal: Number(result.totals.priceBeforeTaxUsd || 0) }],
+    documentTerms: {
+      validityDays: 15,
+      paymentTerms: '50% de seña para inicio de fabricación en taller, 50% contra entrega.',
+      executionTime: '15 a 20 días hábiles a partir de la confirmación técnica y seña.',
+      warranty: '12 meses de garantía estructural y soldaduras bajo condiciones normales de uso.',
+      exclusions: 'Trabajos de albañilería previa, anclajes especiales no especificados o modificaciones posteriores a la aprobación.',
+      notes: notes || (result.assumptions || []).join(' | '),
+    },
+    proposalDescription: `Fabricación de ${customTitle || result.template?.name || result.template?.code} conforme al cálculo técnico paramétrico y requerimientos acordados.`,
+    description: 'Propuesta comercial generada automáticamente desde motor paramétrico Óxida.',
+  }
+
+  const customer = {
+    name: customerName || 'Cliente Particular',
+    company: customerName || 'Cliente',
+  }
+
+  const pdf = await createQuotePdf({ quote, customer })
+  const filename = `Presupuesto-OXI-${String(quote.referenceNumber).replace(/[^a-z0-9-]/gi, '_')}.pdf`
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `attachment; filename="${filename}"`,
+    'Content-Length': String(pdf.length),
+  })
+  return res.send(pdf)
+}))
+
+app.post('/admin/costing/convert-to-quote', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const { customerId, result, customTitle, notes } = req.body || {}
+  const parsedCustomerId = validateNumber(customerId, 'Cliente ID', 1)
+  if (!result || !result.totals) throw new ValidationError('Resultado de cotización inválido')
+
+  const repo = await getRepository()
+  const customer = await repo.getAdminCustomerById(parsedCustomerId)
+  if (!customer) throw new NotFoundError('Cliente')
+
+  const exchangeRate = Number(result.form?.exchangeRateUyuPerUsd || 40)
+  const overheadRate = Number(result.rates?.overheadRate || 0.15)
+  const marginRate = Number(result.rates?.marginRate || 0.30)
+  const markup = (1 + overheadRate) * (1 + marginRate)
+
+  const items = (result.lines || []).map((line, idx) => ({
+    code: line.code || String(idx + 1).padStart(2, '0'),
+    description: `${line.description} (${line.quantity} ${line.unit})`,
+    subtotal: Math.round(((Number(line.subtotalUyu || 0) / exchangeRate) * markup) * 100) / 100,
+  }))
+
+  const referenceNumber = `OXI-${Date.now().toString().slice(-6)}`
+  const title = customTitle || result.template?.name || result.template?.code || 'Estructura Paramétrica'
+  const totalAmount = Number(result.totals.priceFinalUsd || 0)
+  const taxRate = Math.round((Number(result.rates?.taxRate || 0.22)) * 100)
+
+  const created = await repo.createCustomerQuote({
+    customerId: parsedCustomerId,
+    referenceNumber,
+    title,
+    description: `Cotización paramétrica generada vía OXI Quote para ${title}.`,
+    status: 'in_progress',
+    totalAmount,
+    currency: 'USD',
+    estimatedStartAt: null,
+    estimatedEndAt: null,
+    internalNotes: notes || `Generado desde plantilla ${result.template?.code}. Medidas: ${JSON.stringify(result.form || {})}`,
+    createdBy: req.authUser.id,
+    attachments: [],
+    desiredDate: null,
+    budget: null,
+  })
+
+  const updated = await repo.updateCustomerQuote(created.id, {
+    proposalDescription: `Fabricación de ${title} conforme al cálculo técnico paramétrico y requerimientos acordados.`,
+    documentItems: items,
+    documentTerms: {
+      validityDays: 15,
+      paymentTerms: '50% de seña para inicio de fabricación en taller, 50% contra entrega.',
+      executionTime: '15 a 20 días hábiles a partir de la confirmación técnica y seña.',
+      warranty: '12 meses de garantía estructural y soldaduras bajo condiciones normales de uso.',
+      exclusions: 'Trabajos de albañilería previa, anclajes especiales no especificados o modificaciones posteriores a la aprobación.',
+      notes: (result.assumptions || []).join(' | '),
+    },
+    taxRate,
+  })
+
+  return res.status(201).json(updated)
+}))
+
+// ============================================================================
+// OXI NETWORK · FABRICATION ORDERS & WORKSHOP MARKETPLACE
+// ============================================================================
+
+app.get('/admin/fabrication/suppliers', authMiddleware, adminOnly, asyncHandler(async (_req, res) => {
+  const repo = await getRepository()
+  const suppliers = await repo.getFabricationSuppliers()
+  return res.json({ rows: suppliers, total: suppliers.length })
+}))
+
+app.get('/admin/fabrication/orders', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  const { quoteId, supplierId } = req.query || {}
+  const orders = await repo.getFabricationOrders({ quoteId, supplierId })
+  return res.json({ rows: orders, total: orders.length })
+}))
+
+app.post('/admin/fabrication/orders', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const {
+    supplierId, quoteId, b2bProjectId, projectName, title, description,
+    specifications, targetPrice, currency, deadline,
+  } = req.body || {}
+  const parsedSupplierId = validateNumber(supplierId, 'Proveedor / Taller ID', 1)
+  const normalizedTitle = requireField(title, 'Título de la pieza')
+
+  const repo = await getRepository()
+  const supplierUser = await repo.findUserById(parsedSupplierId)
+  if (!supplierUser) throw new NotFoundError('Taller / Fabricante')
+
+  const order = await repo.createFabricationOrder({
+    supplierId: parsedSupplierId,
+    supplierCompany: supplierUser.company || supplierUser.email,
+    quoteId: quoteId ? Number(quoteId) : null,
+    b2bProjectId: b2bProjectId ? Number(b2bProjectId) : null,
+    projectName: projectName || 'Proyecto Óxida',
+    title: normalizedTitle,
+    description: description || '',
+    specifications: specifications || {},
+    targetPrice: Number(targetPrice || 0),
+    currency: String(currency || 'USD').toUpperCase() === 'UYU' ? 'UYU' : 'USD',
+    deadline: deadline || null,
+    status: 'pending',
+    progressPercent: 0,
+    workshopNotes: '',
+  })
+
+  return res.status(201).json(order)
+}))
+
+app.patch('/admin/fabrication/orders/:id', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const id = validateNumber(req.params.id, 'Orden de fabricación ID', 1)
+  const repo = await getRepository()
+  const order = await repo.getFabricationOrderById(id)
+  if (!order) throw new NotFoundError('Orden de fabricación')
+
+  const updated = await repo.updateFabricationOrder(id, req.body || {})
+  return res.json(updated)
+}))
+
+app.get('/supplier/fabrication/orders', authMiddleware, providerOnly, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  const orders = await repo.getFabricationOrders({ supplierId: req.authUser.id })
+  return res.json({ rows: orders, total: orders.length })
+}))
+
+app.patch('/supplier/fabrication/orders/:id', authMiddleware, providerOnly, asyncHandler(async (req, res) => {
+  const id = validateNumber(req.params.id, 'Orden de fabricación ID', 1)
+  const repo = await getRepository()
+  const order = await repo.getFabricationOrderById(id)
+  if (!order) throw new NotFoundError('Orden de fabricación')
+
+  if (req.authUser.role !== 'admin' && Number(order.supplierId) !== Number(req.authUser.id)) {
+    throw new AuthorizationError('No podés modificar una orden que no fue asignada a tu taller')
+  }
+
+  const { status, progressPercent, workshopNotes } = req.body || {}
+  const updates = {}
+  if (status !== undefined) updates.status = status
+  if (progressPercent !== undefined) updates.progressPercent = Math.min(100, Math.max(0, Number(progressPercent)))
+  if (workshopNotes !== undefined) updates.workshopNotes = String(workshopNotes)
+
+  const updated = await repo.updateFabricationOrder(id, updates)
+  return res.json(updated)
+}))
+
 app.post('/chat', asyncHandler(async (req, res) => {
   const { message = '', history = [] } = req.body || {}
 
