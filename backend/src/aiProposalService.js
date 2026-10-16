@@ -3,14 +3,23 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 let genAI;
 let model;
 
+function fallbackProposal(quoteData) {
+  const priceFormatted = `${Number(quoteData.totalAmount || 0).toLocaleString('es-UY')} ${quoteData.currency || 'USD'}`
+  return `Estimado cliente, muchas gracias por confiar en Óxida (OXI Platform) para la ejecución de su proyecto. Hemos revisado detalladamente sus requerimientos técnicos para "${quoteData.title || 'su solicitud'}", analizando dimensiones, perfiles estructurales y especificaciones requeridas de acabado y resistencia.
+
+Nuestra propuesta técnica comprende la fabricación en taller homologado con acero seleccionado de primera calidad, corte de precisión, soldaduras continuas bajo norma y tratamiento superficial anticorrosivo de alta durabilidad. El plazo estimado de ejecución es de 15 a 20 días hábiles a partir de la confirmación técnica y seña correspondiente.
+
+La inversión total para la provisión del proyecto es de ${priceFormatted}. Quedamos a su entera disposición para coordinar los detalles constructivos finales y la visita técnica a obra.`
+}
+
 export async function generateConstructionProposal(quoteData) {
   if (!process.env.GEMINI_API_KEY) {
-    throw new Error('La clave GEMINI_API_KEY no está configurada.');
+    return fallbackProposal(quoteData);
   }
 
   if (!genAI) {
     genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   }
 
   const prompt = `Eres un gerente de ventas de una fábrica metalúrgica/constructora (OXI).
@@ -44,7 +53,7 @@ No incluyas saludos finales ni firmas. Solo el cuerpo de la propuesta.
 
     return result.response.text().trim();
   } catch (error) {
-    console.error("Error en Gemini AI (Proposal):", error);
-    throw new Error('No se pudo redactar la propuesta con IA.');
+    console.warn("Fallo en Gemini AI (Proposal), usando generador de respaldo:", error.message);
+    return fallbackProposal(quoteData);
   }
 }

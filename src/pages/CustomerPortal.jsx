@@ -7,7 +7,7 @@ import {
   createMyQuote, getCustomerProfile, getMyQuoteMessages, getMyQuotes, 
   reportQuoteDepositTransfer, respondToMyQuote, sendMyQuoteMessage, 
   startQuoteDepositCheckout, updateCustomerProfile, getB2bProjects, 
-  createB2bProject, assignQuoteToB2bProject
+  createB2bProject, assignQuoteToB2bProject, parseRequirementsWithAI
 } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import './CustomerPortal.css'
@@ -77,6 +77,22 @@ export default function CustomerPortal() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [depositReceipt, setDepositReceipt] = useState(null)
+  const [isCustomerAiAnalyzing, setIsCustomerAiAnalyzing] = useState(false)
+  const [customerAiResult, setCustomerAiResult] = useState(null)
+
+  async function handleCustomerAiAnalyze() {
+    if (!request.description?.trim()) return
+    setIsCustomerAiAnalyzing(true)
+    setError('')
+    try {
+      const res = await parseRequirementsWithAI(request.description, customerToken)
+      setCustomerAiResult(res.data)
+    } catch (err) {
+      setError(err.message || 'No se pudo analizar la especificación.')
+    } finally {
+      setIsCustomerAiAnalyzing(false)
+    }
+  }
 
   useEffect(() => { 
     if (!customerToken) return; 
@@ -591,7 +607,29 @@ export default function CustomerPortal() {
                   </label>
 
                   <label>
-                    Memoria y detalles técnicos
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Memoria y detalles técnicos</span>
+                      {request.description?.trim().length > 10 && (
+                        <button
+                          type="button"
+                          onClick={handleCustomerAiAnalyze}
+                          disabled={isCustomerAiAnalyzing}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#ea580c',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          {isCustomerAiAnalyzing ? '⏳ Analizando...' : '✨ Validar memoria técnica con IA'}
+                        </button>
+                      )}
+                    </div>
                     <textarea 
                       rows="4" 
                       value={request.description} 
@@ -600,6 +638,30 @@ export default function CustomerPortal() {
                       required
                     />
                   </label>
+
+                  {customerAiResult && (
+                    <div style={{ background: '#f8f5ef', border: '1px solid #dcd4c9', padding: '0.85rem 1rem', borderRadius: '6px', margin: '-4px 0 12px 0', fontSize: '0.85rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <strong style={{ color: '#ea580c', fontSize: '0.88rem' }}>🤖 OXI AI identificó en tu solicitud:</strong>
+                        <button type="button" onClick={() => setCustomerAiResult(null)} style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer', fontSize: '0.8rem' }}>✕ cerrar</button>
+                      </div>
+                      <ul style={{ margin: '0 0 6px 0', paddingLeft: '18px', color: '#333', lineHeight: '1.4' }}>
+                        {customerAiResult.detected_items?.map((item, idx) => (
+                          <li key={idx}>
+                            <strong>{item.quantity}x {item.product_type}</strong>
+                            {item.dimensions?.length_m ? ` (${item.dimensions.length_m}m × ${item.dimensions.height_m || '?'}m)` : ''}
+                            {item.material ? ` · ${item.material}` : ''}
+                            {item.finish ? ` · ${item.finish}` : ''}
+                          </li>
+                        ))}
+                      </ul>
+                      {customerAiResult.missing_critical_info?.length > 0 && (
+                        <div style={{ color: '#b91c1c', background: '#fee2e2', padding: '6px 10px', borderRadius: '4px', fontSize: '0.8rem', marginTop: '6px' }}>
+                          <strong>💡 Consejo para acelerar tu cotización:</strong> Sugerimos aclarar: {customerAiResult.missing_critical_info.join(', ')}.
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div>
                     <label>

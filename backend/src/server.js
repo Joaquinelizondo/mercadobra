@@ -1973,6 +1973,69 @@ app.post('/admin/costing/convert-to-quote', authMiddleware, adminOnly, asyncHand
   return res.status(201).json(updated)
 }))
 
+app.post('/admin/costing/apply-to-quote', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const { quoteId, result, customTitle, notes } = req.body || {}
+  const parsedQuoteId = validateNumber(quoteId, 'Cotización ID', 1)
+  if (!result || !result.totals) throw new ValidationError('Resultado de cotización inválido')
+
+  const repo = await getRepository()
+  const currentQuote = await repo.getCustomerQuoteById(parsedQuoteId)
+  if (!currentQuote) throw new NotFoundError('Cotización')
+
+  const exchangeRate = Number(result.form?.exchangeRateUyuPerUsd || 40)
+  const overheadRate = Number(result.rates?.overheadRate || 0.15)
+  const marginRate = Number(result.rates?.grossMarginRate || result.rates?.marginRate || 0.35)
+  const markup = (1 + overheadRate) * (1 + marginRate)
+
+  const items = (result.lines || []).map((line, idx) => ({
+    code: line.code || String(idx + 1).padStart(2, '0'),
+    description: `${line.description} (${line.quantity} ${line.unit})`,
+    subtotal: Math.round(((Number(line.subtotalUyu || 0) / exchangeRate) * markup) * 100) / 100,
+  }))
+
+  const title = customTitle || currentQuote.title || result.template?.name || result.template?.code
+  const totalAmount = Number(result.totals.priceFinalUsd || 0)
+  const taxRate = Math.round((Number(result.rates?.taxRate || 0.22)) * 100)
+
+  const derivedSpecs = []
+  if (result.derived?.totalTubeM || result.derived?.tubeLengthM) {
+    derivedSpecs.push(`${Math.round(result.derived.totalTubeM || result.derived.tubeLengthM)} m de perfil/caño`)
+  }
+  if (result.derived?.workshopHours) {
+    derivedSpecs.push(`${Math.round(result.derived.workshopHours)} h oficial taller`)
+  }
+  if (result.derived?.finishAreaM2) {
+    derivedSpecs.push(`${Number(result.derived.finishAreaM2).toFixed(1)} m² pintura PU`)
+  }
+  if (result.derived?.weldingKg) {
+    derivedSpecs.push(`${Number(result.derived.weldingKg).toFixed(1)} kg soldadura`)
+  }
+
+  const specsText = derivedSpecs.length > 0 ? ` [Especificación técnica: ${derivedSpecs.join(', ')}]` : ''
+  const proposalDescription = currentQuote.proposalDescription
+    ? `${currentQuote.proposalDescription}\n\n${specsText}`
+    : `Fabricación de ${title} conforme al cálculo técnico paramétrico OXI Quote.${specsText}`
+
+  const updated = await repo.updateCustomerQuote(parsedQuoteId, {
+    totalAmount,
+    currency: 'USD',
+    proposalDescription,
+    documentItems: items,
+    documentTerms: {
+      validityDays: 15,
+      paymentTerms: '50% de seña para inicio de fabricación en taller, 50% contra entrega.',
+      executionTime: '15 a 20 días hábiles a partir de la confirmación técnica y seña.',
+      warranty: '12 meses de garantía estructural y soldaduras bajo condiciones normales de uso.',
+      exclusions: 'Trabajos de albañilería previa, anclajes especiales no especificados o modificaciones posteriores a la aprobación.',
+      notes: notes || (result.assumptions || []).join(' | '),
+    },
+    taxRate,
+  })
+
+  return res.json({ success: true, quote: updated })
+}))
+
+
 // ============================================================================
 // OXI NETWORK · FABRICATION ORDERS & WORKSHOP MARKETPLACE
 // ============================================================================

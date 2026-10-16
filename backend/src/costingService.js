@@ -176,6 +176,121 @@ export function calculateOxiDivider(input, variables) {
   }
 }
 
+export function calculateOxiRailing(input, variables) {
+  const lengthM = Number(input.lengthM || input.widthM)
+  const heightM = Number(input.heightM || 1.0)
+  const quantity = Number(input.quantity || 1)
+  const exchangeRateUyuPerUsd = Number(input.exchangeRateUyuPerUsd || 40)
+
+  if (!Number.isFinite(lengthM) || lengthM < 0.5 || lengthM > 50) throw new Error('El largo debe estar entre 0,50 m y 50 m.')
+  if (!Number.isFinite(heightM) || heightM < 0.5 || heightM > 2.5) throw new Error('La altura debe estar entre 0,50 m y 2,50 m.')
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100) throw new Error('La cantidad debe ser un entero entre 1 y 100.')
+
+  const catalog = new Map(variables.map((variable) => [variable.code, variable]))
+
+  const postsCount = (Math.max(2, Math.ceil(lengthM) + 1)) * quantity
+  const topAndBottomRailM = (lengthM * 2) * quantity
+  const postsTubeM = postsCount * heightM
+  const totalTubeM = topAndBottomRailM + postsTubeM
+  const balusterCount = Math.floor(lengthM / 0.12) * quantity
+  const balusterHeightM = Math.max(0.3, heightM - 0.15)
+  const infillSteelKg = balusterCount * balusterHeightM * 1.5
+  const finishAreaM2 = (totalTubeM * 0.16 + (balusterCount * balusterHeightM * 0.08)) * 1.1
+  const workshopHours = (3 + lengthM * 1.4) * quantity
+  const helperHours = workshopHours * 0.5
+  const weldingKg = (postsCount * 0.06 + balusterCount * 0.02) * 1.1
+
+  const lines = [
+    line(catalog, 'PU_TUBO40', totalTubeM, 0.08),
+    line(catalog, 'PU_CHAPA_PARRILLERO', infillSteelKg, 0.05),
+    line(catalog, 'PU_CONS_SOLDADURA', weldingKg, 0.08),
+    line(catalog, 'PU_HH_OFICIAL', workshopHours),
+    line(catalog, 'PU_HH_AYUDANTE', helperHours),
+    line(catalog, 'PU_FONDO', finishAreaM2, 0.1),
+    line(catalog, 'PU_ESMALTE_PU', finishAreaM2, 0.1),
+  ]
+  if (input.includeFreight) lines.push(line(catalog, 'PU_FLETE_VIAJE', Number(input.freightTrips || 1)))
+
+  const result = calculateQuote({
+    lines,
+    overheadRate: requireVariable(catalog, 'PU_GASTOS_GRALES').value,
+    grossMarginRate: requireVariable(catalog, 'PU_BENEFICIO').value,
+    exchangeRateUyuPerUsd,
+    taxRate: requireVariable(catalog, 'PU_IVA').value,
+  })
+
+  return {
+    template: { code: 'OXI_RAILING_R01', name: 'Baranda Balcón / Escalera OXI', version: 1 },
+    inputs: { lengthM, heightM, quantity, includeFreight: Boolean(input.includeFreight), freightTrips: input.includeFreight ? Number(input.freightTrips || 1) : 0 },
+    derived: { totalLengthM: lengthM * quantity, postsCount, totalTubeM, infillSteelKg, finishAreaM2, workshopHours, helperHours, weldingKg },
+    ...result,
+    assumptions: [
+      'Estructura principal en caño estructural 40×40×2 mm con parantes cada 1,0 m.',
+      'Barrote vertical de seguridad cada 12 cm según normativa constructiva.',
+      'Pintura electrostática / poliuretánica con fondo anticorrosivo sobre hierro desengrasado.',
+    ],
+  }
+}
+
+export function calculateOxiPergola(input, variables) {
+  const lengthM = Number(input.lengthM || input.widthM || 3.0)
+  const widthM = Number(input.widthM || 3.0)
+  const heightM = Number(input.heightM || 2.6)
+  const quantity = Number(input.quantity || 1)
+  const exchangeRateUyuPerUsd = Number(input.exchangeRateUyuPerUsd || 40)
+
+  if (!Number.isFinite(lengthM) || lengthM < 1.0 || lengthM > 15.0) throw new Error('El largo debe estar entre 1,0 m y 15,0 m.')
+  if (!Number.isFinite(widthM) || widthM < 1.0 || widthM > 12.0) throw new Error('El ancho debe estar entre 1,0 m y 12,0 m.')
+  if (!Number.isFinite(heightM) || heightM < 1.8 || heightM > 4.5) throw new Error('La altura debe estar entre 1,80 m y 4,50 m.')
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 50) throw new Error('La cantidad debe ser un entero entre 1 y 50.')
+
+  const catalog = new Map(variables.map((variable) => [variable.code, variable]))
+
+  const areaM2 = lengthM * widthM * quantity
+  const columnsCount = (lengthM > 4.5 ? 6 : 4) * quantity
+  const columnsTubeM = columnsCount * heightM
+  const perimeterBeamsM = (lengthM * 2 + widthM * 2) * quantity
+  const rafterCount = Math.floor(lengthM / 0.6) * quantity
+  const rafterTubeM = rafterCount * widthM
+  const totalTubeM = perimeterBeamsM + columnsTubeM + rafterTubeM
+  const basePlatesKg = columnsCount * 3.5
+  const finishAreaM2 = totalTubeM * 0.16 * 1.15
+  const workshopHours = (8 + areaM2 * 0.8) * quantity
+  const helperHours = workshopHours * 0.65
+  const weldingKg = totalTubeM * 0.045
+
+  const lines = [
+    line(catalog, 'PU_TUBO40', totalTubeM, 0.08),
+    line(catalog, 'PU_CHAPA_PARRILLERO', basePlatesKg, 0.05),
+    line(catalog, 'PU_CONS_SOLDADURA', weldingKg, 0.08),
+    line(catalog, 'PU_HH_OFICIAL', workshopHours),
+    line(catalog, 'PU_HH_AYUDANTE', helperHours),
+    line(catalog, 'PU_FONDO', finishAreaM2, 0.1),
+    line(catalog, 'PU_ESMALTE_PU', finishAreaM2, 0.1),
+  ]
+  if (input.includeFreight) lines.push(line(catalog, 'PU_FLETE_VIAJE', Number(input.freightTrips || 1)))
+
+  const result = calculateQuote({
+    lines,
+    overheadRate: requireVariable(catalog, 'PU_GASTOS_GRALES').value,
+    grossMarginRate: requireVariable(catalog, 'PU_BENEFICIO').value,
+    exchangeRateUyuPerUsd,
+    taxRate: requireVariable(catalog, 'PU_IVA').value,
+  })
+
+  return {
+    template: { code: 'OXI_PERGOLA_P01', name: 'Pérgola Metálica Exterior OXI', version: 1 },
+    inputs: { lengthM, widthM, heightM, quantity, includeFreight: Boolean(input.includeFreight), freightTrips: input.includeFreight ? Number(input.freightTrips || 1) : 0 },
+    derived: { areaM2, columnsCount, totalTubeM, basePlatesKg, finishAreaM2, workshopHours, helperHours, weldingKg },
+    ...result,
+    assumptions: [
+      'Pilares y vigas perimetrales con anclajes químicos en base.',
+      'Correas intermedias cada 60 cm preparadas para policarbonato, chapa o lamas.',
+      'Tratamiento anticorrosivo para intemperie y flete de transporte pesado considerado.',
+    ],
+  }
+}
+
 export async function calculateCircularTableWithCurrentVariables(input) {
   const variables = await getCurrentCostVariables()
   const selected = completePilotCatalog(variables)
@@ -199,6 +314,10 @@ export async function calculateTemplateWithCurrentVariables(templateCode, input)
     result = calculateCircularTable(input, selected)
   } else if (templateCode === 'OXI_DIVIDER_D01') {
     result = calculateOxiDivider(input, selected)
+  } else if (templateCode === 'OXI_RAILING_R01') {
+    result = calculateOxiRailing(input, selected)
+  } else if (templateCode === 'OXI_PERGOLA_P01') {
+    result = calculateOxiPergola(input, selected)
   } else {
     throw new Error(`Plantilla no reconocida: ${templateCode}`)
   }

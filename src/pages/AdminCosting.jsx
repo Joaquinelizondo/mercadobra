@@ -1,18 +1,35 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import OxidaWordmark from '../components/OxidaWordmark'
 import { useAuth } from '../context/AuthContext'
-import { calculateTemplate, getAdminCostVariables, auditQuoteWithAI, downloadCostingPdf, convertCostingToQuote, getAdminCustomers } from '../lib/api'
+import { calculateTemplate, getAdminCostVariables, auditQuoteWithAI, downloadCostingPdf, convertCostingToQuote, applyCostingToQuote, getAdminCustomers } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import './AdminCosting.css'
 
-const INITIAL_FORM = { diameterM: 1.2, heightM: 0.75, widthM: 1.0, quantity: 1, exchangeRateUyuPerUsd: 40, includeFreight: true, freightTrips: 1 }
+const INITIAL_FORM = { diameterM: 1.2, heightM: 0.75, widthM: 1.0, lengthM: 3.0, quantity: 1, exchangeRateUyuPerUsd: 40, includeFreight: true, freightTrips: 1 }
 const number = (value, digits = 2) => new Intl.NumberFormat('es-UY', { maximumFractionDigits: digits }).format(Number(value || 0))
 
 export default function AdminCosting() {
   const { adminUser, adminToken } = useAuth()
-  const [templateCode, setTemplateCode] = useState('MESA_CIRCULAR_001')
-  const [form, setForm] = useState(INITIAL_FORM)
+  const [searchParams] = useSearchParams()
+
+  const quoteIdParam = searchParams.get('quoteId')
+  const customerIdParam = searchParams.get('customerId')
+  const templateCodeParam = searchParams.get('templateCode')
+  const widthMParam = searchParams.get('widthM')
+  const lengthMParam = searchParams.get('lengthM')
+  const heightMParam = searchParams.get('heightM')
+  const quantityParam = searchParams.get('quantity')
+  const titleParam = searchParams.get('title')
+
+  const [templateCode, setTemplateCode] = useState(templateCodeParam || 'MESA_CIRCULAR_001')
+  const [form, setForm] = useState({
+    ...INITIAL_FORM,
+    widthM: widthMParam ? Number(widthMParam) : INITIAL_FORM.widthM,
+    lengthM: lengthMParam ? Number(lengthMParam) : (widthMParam ? Number(widthMParam) : INITIAL_FORM.lengthM),
+    heightM: heightMParam ? Number(heightMParam) : (templateCodeParam === 'OXI_RAILING_R01' ? 1.0 : templateCodeParam === 'OXI_PERGOLA_P01' ? 2.6 : INITIAL_FORM.heightM),
+    quantity: quantityParam ? Number(quantityParam) : INITIAL_FORM.quantity,
+  })
   const [catalog, setCatalog] = useState([])
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -25,10 +42,26 @@ export default function AdminCosting() {
   const [customers, setCustomers] = useState([])
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
   const [showConvertModal, setShowConvertModal] = useState(false)
-  const [convertForm, setConvertForm] = useState({ customerId: '', customTitle: '', notes: '' })
+  const [convertForm, setConvertForm] = useState({ customerId: customerIdParam || '', customTitle: titleParam || '', notes: '' })
   const [isConverting, setIsConverting] = useState(false)
   const [convertError, setConvertError] = useState('')
   const [convertSuccess, setConvertSuccess] = useState(null)
+
+  const [isApplyingQuote, setIsApplyingQuote] = useState(false)
+  const [applySuccess, setApplySuccess] = useState(null)
+
+  useEffect(() => {
+    if (templateCodeParam) setTemplateCode(templateCodeParam)
+    if (widthMParam || lengthMParam || heightMParam || quantityParam) {
+      setForm((prev) => ({
+        ...prev,
+        widthM: widthMParam ? Number(widthMParam) : prev.widthM,
+        lengthM: lengthMParam ? Number(lengthMParam) : (widthMParam ? Number(widthMParam) : prev.lengthM),
+        heightM: heightMParam ? Number(heightMParam) : prev.heightM,
+        quantity: quantityParam ? Number(quantityParam) : prev.quantity,
+      }))
+    }
+  }, [templateCodeParam, widthMParam, lengthMParam, heightMParam, quantityParam])
 
   useEffect(() => {
     if (!adminToken) return
@@ -83,6 +116,30 @@ export default function AdminCosting() {
     }
   }
 
+  async function handleApplyToExistingQuote() {
+    if (!result || !quoteIdParam) return
+    setIsApplyingQuote(true)
+    setError('')
+    try {
+      const res = await applyCostingToQuote({
+        quoteId: Number(quoteIdParam),
+        result: { ...result, form },
+        customTitle: titleParam || result.template?.name || result.template?.code,
+        notes: `Cálculo automático generado desde OXI Quote. Medidas: ${JSON.stringify(form)}`
+      }, adminToken)
+      setApplySuccess({
+        quoteId: quoteIdParam,
+        customerId: customerIdParam || res.quote?.customerId,
+        referenceNumber: res.quote?.referenceNumber || quoteIdParam,
+        totalAmount: res.quote?.totalAmount
+      })
+    } catch (err) {
+      setError(err.message || 'No se pudo aplicar el cálculo a la cotización.')
+    } finally {
+      setIsApplyingQuote(false)
+    }
+  }
+
   const pendingReview = useMemo(() => catalog.filter((item) => item.reviewStatus === 'requiere_revision').length, [catalog])
   if (!adminUser || !adminToken) return <Navigate to="/admin/login?redirect=/admin/cotiza" replace />
 
@@ -133,6 +190,25 @@ export default function AdminCosting() {
       <div className="costing-catalog-status"><strong>{catalog.length}</strong><span>variables vigentes</span><small>{pendingReview} requieren revisión técnica</small></div>
     </div>
 
+    {quoteIdParam && (
+      <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px', padding: '0.85rem 1.25rem', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#b45309', textTransform: 'uppercase' }}>⚡ Modo Cotización Vinculada</span>
+          <h3 style={{ margin: '2px 0 0', fontSize: '1rem', color: '#92400e' }}>
+            Costeando solicitud #{quoteIdParam} {titleParam ? `· "${titleParam}"` : ''}
+          </h3>
+          <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: '#78350f' }}>
+            Las variables extraídas con IA fueron precargadas. Al calcular, podés volcar el resultado directo a la cotización con 1 clic.
+          </p>
+        </div>
+        {customerIdParam && (
+          <Link to={`/admin/clientes/${customerIdParam}/cotizaciones/${quoteIdParam}`} style={{ fontSize: '0.85rem', color: '#b45309', textDecoration: 'underline', fontWeight: 600 }}>
+            ← Volver a la solicitud
+          </Link>
+        )}
+      </div>
+    )}
+
     {error && <p className="costing-error" role="alert">{error}</p>}
     <div className="costing-layout">
       <form className="costing-form" onSubmit={submit}>
@@ -141,8 +217,10 @@ export default function AdminCosting() {
           <label>
             <span>Familia</span>
             <select value={templateCode} onChange={handleTemplateChange}>
-              <option value="MESA_CIRCULAR_001">Mesa Circular</option>
-              <option value="OXI_DIVIDER_D01">OXI Divider D01 (Divisor de Ambientes)</option>
+              <option value="MESA_CIRCULAR_001">Mesa Circular OXI</option>
+              <option value="OXI_DIVIDER_D01">OXI Divider D01 (Divisor de Ambientes / Cerramiento)</option>
+              <option value="OXI_RAILING_R01">OXI Railing R01 (Baranda Balcón / Escalera)</option>
+              <option value="OXI_PERGOLA_P01">OXI Pergola P01 (Pérgola Metálica Exterior)</option>
             </select>
           </label>
         </div>
@@ -153,6 +231,17 @@ export default function AdminCosting() {
             <>
               <label><span>Diámetro (m)</span><input name="diameterM" type="number" min="0.5" max="3" step="0.01" value={form.diameterM} onChange={change} required /></label>
               <label><span>Altura (m)</span><input name="heightM" type="number" min="0.4" max="1.2" step="0.01" value={form.heightM} onChange={change} required /></label>
+            </>
+          ) : templateCode === 'OXI_RAILING_R01' ? (
+            <>
+              <label><span>Largo de baranda (m)</span><input name="lengthM" type="number" min="0.5" max="50" step="0.05" value={form.lengthM || form.widthM || 3.0} onChange={change} required /></label>
+              <label><span>Altura reglamentaria (m)</span><input name="heightM" type="number" min="0.5" max="2.5" step="0.05" value={form.heightM || 1.0} onChange={change} required /></label>
+            </>
+          ) : templateCode === 'OXI_PERGOLA_P01' ? (
+            <>
+              <label><span>Largo proyección (m)</span><input name="lengthM" type="number" min="1.0" max="15" step="0.1" value={form.lengthM || 4.0} onChange={change} required /></label>
+              <label><span>Ancho / Luz libre (m)</span><input name="widthM" type="number" min="1.0" max="12" step="0.1" value={form.widthM || 3.0} onChange={change} required /></label>
+              <label><span>Altura bajo viga (m)</span><input name="heightM" type="number" min="1.8" max="4.5" step="0.05" value={form.heightM || 2.6} onChange={change} required /></label>
             </>
           ) : (
             <>
@@ -177,7 +266,13 @@ export default function AdminCosting() {
           <header><div><span>{result.template.code}</span><h2>Resultado comercial</h2></div><strong>{formatPrice(result.totals.priceFinalUsd, 'USD')}</strong></header>
           <div className="costing-metrics">
             {result.derived.areaTopM2 && <div><span>Área de tapa</span><strong>{number(result.derived.areaTopM2)} m²</strong></div>}
-            {result.derived.tubeLengthM && <div><span>Tubo total</span><strong>{number(result.derived.tubeLengthM)} m</strong></div>}
+            {result.derived.areaM2 && <div><span>Área techada</span><strong>{number(result.derived.areaM2)} m²</strong></div>}
+            {result.derived.totalLengthM && <div><span>Largo baranda</span><strong>{number(result.derived.totalLengthM)} m</strong></div>}
+            {result.derived.postsCount && <div><span>Parantes</span><strong>{result.derived.postsCount} un</strong></div>}
+            {result.derived.columnsCount && <div><span>Pilares estructurales</span><strong>{result.derived.columnsCount} un</strong></div>}
+            {(result.derived.totalTubeM || result.derived.tubeLengthM) && <div><span>Tubo estructural</span><strong>{number(result.derived.totalTubeM || result.derived.tubeLengthM)} m</strong></div>}
+            {result.derived.infillSteelKg && <div><span>Acero barrote</span><strong>{number(result.derived.infillSteelKg)} kg</strong></div>}
+            {result.derived.finishAreaM2 && <div><span>Superficie pintura</span><strong>{number(result.derived.finishAreaM2)} m²</strong></div>}
             <div><span>Horas oficial</span><strong>{number(result.derived.workshopHours)} h</strong></div>
           </div>
           <div className="costing-table-wrap"><table><thead><tr><th>Recurso</th><th>Cantidad</th><th>Unitario</th><th>Subtotal</th></tr></thead><tbody>{result.lines.map((item) => <tr key={item.code}><td><strong>{item.code}</strong><span>{item.description}</span></td><td>{number(item.quantity)} {item.unit}</td><td>{formatPrice(item.unitCostUyu, 'UYU')}</td><td>{formatPrice(item.subtotalUyu, 'UYU')}</td></tr>)}</tbody></table></div>
@@ -211,6 +306,33 @@ export default function AdminCosting() {
 
           {/* COMMERCIAL EXPORT & ACTIONS */}
           <div style={{ marginTop: '1.5rem', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            {quoteIdParam && (
+              <button
+                type="button"
+                onClick={handleApplyToExistingQuote}
+                disabled={isApplyingQuote}
+                style={{
+                  flex: 1,
+                  minWidth: '220px',
+                  padding: '12px 20px',
+                  background: '#16a34a',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)'
+                }}
+              >
+                ⚡ {isApplyingQuote ? 'Aplicando a Ficha...' : `Aplicar a Cotización #${quoteIdParam}`}
+              </button>
+            )}
+
             <button
               type="button"
               onClick={handleDownloadPdf}
@@ -241,8 +363,8 @@ export default function AdminCosting() {
                 setShowConvertModal(true)
                 setConvertSuccess(null)
                 setConvertForm({
-                  customerId: customers[0]?.id || '',
-                  customTitle: result.template?.name || result.template?.code,
+                  customerId: customerIdParam || customers[0]?.id || '',
+                  customTitle: titleParam || result.template?.name || result.template?.code,
                   notes: ''
                 })
               }}
@@ -263,9 +385,18 @@ export default function AdminCosting() {
                 gap: '8px'
               }}
             >
-              💼 Convertir en Cotización Oficial
+              💼 Convertir en Nueva Cotización
             </button>
           </div>
+
+          {applySuccess && (
+            <div style={{ marginTop: '1rem', padding: '1rem', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '6px', color: '#065f46', fontSize: '0.9rem' }}>
+              ✓ ¡Cotización #{applySuccess.referenceNumber} actualizada con éxito! Monto: <strong>{formatPrice(applySuccess.totalAmount, 'USD')}</strong>.
+              <Link to={`/admin/clientes/${applySuccess.customerId}/cotizaciones/${applySuccess.quoteId}`} style={{ marginLeft: '10px', color: '#047857', fontWeight: 'bold', textDecoration: 'underline' }}>
+                Abrir Ficha de Cotización en OXI Studio →
+              </Link>
+            </div>
+          )}
 
           {convertSuccess && (
             <div style={{ marginTop: '1rem', padding: '1rem', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '6px', color: '#065f46', fontSize: '0.9rem' }}>

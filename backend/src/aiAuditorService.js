@@ -3,14 +3,34 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 let genAI;
 let model;
 
+function fallbackAudit(breakdownData) {
+  const totals = breakdownData.totals || {}
+  const margin = Number(breakdownData.rates?.grossMarginRate || breakdownData.rates?.marginRate || 0.35)
+  const directCost = Number(totals.directCostUyu || 0)
+  
+  const status = margin >= 0.30 ? 'VERDE' : margin >= 0.20 ? 'AMARILLO' : 'ROJO'
+  const risks = []
+  if (margin < 0.25) risks.push('Margen comercial ajustado por debajo del 25% recomendado.')
+  if (directCost > 0 && !totals.freightUyu && !breakdownData.inputs?.includeFreight) risks.push('El flete no está incluido en el costo directo; verificar transporte a obra.')
+  if (breakdownData.fallbackVariables?.length > 0) risks.push(`Variables con valor inicial de referencia: ${breakdownData.fallbackVariables.join(', ')}`)
+
+  return {
+    status,
+    summary: status === 'VERDE'
+      ? `Cotización financieramente saludable con margen objetivo del ${(margin * 100).toFixed(1)}% y absorción de costos indirectos.`
+      : `Cotización con margen del ${(margin * 100).toFixed(1)}%. Se aconseja validar costos de flete y mano de obra.`,
+    risks
+  }
+}
+
 export async function auditQuoteBreakdown(breakdownData) {
   if (!process.env.GEMINI_API_KEY) {
-    throw new Error('La clave GEMINI_API_KEY no está configurada.');
+    return fallbackAudit(breakdownData);
   }
 
   if (!genAI) {
     genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   }
 
   const prompt = `Eres el "Auditor Financiero IA" de OXI OS, una metalúrgica.
@@ -45,7 +65,7 @@ Debes responder ÚNICAMENTE con un objeto JSON (sin markdown, sin backticks) con
     
     return JSON.parse(text);
   } catch (error) {
-    console.error("Error en Gemini AI (Auditor):", error);
-    throw new Error('No se pudo auditar la cotización.');
+    console.warn("Fallo en Gemini AI (Auditor), usando auditor de respaldo:", error.message);
+    return fallbackAudit(breakdownData);
   }
 }

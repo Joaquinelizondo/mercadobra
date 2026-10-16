@@ -6,7 +6,7 @@ Plataforma uruguaya para descubrir, cotizar y comprar productos para obra, con e
 
 **Backend:** <https://mercadobra.onrender.com>
 
-**Última actualización:** 15 de octubre de 2026
+**Última actualización:** 16 de octubre de 2026
 
 El estado funcional detallado y las prioridades se mantienen también en [docs/ESTADO_WEB.md](docs/ESTADO_WEB.md).
 
@@ -98,13 +98,14 @@ Para trascender el modelo de un simple ERP administrativo y convertir a Mercadob
 └───────────────────────────────────────────┴────────────────────────────────────────────┘
 ```
 
-#### Tarea A: Cotización Inteligente Automatizada de Piezas & Soluciones OXI (*AI Quoting Engine*)
+#### Tarea A: Cotización Inteligente Automatizada de Piezas & Soluciones OXI (*AI Quoting Engine*) — **[OPERATIVO]**
 * **Objetivo:** Pasar de 5 días de espera presupuestaria a 45 segundos, eliminando la fricción de costeo manual.
-* **Mecánica:**
-  - **Recepción Multimodal:** El cliente (arquitecto o constructora) escribe su solicitud en lenguaje natural, adjunta bocetos o sube un plano técnico (PDF / CAD / imagen).
-  - **Extracción de Variables:** El modelo de IA extrae y normaliza las dimensiones (largo, ancho, alto), tipos de perfiles requeridos, metros lineales, peso estimado de acero ($\text{kg}$), horas de taller de soldadura/corte y superficie de pintura electrostática ($\text{m}^2$).
-  - **Cálculo Determinístico con OXI Quote:** Pasa las variables extraídas al motor matemático de costeo conectado a las tablas de costos versionadas (`cost_variables`, `cost_variable_versions`), margen comercial y tipo de cambio BROU.
-  - **Generación de Propuesta y PDF:** Redacción instantánea de la propuesta formal (alcance, supuestos técnicos, exclusiones y garantía) y emisión del presupuesto oficial en PDF de 2 páginas listo para aprobar en 1 clic.
+* **Mecánica Implementada:**
+  - **Recepción Multimodal & Asistencia en Vivo:** El cliente (arquitecto o constructora) escribe su solicitud en lenguaje natural, adjunta bocetos o sube un plano técnico (PDF / CAD / imagen). Puede validar su memoria técnica en tiempo real con IA (`✨ Validar memoria técnica con IA`) antes de enviar, detectando medidas y faltantes de información.
+  - **Extracción de Variables:** En la consola de cotización (`/admin/cotizaciones/:id`), el modelo de IA extrae y normaliza las dimensiones (largo, ancho, alto), tipos de perfiles requeridos, metros lineales, peso estimado de acero ($\text{kg}$), horas de taller de soldadura/corte, superficie de pintura electrostática ($\text{m}^2$) y sugiere la plantilla paramétrica correspondiente (`OXI_RAILING_R01`, `OXI_PERGOLA_P01`, `OXI_DIVIDER_D01`, `MESA_CIRCULAR_001`).
+  - **Cálculo Determinístico con OXI Quote en 1 Clic:** Botón directo `⚡ Cotizar en OXI Quote con 1 clic` que precarga las variables extraídas en `/admin/cotiza`, conectándolas a las tablas de costos versionadas (`cost_variables`, `cost_variable_versions`), margen comercial y tipo de cambio BROU.
+  - **Volcado Automático a la Cotización Comercial:** Botón `⚡ Aplicar a Cotización #${quoteId}` (`POST /admin/costing/apply-to-quote`) que traslada el precio total calculado en USD, el desglose de partidas técnicas y la descripción ejecutiva directamente a la ficha del cliente.
+  - **Generación de Propuesta y PDF:** Redacción asistida con IA (`✨ Redactar con IA`), auditoría financiera de rentabilidad (`🤖 OXI AI Auditor`) y emisión del presupuesto oficial en PDF de 2 páginas listo para firmar y aprobar.
 
 #### Tarea B: Automatización Integral del Proyecto de la Constructora (*AI Project Ingestion & Onboarding*)
 * **Objetivo:** Cero carga manual: transformar la carpeta desordenada de la constructora en la Suite OxI Pro 100% poblada.

@@ -78,7 +78,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 
 | Punto | Estado | Criterio para darlo por terminado |
 | --- | --- | --- |
-| Cotizador Inteligente de Piezas OXI (IA) | Pendiente | Extracción multimodal de variables (L, H, perfiles, kg acero) desde requerimiento o plano, cálculo determinístico con OXI Quote y propuesta formal en PDF en < 45s. |
+| Cotizador Inteligente de Piezas OXI (IA) | Terminado | Extracción técnica multimodal y heurística con IA (medidas, cantidades, perfiles, terminación y plantilla sugerida) integrada a OXI Quote con 1 clic (`/admin/cotizaciones/:id` -> `/admin/cotiza`), nuevas plantillas paramétricas de Barandas (OXI Railing R01) y Pérgolas (OXI Pergola P01), actualización bidireccional a la cotización comercial del cliente (`POST /admin/costing/apply-to-quote`), cálculo de kilos/horas/pintura/flete, auditoría de rentabilidad y validación preliminar interactiva en el portal del cliente. |
 | Auto-Onboarding de Proyectos de Obra (IA) | Pendiente | Carga masiva de memorias y pliegos de constructora con auto-generación de tareas Gantt, balance presupuestario por rubro y detección de paquetes de herrería Óxida. |
 | Configurador 3D Público para Clientes | Pendiente | Modelado 3D interactivo para pérgolas, barandas y escaleras con recálculo de precio en tiempo real y pedido directo de fabricación. |
 | Optimizador de Corte (Nesting 1D) para Talleres | Pendiente | Algoritmo de corte de barras de 6m (< 5% desperdicio) con emisión de planillas técnicas y QR para OXI Network. |
@@ -120,6 +120,7 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | 2026-10-15 | Polish UI & Solicitud directa OxI Pro. | Alineación pixel-perfect de la barra lateral OxI OS y separación 100% limpia entre solicitud de habilitación Pro (1 clic en modal con notas) y cotización de herrería. | `53188a9` |
 | 2026-10-15 | OXI Network (Fabricación Distribuida). | Adjudicación de cotizaciones a talleres asociados desde `/admin/cotizaciones/:id`, panel operativo de taller en `/proveedor` con control de avance (0–100%) y notas técnicas, presupuestos en PDF de 2 páginas y conversión a cotización oficial. | `940bc5f` |
 | 2026-10-15 | Los 4 Pilares de Suite OxI Pro. | Conmutador y recarga de proyectos reactivo, Schedule Gantt con cálculo de días y exportación CSV, balance de costos con partidas personalizadas y exportación CSV, gestor documental con drag-and-drop real, descargas directas y versionado de iteraciones. | `9e21a17` |
+| 2026-10-16 | Cotizador Inteligente Automatizado de Piezas OXI (IA). | Conexión integral de IA con OXI Quote: extracción normalizada con 1 clic a cotizador (`/admin/cotizaciones/:id` -> `/admin/cotiza`), nuevas plantillas paramétricas de Barandas y Pérgolas, volcado automático bidireccional a la cotización comercial (`POST /admin/costing/apply-to-quote`), cálculo de kilos/horas/pintura/flete, auditoría de rentabilidad y validación interactiva para clientes. | Este cambio |
 
 ## Forma de trabajo
 

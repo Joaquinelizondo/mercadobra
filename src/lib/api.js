@@ -490,6 +490,14 @@ export function convertCostingToQuote(payload, token) {
   })
 }
 
+export function applyCostingToQuote(payload, token) {
+  return request('/admin/costing/apply-to-quote', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
 export function getFabricationSuppliers(token) {
   return request('/admin/fabrication/suppliers', { token })
 }

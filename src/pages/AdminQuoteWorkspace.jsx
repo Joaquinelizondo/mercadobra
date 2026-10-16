@@ -132,8 +132,92 @@ export default function AdminQuoteWorkspace(){
   if(!quote)return <section className="customer-portal"><p>{error||'Cargando cotización…'}</p></section>
   return <section className="customer-portal"><header><div><Link to={`/admin/clientes/${id}`}>← Volver al cliente</Link><span>Respuesta comercial</span><h1>{quote.title}</h1><p>{customer?.name} · {quote.referenceNumber}</p></div>{quote.totalAmount>0&&<strong>{formatPrice(quote.totalAmount,quote.currency)}</strong>}</header>{error&&<p className="customer-portal-error">{error}</p>}
     <div className="admin-quote-workspace"><div className="quote-workspace"><div className="quote-workspace-head"><div><span>Solicitud del cliente</span><p>{quote.description}</p>
-      <div style={{ marginTop: '10px' }}><button type="button" onClick={parseWithAI} disabled={isParsingAI} style={{ background: '#f8f5ef', color: '#ea580c', border: '1px solid #ea580c', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', cursor: 'pointer' }}>{isParsingAI ? '⏳ Analizando requerimientos...' : '✨ Extraer datos técnicos con IA'}</button></div>
-      {aiSuggestion && (<div style={{ background: '#f8f5ef', border: '1px solid #dcd4c9', padding: '1rem', borderRadius: '8px', marginTop: '10px' }}><h4 style={{ margin: '0 0 10px', color: '#ea580c', fontSize: '1rem' }}>🤖 OXI AI extrajo:</h4><ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.9rem', color: '#1a1a1a', lineHeight: '1.5' }}>{aiSuggestion.detected_items?.map((item, idx) => (<li key={idx}><strong>{item.quantity}x {item.product_type}</strong> — {item.material}{item.dimensions?.length_m ? ` (${item.dimensions.length_m}m x ${item.dimensions.height_m || '?'}m)` : ''}{item.finish ? ` — ${item.finish}` : ''}</li>))}</ul>{aiSuggestion.missing_critical_info?.length > 0 && (<div style={{ marginTop: '12px', color: '#b91c1c', fontSize: '0.85rem', background: '#fee2e2', padding: '8px', borderRadius: '4px' }}><strong>Faltan datos clave:</strong> {aiSuggestion.missing_critical_info.join(', ')}</div>)}</div>)}
+      <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <button type="button" onClick={parseWithAI} disabled={isParsingAI} style={{ background: '#f8f5ef', color: '#ea580c', border: '1px solid #ea580c', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>
+          {isParsingAI ? '⏳ Analizando requerimientos...' : '✨ Extraer datos técnicos con IA'}
+        </button>
+        <Link
+          to={`/admin/cotiza?quoteId=${quote.id}&customerId=${id}&title=${encodeURIComponent(quote.title)}`}
+          style={{ background: '#131313', color: 'white', textDecoration: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+        >
+          ⚡ Abrir en OXI Quote
+        </Link>
+      </div>
+
+      {/* COSTEO VINCULADO BANNER */}
+      {quote.documentItems?.length > 0 && (
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.85rem 1rem', borderRadius: '8px', marginTop: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <span style={{ color: '#166534', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>📐 Costeo Paramétrico OXI Quote Vinculado</span>
+            <strong style={{ color: '#15803d', fontSize: '1.05rem' }}>{formatPrice(quote.totalAmount, quote.currency)}</strong>
+          </div>
+          <p style={{ margin: '0 0 8px 0', fontSize: '0.82rem', color: '#14532d' }}>
+            Esta cotización cuenta con un desglose técnico generado desde OXI Quote ({quote.documentItems.length} partidas de materiales y mano de obra).
+          </p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <Link
+              to={`/admin/cotiza?quoteId=${quote.id}&customerId=${id}&title=${encodeURIComponent(quote.title)}`}
+              style={{ fontSize: '0.78rem', background: 'white', border: '1px solid #86efac', color: '#166534', padding: '3px 8px', borderRadius: '4px', textDecoration: 'none', fontWeight: 600 }}
+            >
+              🔄 Recalcular / Modificar medidas en OXI Quote
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {aiSuggestion && (
+        <div style={{ background: '#f8f5ef', border: '1px solid #dcd4c9', padding: '1rem', borderRadius: '8px', marginTop: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <h4 style={{ margin: 0, color: '#ea580c', fontSize: '1rem' }}>🤖 OXI AI extrajo:</h4>
+            <span style={{ fontSize: '0.75rem', color: '#666' }}>Variables paramétricas normalizadas</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {aiSuggestion.detected_items?.map((item, idx) => {
+              const targetTemplate = item.suggested_template || 'OXI_DIVIDER_D01'
+              const lengthParam = item.dimensions?.length_m || ''
+              const heightParam = item.dimensions?.height_m || ''
+              const qtyParam = item.quantity || 1
+              const titleParam = encodeURIComponent(item.product_type || quote.title)
+              const cotizaUrl = `/admin/cotiza?quoteId=${quote.id}&customerId=${id}&templateCode=${targetTemplate}&lengthM=${lengthParam}&widthM=${lengthParam}&heightM=${heightParam}&quantity=${qtyParam}&title=${titleParam}`
+
+              return (
+                <div key={idx} style={{ background: 'white', padding: '10px', borderRadius: '6px', border: '1px solid #e5e0d8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <div>
+                    <strong style={{ fontSize: '0.92rem', color: '#131313' }}>{item.quantity}x {item.product_type}</strong>
+                    <div style={{ fontSize: '0.82rem', color: '#555', marginTop: '2px' }}>
+                      {item.material} · {item.dimensions?.length_m ? `${item.dimensions.length_m}m largo × ${item.dimensions.height_m || '?'}m alto` : 'Medidas a definir'}
+                      {item.finish ? ` · ${item.finish}` : ''}
+                    </div>
+                  </div>
+                  <Link
+                    to={cotizaUrl}
+                    style={{
+                      background: '#ea580c',
+                      color: 'white',
+                      textDecoration: 'none',
+                      padding: '6px 12px',
+                      borderRadius: '4px',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    ⚡ Cotizar en OXI Quote con 1 clic
+                  </Link>
+                </div>
+              )
+            })}
+          </div>
+          {aiSuggestion.missing_critical_info?.length > 0 && (
+            <div style={{ marginTop: '12px', color: '#b91c1c', fontSize: '0.85rem', background: '#fee2e2', padding: '8px', borderRadius: '4px' }}>
+              <strong>Faltan datos clave para costeo exacto:</strong> {aiSuggestion.missing_critical_info.join(', ')}
+            </div>
+          )}
+        </div>
+      )}
       {quote.budget!=null&&<p style={{marginTop: '1rem'}}>Presupuesto indicado: {formatPrice(quote.budget,quote.currency)}</p>}{formatRequestedDate(quote.desiredDate)&&<p>Fecha deseada: {formatRequestedDate(quote.desiredDate)}</p>}</div></div>{quote.attachments?.length>0&&<div className="quote-files">{quote.attachments.map((f,i)=><a key={i} href={f.url || f.data} target="_blank" rel="noreferrer" download={!f.url ? f.name : undefined}>📎 {f.name}</a>)}</div>}
       <div className="quote-thread">{messages.length===0?<p className="quote-thread-empty">Todavía no hay mensajes.</p>:messages.map(m=><article key={m.id} className={m.authorRole==='admin'?'is-customer':'is-admin'}><small>{m.authorRole==='admin'?'Mercadobra':customer?.name||'Cliente'}</small><p>{m.message}</p><time>{new Date(m.createdAt).toLocaleString('es-UY')}</time></article>)}</div><form className="quote-message-form" onSubmit={send}><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Responder al cliente…"/><button>Enviar mensaje</button></form></div>
       <form className="admin-proposal-form" onSubmit={saveProposal}><span>Propuesta económica</span><h2>Preparar cotización</h2><label>Título<input value={quote.title} onChange={e=>setQuote({...quote,title:e.target.value})}/></label>
