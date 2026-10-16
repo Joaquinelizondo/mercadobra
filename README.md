@@ -81,44 +81,44 @@ Para lograr un modelo de negocio altamente escalable y atractivo, el ecosistema 
 
 ### 🚀 Ejes de Innovación Disruptiva (De Software Administrativo a Plataforma ConstructionTech)
 
-Para trascender el modelo de un simple ERP administrativo y convertir a Mercadobra / Óxida en un ecosistema ConstructionTech de clase mundial (inspirado en referentes globales como Xometry, Procore y Kojo), la plataforma orienta su desarrollo hacia **5 ejes de disrupción técnica y operativa**:
+Para trascender el modelo de un simple ERP administrativo y convertir a Mercadobra / Óxida en un ecosistema ConstructionTech de clase mundial (inspirado en referentes globales como Xometry, Procore y Kojo), la plataforma orienta su desarrollo hacia dos grandes frentes de inteligencia artificial y automatización operativa:
 
-#### 1. 🤖 Cotizador Instantáneo de Planos por IA (AI Blueprints to BOM)
-* **Objetivo:** Reducir el tiempo de cotización técnica de 5 días hábiles a 45 segundos.
-* **Mecánica:**
-  - El arquitecto o constructora arrastra su plano en PDF o DWG.
-  - Un modelo de visión multimodal (Gemini / OCR avanzado) analiza la planimetría para identificar automáticamente los ítems metálicos: barandas, escaleras helicoidales/rectas, pérgolas, aberturas y marcos.
-  - Generación instantánea de Cómputo Métrico Preliminar (BOM - Bill of Materials) con metrajes lineales, kilos estimados de acero y horas de mano de obra.
-  - Emisión inmediata de una propuesta preliminar orientativa en pantalla con opción de solicitar validación final de ingeniería en 1 clic.
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        DOS PILARES DISRUPTIVOS CON IA                                  │
+├───────────────────────────────────────────┬────────────────────────────────────────────┤
+│  1. COTIZADOR INTELIGENTE DE PIEZAS OXI   │  2. AUTO-ONBOARDING DE PROYECTO / OBRA     │
+│  (Del requerimiento o croquis al precio)  │  (De la carpeta del arquitecto a OxI Pro)  │
+│                                           │                                            │
+│  • Entrada: texto, plano o croquis.       │  • Entrada: memorias, pliegos, planos PDF. │
+│  • IA extrae medidas, perfiles y kilos.   │  • IA clasifica y versiona los documentos. │
+│  • Calcula costo con motor OXI Quote.     │  • Auto-genera el Cronograma Gantt.        │
+│  • Genera propuesta comercial y PDF.      │  • Auto-genera la Planilla de Rubros ($).  │
+│  • Redacción lista para el cliente.       │  • Detecta paquetes metálicos a cotizar.   │
+└───────────────────────────────────────────┴────────────────────────────────────────────┘
+```
 
-#### 2. 📐 Configurador 3D Paramétrico para Clientes (Self-Serve Metal Configurator)
-* **Objetivo:** Permitir al cliente o arquitecto diseñar, presupuestar y encargar estructuras metálicas en vivo desde el navegador.
+#### Tarea A: Cotización Inteligente Automatizada de Piezas & Soluciones OXI (*AI Quoting Engine*)
+* **Objetivo:** Pasar de 5 días de espera presupuestaria a 45 segundos, eliminando la fricción de costeo manual.
 * **Mecánica:**
-  - Módulo web 3D interactivo para familias estandarizables: Pérgolas bioclimáticas, Barandas de balcón, Escaleras caracol y Cerramientos de hierro y vidrio.
-  - Controles paramétricos en tiempo real: sliders de ancho, largo, altura, tipo de perfiles tubulares, acabados (óxido natural, negro mate, galvanizado) y maderas tratadas.
-  - Conexión biunívoca con el motor de costos OXI Quote: cada centímetro modificado recalcula en vivo el precio exacto en pantalla.
-  - Botón directo "Encargar Fabricación": genera la orden técnica y despiece para el taller sin requerir reuniones de especificación.
+  - **Recepción Multimodal:** El cliente (arquitecto o constructora) escribe su solicitud en lenguaje natural, adjunta bocetos o sube un plano técnico (PDF / CAD / imagen).
+  - **Extracción de Variables:** El modelo de IA extrae y normaliza las dimensiones (largo, ancho, alto), tipos de perfiles requeridos, metros lineales, peso estimado de acero ($\text{kg}$), horas de taller de soldadura/corte y superficie de pintura electrostática ($\text{m}^2$).
+  - **Cálculo Determinístico con OXI Quote:** Pasa las variables extraídas al motor matemático de costeo conectado a las tablas de costos versionadas (`cost_variables`, `cost_variable_versions`), margen comercial y tipo de cambio BROU.
+  - **Generación de Propuesta y PDF:** Redacción instantánea de la propuesta formal (alcance, supuestos técnicos, exclusiones y garantía) y emisión del presupuesto oficial en PDF de 2 páginas listo para aprobar en 1 clic.
 
-#### 3. ⚡ Generador de Listas de Corte y Nesting para Talleres (Digital CAM Pipeline)
-* **Objetivo:** Eliminar el error humano en taller y reducir el desperdicio de perfiles metálicos al < 5%.
+#### Tarea B: Automatización Integral del Proyecto de la Constructora (*AI Project Ingestion & Onboarding*)
+* **Objetivo:** Cero carga manual: transformar la carpeta desordenada de la constructora en la Suite OxI Pro 100% poblada.
 * **Mecánica:**
-  - A partir de la cotización o modelo aprobado, el algoritmo resuelve el problema de corte unidimensional (1D Cutting Stock / Nesting Optimizer) sobre barras comerciales estándar de 6 metros.
-  - Generación automática de la Planilla de Corte y Fabricación en PDF con esquemas visuales, medidas de corte, ángulos de inglete y códigos QR de trazabilidad por pieza.
-  - El taller en OXI Network recibe la orden con el plano de despiece optimizado, reduciendo tiempos muertos y costos de materia prima.
+  - **Carga Masiva de Documentación:** La constructora arrastra su carpeta de obra (memorias descriptivas, pliegos de condiciones técnicas, planos de arquitectura, detalles y planillas de cálculo).
+  - **Clasificación y Versionado Inteligente:** El agente clasifica automáticamente cada archivo en su categoría correspondiente (`Planos`, `Certificaciones`, `Seguridad y Salud`, `Especificaciones`) y le asigna la versión base `v1.0`.
+  - **Auto-Generación del Cronograma Gantt:** La IA lee los plazos y etapas descritas en la memoria técnica y genera el cronograma de obra completo (Fundaciones, Estructura de Hormigón, Albañilería, Herrería de Fachada Óxida, Instalaciones y Terminaciones) con fechas estimadas y asignación sugerida de cuadrillas por categoría salarial.
+  - **Auto-Generación del Balance Presupuestario por Rubro:** Estima los montos autorizados por especialidad según los metros cuadrados construidos y tipología edilicia, activando el semáforo de sobrecosto.
+  - **Detección Proactiva de Paquetes Metálicos Óxida:** Identifica todas las partidas de herrería que la obra requerirá (barandas de balcón, escaleras presurizadas de escape, pérgolas, parasoles, marcos) y genera automáticamente los borradores de cotización listos para cotizar en el sistema.
 
-#### 4. 📱 Certificaciones Digitales de Obra con Fotos Georreferenciadas (Mobile-First Field Inspection)
-* **Objetivo:** Llevar la plataforma al andamio y a la obra real, reemplazando la carga de escritorio por validación móvil fehaciente.
-* **Mecánica:**
-  - Interfaz web móvil ultraliviana para Directores de Obra, Inspectores y Capataces en sitio.
-  - Flujo de certificación de hitos: al completar un montaje, el usuario toma fotografías del elemento instalado; el sistema captura geolocalización GPS, orientación y timestamp inmutable.
-  - Firma digital táctil en pantalla del "Certificado de Avance Físico".
-  - Disparador automático: la aprobación digital del hito desbloquea la siguiente etapa del cronograma y libera el pago correspondiente al taller en OXI Network.
-
-#### 5. 🔄 Asignación Inteligente de Talleres & Custodia Segura de Fondos (Smart Matching & Escrow)
-* **Objetivo:** Escalar la capacidad productiva sin multiplicar la estructura fija, mitigando el riesgo financiero de compradores y fabricantes.
-* **Mecánica:**
-  - **Smart Matching Algorítmico:** Al confirmarse un proyecto, el sistema analiza la red de talleres homologados según capacidad ociosa en calendario, especialidad técnica (soldadura TIG, corte láser, pintura electrostática) y cercanía geográfica a la obra.
-  - **Sistema de Escrow (Custodia de Señas):** La constructora deposita la seña en Mercadobra; los fondos quedan en garantía y se transfieren al taller de forma progresiva únicamente contra certificados de avance aprobados con evidencia fotográfica.
+#### Funcionalidades de Soporte Técnico y Fabricación:
+* **Configurador 3D Paramétrico para Clientes:** Modelado 3D interactivo en navegador para familias estandarizadas (Pérgolas, Barandas, Escaleras caracol, Cerramientos tipo loft) con sliders de medidas, recálculo de precio en tiempo real y pedido directo de fabricación.
+* **Optimizador de Listas de Corte (1D Nesting):** Algoritmo de optimización sobre barras estándar de 6 metros para reducir el desperdicio del taller al $< 5\%$, emitiendo planillas de corte en PDF con códigos QR por pieza para la red OXI Network.
+* **Certificaciones Móviles de Obra con Fotos Georreferenciadas:** Interfaz móvil para que directores de obra y capataces certifiquen avances en sitio con GPS, timestamp inmutable y firma táctil, liberando pagos e hitos al taller.
 
 ### Roadmap Comercial y de Desarrollo (90 Días)
 
