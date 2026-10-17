@@ -625,6 +625,126 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       })
   }, [showRainModal, rainForm.date, rainForm.days, schedule])
 
+  // Gantt State & Calculations
+  const [scheduleViewMode, setScheduleViewMode] = useState('gantt')
+
+  const ganttBounds = useMemo(() => {
+    if (!schedule.length) {
+      const now = new Date()
+      const end = new Date(now.getTime() + 60 * 86400000)
+      return {
+        startDate: now,
+        endDate: end,
+        totalDays: 60,
+        startMs: now.getTime(),
+        endMs: end.getTime()
+      }
+    }
+
+    let minMs = Infinity
+    let maxMs = -Infinity
+
+    schedule.forEach(t => {
+      if (t.startDate) {
+        const parts = t.startDate.split('-').map(Number)
+        if (parts.length === 3) {
+          const ms = new Date(parts[0], parts[1] - 1, parts[2]).getTime()
+          if (!Number.isNaN(ms) && ms < minMs) minMs = ms
+        }
+      }
+      if (t.endDate) {
+        const parts = t.endDate.split('-').map(Number)
+        if (parts.length === 3) {
+          const ms = new Date(parts[0], parts[1] - 1, parts[2]).getTime()
+          if (!Number.isNaN(ms) && ms > maxMs) maxMs = ms
+        }
+      }
+    })
+
+    if (minMs === Infinity || maxMs === -Infinity) {
+      minMs = new Date(2026, 9, 1).getTime()
+      maxMs = new Date(2027, 2, 1).getTime()
+    }
+
+    const bufferedMinMs = minMs - (4 * 86400000)
+    const bufferedMaxMs = maxMs + (10 * 86400000)
+    const totalDays = Math.max(1, Math.round((bufferedMaxMs - bufferedMinMs) / 86400000))
+
+    return {
+      startDate: new Date(bufferedMinMs),
+      endDate: new Date(bufferedMaxMs),
+      totalDays,
+      startMs: bufferedMinMs,
+      endMs: bufferedMaxMs
+    }
+  }, [schedule])
+
+  const ganttMonths = useMemo(() => {
+    const { startMs, endMs } = ganttBounds
+    const months = []
+    const cur = new Date(startMs)
+    cur.setDate(1)
+
+    const end = new Date(endMs)
+    while (cur <= end) {
+      const y = cur.getFullYear()
+      const m = cur.getMonth()
+      const monthStart = Math.max(startMs, new Date(y, m, 1).getTime())
+      const nextMonthStart = new Date(y, m + 1, 1).getTime()
+      const monthEnd = Math.min(endMs, nextMonthStart)
+
+      if (monthEnd > monthStart) {
+        const widthPct = ((monthEnd - monthStart) / (endMs - startMs)) * 100
+        const leftPct = ((monthStart - startMs) / (endMs - startMs)) * 100
+        const label = cur.toLocaleDateString('es-UY', { month: 'long', year: 'numeric' })
+        months.push({
+          key: `${y}-${m}`,
+          label: label.charAt(0).toUpperCase() + label.slice(1),
+          leftPct,
+          widthPct
+        })
+      }
+      cur.setMonth(cur.getMonth() + 1)
+    }
+
+    return months
+  }, [ganttBounds])
+
+  const ganttWeeks = useMemo(() => {
+    const { startMs, endMs } = ganttBounds
+    const ticks = []
+    const cur = new Date(startMs)
+    const dayOfWeek = cur.getDay()
+    const diffToMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7
+    cur.setDate(cur.getDate() + diffToMonday)
+
+    while (cur.getTime() <= endMs) {
+      const pct = ((cur.getTime() - startMs) / (endMs - startMs)) * 100
+      const day = String(cur.getDate()).padStart(2, '0')
+      const month = String(cur.getMonth() + 1).padStart(2, '0')
+      ticks.push({
+        pct,
+        label: `${day}/${month}`,
+        ms: cur.getTime()
+      })
+      cur.setDate(cur.getDate() + 7)
+    }
+    return ticks
+  }, [ganttBounds])
+
+  const todayGanttPositionPct = useMemo(() => {
+    const { startMs, endMs } = ganttBounds
+    const refDateMs = new Date(2026, 9, 18).getTime()
+    if (refDateMs >= startMs && refDateMs <= endMs) {
+      return ((refDateMs - startMs) / (endMs - startMs)) * 100
+    }
+    const realNow = Date.now()
+    if (realNow >= startMs && realNow <= endMs) {
+      return ((realNow - startMs) / (endMs - startMs)) * 100
+    }
+    return null
+  }, [ganttBounds])
+
   // Calculated global stats
   const totalLaborCost = useMemo(() => schedule.reduce((sum, t) => sum + (t.assignedLaborCost || 0), 0), [schedule])
   const totalSocialLawsCost = useMemo(() => schedule.reduce((sum, t) => sum + getTaskSocialLaws(t), 0), [schedule])
@@ -1286,7 +1406,26 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
               <h3>Cronograma de Obra & Asignación de Recursos</h3>
               <p>Control de avance físico (Programado vs. Real Certificado) y costo ejecutado con devengamiento en tiempo real.</p>
             </div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div className="gantt-view-switch">
+                <button
+                  type="button"
+                  className={`gantt-view-btn ${scheduleViewMode === 'gantt' ? 'is-active' : ''}`}
+                  onClick={() => setScheduleViewMode('gantt')}
+                  title="Vista Diagrama de Gantt temporal interactivo"
+                >
+                  📊 Diagrama de Gantt
+                </button>
+                <button
+                  type="button"
+                  className={`gantt-view-btn ${scheduleViewMode === 'tabla' ? 'is-active' : ''}`}
+                  onClick={() => setScheduleViewMode('tabla')}
+                  title="Vista Planilla analítica detallada de costos y leyes sociales"
+                >
+                  📋 Planilla & Costos
+                </button>
+              </div>
+
               <button
                 type="button"
                 className="oxi-btn-rain"
@@ -1381,7 +1520,189 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
             </div>
           </div>
 
-          <div className="table-responsive">
+          {/* ── VISTA 1: DIAGRAMA DE GANTT INTERACTIVO ── */}
+          {scheduleViewMode === 'gantt' && (
+            <div className="gantt-card">
+              {/* Top bar with legend and summary */}
+              <div className="gantt-top-bar">
+                <div className="gantt-legend">
+                  <div className="gantt-legend-item">
+                    <span className="gantt-legend-box" style={{ background: '#ea580c' }} />
+                    <span>Avance Real Físico Certificado</span>
+                  </div>
+                  <div className="gantt-legend-item">
+                    <span className="gantt-legend-box" style={{ background: 'rgba(2, 132, 199, 0.25)', border: '1px solid #0284c7' }} />
+                    <span>Avance Programado (Plan)</span>
+                  </div>
+                  <div className="gantt-legend-item">
+                    <span className="gantt-legend-box" style={{ background: '#e2e8f0', border: '1px solid #cbd5e1' }} />
+                    <span>Plazo Contractual</span>
+                  </div>
+                  <div className="gantt-legend-item">
+                    <span style={{ width: '14px', height: '2px', background: '#ef4444', display: 'inline-block' }} />
+                    <span>Línea de Hoy (18/10)</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#737373' }}>
+                  <span><strong>{schedule.length}</strong> tareas programadas</span>
+                  <span>•</span>
+                  <span>Escala temporal: <strong>{ganttBounds.totalDays}</strong> días totales</span>
+                </div>
+              </div>
+
+              {/* Gantt Body with fixed left task info and scrollable timeline */}
+              <div className="gantt-body-wrap">
+                {/* Left Column: Tasks metadata */}
+                <div className="gantt-tasks-col">
+                  <div className="gantt-tasks-col-header">
+                    <span>TAREA DE OBRA</span>
+                    <span>ESTADO / REAL</span>
+                  </div>
+                  {schedule.map(task => {
+                    const planned = getTaskPlannedPercent(task)
+                    const real = Math.min(100, Math.max(0, Number(task.progressPercent) || 0))
+                    const delta = real - planned
+                    const isDone = real === 100
+
+                    return (
+                      <div key={task.id} className="gantt-task-meta-cell">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span className="gantt-task-title" title={task.name}>{task.name}</span>
+                          <span className={`delta-badge ${delta > 0 ? 'ahead' : delta < 0 ? 'delayed' : 'ontrack'}`} style={{ fontSize: '0.68rem', padding: '1px 5px' }}>
+                            {delta > 0 ? `+${delta}%` : `${delta}%`}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#737373', fontSize: '0.74rem' }}>
+                          <span>{task.startDate} al {task.endDate}</span>
+                          <div>
+                            <strong style={{ color: isDone ? '#10b981' : '#ea580c' }}>{real}%</strong>
+                            <span style={{ color: '#0284c7', marginLeft: '3px' }}>({planned}%)</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Right Column: Timeline Canvas */}
+                <div className="gantt-timeline-canvas">
+                  {/* Timeline Header */}
+                  <div className="gantt-timeline-header-wrap">
+                    {/* Months Row */}
+                    <div className="gantt-months-row">
+                      {ganttMonths.map(m => (
+                        <div
+                          key={m.key}
+                          className="gantt-month-cell"
+                          style={{ left: `${m.leftPct}%`, width: `${m.widthPct}%` }}
+                        >
+                          {m.label}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Weeks Row */}
+                    <div className="gantt-weeks-row">
+                      {ganttWeeks.map((w, idx) => (
+                        <div
+                          key={idx}
+                          className="gantt-week-tick"
+                          style={{ left: `${w.pct}%` }}
+                        >
+                          {w.label}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Today Badge on Header */}
+                    {todayGanttPositionPct != null && (
+                      <div
+                        className="gantt-today-badge"
+                        style={{ left: `${todayGanttPositionPct}%` }}
+                      >
+                        Hoy
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tasks Timeline Rows */}
+                  <div style={{ position: 'relative' }}>
+                    {/* Background Vertical Grid Lines for Weeks */}
+                    {ganttWeeks.map((w, idx) => (
+                      <div
+                        key={idx}
+                        className="gantt-grid-line"
+                        style={{ left: `${w.pct}%` }}
+                      />
+                    ))}
+
+                    {/* Red Vertical Line for Today */}
+                    {todayGanttPositionPct != null && (
+                      <div
+                        className="gantt-today-line"
+                        style={{ left: `${todayGanttPositionPct}%` }}
+                      />
+                    )}
+
+                    {/* Task Rows with Gantt Bars */}
+                    {schedule.map(task => {
+                      const partsStart = String(task.startDate || '').split('-').map(Number)
+                      const partsEnd = String(task.endDate || '').split('-').map(Number)
+                      const startMs = partsStart.length === 3 ? new Date(partsStart[0], partsStart[1] - 1, partsStart[2]).getTime() : ganttBounds.startMs
+                      const endMs = partsEnd.length === 3 ? new Date(partsEnd[0], partsEnd[1] - 1, partsEnd[2]).getTime() : ganttBounds.endMs
+                      const totalSpan = ganttBounds.endMs - ganttBounds.startMs
+
+                      const leftPct = Math.max(0, Math.min(100, ((startMs - ganttBounds.startMs) / totalSpan) * 100))
+                      const widthPct = Math.max(2, Math.min(100 - leftPct, ((endMs - startMs) / totalSpan) * 100))
+
+                      const planned = getTaskPlannedPercent(task)
+                      const real = Math.min(100, Math.max(0, Number(task.progressPercent) || 0))
+                      const isDone = real === 100
+                      const totalTask = getTaskBudget(task)
+                      const taskExecuted = getTaskExecutedCost(task)
+
+                      return (
+                        <div key={task.id} className="gantt-row">
+                          <div
+                            className="gantt-bar-box"
+                            style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                            title={`${task.name}\n• Plazo: ${task.startDate} al ${task.endDate}\n• Avance Real Físico: ${real}%\n• Avance Programado: ${planned}%\n• Presupuesto: ${formatMoney(totalTask)}\n• Ejecutado a la fecha: ${formatMoney(taskExecuted)}`}
+                          >
+                            {/* Plan Progress Fill */}
+                            <div
+                              className="gantt-bar-plan-fill"
+                              style={{ width: `${planned}%` }}
+                            />
+
+                            {/* Real Progress Fill */}
+                            <div
+                              className={`gantt-bar-real-fill ${isDone ? 'done' : ''}`}
+                              style={{ width: `${real}%` }}
+                            />
+
+                            {/* Label */}
+                            <div className="gantt-bar-content">
+                              <span style={{ color: real > 40 ? '#fff' : '#1e293b' }}>
+                                {task.name}
+                              </span>
+                              <span style={{ color: real > 60 ? '#fff' : '#334155' }}>
+                                {real}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── VISTA 2: PLANILLA ANALÍTICA & COSTOS ── */}
+          {scheduleViewMode === 'tabla' && (
+            <div className="table-responsive">
             <table className="oxi-pro-table schedule-table">
               <thead>
                 <tr>
@@ -1624,6 +1945,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
               </tfoot>
             </table>
           </div>
+        )}
         </section>
       )}
 
