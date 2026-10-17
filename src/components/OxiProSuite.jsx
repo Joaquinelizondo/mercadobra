@@ -106,6 +106,7 @@ const DEFAULT_SCHEDULE = [
     category: 'Oficial Especializado',
     categoryRate: 3400,
     assignedLaborCost: 489600,
+    socialLawsCost: 318240,
     materialCost: 750000,
     month: 'Mes 1',
     progressPercent: 95
@@ -119,6 +120,7 @@ const DEFAULT_SCHEDULE = [
     category: 'Oficial',
     categoryRate: 2800,
     assignedLaborCost: 806400,
+    socialLawsCost: 524160,
     materialCost: 1950000,
     month: 'Mes 2',
     progressPercent: 70
@@ -132,6 +134,7 @@ const DEFAULT_SCHEDULE = [
     category: 'Oficial Especializado',
     categoryRate: 3400,
     assignedLaborCost: 476000,
+    socialLawsCost: 309400,
     materialCost: 1150000,
     month: 'Mes 2',
     progressPercent: 45
@@ -145,6 +148,7 @@ const DEFAULT_SCHEDULE = [
     category: 'Oficial',
     categoryRate: 2800,
     assignedLaborCost: 294000,
+    socialLawsCost: 191100,
     materialCost: 480000,
     month: 'Mes 3',
     progressPercent: 30
@@ -158,6 +162,7 @@ const DEFAULT_SCHEDULE = [
     category: 'Medio Oficial',
     categoryRate: 2200,
     assignedLaborCost: 440000,
+    socialLawsCost: 286000,
     materialCost: 620000,
     month: 'Mes 3',
     progressPercent: 20
@@ -171,6 +176,7 @@ const DEFAULT_SCHEDULE = [
     category: 'Oficial Especializado',
     categoryRate: 3400,
     assignedLaborCost: 693600,
+    socialLawsCost: 450840,
     materialCost: 890000,
     month: 'Mes 4',
     progressPercent: 10
@@ -184,6 +190,7 @@ const DEFAULT_SCHEDULE = [
     category: 'Oficial',
     categoryRate: 2800,
     assignedLaborCost: 548800,
+    socialLawsCost: 356720,
     materialCost: 420000,
     month: 'Mes 5',
     progressPercent: 0
@@ -259,20 +266,39 @@ function downloadFile(doc) {
   }
 }
 
+function getTaskSocialLaws(task) {
+  if (task && task.socialLawsCost != null && task.socialLawsCost !== '' && !Number.isNaN(Number(task.socialLawsCost))) {
+    return Number(task.socialLawsCost)
+  }
+  return Math.round((task?.assignedLaborCost || 0) * 0.65)
+}
+
 function exportScheduleCsv(schedule, projectName) {
-  const headers = ['Tarea', 'Fecha Inicio', 'Fecha Fin', 'Personas', 'Categoria Personal', 'Tarifa Diaria ($)', 'Costo Mano de Obra ($)', 'Costo Materiales ($)', 'Mes', 'Avance (%)']
-  const rows = schedule.map(t => [
-    `"${(t.name || '').replace(/"/g, '""')}"`,
-    t.startDate,
-    t.endDate,
-    t.peopleCount,
-    `"${t.category}"`,
-    t.categoryRate,
-    t.assignedLaborCost,
-    t.materialCost,
-    `"${t.month}"`,
-    `${t.progressPercent}%`
-  ])
+  const headers = [
+    'Tarea', 'Fecha Inicio', 'Fecha Fin', 'Personas', 'Categoria Personal',
+    'Tarifa Diaria ($)', 'Costo Mano de Obra ($)', 'Leyes Sociales ($)',
+    'Costo Materiales ($)', 'Costo Total Tarea ($)', 'Mes', 'Avance (%)'
+  ]
+  const rows = schedule.map(t => {
+    const labor = t.assignedLaborCost || 0
+    const social = getTaskSocialLaws(t)
+    const material = t.materialCost || 0
+    const total = labor + social + material
+    return [
+      `"${(t.name || '').replace(/"/g, '""')}"`,
+      t.startDate,
+      t.endDate,
+      t.peopleCount,
+      `"${t.category}"`,
+      t.categoryRate,
+      labor,
+      social,
+      material,
+      total,
+      `"${t.month}"`,
+      `${t.progressPercent}%`
+    ]
+  })
   const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
@@ -407,6 +433,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     peopleCount: 4,
     category: 'Oficial Especializado',
     categoryRate: 3400,
+    socialLawsCost: '',
     materialCost: 500000,
     month: 'Mes 1',
     progressPercent: 0
@@ -430,19 +457,20 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   }, [documents, schedule, monthlyComp, weeklyProgress, rubros, storageKey])
 
   // Calculated global stats
+  const totalLaborCost = useMemo(() => schedule.reduce((sum, t) => sum + (t.assignedLaborCost || 0), 0), [schedule])
+  const totalSocialLawsCost = useMemo(() => schedule.reduce((sum, t) => sum + getTaskSocialLaws(t), 0), [schedule])
+  const totalMaterialCost = useMemo(() => schedule.reduce((sum, t) => sum + (t.materialCost || 0), 0), [schedule])
+  const totalProjectBudget = totalLaborCost + totalSocialLawsCost + totalMaterialCost
+
   const globalProgress = useMemo(() => {
     if (!schedule.length) return 0
-    const totalWeight = schedule.reduce((sum, t) => sum + (t.assignedLaborCost + t.materialCost), 0)
+    const totalWeight = schedule.reduce((sum, t) => sum + ((t.assignedLaborCost || 0) + getTaskSocialLaws(t) + (t.materialCost || 0)), 0)
     if (!totalWeight) {
-      return Math.round(schedule.reduce((sum, t) => sum + t.progressPercent, 0) / schedule.length)
+      return Math.round(schedule.reduce((sum, t) => sum + (t.progressPercent || 0), 0) / schedule.length)
     }
-    const weightedSum = schedule.reduce((sum, t) => sum + (t.progressPercent * (t.assignedLaborCost + t.materialCost)), 0)
+    const weightedSum = schedule.reduce((sum, t) => sum + ((t.progressPercent || 0) * ((t.assignedLaborCost || 0) + getTaskSocialLaws(t) + (t.materialCost || 0))), 0)
     return Math.round(weightedSum / totalWeight)
   }, [schedule])
-
-  const totalLaborCost = useMemo(() => schedule.reduce((sum, t) => sum + (t.assignedLaborCost || 0), 0), [schedule])
-  const totalMaterialCost = useMemo(() => schedule.reduce((sum, t) => sum + (t.materialCost || 0), 0), [schedule])
-  const totalProjectBudget = totalLaborCost + totalMaterialCost
 
   // Alerts by rubro
   const rubroAlerts = useMemo(() => {
@@ -597,6 +625,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     if (!newTask.name) return
     const days = Math.max(1, Number(newTask.workDays) || 20)
     const laborCost = newTask.peopleCount * newTask.categoryRate * days
+    const socialCost = newTask.socialLawsCost !== '' && newTask.socialLawsCost != null
+      ? Number(newTask.socialLawsCost)
+      : Math.round(laborCost * 0.65)
     const taskEntry = {
       id: Date.now(),
       name: newTask.name,
@@ -606,9 +637,11 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       category: newTask.category,
       categoryRate: Number(newTask.categoryRate),
       assignedLaborCost: laborCost,
-      materialCost: Number(newTask.materialCost),
+      socialLawsCost: socialCost,
+      customSocialLaws: newTask.socialLawsCost !== '' && newTask.socialLawsCost != null,
+      materialCost: Number(newTask.materialCost) || 0,
       month: newTask.month,
-      progressPercent: Number(newTask.progressPercent)
+      progressPercent: Number(newTask.progressPercent) || 0
     }
     setSchedule([...schedule, taskEntry])
     setShowAddTaskModal(false)
@@ -620,6 +653,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       peopleCount: 4,
       category: 'Oficial Especializado',
       categoryRate: 3400,
+      socialLawsCost: '',
       materialCost: 500000,
       month: 'Mes 1',
       progressPercent: 0
@@ -711,9 +745,15 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         </div>
 
         <div className="oxi-pro-kpi-card">
-          <span className="kpi-label">Costo Mano de Obra Asignado</span>
+          <span className="kpi-label">Costo Mano de Obra</span>
           <strong>{formatMoney(totalLaborCost)}</strong>
           <span className="kpi-sub">{schedule.reduce((acc, t) => acc + (t.peopleCount || 0), 0)} operarios activos</span>
+        </div>
+
+        <div className="oxi-pro-kpi-card">
+          <span className="kpi-label">Leyes Sociales (BPS / Aportes)</span>
+          <strong>{formatMoney(totalSocialLawsCost)}</strong>
+          <span className="kpi-sub">Cargas sociales sobre mano de obra</span>
         </div>
 
         <div className="oxi-pro-kpi-card">
@@ -917,9 +957,11 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                   <th>Personal</th>
                   <th>Categoría & Tarifa</th>
                   <th>Costo Mano Obra</th>
+                  <th>Leyes Sociales (BPS)</th>
                   <th>Costo Materiales</th>
+                  <th>Costo Total Tarea</th>
                   <th>Mes Asignado</th>
-                  <th style={{ minWidth: '200px' }}>% Avance de Obra</th>
+                  <th style={{ minWidth: '180px' }}>% Avance de Obra</th>
                   <th>Estado</th>
                   <th>Acción</th>
                 </tr>
@@ -928,6 +970,11 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                 {schedule.map(task => {
                   const isDone = task.progressPercent === 100
                   const isProgress = task.progressPercent > 0 && task.progressPercent < 100
+                  const labor = task.assignedLaborCost || 0
+                  const social = getTaskSocialLaws(task)
+                  const material = task.materialCost || 0
+                  const totalTask = labor + social + material
+
                   return (
                     <tr key={task.id}>
                       <td>
@@ -944,10 +991,88 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                         <small>{formatMoney(task.categoryRate)} / día</small>
                       </td>
                       <td>
-                        <strong>{formatMoney(task.assignedLaborCost)}</strong>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1000"
+                            value={labor}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 0
+                              setSchedule(schedule.map(t => {
+                                if (t.id !== task.id) return t
+                                const newSocial = t.customSocialLaws ? t.socialLawsCost : Math.round(val * 0.65)
+                                return { ...t, assignedLaborCost: val, socialLawsCost: newSocial }
+                              }))
+                            }}
+                            title="Editar Costo Mano de Obra"
+                            style={{
+                              width: '105px',
+                              padding: '5px 8px',
+                              fontSize: '0.82rem',
+                              fontWeight: 'bold',
+                              border: '1px solid #d4d4d4',
+                              borderRadius: '4px',
+                              background: '#fff'
+                            }}
+                          />
+                          <small style={{ color: '#737373' }}>{formatMoney(labor)}</small>
+                        </div>
                       </td>
                       <td>
-                        <strong>{formatMoney(task.materialCost)}</strong>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <input
+                            type="number"
+                            min="0"
+                            step="500"
+                            value={social}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 0
+                              setSchedule(schedule.map(t => t.id === task.id ? { ...t, socialLawsCost: val, customSocialLaws: true } : t))
+                            }}
+                            title="Editar Leyes Sociales (BPS / Aportes)"
+                            style={{
+                              width: '105px',
+                              padding: '5px 8px',
+                              fontSize: '0.82rem',
+                              fontWeight: 'bold',
+                              border: '1px solid #d4d4d4',
+                              borderRadius: '4px',
+                              background: '#fff'
+                            }}
+                          />
+                          <small style={{ color: '#737373' }}>{formatMoney(social)}</small>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1000"
+                            value={material}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 0
+                              setSchedule(schedule.map(t => t.id === task.id ? { ...t, materialCost: val } : t))
+                            }}
+                            title="Editar Costo Materiales"
+                            style={{
+                              width: '105px',
+                              padding: '5px 8px',
+                              fontSize: '0.82rem',
+                              fontWeight: 'bold',
+                              border: '1px solid #d4d4d4',
+                              borderRadius: '4px',
+                              background: '#fff'
+                            }}
+                          />
+                          <small style={{ color: '#737373' }}>{formatMoney(material)}</small>
+                        </div>
+                      </td>
+                      <td>
+                        <strong style={{ color: '#ea580c', fontSize: '0.92rem' }}>
+                          {formatMoney(totalTask)}
+                        </strong>
                       </td>
                       <td>
                         <span className="month-pill">{task.month}</span>
@@ -989,6 +1114,26 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                   )
                 })}
               </tbody>
+              <tfoot>
+                <tr style={{ background: '#f5f5f4', fontWeight: 'bold', borderTop: '2px solid #d4d4d4' }}>
+                  <td colSpan="4" style={{ textAlign: 'right', padding: '12px' }}>
+                    TOTALES CRONOGRAMA:
+                  </td>
+                  <td style={{ padding: '12px' }}>
+                    <strong>{formatMoney(totalLaborCost)}</strong>
+                  </td>
+                  <td style={{ padding: '12px' }}>
+                    <strong>{formatMoney(totalSocialLawsCost)}</strong>
+                  </td>
+                  <td style={{ padding: '12px' }}>
+                    <strong>{formatMoney(totalMaterialCost)}</strong>
+                  </td>
+                  <td style={{ padding: '12px', color: '#ea580c' }}>
+                    <strong>{formatMoney(totalProjectBudget)}</strong>
+                  </td>
+                  <td colSpan="4"></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </section>
@@ -1492,6 +1637,19 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                   />
                 </label>
                 <label>
+                  Leyes Sociales ($)
+                  <input
+                    type="number"
+                    min="0"
+                    value={newTask.socialLawsCost}
+                    onChange={e => setNewTask({ ...newTask, socialLawsCost: e.target.value })}
+                    placeholder={`Automático 65%: $${Math.round((newTask.peopleCount * newTask.categoryRate * (Number(newTask.workDays) || 16)) * 0.65).toLocaleString('es-UY')}`}
+                  />
+                </label>
+              </div>
+
+              <div className="form-row">
+                <label>
                   % Avance Inicial
                   <input
                     type="number"
@@ -1501,13 +1659,41 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                     onChange={e => setNewTask({ ...newTask, progressPercent: e.target.value })}
                   />
                 </label>
+                <div></div>
               </div>
 
-              <div style={{ background: '#f8f5ef', border: '1px solid #e5e5e5', borderRadius: '8px', padding: '12px', fontSize: '0.85rem' }}>
-                <span style={{ color: '#737373', display: 'block', marginBottom: '4px' }}>Cálculo estimado de Mano de Obra:</span>
-                <strong>
-                  {newTask.peopleCount} operarios × {formatMoney(newTask.categoryRate)}/día × {newTask.workDays} días = {formatMoney(newTask.peopleCount * newTask.categoryRate * newTask.workDays)}
-                </strong>
+              <div style={{ background: '#f8f5ef', border: '1px solid #e5e5e5', borderRadius: '8px', padding: '14px', fontSize: '0.85rem' }}>
+                <span style={{ color: '#737373', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>Desglose de Costos de la Tarea:</span>
+                <div style={{ display: 'grid', gap: '4px' }}>
+                  <div>
+                    <span style={{ color: '#525252' }}>• Mano de Obra: </span>
+                    <strong>{formatMoney(newTask.peopleCount * newTask.categoryRate * (Number(newTask.workDays) || 16))}</strong>
+                    <small style={{ color: '#737373', marginLeft: '6px' }}>({newTask.peopleCount} operarios × {formatMoney(newTask.categoryRate)}/d × {newTask.workDays} d)</small>
+                  </div>
+                  <div>
+                    <span style={{ color: '#525252' }}>• Leyes Sociales (BPS): </span>
+                    <strong>{formatMoney(newTask.socialLawsCost !== '' && newTask.socialLawsCost != null
+                      ? Number(newTask.socialLawsCost)
+                      : Math.round((newTask.peopleCount * newTask.categoryRate * (Number(newTask.workDays) || 16)) * 0.65))}</strong>
+                    <small style={{ color: '#737373', marginLeft: '6px' }}>{newTask.socialLawsCost !== '' && newTask.socialLawsCost != null ? '(personalizado)' : '(base 65%)'}</small>
+                  </div>
+                  <div>
+                    <span style={{ color: '#525252' }}>• Costo Materiales: </span>
+                    <strong>{formatMoney(Number(newTask.materialCost) || 0)}</strong>
+                  </div>
+                  <div style={{ marginTop: '6px', paddingTop: '6px', borderTop: '1px dashed #d4d4d4', color: '#ea580c', fontSize: '0.92rem' }}>
+                    <span>Costo Total Estimado Tarea: </span>
+                    <strong>
+                      {formatMoney(
+                        (newTask.peopleCount * newTask.categoryRate * (Number(newTask.workDays) || 16)) +
+                        (newTask.socialLawsCost !== '' && newTask.socialLawsCost != null
+                          ? Number(newTask.socialLawsCost)
+                          : Math.round((newTask.peopleCount * newTask.categoryRate * (Number(newTask.workDays) || 16)) * 0.65)) +
+                        (Number(newTask.materialCost) || 0)
+                      )}
+                    </strong>
+                  </div>
+                </div>
               </div>
 
               <div className="modal-actions">
