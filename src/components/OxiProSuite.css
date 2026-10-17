@@ -601,6 +601,7 @@
 
 .delta-badge.ahead { background: #dcfce7; color: #15803d; }
 .delta-badge.delayed { background: #fee2e2; color: #b91c1c; }
+.delta-badge.ontrack { background: #e0f2fe; color: #0369a1; }
 
 /* Status pill */
 .status-pill {

@@ -109,6 +109,7 @@ const DEFAULT_SCHEDULE = [
     socialLawsCost: 318240,
     materialCost: 750000,
     month: 'Mes 1',
+    plannedPercent: 100,
     progressPercent: 95
   },
   {
@@ -123,6 +124,7 @@ const DEFAULT_SCHEDULE = [
     socialLawsCost: 524160,
     materialCost: 1950000,
     month: 'Mes 2',
+    plannedPercent: 75,
     progressPercent: 70
   },
   {
@@ -137,6 +139,7 @@ const DEFAULT_SCHEDULE = [
     socialLawsCost: 309400,
     materialCost: 1150000,
     month: 'Mes 2',
+    plannedPercent: 35,
     progressPercent: 45
   },
   {
@@ -151,6 +154,7 @@ const DEFAULT_SCHEDULE = [
     socialLawsCost: 191100,
     materialCost: 480000,
     month: 'Mes 3',
+    plannedPercent: 20,
     progressPercent: 30
   },
   {
@@ -165,6 +169,7 @@ const DEFAULT_SCHEDULE = [
     socialLawsCost: 286000,
     materialCost: 620000,
     month: 'Mes 3',
+    plannedPercent: 10,
     progressPercent: 20
   },
   {
@@ -179,6 +184,7 @@ const DEFAULT_SCHEDULE = [
     socialLawsCost: 450840,
     materialCost: 890000,
     month: 'Mes 4',
+    plannedPercent: 0,
     progressPercent: 10
   },
   {
@@ -193,6 +199,7 @@ const DEFAULT_SCHEDULE = [
     socialLawsCost: 356720,
     materialCost: 420000,
     month: 'Mes 5',
+    plannedPercent: 0,
     progressPercent: 0
   }
 ]
@@ -302,17 +309,56 @@ function getTaskSocialLaws(task) {
   return Math.round((task?.assignedLaborCost || 0) * 0.65)
 }
 
+function getTaskPlannedPercent(task) {
+  if (task && task.plannedPercent != null && task.plannedPercent !== '' && !Number.isNaN(Number(task.plannedPercent))) {
+    return Math.min(100, Math.max(0, Number(task.plannedPercent)))
+  }
+  if (task?.startDate && task?.endDate) {
+    const start = new Date(task.startDate).getTime()
+    const end = new Date(task.endDate).getTime()
+    const now = new Date('2026-10-17').getTime()
+    if (!Number.isNaN(start) && !Number.isNaN(end) && end > start) {
+      if (now <= start) return 0
+      if (now >= end) return 100
+      return Math.round(((now - start) / (end - start)) * 100)
+    }
+  }
+  return 0
+}
+
+function getTaskBudget(task) {
+  return (task?.assignedLaborCost || 0) + getTaskSocialLaws(task) + (task?.materialCost || 0)
+}
+
+function getTaskExecutedCost(task) {
+  const budget = getTaskBudget(task)
+  const real = Math.min(100, Math.max(0, Number(task?.progressPercent) || 0))
+  return Math.round(budget * (real / 100))
+}
+
+function getTaskBalance(task) {
+  return Math.max(0, getTaskBudget(task) - getTaskExecutedCost(task))
+}
+
 function exportScheduleCsv(schedule, projectName) {
   const headers = [
     'Tarea', 'Fecha Inicio', 'Fecha Fin', 'Personas', 'Categoria Personal',
     'Tarifa Diaria ($)', 'Costo Mano de Obra ($)', 'Leyes Sociales ($)',
-    'Costo Materiales ($)', 'Costo Total Tarea ($)', 'Mes', 'Avance (%)'
+    'Costo Materiales ($)', 'Presupuesto Total Tarea ($)', 'Mes',
+    'Avance Programado (%)', 'Avance Real Certificado (%)', 'Desvio (%)',
+    'Estado Plazo', 'Costo Ejecutado ($)', 'Saldo Restante ($)'
   ]
   const rows = schedule.map(t => {
     const labor = t.assignedLaborCost || 0
     const social = getTaskSocialLaws(t)
     const material = t.materialCost || 0
     const total = labor + social + material
+    const planned = getTaskPlannedPercent(t)
+    const real = Math.min(100, Math.max(0, Number(t.progressPercent) || 0))
+    const delta = real - planned
+    const status = delta > 0 ? 'Adelantada' : delta < 0 ? 'Atrasada' : 'En plazo'
+    const executed = Math.round(total * (real / 100))
+    const balance = Math.max(0, total - executed)
     return [
       `"${(t.name || '').replace(/"/g, '""')}"`,
       t.startDate,
@@ -325,7 +371,12 @@ function exportScheduleCsv(schedule, projectName) {
       material,
       total,
       `"${t.month}"`,
-      `${t.progressPercent}%`
+      `${planned}%`,
+      `${real}%`,
+      `${delta}%`,
+      `"${status}"`,
+      executed,
+      balance
     ]
   })
   const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
@@ -476,6 +527,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     socialLawsCost: '',
     materialCost: 500000,
     month: 'Mes 1',
+    plannedPercent: 0,
     progressPercent: 0
   })
 
@@ -509,15 +561,31 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   const totalMaterialCost = useMemo(() => schedule.reduce((sum, t) => sum + (t.materialCost || 0), 0), [schedule])
   const totalProjectBudget = totalLaborCost + totalSocialLawsCost + totalMaterialCost
 
+  const totalExecutedCost = useMemo(() => {
+    return schedule.reduce((sum, t) => sum + getTaskExecutedCost(t), 0)
+  }, [schedule])
+
+  const totalBalanceCost = Math.max(0, totalProjectBudget - totalExecutedCost)
+
   const globalProgress = useMemo(() => {
     if (!schedule.length) return 0
-    const totalWeight = schedule.reduce((sum, t) => sum + ((t.assignedLaborCost || 0) + getTaskSocialLaws(t) + (t.materialCost || 0)), 0)
-    if (!totalWeight) {
-      return Math.round(schedule.reduce((sum, t) => sum + (t.progressPercent || 0), 0) / schedule.length)
+    if (!totalProjectBudget) {
+      return Math.round(schedule.reduce((sum, t) => sum + (Number(t.progressPercent) || 0), 0) / schedule.length)
     }
-    const weightedSum = schedule.reduce((sum, t) => sum + ((t.progressPercent || 0) * ((t.assignedLaborCost || 0) + getTaskSocialLaws(t) + (t.materialCost || 0))), 0)
-    return Math.round(weightedSum / totalWeight)
-  }, [schedule])
+    const weightedSum = schedule.reduce((sum, t) => sum + ((Number(t.progressPercent) || 0) * getTaskBudget(t)), 0)
+    return Math.round(weightedSum / totalProjectBudget)
+  }, [schedule, totalProjectBudget])
+
+  const plannedGlobalProgress = useMemo(() => {
+    if (!schedule.length) return 0
+    if (!totalProjectBudget) {
+      return Math.round(schedule.reduce((sum, t) => sum + getTaskPlannedPercent(t), 0) / schedule.length)
+    }
+    const weightedSum = schedule.reduce((sum, t) => sum + (getTaskPlannedPercent(t) * getTaskBudget(t)), 0)
+    return Math.round(weightedSum / totalProjectBudget)
+  }, [schedule, totalProjectBudget])
+
+  const globalDelta = globalProgress - plannedGlobalProgress
 
   // Alerts by rubro with detailed breakdown (MO + Leyes Sociales + Materiales)
   const rubroAlerts = useMemo(() => {
@@ -713,7 +781,8 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       customSocialLaws: newTask.socialLawsCost !== '' && newTask.socialLawsCost != null,
       materialCost: Number(newTask.materialCost) || 0,
       month: newTask.month,
-      progressPercent: Number(newTask.progressPercent) || 0
+      plannedPercent: Math.min(100, Math.max(0, Number(newTask.plannedPercent) || 0)),
+      progressPercent: Math.min(100, Math.max(0, Number(newTask.progressPercent) || 0))
     }
     setSchedule([...schedule, taskEntry])
     setShowAddTaskModal(false)
@@ -728,8 +797,13 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       socialLawsCost: '',
       materialCost: 500000,
       month: 'Mes 1',
+      plannedPercent: 0,
       progressPercent: 0
     })
+  }
+
+  function handleUpdateTaskPlanned(taskId, planned) {
+    setSchedule(schedule.map(t => t.id === taskId ? { ...t, plannedPercent: Math.min(100, Math.max(0, Number(planned))) } : t))
   }
 
   function handleUpdateTaskProgress(taskId, progress) {
@@ -844,12 +918,17 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       {/* ── METRICS STRIP ── */}
       <div className="oxi-pro-kpi-grid">
         <div className="oxi-pro-kpi-card highlight">
-          <span className="kpi-label">Avance Físico Global</span>
+          <span className="kpi-label">Avance Físico: Real vs. Plan</span>
           <div className="kpi-value-row">
             <strong>{globalProgress}%</strong>
-            <span className="kpi-sub">Ponderado por recursos</span>
+            <span className="kpi-sub" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>Plan: <strong>{plannedGlobalProgress}%</strong></span>
+              <span className={`delta-badge ${globalDelta > 0 ? 'ahead' : globalDelta < 0 ? 'delayed' : 'ontrack'}`}>
+                {globalDelta > 0 ? `+${globalDelta}%` : `${globalDelta}%`}
+              </span>
+            </span>
           </div>
-          <div className="kpi-progress-bar">
+          <div className="kpi-progress-bar" title={`Avance Real: ${globalProgress}% | Avance Programado: ${plannedGlobalProgress}%`}>
             <div className="kpi-progress-fill" style={{ width: `${globalProgress}%` }} />
           </div>
         </div>
@@ -872,12 +951,18 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
           <span className="kpi-sub">{schedule.length} partidas presupuestarias</span>
         </div>
 
+        <div className="oxi-pro-kpi-card">
+          <span className="kpi-label">Costo Ejecutado / Devengado</span>
+          <strong style={{ color: '#ea580c' }}>{formatMoney(totalExecutedCost)}</strong>
+          <span className="kpi-sub">de {formatMoney(totalProjectBudget)} (Saldo: {formatMoney(totalBalanceCost)})</span>
+        </div>
+
         <div className={`oxi-pro-kpi-card ${criticalAlertsCount > 0 ? 'alert' : ''}`}>
           <span className="kpi-label">Alertas de Sobrecosto</span>
           <strong style={{ color: criticalAlertsCount > 0 ? '#ef4444' : '#10b981' }}>
             {criticalAlertsCount > 0 ? `${criticalAlertsCount} Rubros excedidos` : '0 desvíos críticos'}
           </strong>
-          <span className="kpi-sub">Presupuesto total: {formatMoney(totalProjectBudget)}</span>
+          <span className="kpi-sub">Saldo por ejecutar: {formatMoney(totalBalanceCost)}</span>
         </div>
       </div>
 
@@ -1041,9 +1126,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
           <div className="section-toolbar">
             <div>
               <h3>Cronograma de Obra & Asignación de Recursos</h3>
-              <p>Modificá los avances en tiempo real, asigná operarios por categoría y costos de materiales.</p>
+              <p>Control de avance físico (Programado vs. Real Certificado) y costo ejecutado con devengamiento en tiempo real.</p>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 className="oxi-btn-back-classic"
@@ -1058,37 +1143,83 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
             </div>
           </div>
 
+          {/* Quick executive summary bar */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '12px',
+            background: '#fafafa',
+            border: '1px solid #e5e5e5',
+            borderRadius: '10px',
+            padding: '14px 18px',
+            marginBottom: '1.25rem'
+          }}>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: '#737373', textTransform: 'uppercase', fontWeight: 'bold' }}>Avance Programado (Plan)</span>
+              <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0369a1' }}>{plannedGlobalProgress}%</div>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: '#737373', textTransform: 'uppercase', fontWeight: 'bold' }}>Avance Real Certificado</span>
+              <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#15803d' }}>{globalProgress}%</div>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: '#737373', textTransform: 'uppercase', fontWeight: 'bold' }}>Desvío de Plazo</span>
+              <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>
+                <span className={`delta-badge ${globalDelta > 0 ? 'ahead' : globalDelta < 0 ? 'delayed' : 'ontrack'}`} style={{ fontSize: '0.85rem' }}>
+                  {globalDelta > 0 ? `+${globalDelta}% Adelantado` : globalDelta < 0 ? `${globalDelta}% Atrasado` : '0% En Plazo'}
+                </span>
+              </div>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: '#737373', textTransform: 'uppercase', fontWeight: 'bold' }}>Costo Total Ejecutado</span>
+              <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#ea580c' }}>{formatMoney(totalExecutedCost)}</div>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: '#737373', textTransform: 'uppercase', fontWeight: 'bold' }}>Saldo por Devengar</span>
+              <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#262626' }}>{formatMoney(totalBalanceCost)}</div>
+            </div>
+          </div>
+
           <div className="table-responsive">
             <table className="oxi-pro-table schedule-table">
               <thead>
                 <tr>
-                  <th>Tarea de Obra</th>
-                  <th>Plazo (Inicio - Fin)</th>
+                  <th style={{ minWidth: '180px' }}>Tarea de Obra</th>
+                  <th style={{ minWidth: '130px' }}>Plazo (Inicio - Fin)</th>
                   <th>Personal</th>
                   <th>Categoría & Tarifa</th>
                   <th>Costo Mano Obra</th>
                   <th>Leyes Sociales (BPS)</th>
                   <th>Costo Materiales</th>
-                  <th>Costo Total Tarea</th>
-                  <th>Mes Asignado</th>
-                  <th style={{ minWidth: '180px' }}>% Avance de Obra</th>
-                  <th>Estado</th>
+                  <th>Presupuesto Tarea</th>
+                  <th style={{ minWidth: '130px' }}>% Programado</th>
+                  <th style={{ minWidth: '130px' }}>% Real Certificado</th>
+                  <th>Desvío / Plazo</th>
+                  <th style={{ minWidth: '140px' }}>Costo Ejecutado ($)</th>
                   <th>Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {schedule.map(task => {
-                  const isDone = task.progressPercent === 100
-                  const isProgress = task.progressPercent > 0 && task.progressPercent < 100
+                  const planned = getTaskPlannedPercent(task)
+                  const real = Math.min(100, Math.max(0, Number(task.progressPercent) || 0))
+                  const delta = real - planned
+                  const isDone = real === 100
+                  const isProgress = real > 0 && real < 100
                   const labor = task.assignedLaborCost || 0
                   const social = getTaskSocialLaws(task)
                   const material = task.materialCost || 0
                   const totalTask = labor + social + material
+                  const taskExecuted = Math.round(totalTask * (real / 100))
+                  const taskBalance = Math.max(0, totalTask - taskExecuted)
 
                   return (
                     <tr key={task.id}>
                       <td>
                         <strong>{task.name}</strong>
+                        <div>
+                          <span className="month-pill" style={{ marginTop: '4px', display: 'inline-block' }}>{task.month}</span>
+                        </div>
                       </td>
                       <td>
                         <small>{task.startDate} al {task.endDate}</small>
@@ -1180,36 +1311,71 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                         </div>
                       </td>
                       <td>
-                        <strong style={{ color: '#ea580c', fontSize: '0.92rem' }}>
+                        <strong style={{ color: '#262626', fontSize: '0.92rem' }}>
                           {formatMoney(totalTask)}
                         </strong>
                       </td>
                       <td>
-                        <span className="month-pill">{task.month}</span>
-                      </td>
-                      <td>
                         <div className="progress-control">
-                          <div className="progress-bar-wrap">
+                          <div className="progress-bar-wrap" style={{ background: '#e0f2fe', width: '55px' }}>
                             <div
-                              className={`progress-fill ${isDone ? 'done' : ''}`}
-                              style={{ width: `${task.progressPercent}%` }}
+                              className="progress-fill"
+                              style={{ width: `${planned}%`, background: '#0284c7' }}
                             />
                           </div>
                           <input
                             type="number"
                             min="0"
                             max="100"
-                            value={task.progressPercent}
-                            onChange={(e) => handleUpdateTaskProgress(task.id, e.target.value)}
+                            value={planned}
+                            onChange={(e) => handleUpdateTaskPlanned(task.id, e.target.value)}
                             className="progress-input"
+                            title="Modificar % Avance Programado (Plan)"
+                            style={{ borderColor: '#bae6fd', color: '#0369a1', width: '45px' }}
                           />
                           <span className="unit-label">%</span>
                         </div>
                       </td>
                       <td>
-                        <span className={`task-status-pill ${isDone ? 'done' : isProgress ? 'progress' : 'pending'}`}>
-                          {isDone ? '✓ Terminado' : isProgress ? '⚡ En curso' : '⏳ Pendiente'}
-                        </span>
+                        <div className="progress-control">
+                          <div className="progress-bar-wrap" style={{ width: '55px' }}>
+                            <div
+                              className={`progress-fill ${isDone ? 'done' : ''}`}
+                              style={{ width: `${real}%` }}
+                            />
+                          </div>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={real}
+                            onChange={(e) => handleUpdateTaskProgress(task.id, e.target.value)}
+                            className="progress-input"
+                            title="Modificar % Avance Real Físico Certificado"
+                            style={{ width: '45px' }}
+                          />
+                          <span className="unit-label">%</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span className={`delta-badge ${delta > 0 ? 'ahead' : delta < 0 ? 'delayed' : 'ontrack'}`} style={{ whiteSpace: 'nowrap' }}>
+                            {delta > 0 ? `+${delta}% Adelantada` : delta < 0 ? `${delta}% Atrasada` : '0% En plazo'}
+                          </span>
+                          <span className={`task-status-pill ${isDone ? 'done' : isProgress ? 'progress' : 'pending'}`} style={{ fontSize: '0.72rem' }}>
+                            {isDone ? '✓ Terminado' : isProgress ? '⚡ En curso' : '⏳ Pendiente'}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <strong style={{ color: '#ea580c', fontSize: '0.92rem' }}>
+                            {formatMoney(taskExecuted)}
+                          </strong>
+                          <small style={{ color: '#737373', fontSize: '0.75rem' }}>
+                            Saldo: {formatMoney(taskBalance)}
+                          </small>
+                        </div>
                       </td>
                       <td>
                         <button
@@ -1229,19 +1395,30 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                   <td colSpan="4" style={{ textAlign: 'right', padding: '12px' }}>
                     TOTALES CRONOGRAMA:
                   </td>
-                  <td style={{ padding: '12px' }}>
-                    <strong>{formatMoney(totalLaborCost)}</strong>
+                  <td style={{ padding: '12px' }}>{formatMoney(totalLaborCost)}</td>
+                  <td style={{ padding: '12px' }}>{formatMoney(totalSocialLawsCost)}</td>
+                  <td style={{ padding: '12px' }}>{formatMoney(totalMaterialCost)}</td>
+                  <td style={{ padding: '12px', color: '#262626' }}>{formatMoney(totalProjectBudget)}</td>
+                  <td style={{ padding: '12px', color: '#0369a1' }}>
+                    <div>{plannedGlobalProgress}%</div>
+                    <small style={{ color: '#737373', fontWeight: 'normal', fontSize: '0.75rem' }}>prom. plan</small>
+                  </td>
+                  <td style={{ padding: '12px', color: '#15803d' }}>
+                    <div>{globalProgress}%</div>
+                    <small style={{ color: '#737373', fontWeight: 'normal', fontSize: '0.75rem' }}>prom. real</small>
                   </td>
                   <td style={{ padding: '12px' }}>
-                    <strong>{formatMoney(totalSocialLawsCost)}</strong>
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <strong>{formatMoney(totalMaterialCost)}</strong>
+                    <span className={`delta-badge ${globalDelta > 0 ? 'ahead' : globalDelta < 0 ? 'delayed' : 'ontrack'}`}>
+                      {globalDelta > 0 ? `+${globalDelta}%` : `${globalDelta}%`}
+                    </span>
                   </td>
                   <td style={{ padding: '12px', color: '#ea580c' }}>
-                    <strong>{formatMoney(totalProjectBudget)}</strong>
+                    <div>{formatMoney(totalExecutedCost)}</div>
+                    <small style={{ color: '#737373', fontWeight: 'normal', fontSize: '0.75rem', display: 'block' }}>
+                      Saldo: {formatMoney(totalBalanceCost)}
+                    </small>
                   </td>
-                  <td colSpan="4"></td>
+                  <td></td>
                 </tr>
               </tfoot>
             </table>
@@ -1819,7 +1996,17 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
               <div className="form-row">
                 <label>
-                  % Avance Inicial
+                  % Avance Programado (Plan Inicial)
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={newTask.plannedPercent}
+                    onChange={e => setNewTask({ ...newTask, plannedPercent: e.target.value })}
+                  />
+                </label>
+                <label>
+                  % Avance Real Inicial (Certificado)
                   <input
                     type="number"
                     min="0"
@@ -1828,7 +2015,6 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                     onChange={e => setNewTask({ ...newTask, progressPercent: e.target.value })}
                   />
                 </label>
-                <div></div>
               </div>
 
               <div style={{ background: '#f8f5ef', border: '1px solid #e5e5e5', borderRadius: '8px', padding: '14px', fontSize: '0.85rem' }}>
@@ -1851,7 +2037,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                     <strong>{formatMoney(Number(newTask.materialCost) || 0)}</strong>
                   </div>
                   <div style={{ marginTop: '6px', paddingTop: '6px', borderTop: '1px dashed #d4d4d4', color: '#ea580c', fontSize: '0.92rem' }}>
-                    <span>Costo Total Estimado Tarea: </span>
+                    <span>Presupuesto Total Estimado Tarea: </span>
                     <strong>
                       {formatMoney(
                         (newTask.peopleCount * newTask.categoryRate * (Number(newTask.workDays) || 16)) +
@@ -1862,6 +2048,23 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                       )}
                     </strong>
                   </div>
+                  {Number(newTask.progressPercent) > 0 && (
+                    <div style={{ color: '#15803d', fontSize: '0.85rem', marginTop: '3px' }}>
+                      <span>Costo Ejecutado Inicial ({newTask.progressPercent}%): </span>
+                      <strong>
+                        {formatMoney(
+                          Math.round(
+                            ((newTask.peopleCount * newTask.categoryRate * (Number(newTask.workDays) || 16)) +
+                            (newTask.socialLawsCost !== '' && newTask.socialLawsCost != null
+                              ? Number(newTask.socialLawsCost)
+                              : Math.round((newTask.peopleCount * newTask.categoryRate * (Number(newTask.workDays) || 16)) * 0.65)) +
+                            (Number(newTask.materialCost) || 0)) *
+                            (Math.min(100, Math.max(0, Number(newTask.progressPercent))) / 100)
+                          )
+                        )}
+                      </strong>
+                    </div>
+                  )}
                 </div>
               </div>
 

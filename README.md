@@ -194,8 +194,8 @@ Esta es la lista ordenada de tareas accionables para completar la transición a 
 - [x] Trazabilidad y visibilidad bidireccional entre la administración de Óxida y los talleres fabricantes.
 
 #### 9. Hoja de Ruta Inmediata (Ingeniería & Control de Obra OxI Pro)
-- [ ] **Paso 1 — Leyes Sociales por Rubro (Pestaña 4):** Desglose paramétrico por rubro/especialidad de Mano de Obra, Leyes Sociales (BPS ~65%), Materiales/Subcontratos, Presupuesto Total y Ejecutado a la fecha con exportación CSV enriquecida. *(En desarrollo)*
-- [ ] **Paso 2 — Avance Programado vs. Avance Real y Costo Ejecutado:** Cálculo automático del % previsto contractual por fechas transcurridas vs. % real in situ certificado, desvío físico ($\Delta$) y devengamiento económico ($).
+- [x] **Paso 1 — Leyes Sociales por Rubro (Pestaña 4):** Desglose paramétrico por rubro/especialidad de Mano de Obra, Leyes Sociales (BPS ~65%), Materiales/Subcontratos, Presupuesto Total y Saldo Disponible con edición en tabla y modal, consolidado de totales en pie y exportación CSV enriquecida.
+- [x] **Paso 2 — Avance Programado vs. Avance Real y Costo Ejecutado:** Comparativa de % previsto contractual (Plan) vs. % real certificado por tarea con inputs editables, badges visuales de desvío de plazo (adelantada / en plazo / atrasada), cálculo automático de devengamiento económico ($ Ejecutado vs. Presupuestado y Saldo restante), barra ejecutiva de resumen, tarjeta KPI superior de avance físico dual y exportación CSV con todas las métricas.
 - [ ] **Paso 3 — Desplazamiento Automático por Lluvia o Demoras (Cascada):** Acción rápida para registrar jornadas de lluvia o demoras imprevistas con propagación automática de fechas a tareas activas y futuras, preservando duraciones y generando bitácora técnica de obra.
 - [ ] **Paso 4 — Vista Diagrama de Gantt Interactivo:** Conmutador de vista `[📋 Vista Detalle & Costos]` y `[📊 Vista Diagrama de Gantt]` con barras de progreso relativo, escala mensual/semanal y línea vertical de "Hoy".
 
