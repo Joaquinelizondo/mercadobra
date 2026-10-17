@@ -219,14 +219,43 @@ const DEFAULT_WEEKLY_PROGRESS = [
 ]
 
 const DEFAULT_RUBROS = [
-  { id: 'fundaciones', name: 'Movimiento de Suelos & Fundaciones', budgeted: 1250000, executed: 1240000 },
-  { id: 'estructura', name: 'Estructura de Hormigón Armado', budgeted: 2800000, executed: 2750000 },
-  { id: 'herreria', name: 'Herrería de Obra & Estructuras (Óxida)', budgeted: 1600000, executed: 1840000 },
-  { id: 'madera', name: 'Carpintería en Madera & Encofrados', budgeted: 800000, executed: 775000 },
-  { id: 'albanileria', name: 'Albañilería y Mampostería', budgeted: 1100000, executed: 1060000 },
-  { id: 'instalaciones', name: 'Instalaciones (Eléctrica, Sanitaria, HVAC)', budgeted: 1550000, executed: 1585000 },
-  { id: 'terminaciones', name: 'Terminaciones, Revestimientos y Pintura', budgeted: 950000, executed: 420000 }
+  { id: 'fundaciones', name: 'Movimiento de Suelos & Fundaciones', laborCost: 400000, socialLawsCost: 260000, materialCost: 590000, budgeted: 1250000, executed: 1240000 },
+  { id: 'estructura', name: 'Estructura de Hormigón Armado', laborCost: 900000, socialLawsCost: 585000, materialCost: 1315000, budgeted: 2800000, executed: 2750000 },
+  { id: 'herreria', name: 'Herrería de Obra & Estructuras (Óxida)', laborCost: 500000, socialLawsCost: 325000, materialCost: 775000, budgeted: 1600000, executed: 1840000 },
+  { id: 'madera', name: 'Carpintería en Madera & Encofrados', laborCost: 280000, socialLawsCost: 182000, materialCost: 338000, budgeted: 800000, executed: 775000 },
+  { id: 'albanileria', name: 'Albañilería y Mampostería', laborCost: 450000, socialLawsCost: 292500, materialCost: 357500, budgeted: 1100000, executed: 1060000 },
+  { id: 'instalaciones', name: 'Instalaciones (Eléctrica, Sanitaria, HVAC)', laborCost: 550000, socialLawsCost: 357500, materialCost: 642500, budgeted: 1550000, executed: 1585000 },
+  { id: 'terminaciones', name: 'Terminaciones, Revestimientos y Pintura', laborCost: 350000, socialLawsCost: 227500, materialCost: 372500, budgeted: 950000, executed: 420000 }
 ]
+
+function getRubroLaborCost(rubro) {
+  if (rubro && rubro.laborCost != null && rubro.laborCost !== '' && !Number.isNaN(Number(rubro.laborCost))) {
+    return Number(rubro.laborCost)
+  }
+  return Math.round((Number(rubro?.budgeted) || 0) * 0.35)
+}
+
+function getRubroSocialLaws(rubro) {
+  if (rubro && rubro.socialLawsCost != null && rubro.socialLawsCost !== '' && !Number.isNaN(Number(rubro.socialLawsCost))) {
+    return Number(rubro.socialLawsCost)
+  }
+  return Math.round(getRubroLaborCost(rubro) * 0.65)
+}
+
+function getRubroMaterialCost(rubro) {
+  if (rubro && rubro.materialCost != null && rubro.materialCost !== '' && !Number.isNaN(Number(rubro.materialCost))) {
+    return Number(rubro.materialCost)
+  }
+  const rem = (Number(rubro?.budgeted) || 0) - getRubroLaborCost(rubro) - getRubroSocialLaws(rubro)
+  return Math.max(0, rem)
+}
+
+function getRubroTotalBudget(rubro) {
+  if (rubro && (rubro.laborCost != null || rubro.socialLawsCost != null || rubro.materialCost != null)) {
+    return getRubroLaborCost(rubro) + getRubroSocialLaws(rubro) + getRubroMaterialCost(rubro)
+  }
+  return Number(rubro?.budgeted) || 0
+}
 
 function formatMoney(amount) {
   return new Intl.NumberFormat('es-UY', { style: 'currency', currency: 'UYU', maximumFractionDigits: 0 }).format(amount)
@@ -312,15 +341,26 @@ function exportScheduleCsv(schedule, projectName) {
 }
 
 function exportRubrosCsv(rubros, projectName) {
-  const headers = ['Rubro de Obra', 'Presupuesto Base ($)', 'Ejecutado a la Fecha ($)', 'Saldo ($)', 'Porcentaje Consumido (%)', 'Estado']
+  const headers = [
+    'Rubro de Obra', 'Mano de Obra ($)', 'Leyes Sociales ($)', 'Materiales / Subcontratos ($)',
+    'Presupuesto Total ($)', 'Ejecutado a la Fecha ($)', 'Saldo Disponible ($)', 'Porcentaje Consumido (%)', 'Estado'
+  ]
   const rows = rubros.map(r => {
-    const diff = r.budgeted - r.executed
-    const percent = Math.round((r.executed / (r.budgeted || 1)) * 100)
+    const labor = getRubroLaborCost(r)
+    const social = getRubroSocialLaws(r)
+    const material = getRubroMaterialCost(r)
+    const totalBudget = getRubroTotalBudget(r)
+    const executed = Number(r.executed) || 0
+    const diff = totalBudget - executed
+    const percent = Math.round((executed / (totalBudget || 1)) * 100)
     const status = percent > 100 ? 'SOBRECOSTO CRITICO' : percent >= 85 ? 'LIMITE PROXIMO' : 'NORMAL'
     return [
       `"${(r.name || '').replace(/"/g, '""')}"`,
-      r.budgeted,
-      r.executed,
+      labor,
+      social,
+      material,
+      totalBudget,
+      executed,
       diff,
       `${percent}%`,
       status
@@ -441,7 +481,14 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
   // Rubro modal
   const [showAddRubroModal, setShowAddRubroModal] = useState(false)
-  const [newRubro, setNewRubro] = useState({ name: '', budgeted: 500000, executed: 0 })
+  const [newRubro, setNewRubro] = useState({
+    name: '',
+    laborCost: 200000,
+    socialLawsCost: 130000,
+    materialCost: 170000,
+    executed: 0,
+    customSocial: false
+  })
 
   // Auto-save
   useEffect(() => {
@@ -472,17 +519,42 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     return Math.round(weightedSum / totalWeight)
   }, [schedule])
 
-  // Alerts by rubro
+  // Alerts by rubro with detailed breakdown (MO + Leyes Sociales + Materiales)
   const rubroAlerts = useMemo(() => {
     return rubros.map(r => {
-      const diff = r.executed - r.budgeted
-      const percent = Math.round((r.executed / (r.budgeted || 1)) * 100)
+      const labor = getRubroLaborCost(r)
+      const social = getRubroSocialLaws(r)
+      const material = getRubroMaterialCost(r)
+      const totalBudget = getRubroTotalBudget(r)
+      const executed = Number(r.executed) || 0
+      const diff = executed - totalBudget
+      const percent = Math.round((executed / (totalBudget || 1)) * 100)
       let status = 'normal'
       if (percent > 100) status = 'critical'
       else if (percent >= 85) status = 'warning'
-      return { ...r, diff, percent, status }
+      return {
+        ...r,
+        laborCost: labor,
+        socialLawsCost: social,
+        materialCost: material,
+        budgeted: totalBudget,
+        executed,
+        diff,
+        percent,
+        status
+      }
     })
   }, [rubros])
+
+  const rubroTotals = useMemo(() => {
+    const labor = rubroAlerts.reduce((acc, r) => acc + (r.laborCost || 0), 0)
+    const social = rubroAlerts.reduce((acc, r) => acc + (r.socialLawsCost || 0), 0)
+    const material = rubroAlerts.reduce((acc, r) => acc + (r.materialCost || 0), 0)
+    const budgeted = rubroAlerts.reduce((acc, r) => acc + (r.budgeted || 0), 0)
+    const executed = rubroAlerts.reduce((acc, r) => acc + (r.executed || 0), 0)
+    const saldo = budgeted - executed
+    return { labor, social, material, budgeted, executed, saldo }
+  }, [rubroAlerts])
 
   const criticalAlertsCount = rubroAlerts.filter(a => a.status === 'critical').length
 
@@ -672,21 +744,59 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
   // Handlers for Rubros
   function handleUpdateRubro(id, field, value) {
-    setRubros(rubros.map(r => r.id === id ? { ...r, [field]: Number(value) || 0 } : r))
+    const num = Number(value) || 0
+    setRubros(rubros.map(r => {
+      if (r.id !== id) return r
+      const updated = { ...r, [field]: num }
+      if (field === 'laborCost') {
+        const soc = r.customSocialLaws ? getRubroSocialLaws(r) : Math.round(num * 0.65)
+        const mat = getRubroMaterialCost(r)
+        return { ...updated, laborCost: num, socialLawsCost: soc, materialCost: mat, budgeted: num + soc + mat }
+      }
+      if (field === 'socialLawsCost') {
+        const labor = getRubroLaborCost(r)
+        const mat = getRubroMaterialCost(r)
+        return { ...updated, socialLawsCost: num, customSocialLaws: true, budgeted: labor + num + mat }
+      }
+      if (field === 'materialCost') {
+        const labor = getRubroLaborCost(r)
+        const soc = getRubroSocialLaws(r)
+        return { ...updated, materialCost: num, budgeted: labor + soc + num }
+      }
+      return updated
+    }))
   }
 
   function handleAddRubro(e) {
     e.preventDefault()
     if (!newRubro.name) return
+    const labor = Number(newRubro.laborCost) || 0
+    const social = newRubro.socialLawsCost !== '' && newRubro.socialLawsCost != null
+      ? Number(newRubro.socialLawsCost)
+      : Math.round(labor * 0.65)
+    const material = Number(newRubro.materialCost) || 0
+    const totalBudget = labor + social + material
+
     const entry = {
       id: `rubro_${Date.now()}`,
       name: newRubro.name,
-      budgeted: Number(newRubro.budgeted) || 0,
+      laborCost: labor,
+      socialLawsCost: social,
+      customSocialLaws: newRubro.customSocial,
+      materialCost: material,
+      budgeted: totalBudget,
       executed: Number(newRubro.executed) || 0
     }
     setRubros([...rubros, entry])
     setShowAddRubroModal(false)
-    setNewRubro({ name: '', budgeted: 500000, executed: 0 })
+    setNewRubro({
+      name: '',
+      laborCost: 200000,
+      socialLawsCost: 130000,
+      materialCost: 170000,
+      executed: 0,
+      customSocial: false
+    })
   }
 
   function handleDeleteRubro(rubroId) {
@@ -1286,7 +1396,10 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
               <thead>
                 <tr>
                   <th>Rubro de Obra</th>
-                  <th>Presupuesto Base ($)</th>
+                  <th>Mano de Obra ($)</th>
+                  <th>Leyes Sociales (BPS)</th>
+                  <th>Materiales / Subcontrato ($)</th>
+                  <th>Presupuesto Total ($)</th>
                   <th>Ejecutado a la Fecha ($)</th>
                   <th>Saldo Disponible ($)</th>
                   <th>% Consumido</th>
@@ -1296,33 +1409,75 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
               </thead>
               <tbody>
                 {rubroAlerts.map(rubro => {
+                  const saldo = rubro.budgeted - rubro.executed
                   return (
                     <tr key={rubro.id} className={`rubro-row-${rubro.status}`}>
                       <td>
                         <strong>{rubro.name}</strong>
                       </td>
                       <td>
-                        <input
-                          type="number"
-                          className="table-input"
-                          value={rubro.budgeted}
-                          onChange={(e) => handleUpdateRubro(rubro.id, 'budgeted', e.target.value)}
-                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={rubro.laborCost}
+                            onChange={(e) => handleUpdateRubro(rubro.id, 'laborCost', e.target.value)}
+                            title="Modificar Mano de Obra"
+                            style={{ width: '95px', fontWeight: 'bold' }}
+                          />
+                          <small style={{ color: '#737373' }}>{formatMoney(rubro.laborCost)}</small>
+                        </div>
                       </td>
                       <td>
-                        <input
-                          type="number"
-                          className="table-input"
-                          value={rubro.executed}
-                          onChange={(e) => handleUpdateRubro(rubro.id, 'executed', e.target.value)}
-                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={rubro.socialLawsCost}
+                            onChange={(e) => handleUpdateRubro(rubro.id, 'socialLawsCost', e.target.value)}
+                            title="Modificar Leyes Sociales (BPS)"
+                            style={{ width: '95px', fontWeight: 'bold' }}
+                          />
+                          <small style={{ color: '#737373' }}>{formatMoney(rubro.socialLawsCost)}</small>
+                        </div>
                       </td>
-                      <td style={{ color: rubro.diff > 0 ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
-                        {formatMoney(rubro.budgeted - rubro.executed)}
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={rubro.materialCost}
+                            onChange={(e) => handleUpdateRubro(rubro.id, 'materialCost', e.target.value)}
+                            title="Modificar Materiales / Subcontrato"
+                            style={{ width: '95px', fontWeight: 'bold' }}
+                          />
+                          <small style={{ color: '#737373' }}>{formatMoney(rubro.materialCost)}</small>
+                        </div>
+                      </td>
+                      <td>
+                        <strong style={{ color: '#262626', fontSize: '0.92rem' }}>
+                          {formatMoney(rubro.budgeted)}
+                        </strong>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <input
+                            type="number"
+                            className="table-input"
+                            value={rubro.executed}
+                            onChange={(e) => handleUpdateRubro(rubro.id, 'executed', e.target.value)}
+                            title="Modificar Ejecutado a la Fecha"
+                            style={{ width: '95px', fontWeight: 'bold' }}
+                          />
+                          <small style={{ color: '#737373' }}>{formatMoney(rubro.executed)}</small>
+                        </div>
+                      </td>
+                      <td style={{ color: saldo < 0 ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
+                        {formatMoney(saldo)}
                       </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div className="progress-bar-wrap" style={{ width: '80px' }}>
+                          <div className="progress-bar-wrap" style={{ width: '70px' }}>
                             <div
                               className={`progress-fill ${rubro.status === 'critical' ? 'danger' : rubro.status === 'warning' ? 'warn' : ''}`}
                               style={{ width: `${Math.min(100, rubro.percent)}%` }}
@@ -1362,6 +1517,20 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                   )
                 })}
               </tbody>
+              <tfoot>
+                <tr style={{ background: '#f5f5f4', fontWeight: 'bold', borderTop: '2px solid #d4d4d4' }}>
+                  <td style={{ textAlign: 'right', padding: '12px' }}>TOTALES DE OBRA:</td>
+                  <td style={{ padding: '12px' }}>{formatMoney(rubroTotals.labor)}</td>
+                  <td style={{ padding: '12px' }}>{formatMoney(rubroTotals.social)}</td>
+                  <td style={{ padding: '12px' }}>{formatMoney(rubroTotals.material)}</td>
+                  <td style={{ padding: '12px', color: '#ea580c' }}>{formatMoney(rubroTotals.budgeted)}</td>
+                  <td style={{ padding: '12px' }}>{formatMoney(rubroTotals.executed)}</td>
+                  <td style={{ padding: '12px', color: rubroTotals.saldo < 0 ? '#ef4444' : '#10b981' }}>
+                    {formatMoney(rubroTotals.saldo)}
+                  </td>
+                  <td colSpan="3"></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </section>
@@ -1729,13 +1898,38 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
               <div className="form-row">
                 <label>
-                  Presupuesto Base Autorizado ($)
+                  Mano de Obra Estimada ($)
                   <input
                     type="number"
                     min="0"
-                    required
-                    value={newRubro.budgeted}
-                    onChange={e => setNewRubro({ ...newRubro, budgeted: e.target.value })}
+                    value={newRubro.laborCost}
+                    onChange={e => {
+                      const val = Number(e.target.value) || 0
+                      const soc = newRubro.customSocial ? newRubro.socialLawsCost : Math.round(val * 0.65)
+                      setNewRubro({ ...newRubro, laborCost: e.target.value, socialLawsCost: soc })
+                    }}
+                  />
+                </label>
+                <label>
+                  Leyes Sociales ($)
+                  <input
+                    type="number"
+                    min="0"
+                    value={newRubro.socialLawsCost}
+                    onChange={e => setNewRubro({ ...newRubro, socialLawsCost: e.target.value, customSocial: true })}
+                    placeholder="Base 65% BPS"
+                  />
+                </label>
+              </div>
+
+              <div className="form-row">
+                <label>
+                  Materiales / Subcontrato ($)
+                  <input
+                    type="number"
+                    min="0"
+                    value={newRubro.materialCost}
+                    onChange={e => setNewRubro({ ...newRubro, materialCost: e.target.value })}
                   />
                 </label>
                 <label>
@@ -1747,6 +1941,22 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                     onChange={e => setNewRubro({ ...newRubro, executed: e.target.value })}
                   />
                 </label>
+              </div>
+
+              <div style={{ background: '#f8f5ef', border: '1px solid #e5e5e5', borderRadius: '8px', padding: '12px', fontSize: '0.85rem' }}>
+                <span style={{ color: '#737373', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Presupuesto Total Autorizado del Rubro:</span>
+                <strong style={{ color: '#ea580c', fontSize: '1.05rem' }}>
+                  {formatMoney(
+                    (Number(newRubro.laborCost) || 0) +
+                    (newRubro.socialLawsCost !== '' && newRubro.socialLawsCost != null
+                      ? Number(newRubro.socialLawsCost)
+                      : Math.round((Number(newRubro.laborCost) || 0) * 0.65)) +
+                    (Number(newRubro.materialCost) || 0)
+                  )}
+                </strong>
+                <small style={{ color: '#737373', display: 'block', marginTop: '3px' }}>
+                  (MO: {formatMoney(Number(newRubro.laborCost) || 0)} + Leyes Sociales: {formatMoney(newRubro.socialLawsCost !== '' && newRubro.socialLawsCost != null ? Number(newRubro.socialLawsCost) : Math.round((Number(newRubro.laborCost) || 0) * 0.65))} + Materiales: {formatMoney(Number(newRubro.materialCost) || 0)})
+                </small>
               </div>
 
               <div className="modal-actions">
