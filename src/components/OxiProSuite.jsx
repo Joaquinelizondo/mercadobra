@@ -302,6 +302,20 @@ function downloadFile(doc) {
   }
 }
 
+function addDays(dateStr, days) {
+  if (!dateStr) return dateStr
+  const parts = String(dateStr).split('-').map(Number)
+  if (parts.length !== 3 || Number.isNaN(parts[0]) || Number.isNaN(parts[1]) || Number.isNaN(parts[2])) {
+    return dateStr
+  }
+  const d = new Date(parts[0], parts[1] - 1, parts[2])
+  d.setDate(d.getDate() + Number(days))
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 function getTaskSocialLaws(task) {
   if (task && task.socialLawsCost != null && task.socialLawsCost !== '' && !Number.isNaN(Number(task.socialLawsCost))) {
     return Number(task.socialLawsCost)
@@ -499,6 +513,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
       const savedRubros = localStorage.getItem(`${storageKey}_rubros`)
       setRubros(savedRubros ? JSON.parse(savedRubros) : DEFAULT_RUBROS)
+
+      const savedRainLogs = localStorage.getItem(`${storageKey}_rainLogs`)
+      setRainLogs(savedRainLogs ? JSON.parse(savedRainLogs) : [])
     } catch (e) {
       console.warn('Error reloading project state', e)
     }
@@ -531,6 +548,24 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     progressPercent: 0
   })
 
+  // Rain delay modal & logs
+  const [showRainModal, setShowRainModal] = useState(false)
+  const [rainLogs, setRainLogs] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`${storageKey}_rainLogs`)
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
+  const [rainForm, setRainForm] = useState({
+    date: '2026-10-18',
+    days: 2,
+    reason: 'Lluvias y precipitaciones copiosas',
+    recordDocument: true,
+    notes: 'Suspensión de hormigonado y tareas exteriores por temporal con anegamiento.'
+  })
+
   // Rubro modal
   const [showAddRubroModal, setShowAddRubroModal] = useState(false)
   const [newRubro, setNewRubro] = useState({
@@ -550,10 +585,45 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       localStorage.setItem(`${storageKey}_monthly`, JSON.stringify(monthlyComp))
       localStorage.setItem(`${storageKey}_weekly`, JSON.stringify(weeklyProgress))
       localStorage.setItem(`${storageKey}_rubros`, JSON.stringify(rubros))
+      localStorage.setItem(`${storageKey}_rainLogs`, JSON.stringify(rainLogs))
     } catch (e) {
       console.warn('Error saving Oxi Pro state', e)
     }
-  }, [documents, schedule, monthlyComp, weeklyProgress, rubros, storageKey])
+  }, [documents, schedule, monthlyComp, weeklyProgress, rubros, rainLogs, storageKey])
+
+  // Rain calculations
+  const totalRainDays = useMemo(() => {
+    return rainLogs.reduce((sum, log) => sum + (Number(log.days) || 0), 0)
+  }, [rainLogs])
+
+  const previewShiftedTasks = useMemo(() => {
+    if (!showRainModal) return []
+    const delayDays = Math.max(1, Number(rainForm.days) || 1)
+    const eventDate = rainForm.date
+    if (!eventDate) return []
+
+    return schedule
+      .filter(t => (t.progressPercent || 0) < 100 && t.endDate >= eventDate)
+      .map(t => {
+        let newStart = t.startDate
+        let newEnd = t.endDate
+        if (t.startDate <= eventDate && t.endDate >= eventDate) {
+          newEnd = addDays(t.endDate, delayDays)
+        } else if (t.startDate > eventDate) {
+          newStart = addDays(t.startDate, delayDays)
+          newEnd = addDays(t.endDate, delayDays)
+        }
+        return {
+          id: t.id,
+          name: t.name,
+          oldStart: t.startDate,
+          oldEnd: t.endDate,
+          newStart,
+          newEnd,
+          isOngoing: t.startDate <= eventDate && t.endDate >= eventDate
+        }
+      })
+  }, [showRainModal, rainForm.date, rainForm.days, schedule])
 
   // Calculated global stats
   const totalLaborCost = useMemo(() => schedule.reduce((sum, t) => sum + (t.assignedLaborCost || 0), 0), [schedule])
@@ -814,6 +884,94 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     if (window.confirm('¿Seguro que deseas eliminar esta tarea del cronograma?')) {
       setSchedule(schedule.filter(t => t.id !== taskId))
     }
+  }
+
+  function handleApplyRainDelay(e) {
+    e.preventDefault()
+    const delayDays = Math.max(1, Number(rainForm.days) || 1)
+    const eventDate = rainForm.date
+    if (!eventDate) return
+
+    let affectedTasksCount = 0
+    const updatedSchedule = schedule.map(t => {
+      // Don't shift completed tasks
+      if (Number(t.progressPercent) === 100) return t
+      // Don't shift tasks that ended strictly before the rain event
+      if (t.endDate < eventDate) return t
+
+      affectedTasksCount++
+      let newStart = t.startDate
+      let newEnd = t.endDate
+
+      if (t.startDate <= eventDate && t.endDate >= eventDate) {
+        // Ongoing task during rain: extend endDate by delayDays
+        newEnd = addDays(t.endDate, delayDays)
+      } else if (t.startDate > eventDate) {
+        // Future task: push both start and end forward by delayDays
+        newStart = addDays(t.startDate, delayDays)
+        newEnd = addDays(t.endDate, delayDays)
+      }
+
+      return {
+        ...t,
+        startDate: newStart,
+        endDate: newEnd
+      }
+    })
+
+    if (affectedTasksCount === 0) {
+      alert('No se encontraron tareas activas o futuras a partir de la fecha seleccionada.')
+      return
+    }
+
+    const logEntry = {
+      id: Date.now(),
+      date: eventDate,
+      days: delayDays,
+      reason: rainForm.reason,
+      notes: rainForm.notes,
+      affectedCount: affectedTasksCount,
+      timestamp: new Date().toISOString(),
+      previousSchedule: schedule
+    }
+
+    if (rainForm.recordDocument) {
+      const rainDoc = {
+        id: Date.now(),
+        name: `Acta_Suspension_Lluvia_${eventDate}.pdf`,
+        type: 'no_conformidades',
+        version: 'v1.0',
+        fileSize: '0.8 MB',
+        uploadedAt: new Date().toISOString().split('T')[0],
+        uploadedBy: 'Dirección de Obra',
+        status: 'aprobado',
+        notes: `Suspensión por ${rainForm.reason} (+${delayDays}d). Se corrieron ${affectedTasksCount} tareas en cascada. ${rainForm.notes || ''}`,
+        history: [
+          {
+            version: 'v1.0',
+            date: eventDate,
+            status: 'aprobado',
+            notes: `Homologación técnica de suspensión climática (+${delayDays}d)`
+          }
+        ]
+      }
+      setDocuments(prev => [rainDoc, ...prev])
+    }
+
+    setRainLogs(prev => [logEntry, ...prev])
+    setSchedule(updatedSchedule)
+    setShowRainModal(false)
+  }
+
+  function handleUndoRainDelay(logId) {
+    const targetLog = rainLogs.find(l => l.id === logId)
+    if (!targetLog) return
+    if (!window.confirm(`¿Revertir el corrimiento del evento del ${targetLog.date} (+${targetLog.days} días)? Las fechas volverán a su estado previo.`)) return
+
+    if (targetLog.previousSchedule) {
+      setSchedule(targetLog.previousSchedule)
+    }
+    setRainLogs(prev => prev.filter(l => l.id !== logId))
   }
 
   // Handlers for Rubros
@@ -1131,6 +1289,23 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button
                 type="button"
+                className="oxi-btn-rain"
+                onClick={() => {
+                  setRainForm({
+                    date: '2026-10-18',
+                    days: 2,
+                    reason: 'Lluvias y precipitaciones copiosas',
+                    recordDocument: true,
+                    notes: 'Suspensión preventiva de hormigonado y trabajos en altura por temporal.'
+                  })
+                  setShowRainModal(true)
+                }}
+                title="Desplazar automáticamente las tareas en cascada por días de lluvia o demoras"
+              >
+                🌧️ Registrar Lluvia / Demora
+              </button>
+              <button
+                type="button"
                 className="oxi-btn-back-classic"
                 onClick={() => exportScheduleCsv(schedule, project?.name || 'Obra')}
                 title="Descargar tabla en formato Excel CSV"
@@ -1142,6 +1317,32 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
               </button>
             </div>
           </div>
+
+          {/* Banner de Lluvia y Clima si existen registros */}
+          {rainLogs.length > 0 && (
+            <div className="rain-banner">
+              <div className="rain-banner-content">
+                <span style={{ fontSize: '1.4rem' }}>🌧️</span>
+                <div>
+                  <strong>Control Climático & Demoras:</strong>{' '}
+                  <span>
+                    Se han computado <strong>{totalRainDays} días acumulados de suspensión</strong> ({rainLogs.length} eventos).{' '}
+                    Último corrimiento: <strong>{rainLogs[0].date}</strong> (+{rainLogs[0].days} días por {rainLogs[0].reason}).
+                  </span>
+                </div>
+              </div>
+              <div className="rain-banner-actions">
+                <button
+                  type="button"
+                  className="oxi-btn-small outline"
+                  onClick={() => handleUndoRainDelay(rainLogs[0].id)}
+                  title="Revertir el último corrimiento de fechas aplicado"
+                >
+                  ↺ Deshacer último corrimiento
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Quick executive summary bar */}
           <div style={{
@@ -2074,6 +2275,133 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                 </button>
                 <button type="submit" className="oxi-btn-primary">
                   Agregar Tarea al Cronograma
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: REGISTRAR LLUVIA / DEMORA EN CASCADA ── */}
+      {showRainModal && (
+        <div className="oxi-modal-backdrop" onClick={() => setShowRainModal(false)}>
+          <div className="oxi-modal-content" style={{ maxWidth: '580px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '1.8rem' }}>🌧️</span>
+              <div>
+                <h3 style={{ margin: 0 }}>Registrar Días de Lluvia / Demora</h3>
+                <small style={{ color: '#737373' }}>Desplaza automáticamente en cascada las tareas activas y futuras.</small>
+              </div>
+            </div>
+
+            <form onSubmit={handleApplyRainDelay}>
+              <div className="form-row">
+                <label>
+                  Fecha del Evento Climático
+                  <input
+                    type="date"
+                    required
+                    value={rainForm.date}
+                    onChange={e => setRainForm({ ...rainForm, date: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Jornadas de Suspensión (Días)
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    required
+                    value={rainForm.days}
+                    onChange={e => setRainForm({ ...rainForm, days: Number(e.target.value) || 1 })}
+                  />
+                </label>
+              </div>
+
+              <label>
+                Causa o Motivo de la Demora
+                <select
+                  value={rainForm.reason}
+                  onChange={e => setRainForm({ ...rainForm, reason: e.target.value })}
+                >
+                  <option value="Lluvias y precipitaciones copiosas">🌧️ Lluvias y precipitaciones copiosas</option>
+                  <option value="Alerta meteorológica / Vientos fuertes">💨 Alerta meteorológica / Vientos fuertes</option>
+                  <option value="Inclemencia climática / Suelo anegado">🚜 Inclemencia climática / Suelo anegado</option>
+                  <option value="Demora justificada en entrega de materiales">🚛 Demora justificada en entrega de materiales</option>
+                  <option value="Paro gremial o fuerza mayor homologada">⚠️ Paro gremial o fuerza mayor homologada</option>
+                </select>
+              </label>
+
+              <label>
+                Notas u Observaciones del Libro de Obra
+                <textarea
+                  rows="2"
+                  value={rainForm.notes}
+                  onChange={e => setRainForm({ ...rainForm, notes: e.target.value })}
+                  placeholder="Detalles técnicos, mediciones pluviométricas o justificación..."
+                  style={{ resize: 'vertical' }}
+                />
+              </label>
+
+              <label style={{ flexDirection: 'row', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: '4px 0' }}>
+                <input
+                  type="checkbox"
+                  checked={rainForm.recordDocument}
+                  onChange={e => setRainForm({ ...rainForm, recordDocument: e.target.checked })}
+                  style={{ width: 'auto', cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '0.85rem', color: '#404040' }}>
+                  Generar automáticamente Acta Técnica de Lluvia en el Gestor Documental (Pestaña 1)
+                </span>
+              </label>
+
+              {/* Live Preview of Affected Tasks */}
+              <div style={{ marginTop: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#0369a1' }}>
+                    Vista Previa del Corrimiento en Cascada ({previewShiftedTasks.length} tareas afectadas):
+                  </span>
+                  <small style={{ color: '#737373' }}>+{rainForm.days} día(s)</small>
+                </div>
+                {previewShiftedTasks.length === 0 ? (
+                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', color: '#737373', fontSize: '0.82rem', textAlign: 'center' }}>
+                    No se encontraron tareas activas o posteriores a la fecha {rainForm.date}.
+                  </div>
+                ) : (
+                  <div className="rain-preview-box">
+                    {previewShiftedTasks.map(t => (
+                      <div key={t.id} className="rain-preview-item">
+                        <div>
+                          <strong>{t.name}</strong>
+                          <span style={{ marginLeft: '6px', fontSize: '0.75rem', color: t.isOngoing ? '#d97706' : '#2563eb' }}>
+                            {t.isOngoing ? '(En curso: extiende fin)' : '(Futura: desplaza inicio y fin)'}
+                          </span>
+                        </div>
+                        <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <span style={{ textDecoration: 'line-through', color: '#a3a3a3', fontSize: '0.75rem', marginRight: '6px' }}>
+                            {t.oldStart} al {t.oldEnd}
+                          </span>
+                          <strong style={{ color: '#15803d' }}>
+                            {t.newStart} al {t.newEnd}
+                          </strong>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-actions" style={{ marginTop: '10px' }}>
+                <button type="button" className="btn-cancel" onClick={() => setShowRainModal(false)}>
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="oxi-btn-primary"
+                  style={{ background: '#0284c7' }}
+                  disabled={previewShiftedTasks.length === 0}
+                >
+                  🌧️ Aplicar Corrimiento en Cascada
                 </button>
               </div>
             </form>
