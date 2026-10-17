@@ -1,7 +1,7 @@
 const ENV_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').trim()
 const DEFAULT_API_BASE_URL = import.meta.env.DEV
   ? 'http://localhost:4000'
-  : `${window.location.origin}/api`
+  : 'https://mercadobra.onrender.com'
 const API_BASE_URL = ENV_API_BASE_URL || DEFAULT_API_BASE_URL
 
 function normalizeBaseUrl(url) {

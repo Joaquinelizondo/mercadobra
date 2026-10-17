@@ -218,7 +218,7 @@ export default function AdminQuoteWorkspace(){
           )}
         </div>
       )}
-      {quote.budget!=null&&<p style={{marginTop: '1rem'}}>Presupuesto indicado: {formatPrice(quote.budget,quote.currency)}</p>}{formatRequestedDate(quote.desiredDate)&&<p>Fecha deseada: {formatRequestedDate(quote.desiredDate)}</p>}</div></div>{quote.attachments?.length>0&&<div className="quote-files">{quote.attachments.map((f,i)=><a key={i} href={f.url || f.data} target="_blank" rel="noreferrer" download={!f.url ? f.name : undefined}>📎 {f.name}</a>)}</div>}
+      {formatRequestedDate(quote.desiredDate)&&<p style={{marginTop: '0.75rem'}}>Fecha deseada: {formatRequestedDate(quote.desiredDate)}</p>}</div></div>{quote.attachments?.length>0&&<div className="quote-files">{quote.attachments.map((f,i)=><a key={i} href={f.url || f.data} target="_blank" rel="noreferrer" download={!f.url ? f.name : undefined}>📎 {f.name}</a>)}</div>}
       <div className="quote-thread">{messages.length===0?<p className="quote-thread-empty">Todavía no hay mensajes.</p>:messages.map(m=><article key={m.id} className={m.authorRole==='admin'?'is-customer':'is-admin'}><small>{m.authorRole==='admin'?'Mercadobra':customer?.name||'Cliente'}</small><p>{m.message}</p><time>{new Date(m.createdAt).toLocaleString('es-UY')}</time></article>)}</div><form className="quote-message-form" onSubmit={send}><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Responder al cliente…"/><button>Enviar mensaje</button></form></div>
       <form className="admin-proposal-form" onSubmit={saveProposal}><span>Propuesta económica</span><h2>Preparar cotización</h2><label>Título<input value={quote.title} onChange={e=>setQuote({...quote,title:e.target.value})}/></label>
       <label>

@@ -663,20 +663,16 @@ export default function CustomerPortal() {
                     </div>
                   )}
 
-                  <div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginTop: '4px' }}>
                     <label>
-                      Presupuesto estimado
-                      <input type="number" min="0" value={request.budget} onChange={e => setRequest({...request, budget: e.target.value})} placeholder="Opcional" />
-                    </label>
-                    <label>
-                      Moneda
+                      Moneda de referencia
                       <select value={request.currency} onChange={e => setRequest({...request, currency: e.target.value})}>
-                        <option>UYU</option>
                         <option>USD</option>
+                        <option>UYU</option>
                       </select>
                     </label>
                     <label>
-                      Fecha deseada
+                      Fecha estimada de entrega en obra
                       <input type="date" value={request.desiredDate} onChange={e => setRequest({...request, desiredDate: e.target.value})} />
                     </label>
                   </div>
