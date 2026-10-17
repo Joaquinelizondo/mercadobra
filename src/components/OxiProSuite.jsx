@@ -302,6 +302,15 @@ function downloadFile(doc) {
   }
 }
 
+function parseDateLocal(dateStr) {
+  if (!dateStr) return new Date()
+  const parts = String(dateStr).split('-').map(Number)
+  if (parts.length === 3 && !Number.isNaN(parts[0]) && !Number.isNaN(parts[1]) && !Number.isNaN(parts[2])) {
+    return new Date(parts[0], parts[1] - 1, parts[2])
+  }
+  return new Date(dateStr)
+}
+
 function addDays(dateStr, days) {
   if (!dateStr) return dateStr
   const parts = String(dateStr).split('-').map(Number)
@@ -437,6 +446,62 @@ function exportRubrosCsv(rubros, projectName) {
   const link = document.createElement('a')
   link.href = url
   link.download = `Balance_Rubros_${(projectName || 'Obra').replace(/\s+/g, '_')}.csv`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+function exportCurvaSCsv(weeklyProgress, monthlyComp, projectName) {
+  const weeklyHeaders = [
+    'Semana / Periodo', 'Rango Fechas', '% Programado (P0)', '% Real Certificado', 'Desvio (%)', 'Estado'
+  ]
+  const weeklyRows = (weeklyProgress || []).map(w => {
+    const delta = (w.realPercent - w.budgetZeroPercent).toFixed(1)
+    const status = Number(delta) > 0 ? 'Adelantada' : Number(delta) < 0 ? 'Atrasada' : 'En plazo'
+    return [
+      `"${w.week}"`,
+      `"${w.dateRange || ''}"`,
+      `${w.budgetZeroPercent}%`,
+      `${w.realPercent}%`,
+      `${delta}%`,
+      `"${status}"`
+    ]
+  })
+
+  const monthlyHeaders = [
+    'Mes / Periodo', '% Avance Fisico Certificado', 'Costo Presupuestado ($)', 'Costo Devengado / Certificado ($)', 'Desvio ($)', 'Estado'
+  ]
+  const monthlyRows = (monthlyComp || []).map(m => {
+    const diff = m.certCost - m.budgetedCost
+    const isOver = diff > 0
+    return [
+      `"${m.month}"`,
+      `${m.certAdvancePercent}%`,
+      m.budgetedCost,
+      m.certCost,
+      diff,
+      `"${isOver ? 'Exceso de costo' : 'En presupuesto'}"`
+    ]
+  })
+
+  const csvContent = '\uFEFF' + [
+    `CONTROL FISICO-FINANCIERO Y CURVA S - ${(projectName || 'OBRA').toUpperCase()}`,
+    '',
+    '--- CURVA S SEMANAL DE CONTROL FISICO (EN %) ---',
+    weeklyHeaders.join(','),
+    ...weeklyRows.map(r => r.join(',')),
+    '',
+    '--- CERTIFICACIONES & FLUJO FINANCIERO MENSUAL ($) ---',
+    monthlyHeaders.join(','),
+    ...monthlyRows.map(r => r.join(','))
+  ].join('\n')
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `Curva_S_${(projectName || 'Obra').replace(/\s+/g, '_')}.csv`
   document.body.appendChild(link)
   link.click()
   link.remove()
@@ -776,6 +841,181 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   }, [schedule, totalProjectBudget])
 
   const globalDelta = globalProgress - plannedGlobalProgress
+
+  const totalPlannedCost = useMemo(() => {
+    return schedule.reduce((sum, t) => sum + Math.round(getTaskBudget(t) * (getTaskPlannedPercent(t) / 100)), 0)
+  }, [schedule])
+
+  const spiIndex = useMemo(() => {
+    if (!totalPlannedCost) return '1.00'
+    return (totalExecutedCost / totalPlannedCost).toFixed(2)
+  }, [totalExecutedCost, totalPlannedCost])
+
+  const dynamicMonthlyComp = useMemo(() => {
+    if (!schedule.length) return DEFAULT_MONTHLY_COMPARISON
+
+    let minMs = Infinity
+    let maxMs = -Infinity
+    schedule.forEach(t => {
+      const s = parseDateLocal(t.startDate).getTime()
+      const e = parseDateLocal(t.endDate).getTime()
+      if (!Number.isNaN(s) && s < minMs) minMs = s
+      if (!Number.isNaN(e) && e > maxMs) maxMs = e
+    })
+
+    if (minMs === Infinity || maxMs === -Infinity) return DEFAULT_MONTHLY_COMPARISON
+
+    const months = []
+    const cur = new Date(minMs)
+    cur.setDate(1)
+    cur.setHours(0, 0, 0, 0)
+    const end = new Date(maxMs)
+
+    let monthIndex = 1
+    let cumBudgeted = 0
+    let cumExecuted = 0
+    let cumPlanned = 0
+
+    while (cur <= end) {
+      const y = cur.getFullYear()
+      const m = cur.getMonth()
+      const monthStart = new Date(y, m, 1, 0, 0, 0, 0).getTime()
+      const nextMonthStart = new Date(y, m + 1, 1, 0, 0, 0, 0).getTime()
+      const monthEnd = nextMonthStart - 1
+
+      let monthBudgeted = 0
+      let monthExecuted = 0
+      let monthPlanned = 0
+
+      schedule.forEach(t => {
+        const tStart = parseDateLocal(t.startDate).getTime()
+        const tEnd = parseDateLocal(t.endDate).getTime()
+        const tBudget = getTaskBudget(t)
+        const tDays = Math.max(1, Math.round((tEnd - tStart) / 86400000) + 1)
+
+        const oStart = Math.max(tStart, monthStart)
+        const oEnd = Math.min(tEnd, monthEnd)
+
+        if (oStart <= oEnd) {
+          const oDays = Math.round((oEnd - oStart) / 86400000) + 1
+          const ratio = Math.min(1, Math.max(0, oDays / tDays))
+          const plannedPct = getTaskPlannedPercent(t)
+          const realPct = Math.min(100, Math.max(0, Number(t.progressPercent) || 0))
+
+          monthBudgeted += tBudget * ratio
+          monthPlanned += tBudget * (plannedPct / 100) * ratio
+          monthExecuted += tBudget * (realPct / 100) * ratio
+        }
+      })
+
+      cumBudgeted += monthBudgeted
+      cumExecuted += monthExecuted
+      cumPlanned += monthPlanned
+
+      const rawMonthName = cur.toLocaleDateString('es-UY', { month: 'short', year: 'numeric' })
+      const monthName = rawMonthName.charAt(0).toUpperCase() + rawMonthName.slice(1)
+      const certAdvancePercent = monthBudgeted > 0 ? Number(((monthExecuted / monthBudgeted) * 100).toFixed(1)) : 0
+      const plannedPercent = monthBudgeted > 0 ? Number(((monthPlanned / monthBudgeted) * 100).toFixed(1)) : 0
+
+      months.push({
+        month: `Mes ${monthIndex} (${monthName})`,
+        monthShort: monthName,
+        monthIndex,
+        certAdvancePercent,
+        plannedPercent,
+        certCost: Math.round(monthExecuted),
+        budgetedCost: Math.round(monthBudgeted),
+        plannedCost: Math.round(monthPlanned),
+        cumBudgeted: Math.round(cumBudgeted),
+        cumExecuted: Math.round(cumExecuted),
+        cumPlanned: Math.round(cumPlanned),
+        diff: Math.round(monthExecuted - monthBudgeted),
+        isOver: (monthExecuted - monthBudgeted) > 0
+      })
+
+      monthIndex++
+      cur.setMonth(cur.getMonth() + 1)
+    }
+
+    return months.length > 0 ? months : DEFAULT_MONTHLY_COMPARISON
+  }, [schedule])
+
+  const dynamicWeeklyProgress = useMemo(() => {
+    if (!schedule.length) return DEFAULT_WEEKLY_PROGRESS
+
+    let minMs = Infinity
+    let maxMs = -Infinity
+    schedule.forEach(t => {
+      const s = parseDateLocal(t.startDate).getTime()
+      const e = parseDateLocal(t.endDate).getTime()
+      if (!Number.isNaN(s) && s < minMs) minMs = s
+      if (!Number.isNaN(e) && e > maxMs) maxMs = e
+    })
+
+    if (minMs === Infinity || maxMs === -Infinity) return DEFAULT_WEEKLY_PROGRESS
+
+    const totalDays = Math.max(7, Math.round((maxMs - minMs) / 86400000))
+    const totalBudget = schedule.reduce((sum, t) => sum + getTaskBudget(t), 0)
+    if (totalBudget <= 0) return DEFAULT_WEEKLY_PROGRESS
+
+    const weekCount = Math.min(20, Math.max(4, Math.ceil(totalDays / 7)))
+    const stepMs = (maxMs - minMs) / weekCount
+
+    const weeks = []
+    for (let w = 1; w <= weekCount; w++) {
+      const wCutMs = minMs + w * stepMs
+      const wStartMs = minMs + (w - 1) * stepMs
+      const startD = new Date(wStartMs).toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit' })
+      const endD = new Date(wCutMs).toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit' })
+
+      let cumPlanVal = 0
+      let cumRealVal = 0
+
+      schedule.forEach(t => {
+        const tStart = parseDateLocal(t.startDate).getTime()
+        const tEnd = parseDateLocal(t.endDate).getTime()
+        const tBudget = getTaskBudget(t)
+        const plannedPct = getTaskPlannedPercent(t)
+        const realPct = Math.min(100, Math.max(0, Number(t.progressPercent) || 0))
+
+        let planRatio = 0
+        if (wCutMs >= tEnd) {
+          planRatio = plannedPct / 100
+        } else if (wCutMs <= tStart) {
+          planRatio = 0
+        } else {
+          planRatio = (plannedPct / 100) * ((wCutMs - tStart) / Math.max(1, tEnd - tStart))
+        }
+
+        let realRatio = 0
+        if (wCutMs >= tEnd) {
+          realRatio = realPct / 100
+        } else if (wCutMs <= tStart) {
+          realRatio = 0
+        } else {
+          realRatio = (realPct / 100) * ((wCutMs - tStart) / Math.max(1, tEnd - tStart))
+        }
+
+        cumPlanVal += tBudget * planRatio
+        cumRealVal += tBudget * realRatio
+      })
+
+      const budgetZeroPercent = Number(((cumPlanVal / totalBudget) * 100).toFixed(1))
+      const realPercent = Number(((cumRealVal / totalBudget) * 100).toFixed(1))
+      const delta = Number((realPercent - budgetZeroPercent).toFixed(1))
+
+      weeks.push({
+        week: `Semana ${w}`,
+        dateRange: `${startD} - ${endD}`,
+        budgetZeroPercent,
+        realPercent,
+        delta,
+        isAhead: delta >= 0
+      })
+    }
+
+    return weeks
+  }, [schedule])
 
   // Alerts by rubro with detailed breakdown (MO + Leyes Sociales + Materiales)
   const rubroAlerts = useMemo(() => {
@@ -1264,7 +1504,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
           className={`subnav-btn ${activeTab === 'control' ? 'is-active' : ''}`}
           onClick={() => setActiveTab('control')}
         >
-          📊 Avance Real vs Presup. Cero (%)
+          📊 Curva S & Control Físico-Financiero
         </button>
         <button
           className={`subnav-btn ${activeTab === 'rubros' ? 'is-active' : ''}`}
@@ -1949,9 +2189,298 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         </section>
       )}
 
-      {/* ── TAB 3: CONTROL SEMANAL & MENSUAL ── */}
+      {/* ── TAB 3: CONTROL SEMANAL & MENSUAL / CURVA S DINÁMICA ── */}
       {activeTab === 'control' && (
         <section className="oxi-pro-section">
+          {/* Toolbar */}
+          <div className="section-toolbar">
+            <div>
+              <h3>Control Físico-Financiero & Curva S (Avance Real vs. Plan P0)</h3>
+              <p>Seguimiento continuo de la Curva S conectada en tiempo real al Cronograma Gantt y partidas presupuestarias.</p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="live-sync-badge" title="Cálculo reactivo en tiempo real desde el Cronograma de obra">
+                <span className="live-dot" /> Conectado en vivo al Gantt ({schedule.length} tareas)
+              </span>
+              <button
+                type="button"
+                className="oxi-btn-back-classic"
+                onClick={() => exportCurvaSCsv(dynamicWeeklyProgress, dynamicMonthlyComp, project?.name || 'Obra')}
+                title="Descargar datos de Curva S en CSV para Excel"
+              >
+                📥 Exportar Curva S (CSV)
+              </button>
+            </div>
+          </div>
+
+          {/* ── KPI Summary Cards ── */}
+          <div className="curva-s-kpis-grid">
+            <div className="curva-s-kpi-card">
+              <span className="curva-s-kpi-label">Avance Programado (Plan P0)</span>
+              <span className="curva-s-kpi-val plan">{plannedGlobalProgress}%</span>
+              <span className="curva-s-kpi-sub">Meta física contractual prevista a la fecha</span>
+            </div>
+            <div className="curva-s-kpi-card">
+              <span className="curva-s-kpi-label">Avance Real Certificado</span>
+              <span className={`curva-s-kpi-val ${globalDelta >= 0 ? 'real' : 'delayed'}`}>{globalProgress}%</span>
+              <span className="curva-s-kpi-sub">Avance físico efectivamente homologado</span>
+            </div>
+            <div className="curva-s-kpi-card">
+              <span className="curva-s-kpi-label">Desvío de Cronograma (SV)</span>
+              <span className={`curva-s-kpi-val ${globalDelta >= 0 ? 'real' : 'delayed'}`}>
+                {globalDelta > 0 ? `+${globalDelta}%` : `${globalDelta}%`}
+              </span>
+              <span className="curva-s-kpi-sub">
+                {globalDelta > 0 ? '✓ Obra adelantada al cronograma' : globalDelta < 0 ? '⚠️ Atraso físico a recuperar' : 'En plazo exacto'}
+              </span>
+            </div>
+            <div className="curva-s-kpi-card">
+              <span className="curva-s-kpi-label">Índice Rendimiento Plazo (SPI)</span>
+              <span className={`curva-s-kpi-val ${Number(spiIndex) >= 1 ? 'real' : 'delayed'}`}>
+                {spiIndex}
+              </span>
+              <span className="curva-s-kpi-sub">
+                {Number(spiIndex) >= 1 ? '✓ Ritmo de ejecución óptimo (≥ 1.0)' : '⚠️ Ritmo por debajo de la meta (< 1.0)'}
+              </span>
+            </div>
+            <div className="curva-s-kpi-card">
+              <span className="curva-s-kpi-label">Costo Devengado Total</span>
+              <span className="curva-s-kpi-val delayed" style={{ fontSize: '1.15rem' }}>
+                {formatMoney(totalExecutedCost)}
+              </span>
+              <span className="curva-s-kpi-sub">de {formatMoney(totalProjectBudget)} total</span>
+            </div>
+          </div>
+
+          {/* ── Submódulo: Gráfico Visual de Curva S (SVG) ── */}
+          <div className="curva-s-chart-box">
+            <div className="curva-s-chart-header">
+              <div>
+                <span className="box-eyebrow">DIAGRAMA DE AVANCE ACUMULADO (S-CURVE)</span>
+                <h3 style={{ margin: '4px 0', fontSize: '1.25rem', color: '#0f172a' }}>
+                  Curva S Físico-Financiera (Plan P0 vs Real Certificado)
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
+                  Evolución acumulada periódica calculada según avance físico de tareas y ponderación de costos (Mano de Obra, BPS y Materiales).
+                </p>
+              </div>
+
+              <div className="curva-s-legend">
+                <div className="curva-s-legend-item">
+                  <span className="curva-s-legend-line" style={{ background: '#2563eb', borderTop: '2px dashed #1d4ed8' }} />
+                  <span><strong>Plan Contractual (P0)</strong></span>
+                </div>
+                <div className="curva-s-legend-item">
+                  <span className="curva-s-legend-line" style={{ background: globalDelta >= 0 ? '#10b981' : '#ea580c' }} />
+                  <span><strong>Real Certificado</strong></span>
+                </div>
+                {todayGanttPositionPct != null && (
+                  <div className="curva-s-legend-item">
+                    <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+                    <span><strong>Línea de Hoy</strong></span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* SVG Plot */}
+            <div className="curva-s-svg-wrap">
+              {(() => {
+                const svgW = 920
+                const svgH = 260
+                const padL = 50
+                const padR = 30
+                const padT = 25
+                const padB = 40
+                const pW = svgW - padL - padR
+                const pH = svgH - padT - padB
+
+                const pts = dynamicWeeklyProgress
+                const nPts = pts.length
+                const coords = pts.map((w, i) => {
+                  const x = padL + (i / Math.max(1, nPts - 1)) * pW
+                  const yPlan = padT + pH - (Math.min(100, Math.max(0, w.budgetZeroPercent)) / 100) * pH
+                  const yReal = padT + pH - (Math.min(100, Math.max(0, w.realPercent)) / 100) * pH
+                  return { ...w, x, yPlan, yReal }
+                })
+
+                const planPointsStr = coords.map(p => `${p.x.toFixed(1)},${p.yPlan.toFixed(1)}`).join(' ')
+                const realPointsStr = coords.map(p => `${p.x.toFixed(1)},${p.yReal.toFixed(1)}`).join(' ')
+                const planAreaStr = `${padL},${padT + pH} ${planPointsStr} ${padL + pW},${padT + pH}`
+                const realAreaStr = `${padL},${padT + pH} ${realPointsStr} ${padL + pW},${padT + pH}`
+
+                const xToday = todayGanttPositionPct != null ? padL + (todayGanttPositionPct / 100) * pW : null
+
+                return (
+                  <svg viewBox={`0 0 ${svgW} ${svgH}`} className="curva-s-svg">
+                    <defs>
+                      <linearGradient id="planGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.02" />
+                      </linearGradient>
+                      <linearGradient id="realGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={globalDelta >= 0 ? '#10b981' : '#ea580c'} stopOpacity="0.30" />
+                        <stop offset="100%" stopColor={globalDelta >= 0 ? '#10b981' : '#ea580c'} stopOpacity="0.03" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* Horizontal grid lines & Y labels */}
+                    {[0, 25, 50, 75, 100].map(pct => {
+                      const y = padT + pH - (pct / 100) * pH
+                      return (
+                        <g key={pct}>
+                          <line
+                            x1={padL}
+                            y1={y}
+                            x2={padL + pW}
+                            y2={y}
+                            stroke="#e2e8f0"
+                            strokeWidth="1"
+                            strokeDasharray={pct === 0 || pct === 100 ? undefined : '3 3'}
+                          />
+                          <text
+                            x={padL - 10}
+                            y={y + 4}
+                            textAnchor="end"
+                            fill="#94a3b8"
+                            fontSize="11"
+                            fontWeight="600"
+                          >
+                            {pct}%
+                          </text>
+                        </g>
+                      )
+                    })}
+
+                    {/* Area Under Plan */}
+                    <polygon points={planAreaStr} fill="url(#planGrad)" />
+
+                    {/* Area Under Real */}
+                    <polygon points={realAreaStr} fill="url(#realGrad)" />
+
+                    {/* Vertical guidelines at each week */}
+                    {coords.map((p, idx) => (
+                      <line
+                        key={`vguide-${idx}`}
+                        x1={p.x}
+                        y1={padT}
+                        x2={p.x}
+                        y2={padT + pH}
+                        stroke="#f1f5f9"
+                        strokeWidth="1"
+                      />
+                    ))}
+
+                    {/* Today indicator */}
+                    {xToday != null && xToday >= padL && xToday <= padL + pW && (
+                      <g>
+                        <line
+                          x1={xToday}
+                          y1={padT}
+                          x2={xToday}
+                          y2={padT + pH}
+                          stroke="#ef4444"
+                          strokeWidth="2"
+                          strokeDasharray="4 3"
+                        />
+                        <rect
+                          x={xToday - 22}
+                          y={padT - 20}
+                          width={44}
+                          height={18}
+                          rx={4}
+                          fill="#ef4444"
+                        />
+                        <text
+                          x={xToday}
+                          y={padT - 7}
+                          textAnchor="middle"
+                          fill="#ffffff"
+                          fontSize="10"
+                          fontWeight="bold"
+                        >
+                          Hoy
+                        </text>
+                      </g>
+                    )}
+
+                    {/* Plan Line */}
+                    <polyline
+                      points={planPointsStr}
+                      fill="none"
+                      stroke="#2563eb"
+                      strokeWidth="2.5"
+                      strokeDasharray="5 3"
+                    />
+
+                    {/* Real Line */}
+                    <polyline
+                      points={realPointsStr}
+                      fill="none"
+                      stroke={globalDelta >= 0 ? '#10b981' : '#ea580c'}
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                    />
+
+                    {/* X-Axis Labels */}
+                    {coords.map((p, idx) => {
+                      const showLabel = nPts <= 12 || idx % 2 === 0 || idx === nPts - 1
+                      if (!showLabel) return null
+                      return (
+                        <text
+                          key={`xlabel-${idx}`}
+                          x={p.x}
+                          y={padT + pH + 20}
+                          textAnchor="middle"
+                          fill="#64748b"
+                          fontSize="10"
+                          fontWeight="600"
+                        >
+                          {p.week.replace('Semana ', 'S')}
+                        </text>
+                      )
+                    })}
+
+                    {/* Plan Dots */}
+                    {coords.map((p, idx) => (
+                      <circle
+                        key={`plandot-${idx}`}
+                        cx={p.x}
+                        cy={p.yPlan}
+                        r="3.5"
+                        fill="#2563eb"
+                        stroke="#ffffff"
+                        strokeWidth="1.5"
+                        className="curva-s-dot"
+                      >
+                        <title>{`${p.week} (${p.dateRange})\n• Plan Contractual (P0): ${p.budgetZeroPercent}%`}</title>
+                      </circle>
+                    ))}
+
+                    {/* Real Dots */}
+                    {coords.map((p, idx) => {
+                      const isAhead = p.delta >= 0
+                      return (
+                        <circle
+                          key={`realdot-${idx}`}
+                          cx={p.x}
+                          cy={p.yReal}
+                          r="4.5"
+                          fill={isAhead ? '#10b981' : '#ea580c'}
+                          stroke="#ffffff"
+                          strokeWidth="2"
+                          className="curva-s-dot"
+                        >
+                          <title>{`${p.week} (${p.dateRange})\n• Real Certificado: ${p.realPercent}%\n• Desvío: ${p.delta > 0 ? '+' : ''}${p.delta}%\n• Estado: ${isAhead ? 'En plazo' : 'Atrasada'}`}</title>
+                        </circle>
+                      )
+                    })}
+                  </svg>
+                )
+              })()}
+            </div>
+          </div>
+
           {/* Submódulo A: Avance Real vs Presupuesto Cero Semanal */}
           <div className="card-box" style={{ marginBottom: '2.5rem' }}>
             <div className="card-box-header">
@@ -1963,16 +2492,21 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
             </div>
 
             <div className="weekly-grid">
-              {weeklyProgress.map((w, idx) => {
+              {dynamicWeeklyProgress.map((w, idx) => {
                 const delta = (w.realPercent - w.budgetZeroPercent).toFixed(1)
                 const isAhead = Number(delta) >= 0
                 return (
                   <div key={idx} className="weekly-card">
-                    <span className="weekly-title">{w.week}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <span className="weekly-title">{w.week}</span>
+                      {w.dateRange && (
+                        <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{w.dateRange}</span>
+                      )}
+                    </div>
                     
                     <div className="weekly-bars">
                       <div className="bar-row">
-                        <span className="bar-tag">Plan (P0):</span>
+                        <span className="bar-tag">Plan:</span>
                         <div className="bar-bg">
                           <div className="bar-fill plan" style={{ width: `${Math.min(100, w.budgetZeroPercent)}%` }} />
                         </div>
@@ -2012,7 +2546,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
               <table className="oxi-pro-table">
                 <thead>
                   <tr>
-                    <th>Mes</th>
+                    <th>Mes / Período</th>
                     <th>% Avance Físico Certificado</th>
                     <th>Costo Devengado / Certificado</th>
                     <th>Costo Presupuestado</th>
@@ -2021,7 +2555,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                   </tr>
                 </thead>
                 <tbody>
-                  {monthlyComp.map((item, idx) => {
+                  {dynamicMonthlyComp.map((item, idx) => {
                     const diff = item.certCost - item.budgetedCost
                     const isOver = diff > 0
                     return (
@@ -2049,6 +2583,35 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                     )
                   })}
                 </tbody>
+                <tfoot>
+                  <tr style={{ background: '#f8fafc', fontWeight: 'bold', borderTop: '2px solid #cbd5e1' }}>
+                    <td style={{ padding: '12px' }}>TOTALES CONSOLIDADOS</td>
+                    <td style={{ padding: '12px', color: '#10b981' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="progress-bar-wrap" style={{ width: '120px' }}>
+                          <div className="progress-fill" style={{ width: `${globalProgress}%` }} />
+                        </div>
+                        <span>{globalProgress}% Global</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px', color: '#ea580c' }}>
+                      {formatMoney(totalExecutedCost)}
+                    </td>
+                    <td style={{ padding: '12px', color: '#0f172a' }}>
+                      {formatMoney(totalProjectBudget)}
+                    </td>
+                    <td style={{ padding: '12px', color: (totalExecutedCost - totalProjectBudget) > 0 ? '#ef4444' : '#10b981' }}>
+                      {(totalExecutedCost - totalProjectBudget) > 0 
+                        ? `+${formatMoney(totalExecutedCost - totalProjectBudget)}`
+                        : formatMoney(totalExecutedCost - totalProjectBudget)}
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      <span className={`status-pill ${(totalExecutedCost - totalProjectBudget) > 0 ? 'overbudget' : 'onbudget'}`}>
+                        {(totalExecutedCost - totalProjectBudget) > 0 ? '⚠️ Sobrecosto' : '✓ En balance'}
+                      </span>
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>

@@ -1235,3 +1235,136 @@
   pointer-events: none;
 }
 
+/* ── Curva S Dinámica & Control Físico-Financiero ── */
+.live-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+  animation: livePulse 2s infinite ease-in-out;
+}
+
+@keyframes livePulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.curva-s-kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.curva-s-kpi-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.curva-s-kpi-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.04em;
+}
+
+.curva-s-kpi-val {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.curva-s-kpi-val.plan { color: #2563eb; }
+.curva-s-kpi-val.real { color: #10b981; }
+.curva-s-kpi-val.delayed { color: #ea580c; }
+.curva-s-kpi-val.neutral { color: #64748b; }
+
+.curva-s-kpi-sub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.curva-s-chart-box {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.curva-s-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+.curva-s-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.curva-s-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.curva-s-legend-line {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.curva-s-svg-wrap {
+  width: 100%;
+  overflow-x: auto;
+  position: relative;
+}
+
+.curva-s-svg {
+  width: 100%;
+  min-width: 650px;
+  height: auto;
+  display: block;
+}
+
+.curva-s-dot {
+  cursor: pointer;
+  transition: r 0.15s ease, stroke-width 0.15s ease;
+}
+
+.curva-s-dot:hover {
+  r: 6;
+  stroke-width: 3;
+}
+
