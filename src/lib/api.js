@@ -535,3 +535,44 @@ export function updateSupplierFabricationOrder(orderId, updates, token) {
   })
 }
 
+export async function downloadOxiProReportPdf(payload, token) {
+  const baseCandidates = getApiBaseCandidates()
+  let response = null
+  let lastErr = null
+
+  for (const base of baseCandidates) {
+    try {
+      const url = `${base}/oxipro/report/pdf`
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      })
+      if (res.ok) {
+        response = res
+        break
+      }
+    } catch (err) {
+      lastErr = err
+    }
+  }
+
+  if (!response || !response.ok) {
+    throw new Error(lastErr?.message || 'No se pudo generar el informe PDF de obra')
+  }
+
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `Informe_Ejecutivo_${(payload.project?.name || 'Obra').replace(/\s+/g, '_')}.pdf`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+

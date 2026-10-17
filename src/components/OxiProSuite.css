@@ -1368,3 +1368,27 @@
   stroke-width: 3;
 }
 
+/* Print styles for OxI Pro */
+@media print {
+  .oxi-pro-subnav,
+  .oxi-pro-header-actions,
+  .section-toolbar,
+  .oxi-btn-primary,
+  .oxi-btn-back-classic {
+    display: none !important;
+  }
+
+  .oxi-pro-container {
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .card-box,
+  .curva-s-chart-box,
+  .curva-s-kpi-card {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    break-inside: avoid;
+  }
+}
+

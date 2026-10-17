@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { downloadOxiProReportPdf } from '../lib/api'
 import './OxiProSuite.css'
 
 const FILE_TYPES = [
@@ -1397,6 +1398,35 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     }
   }
 
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
+
+  async function handleDownloadExecutiveReportPdf() {
+    setIsExportingPdf(true)
+    try {
+      await downloadOxiProReportPdf({
+        project: project || { name: 'Obra OxI Pro', location: 'Montevideo, Uruguay' },
+        schedule,
+        rubros,
+        rainLogs,
+        metrics: {
+          plannedGlobalProgress,
+          globalProgress,
+          globalDelta,
+          spiIndex,
+          totalProjectBudget,
+          totalExecutedCost,
+          totalBalanceCost,
+          totalRainDays
+        }
+      })
+    } catch (err) {
+      console.warn('PDF service fallback:', err)
+      window.print()
+    } finally {
+      setIsExportingPdf(false)
+    }
+  }
+
   const filteredDocs = docFilter === 'todos' ? documents : documents.filter(d => d.type === docFilter)
 
   return (
@@ -1426,7 +1456,17 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
           <h2>Control de Ingeniería, Costos y Cronograma de Obra</h2>
           <p>Herramienta técnica y financiera para Constructoras y Estudios de Arquitectura.</p>
         </div>
-        <div className="oxi-pro-header-actions">
+        <div className="oxi-pro-header-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="oxi-btn-primary"
+            onClick={handleDownloadExecutiveReportPdf}
+            disabled={isExportingPdf}
+            title="Descargar informe ejecutivo oficial de obra de 4 páginas en PDF para comitentes e inversores"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            {isExportingPdf ? '⏳ Generando PDF...' : '📄 Exportar Informe de Obra (PDF)'}
+          </button>
           <button className="oxi-btn-back-classic" onClick={onBackToClassic}>
             ← Volver a OxI Clásico
           </button>

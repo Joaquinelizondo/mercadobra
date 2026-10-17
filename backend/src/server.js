@@ -50,6 +50,7 @@ import {
 } from './authService.js'
 import { isCloudinaryConfigured, uploadProductImage } from './cloudinaryService.js'
 import { createQuotePdf } from './quotePdfService.js'
+import { createOxiProReportPdf } from './oxiProReportPdfService.js'
 import { interpretModelerPrompt } from './modelerChatService.js'
 import { calculateTemplateWithCurrentVariables, calculateCircularTableWithCurrentVariables, getCurrentCostVariables } from './costingService.js'
 
@@ -1912,6 +1913,30 @@ app.post('/admin/costing/pdf', authMiddleware, adminOnly, asyncHandler(async (re
     'Content-Length': String(pdf.length),
   })
   return res.send(pdf)
+}))
+
+// ============================================================================
+// OXIPRO SUITE EXECUTIVE REPORT PDF
+// ============================================================================
+
+app.post('/oxipro/report/pdf', asyncHandler(async (req, res) => {
+  const { project, schedule, rubros, rainLogs, metrics, user } = req.body || {}
+  const pdfBuffer = await createOxiProReportPdf({
+    project: project || {},
+    schedule: Array.isArray(schedule) ? schedule : [],
+    rubros: Array.isArray(rubros) ? rubros : [],
+    rainLogs: Array.isArray(rainLogs) ? rainLogs : [],
+    metrics: metrics || {},
+    user: user || req.authUser || {}
+  })
+
+  const rawFilename = `Informe_Ejecutivo_${String(project?.name || 'Obra').replace(/[^a-z0-9-]/gi, '_')}.pdf`
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `attachment; filename="${rawFilename}"`,
+    'Content-Length': String(pdfBuffer.length),
+  })
+  return res.send(pdfBuffer)
 }))
 
 app.post('/admin/costing/convert-to-quote', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
