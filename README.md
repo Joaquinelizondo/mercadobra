@@ -6,7 +6,7 @@ Plataforma uruguaya para descubrir, cotizar y comprar productos para obra, con e
 
 **Backend:** <https://mercadobra.onrender.com>
 
-**Última actualización:** 16 de octubre de 2026
+**Última actualización:** 17 de octubre de 2026
 
 El estado funcional detallado y las prioridades se mantienen también en [docs/ESTADO_WEB.md](docs/ESTADO_WEB.md).
 
@@ -19,11 +19,15 @@ La plataforma se encuentra operativa con:
 - PostgreSQL en Render como base de datos de producción relacional y transaccional.
 - **Plataforma OxI (Portal B2B para Constructoras & Estudios):**
   - **OxI Clásico:** Solicitud y seguimiento de cotizaciones de herrería y obra, carga clasificada de documentación técnica (planos CAD/PDF, memorias, fotos de obra), tablero Kanban en vivo de 5 etapas y mensajería directa con ingeniería.
-  - **OxI Pro Suite (Los 4 Pilares de Control de Obra):**
+  - **OxI Pro Suite (ConstructionTech de Control y Planificación de Obra):**
     - *Pilar 1 (Proyectos):* Conmutador directo de obras en cabecera con persistencia reactiva, visualización de dirección y vinculación estricta en base de datos (`b2b_project_id`).
-    - *Pilar 2 (Schedule Gantt):* Cronograma interactivo con cálculo dinámico de días hábiles, mano de obra estimada por cuadrilla y categoría laboral, badges de estado en vivo (`✓ Terminado`, `⚡ En curso`, `⏳ Pendiente`) y descarga a Excel con `📥 Exportar Cronograma (CSV)`.
-    - *Pilar 3 (Presupuestos & Costos):* Partidas presupuestarias editables y personalizadas (`＋ Agregar Rubro / Partida`), alertas de sobrecosto por rubro (Normal, Advertencia $\ge 85\%$, Crítico $> 100\%$), comparativa semanal (% Real vs P0) y descarga con `📥 Exportar Balance (CSV)`.
-    - *Pilar 4 (Gestor Documental):* Selector drag-and-drop con lectura real Base64 y cálculo de peso, descargas directas (`⬇ Descargar`), modal de nuevas iteraciones (`+ Iteración`) y soporte ampliado en backend para formatos técnicos (.dwg, .dxf, .cad, .pdf, .docx, .xlsx, imágenes) hasta 15 MB.
+    - *Pilar 2 (Schedule Gantt & Recursos):* Cronograma interactivo con doble vista (`[📊 Diagrama de Gantt]` y `[📋 Planilla & Costos]`), cálculo dinámico de días hábiles, control dual de avance (% Plan contractual vs. % Real físico), badges de desvío de plazo, asignación de cuadrillas SUNCA, desplazamiento en cascada por lluvias con actas técnicas y reversión en 1 clic, certificaciones de obra con fotos de evidencia y visor lightbox, y descarga a Excel con `📥 Exportar Cronograma (CSV)`.
+    - *Pilar 3 (Presupuestos & Leyes Sociales):* Partidas presupuestarias editables (`＋ Agregar Rubro / Partida`), desglose tripartito de costos (Mano de Obra directa, Leyes Sociales BPS al 65% s/mano de obra según Ley 14.411, Materiales / Subcontratos), alertas automáticas de sobrecosto (Normal, Advertencia $\ge 85\%$, Crítico $> 100\%$), comparativa semanal (% Real vs P0) y descarga con `📥 Exportar Balance (CSV)`.
+    - *Pilar 4 (Gestor Documental Técnico):* Selector drag-and-drop con lectura real Base64 y cálculo de peso, descargas directas (`⬇ Descargar`), modal de nuevas iteraciones (`+ Iteración`) con trazabilidad histórica de cambios, y soporte ampliado para formatos técnicos (.dwg, .dxf, .cad, .pdf, .docx, .xlsx, imágenes) hasta 15 MB.
+    - *Control Físico-Financiero & Curva S (EVM):* Conexión reactiva en tiempo real al cronograma y rubros, cálculo de métricas de valor ganado (SPI, SV, devengamiento económico) y exportación de datos a CSV.
+    - *Informe Ejecutivo en PDF (1 Clic):* Generador de informe directivo de 4 páginas de alta calidad gráfica (`POST /oxipro/report/pdf`) con portada, ficha técnica, cronograma, partidas con leyes sociales, actas de lluvia y firmas de comitente y director de obra.
+    - *Persistencia Relacional Multi-usuario:* Modelo de datos en PostgreSQL (`b2b_project_tasks`, `b2b_project_rubros`, `b2b_project_delays`) con auto-sincronización debounceada y badge de estado en vivo (`☁️ Guardado en la nube (PostgreSQL)` / `📁 Modo Local / Demo`).
+    - *Auto-Onboarding Asistido por IA:* Ingestión inteligente de memorias y pliegos con OpenAI (`gpt-4o-mini`) y motor heurístico offline de ingeniería civil en cliente y servidor, con perfiles adaptados para pérgolas, herrería de fachada, galpones industriales, reformas y edificios, respaldado por una arquitectura de resiliencia Zero-Downtime.
   - **Gestión de niveles:** Conmutador de plataforma en la barra lateral, control y asignación administrativa de tiers (`classic` / `pro`) y solicitud directa de habilitación a Pro desde modal interactivo en 1 clic.
 - **OXI Network (Marketplace de Fabricación Distribuida):**
   - Adjudicación de piezas y proyectos desde el espacio de cotización administrativo (`/admin/cotizaciones/:id`) a talleres asociados homologados con precio objetivo, moneda y fecha límite.
@@ -253,6 +257,18 @@ OxI Pro es la solución integral de gestión técnica y financiera de obras para
    - Motor híbrido ([`backend/src/oxiProAiService.js`](backend/src/oxiProAiService.js)): Conexión con OpenAI (`gpt-4o-mini`) y motor heurístico offline de ingeniería civil.
    - Ingestión de memorias descriptivas o pliegos técnicos con generación automática de tareas secuenciales, cuadrillas, cálculos BPS (65%) y rubros.
    - Plantillas rápidas para Edificio Residencial, Nave Industrial y Reforma Comercial con inyección en 1 clic (*Reemplazar* o *Anexar*).
+4. **Motor Heurístico Cliente y Resiliencia Offline (Zero-Downtime Fallback):**
+   - Motor cliente ([`src/utils/constructionAiEngine.js`](src/utils/constructionAiEngine.js)): Ejecución instantánea en el navegador sin latencia de red ni dependencia de disponibilidad de servidores.
+   - Perfiles especializados de construcción y herrería:
+     - *Pérgolas, Techos, Barandas y Estructuras Metálicas*: Extracción automática de dimensiones (ej. "3m x 2m" -> $\text{m}^2$), perfiles tubulares, anclajes químicos, soldadura calificada, pintura anticorrosiva/epoxi, montaje e inspección final.
+     - *Naves Industriales y Galpones Logísticos*: Movimiento de suelos, losas de alta resistencia, pórticos de alma llena, cerramientos trapezoidales y cortafuegos.
+     - *Reformas Comerciales y Oficinas*: Demoliciones, tabiquería de yeso, carpintería vidriada, instalaciones y acabados.
+     - *Edificios y Viviendas Residenciales*: Fundaciones, estructura de hormigón armado, albañilería, impermeabilizaciones y terminaciones.
+   - Doble capa de resiliencia en [`src/lib/api.js`](src/lib/api.js) y [`src/components/OxiProSuite.jsx`](src/components/OxiProSuite.jsx): Si el backend remoto está desplegando o retorna 404/500, el frontend recurre transparentemente al motor heurístico cliente sin mostrar errores de red al usuario y conmuta en silencio al modo local/demo.
+5. **Cobertura de Pruebas y Aseguramiento de Calidad:**
+   - Pruebas unitarias de backend: 14/14 tests pasando (`npm --prefix backend test`).
+   - Pruebas unitarias de modelador y frontend: 32/32 tests pasando (`npm test`).
+   - Verificación de compilación limpia de producción (`npm run build`).
 
 ## Experiencia pública e identidad vigente
 
@@ -2001,6 +2017,63 @@ El desarrollo se realizará en este orden. No se iniciará una etapa posterior h
 - [x] **Presupuestos Ejecutivos & Conversión Comercial:**
   - Endpoint `POST /admin/costing/pdf` para generar presupuestos formales de 2 páginas en PDF con identidad corporativa Óxida / Mercadobra.
   - Endpoint `POST /admin/costing/convert-to-quote` para convertir cualquier cálculo paramétrico en cotización oficial para el cliente.
+
+#### Fase 8 — Ingeniería & Control de Obra OxI Pro
+
+**Objetivo:** Dotar a la Suite OxI Pro de herramientas avanzadas de ingeniería de costos, contingencias climáticas y visualización temporal de obra.
+
+- [x] **Leyes Sociales por Rubro (Pestaña 4):**
+  - Desglose paramétrico por rubro: Mano de Obra, Leyes Sociales (aportes BPS al 65% s/mano de obra según Ley 14.411) y Materiales / Subcontratos.
+  - Edición en tabla y modal con cálculo de saldos y consolidado total en pie.
+  - Exportación enriquecida a CSV compatible con Excel.
+- [x] **Avance Programado vs. Real y Devengamiento Económico (Pestaña 2):**
+  - Comparativa de % Plan previsto contractual vs. % Real físico ejecutado con inputs interactivos.
+  - Badges de desvío de plazo en tiempo real (adelantada / en plazo / atrasada).
+  - Cálculo de devengamiento económico ($ Ejecutado vs. Presupuestado y Saldo por devengar).
+  - Tarjeta KPI superior de avance físico dual y exportación ejecutiva a CSV.
+- [x] **Desplazamiento Automático por Lluvias en Cascada:**
+  - Acción rápida para registrar suspensiones por lluvias o contingencias climáticas.
+  - Propagación automática de fechas a tareas activas y futuras preservando duraciones.
+  - Vista previa de tareas afectadas, banner de días acumulados y botón de reversión/deshacer.
+  - Emisión automática de Acta Técnica de Suspensión en el gestor documental.
+- [x] **Vista Diagrama de Gantt Interactivo:**
+  - Conmutador instantáneo de doble vista: `[📊 Diagrama de Gantt]` y `[📋 Planilla & Costos]`.
+  - Proyección temporal con meses y semanas, barras con doble relleno (% Plan vs % Real) y línea de fecha actual ("Hoy").
+  - Panel lateral de tareas con desvíos y tooltips de presupuesto y devengamiento.
+
+#### Fase 9 — Evolución ConstructionTech & Auto-Onboarding IA (Fase 2)
+
+**Objetivo:** Llevar a OxI Pro al estándar de plataformas globales como Procore o Kojo, incorporando inteligencia artificial generativa, certificaciones fotográficas y reportes ejecutivos.
+
+- [x] **Conexión Dinámica de la Curva S (EVM) (Pestaña 3):**
+  - Conexión reactiva en tiempo real entre Cronograma Gantt y Rubros Presupuestarios.
+  - Gráfico interactivo SVG con curvas de avance acumulado (Earned Value Management).
+  - Métricas clave: Schedule Performance Index (SPI), Schedule Variance (SV) y saldo devengado.
+  - Tabla mensual de devengamiento y exportación completa a CSV.
+- [x] **Reporte Ejecutivo de Obra en PDF (1 Clic):**
+  - Servicio `POST /oxipro/report/pdf` desarrollado con PDFKit (`backend/src/oxiProReportPdfService.js`).
+  - Informe directivo oficial de 4 páginas de alta resolución:
+    - Portada ejecutiva con ficha técnica y KPIs (Plan, Real, SPI, SV, Inversión y Lluvias).
+    - Cronograma detallado de tareas con cuadrillas y plazos.
+    - Balance de rubros con leyes sociales (BPS 65%) y materiales.
+    - Historial de actas climáticas y bloques formales de firma técnica homologada.
+- [x] **Persistencia Relacional Multi-usuario (PostgreSQL):**
+  - Tablas dedicadas: `b2b_project_tasks`, `b2b_project_rubros`, `b2b_project_delays` con clave foránea a `b2b_projects` (migración `038_oxipro_collaboration_tables.sql`).
+  - Endpoints REST en backend (`GET/PUT /customer/b2b-projects/:projectId/oxipro/...`).
+  - Sincronización en segundo plano con debounce de 1.2s y badge de estado (`☁️ Guardado en la nube (PostgreSQL)` / `📁 Modo Local / Demo`).
+- [x] **Certificaciones de Obra con Fotos y Registro de Inspección:**
+  - Modal interactivo de certificación técnica de avance físico por partida.
+  - Registro de inspector, fecha de relevamiento y notas técnicas de ensayos de calidad.
+  - Galería de fotos de evidencia con visor Lightbox en alta definición y bitácora histórica.
+- [x] **Auto-Onboarding de Obras con IA & Motor Heurístico Resiliente:**
+  - Endpoint `POST /oxipro/ai-onboarding` conectado a OpenAI (`gpt-4o-mini`) y motor heurístico offline de ingeniería civil (`backend/src/oxiProAiService.js`).
+  - Motor heurístico cliente offline en navegador (`src/utils/constructionAiEngine.js`) con ejecución instantánea y cero latencia.
+  - Perfiles adaptados para Pérgolas y Herrería Óxida (medidas exactas, kilos de acero, pintura y horas), Galpones / Naves Industriales, Reformas Comerciales y Edificios Residenciales.
+  - Arquitectura de alta disponibilidad con Zero-Downtime Fallback: si el backend remoto responde 404/500 por encontrarse en despliegue, el frontend resuelve la solicitud de manera transparente mediante el motor local.
+- [x] **Verificación y Cobertura de Pruebas:**
+  - 14/14 pruebas unitarias de backend pasando exitosamente.
+  - 32/32 pruebas unitarias de modelador y componentes frontend pasando exitosamente.
+  - Compilación de producción validada (`npm run build`).
 
 ### Criterio de salida del MVP
 

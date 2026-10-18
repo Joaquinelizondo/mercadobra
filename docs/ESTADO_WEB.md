@@ -2,7 +2,7 @@
 
 Documento vivo para registrar el estado de la web, ordenar los pendientes y actualizar el avance en cada implementación.
 
-**Última revisión:** 15 de octubre de 2026
+**Última revisión:** 17 de octubre de 2026
 
 **Producción:** <https://mercadobra.com>
 
@@ -79,10 +79,10 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | Punto | Estado | Criterio para darlo por terminado |
 | --- | --- | --- |
 | Cotizador Inteligente de Piezas OXI (IA) | Terminado | Extracción técnica multimodal y heurística con IA (medidas, cantidades, perfiles, terminación y plantilla sugerida) integrada a OXI Quote con 1 clic (`/admin/cotizaciones/:id` -> `/admin/cotiza`), nuevas plantillas paramétricas de Barandas (OXI Railing R01) y Pérgolas (OXI Pergola P01), actualización bidireccional a la cotización comercial del cliente (`POST /admin/costing/apply-to-quote`), cálculo de kilos/horas/pintura/flete, auditoría de rentabilidad y validación preliminar interactiva en el portal del cliente. |
-| Auto-Onboarding de Proyectos de Obra (IA) | Pendiente | Carga masiva de memorias y pliegos de constructora con auto-generación de tareas Gantt, balance presupuestario por rubro y detección de paquetes de herrería Óxida. |
+| Auto-Onboarding de Proyectos de Obra (IA) | Terminado | Motor híbrido de ingestión asistida con OpenAI (`gpt-4o-mini`) y motor heurístico offline de ingeniería civil en backend (`/oxipro/ai-onboarding`) y cliente (`src/utils/constructionAiEngine.js`), con perfiles de Pérgolas y Herrería Óxida, Galpones, Reformas y Edificios, auto-generación de Gantt, rubros con leyes sociales BPS (65%) y resiliencia Zero-Downtime ante caídas o despliegues. |
 | Configurador 3D Público para Clientes | Pendiente | Modelado 3D interactivo para pérgolas, barandas y escaleras con recálculo de precio en tiempo real y pedido directo de fabricación. |
 | Optimizador de Corte (Nesting 1D) para Talleres | Pendiente | Algoritmo de corte de barras de 6m (< 5% desperdicio) con emisión de planillas técnicas y QR para OXI Network. |
-| Certificaciones Móviles con Fotos en Obra | Pendiente | PWA/interfaz móvil para directores de obra con fotos georreferenciadas (GPS) y firma táctil para aprobar hitos y liberar fondos. |
+| Certificaciones de Obra con Fotos e Inspección | Terminado | Registro de avance físico certificado por tarea con nombre de inspector, fecha de relevamiento, notas técnicas de ensayos de calidad y galería de fotos de evidencia con visor Lightbox en alta resolución. |
 
 ## Decisiones pendientes
 
@@ -122,7 +122,8 @@ Documento vivo para registrar el estado de la web, ordenar los pendientes y actu
 | 2026-10-15 | Los 4 Pilares de Suite OxI Pro. | Conmutador y recarga de proyectos reactivo, Schedule Gantt con cálculo de días y exportación CSV, balance de costos con partidas personalizadas y exportación CSV, gestor documental con drag-and-drop real, descargas directas y versionado de iteraciones. | `9e21a17` |
 | 2026-10-16 | Cotizador Inteligente Automatizado de Piezas OXI (IA). | Conexión integral de IA con OXI Quote: extracción normalizada con 1 clic a cotizador (`/admin/cotizaciones/:id` -> `/admin/cotiza`), nuevas plantillas paramétricas de Barandas y Pérgolas, volcado automático bidireccional a la cotización comercial (`POST /admin/costing/apply-to-quote`), cálculo de kilos/horas/pintura/flete, auditoría de rentabilidad y validación interactiva para clientes. | `89c565d` |
 | 2026-10-17 | Ingeniería & Control de Obra OxI Pro (4 Pasos). | Implementación completa de Leyes Sociales (BPS ~65%) por rubro, seguimiento de Avance Real vs. Planificado con devengamiento económico, desplazamiento automático de tareas por lluvia en cascada con actas técnicas y reversión, y Diagrama de Gantt interactivo con doble vista y timeline dinámico. | `088b579` |
-| 2026-10-17 | Evolución ConstructionTech OxI Pro (Fase 2 Completa). | Curva S dinámica conectada con EVM (P0 vs Real, SPI, SV), informe directivo de 4 páginas en PDF (`/oxipro/report/pdf`), persistencia multi-usuario en PostgreSQL (`b2b_project_tasks`, `rubros`, `delays`) con sincronización en la nube, certificaciones físicas de avance con fotos y registro de inspección técnica, y auto-onboarding de obras con IA (`/oxipro/ai-onboarding`) para generar cronogramas y rubros en 1 clic. | Este cambio |
+| 2026-10-17 | Evolución ConstructionTech OxI Pro (Fase 2 Completa). | Curva S dinámica conectada con EVM (P0 vs Real, SPI, SV), informe directivo de 4 páginas en PDF (`/oxipro/report/pdf`), persistencia multi-usuario en PostgreSQL (`b2b_project_tasks`, `rubros`, `delays`) con sincronización en la nube, certificaciones físicas de avance con fotos y registro de inspección técnica, y auto-onboarding de obras con IA (`/oxipro/ai-onboarding`) para generar cronogramas y rubros en 1 clic. | `6088b5f` |
+| 2026-10-17 | Motor Heurístico Cliente & Resiliencia Offline OxI Pro. | Motor cliente en navegador para auto-onboarding IA sin latencia ni dependencia de backend, fallback automático ante errores 404/500 de despliegue y manejo silencioso de sincronización en modo local/demo. | `38a7737` |
 
 
 ## Forma de trabajo
