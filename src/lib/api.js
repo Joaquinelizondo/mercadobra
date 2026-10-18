@@ -575,4 +575,49 @@ export async function downloadOxiProReportPdf(payload, token) {
   URL.revokeObjectURL(url)
 }
 
+export async function getOxiProProjectData(token, projectId) {
+  return request(`/customer/b2b-projects/${projectId}/oxipro`, { token })
+}
+
+export async function saveOxiProTasks(token, projectId, tasks) {
+  return request(`/customer/b2b-projects/${projectId}/oxipro/tasks`, {
+    method: 'PUT',
+    token,
+    body: JSON.stringify({ tasks }),
+  })
+}
+
+export async function saveOxiProRubros(token, projectId, rubros) {
+  return request(`/customer/b2b-projects/${projectId}/oxipro/rubros`, {
+    method: 'PUT',
+    token,
+    body: JSON.stringify({ rubros }),
+  })
+}
+
+export async function createOxiProDelay(token, projectId, delay) {
+  return request(`/customer/b2b-projects/${projectId}/oxipro/delays`, {
+    method: 'POST',
+    token,
+    body: JSON.stringify(delay),
+  })
+}
+
+export async function deleteOxiProDelay(token, projectId, delayId) {
+  return request(`/customer/b2b-projects/${projectId}/oxipro/delays/${delayId}`, {
+    method: 'DELETE',
+    token,
+  })
+}
+
+export async function generateOxiProAiPlan(token, payload) {
+  return request('/oxipro/ai-onboarding', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
+
+
 

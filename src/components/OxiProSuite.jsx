@@ -1,6 +1,26 @@
 import { useState, useEffect, useMemo } from 'react'
-import { downloadOxiProReportPdf } from '../lib/api'
+import {
+  downloadOxiProReportPdf,
+  getOxiProProjectData,
+  saveOxiProTasks,
+  saveOxiProRubros,
+  createOxiProDelay,
+  deleteOxiProDelay,
+  generateOxiProAiPlan
+} from '../lib/api'
 import './OxiProSuite.css'
+
+function getAuthToken() {
+  try {
+    const cust = JSON.parse(localStorage.getItem('mercadobra-customer-session') || '{}')
+    if (cust?.token) return cust.token
+    const adm = JSON.parse(localStorage.getItem('mercadobra-admin-session') || '{}')
+    if (adm?.token) return adm.token
+    const sup = JSON.parse(localStorage.getItem('mercadobra-supplier-session') || '{}')
+    if (sup?.token) return sup.token
+  } catch {}
+  return ''
+}
 
 const FILE_TYPES = [
   { id: 'todos', label: 'Todos los tipos', icon: '📁' },
@@ -562,7 +582,11 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     }
   })
 
-  // Reload state if project changes
+  const isNumericProject = Number(project?.id) > 0
+  const [cloudSyncStatus, setCloudSyncStatus] = useState('idle') // 'idle' | 'saving' | 'synced' | 'error'
+  const [isInitialLoadDone, setIsInitialLoadDone] = useState(false)
+
+  // Reload state if project changes from localStorage
   useEffect(() => {
     try {
       const savedDocs = localStorage.getItem(`${storageKey}_docs`)
@@ -586,6 +610,81 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       console.warn('Error reloading project state', e)
     }
   }, [projectId, storageKey])
+
+  // Cloud initial fetch from PostgreSQL (Multi-user persistence)
+  useEffect(() => {
+    let isMounted = true
+    const token = getAuthToken()
+    if (!isNumericProject || !token) {
+      setIsInitialLoadDone(true)
+      return
+    }
+
+    setCloudSyncStatus('saving')
+    getOxiProProjectData(token, project.id)
+      .then(data => {
+        if (!isMounted) return
+        if (Array.isArray(data?.tasks) && data.tasks.length > 0) {
+          setSchedule(data.tasks)
+        }
+        if (Array.isArray(data?.rubros) && data.rubros.length > 0) {
+          setRubros(data.rubros)
+        }
+        if (Array.isArray(data?.delays) && data.delays.length > 0) {
+          setRainLogs(data.delays)
+        }
+        setCloudSyncStatus('synced')
+        setIsInitialLoadDone(true)
+      })
+      .catch(err => {
+        console.warn('Could not load OxI Pro data from cloud, using local cache', err)
+        if (isMounted) {
+          setCloudSyncStatus('idle')
+          setIsInitialLoadDone(true)
+        }
+      })
+
+    return () => { isMounted = false }
+  }, [project?.id, isNumericProject])
+
+  // Debounced auto-save tasks to PostgreSQL backend
+  useEffect(() => {
+    if (!isInitialLoadDone || !isNumericProject) return
+    const token = getAuthToken()
+    if (!token) return
+
+    setCloudSyncStatus('saving')
+    const timer = setTimeout(() => {
+      saveOxiProTasks(token, project.id, schedule)
+        .then(() => setCloudSyncStatus('synced'))
+        .catch(err => {
+          console.warn('Error syncing tasks to cloud', err)
+          setCloudSyncStatus('error')
+        })
+    }, 1200)
+
+    return () => clearTimeout(timer)
+  }, [schedule, isInitialLoadDone, isNumericProject, project?.id])
+
+  // Debounced auto-save rubros to PostgreSQL backend
+  useEffect(() => {
+    if (!isInitialLoadDone || !isNumericProject) return
+    const token = getAuthToken()
+    if (!token) return
+
+    setCloudSyncStatus('saving')
+    const timer = setTimeout(() => {
+      saveOxiProRubros(token, project.id, rubros)
+        .then(() => setCloudSyncStatus('synced'))
+        .catch(err => {
+          console.warn('Error syncing rubros to cloud', err)
+          setCloudSyncStatus('error')
+        })
+    }, 1200)
+
+    return () => clearTimeout(timer)
+  }, [rubros, isInitialLoadDone, isNumericProject, project?.id])
+
 
   // Modals & form state
   const [showAddDocModal, setShowAddDocModal] = useState(false)
@@ -642,6 +741,27 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     executed: 0,
     customSocial: false
   })
+
+  // Certification & inspection modal (Paso 4)
+  const [showCertModal, setShowCertModal] = useState(false)
+  const [certTask, setCertTask] = useState(null)
+  const [certForm, setCertForm] = useState({
+    certifiedPercent: 0,
+    inspector: 'Director de Obra',
+    date: new Date().toISOString().split('T')[0],
+    notes: '',
+    photos: []
+  })
+  const [selectedPhotoPreview, setSelectedPhotoPreview] = useState(null)
+
+  // AI Onboarding modal (Paso 5)
+  const [showAiModal, setShowAiModal] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiStartDate, setAiStartDate] = useState(new Date().toISOString().split('T')[0])
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiResult, setAiResult] = useState(null)
+  const [aiError, setAiError] = useState('')
+
 
   // Auto-save
   useEffect(() => {
@@ -1319,6 +1439,21 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       setDocuments(prev => [rainDoc, ...prev])
     }
 
+    if (isNumericProject) {
+      const token = getAuthToken()
+      if (token) {
+        createOxiProDelay(token, project.id, {
+          eventDate,
+          days: delayDays,
+          cause: rainForm.reason,
+          notes: rainForm.notes,
+          tasksSnapshot: schedule
+        }).then(created => {
+          logEntry.backendId = created.id
+        }).catch(err => console.warn('Could not persist rain delay to cloud', err))
+      }
+    }
+
     setRainLogs(prev => [logEntry, ...prev])
     setSchedule(updatedSchedule)
     setShowRainModal(false)
@@ -1329,11 +1464,141 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     if (!targetLog) return
     if (!window.confirm(`¿Revertir el corrimiento del evento del ${targetLog.date} (+${targetLog.days} días)? Las fechas volverán a su estado previo.`)) return
 
+    if (isNumericProject && (targetLog.backendId || targetLog.id)) {
+      const token = getAuthToken()
+      if (token) {
+        deleteOxiProDelay(token, project.id, targetLog.backendId || targetLog.id)
+          .catch(err => console.warn('Could not delete delay from cloud', err))
+      }
+    }
+
     if (targetLog.previousSchedule) {
       setSchedule(targetLog.previousSchedule)
     }
     setRainLogs(prev => prev.filter(l => l.id !== logId))
   }
+
+  // Handlers for Certifications with Photos (Paso 4)
+  function handleOpenCertModal(task) {
+    setCertTask(task)
+    setCertForm({
+      certifiedPercent: Number(task.progressPercent) || 0,
+      inspector: 'Director de Obra',
+      date: new Date().toISOString().split('T')[0],
+      notes: '',
+      photos: []
+    })
+    setShowCertModal(true)
+  }
+
+  function handleAddCertPhotos(e) {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+
+    files.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setCertForm(prev => ({
+          ...prev,
+          photos: [
+            ...prev.photos,
+            {
+              id: Date.now() + Math.random(),
+              name: file.name,
+              size: `${(file.size / 1024).toFixed(1)} KB`,
+              dataUrl: event.target.result
+            }
+          ]
+        }))
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  function handleRemoveCertPhoto(photoId) {
+    setCertForm(prev => ({
+      ...prev,
+      photos: prev.photos.filter(p => p.id !== photoId)
+    }))
+  }
+
+  function handleSaveCertification(e) {
+    e.preventDefault()
+    if (!certTask) return
+
+    const newPct = Math.min(100, Math.max(0, Number(certForm.certifiedPercent) || 0))
+    const newCert = {
+      id: Date.now(),
+      date: certForm.date,
+      certifiedPercent: newPct,
+      inspector: certForm.inspector.trim() || 'Inspector Técnico',
+      notes: certForm.notes.trim(),
+      photos: certForm.photos || [],
+      createdAt: new Date().toISOString()
+    }
+
+    const updatedTasks = schedule.map(t => {
+      if (t.id !== certTask.id) return t
+      const existingCerts = Array.isArray(t.certifications) ? t.certifications : []
+      return {
+        ...t,
+        progressPercent: newPct,
+        certifications: [newCert, ...existingCerts]
+      }
+    })
+
+    setSchedule(updatedTasks)
+    setShowCertModal(false)
+    setCertTask(null)
+  }
+
+  // Handlers for AI Onboarding (Paso 5)
+  async function handleGenerateAiPlan() {
+    if (!aiPrompt.trim()) {
+      setAiError('Por favor ingresá una descripción, pliego o memoria descriptiva de la obra.')
+      return
+    }
+    setAiLoading(true)
+    setAiError('')
+    const token = getAuthToken()
+    try {
+      const res = await generateOxiProAiPlan(token, {
+        prompt: aiPrompt,
+        projectName: project?.name || 'Obra Óxida',
+        startDate: aiStartDate
+      })
+      setAiResult(res)
+    } catch (err) {
+      console.warn('AI Onboarding API error', err)
+      setAiError(err.message || 'Error al procesar con IA')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  function handleApplyAiPlan(mode = 'replace') {
+    if (!aiResult) return
+
+    if (mode === 'replace') {
+      setSchedule(aiResult.tasks || [])
+      if (Array.isArray(aiResult.rubros) && aiResult.rubros.length > 0) {
+        setRubros(aiResult.rubros)
+      }
+    } else {
+      const maxId = schedule.reduce((max, t) => Math.max(max, Number(t.id) || 0), 0)
+      const newTasks = (aiResult.tasks || []).map((t, i) => ({
+        ...t,
+        id: maxId + i + 1
+      }))
+      setSchedule([...schedule, ...newTasks])
+    }
+
+    setShowAiModal(false)
+    setAiResult(null)
+    setAiPrompt('')
+    setActiveTab('cronograma')
+  }
+
 
   // Handlers for Rubros
   function handleUpdateRubro(id, field, value) {
@@ -1457,6 +1722,24 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
           <p>Herramienta técnica y financiera para Constructoras y Estudios de Arquitectura.</p>
         </div>
         <div className="oxi-pro-header-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span className={`cloud-sync-pill ${cloudSyncStatus}`}>
+            {cloudSyncStatus === 'saving' && '⏳ Guardando en la nube...'}
+            {cloudSyncStatus === 'synced' && '☁️ Guardado en la nube (PostgreSQL)'}
+            {cloudSyncStatus === 'error' && '⚠️ Error de sincronización'}
+            {cloudSyncStatus === 'idle' && (isNumericProject ? '☁️ Conectado a la nube' : '📁 Modo Local / Demo')}
+          </span>
+          <button
+            type="button"
+            className="oxi-btn-ai"
+            onClick={() => {
+              setShowAiModal(true)
+              setAiError('')
+            }}
+            title="Cargar pliego o memoria descriptiva y auto-generar cronograma y costos con Inteligencia Artificial"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            ⚡ Auto-Crear Obra con IA
+          </button>
           <button
             type="button"
             className="oxi-btn-primary"
@@ -2139,24 +2422,39 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                         </div>
                       </td>
                       <td>
-                        <div className="progress-control">
-                          <div className="progress-bar-wrap" style={{ width: '55px' }}>
-                            <div
-                              className={`progress-fill ${isDone ? 'done' : ''}`}
-                              style={{ width: `${real}%` }}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div className="progress-control">
+                            <div className="progress-bar-wrap" style={{ width: '55px' }}>
+                              <div
+                                className={`progress-fill ${isDone ? 'done' : ''}`}
+                                style={{ width: `${real}%` }}
+                              />
+                            </div>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={real}
+                              onChange={(e) => handleUpdateTaskProgress(task.id, e.target.value)}
+                              className="progress-input"
+                              title="Modificar % Avance Real Físico Certificado"
+                              style={{ width: '45px' }}
                             />
+                            <span className="unit-label">%</span>
                           </div>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={real}
-                            onChange={(e) => handleUpdateTaskProgress(task.id, e.target.value)}
-                            className="progress-input"
-                            title="Modificar % Avance Real Físico Certificado"
-                            style={{ width: '45px' }}
-                          />
-                          <span className="unit-label">%</span>
+                          <button
+                            type="button"
+                            className={`btn-certify ${task.certifications?.length > 0 ? 'has-certs' : ''}`}
+                            onClick={() => handleOpenCertModal(task)}
+                            title="Registrar o ver inspección física con fotos de avance"
+                          >
+                            📸 {task.certifications?.length > 0 ? `${task.certifications.length} Insp.` : 'Certificar'}
+                          </button>
+                          {task.certifications?.length > 0 && (
+                            <small style={{ color: '#047857', fontSize: '0.70rem', display: 'block', whiteSpace: 'nowrap' }}>
+                              ✓ {task.certifications[0].date}
+                            </small>
+                          )}
                         </div>
                       </td>
                       <td>
@@ -2180,13 +2478,23 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
                         </div>
                       </td>
                       <td>
-                        <button
-                          className="btn-delete"
-                          onClick={() => handleDeleteTask(task.id)}
-                          title="Eliminar tarea"
-                        >
-                          ✕
-                        </button>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            className="btn-certify"
+                            onClick={() => handleOpenCertModal(task)}
+                            title="Abrir acta de certificación e inspección con fotos"
+                          >
+                            📸
+                          </button>
+                          <button
+                            className="btn-delete"
+                            onClick={() => handleDeleteTask(task.id)}
+                            title="Eliminar tarea"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -3463,6 +3771,363 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
           </div>
         </div>
       )}
+
+      {/* ── MODAL: CERTIFICACIÓN DE AVANCE CON FOTOS E INSPECCIÓN (Paso 4) ── */}
+      {showCertModal && certTask && (
+        <div className="oxi-modal-backdrop" onClick={() => setShowCertModal(false)}>
+          <div className="oxi-modal-content" style={{ maxWidth: '640px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '1.8rem' }}>📸</span>
+              <div>
+                <h3 style={{ margin: 0 }}>Certificación de Avance e Inspección Técnica</h3>
+                <small style={{ color: '#737373' }}>
+                  Tarea: <strong>{certTask.name}</strong> ({certTask.startDate} al {certTask.endDate})
+                </small>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveCertification}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                <label>
+                  % Avance Físico Certificado (0-100%)
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    required
+                    value={certForm.certifiedPercent}
+                    onChange={e => setCertForm({ ...certForm, certifiedPercent: Number(e.target.value) || 0 })}
+                    style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#047857' }}
+                  />
+                </label>
+
+                <label>
+                  Fecha de Inspección en Obra
+                  <input
+                    type="date"
+                    required
+                    value={certForm.date}
+                    onChange={e => setCertForm({ ...certForm, date: e.target.value })}
+                  />
+                </label>
+              </div>
+
+              <div style={{ marginTop: '10px' }}>
+                <label>
+                  Inspector / Responsable Técnico
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej. Ing. Rodrigo Méndez (Director de Obra)"
+                    value={certForm.inspector}
+                    onChange={e => setCertForm({ ...certForm, inspector: e.target.value })}
+                  />
+                </label>
+              </div>
+
+              <div style={{ marginTop: '10px' }}>
+                <label>
+                  Observaciones Técnicas y Ensayos de Calidad
+                  <textarea
+                    rows="3"
+                    placeholder="Detalle de verificación: armaduras, recubrimientos, ensayos de laboratorio, estanqueidad o replanteo conforme..."
+                    value={certForm.notes}
+                    onChange={e => setCertForm({ ...certForm, notes: e.target.value })}
+                  />
+                </label>
+              </div>
+
+              <div style={{ marginTop: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600 }}>
+                  Fotos de Evidencia de Inspección ({certForm.photos.length})
+                </label>
+                <label className="cert-photo-upload-zone" style={{ display: 'block' }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    style={{ display: 'none' }}
+                    onChange={handleAddCertPhotos}
+                  />
+                  <span>📷 Hacé clic para subir o arrastrar fotos de obra (JPG, PNG, WebP)</span>
+                </label>
+
+                {certForm.photos.length > 0 && (
+                  <div className="cert-photo-grid">
+                    {certForm.photos.map(p => (
+                      <div key={p.id} className="cert-photo-thumb">
+                        <img
+                          src={p.dataUrl}
+                          alt={p.name}
+                          onClick={() => setSelectedPhotoPreview(p.dataUrl)}
+                          title="Clic para ampliar foto"
+                        />
+                        <button
+                          type="button"
+                          className="cert-photo-remove"
+                          onClick={() => handleRemoveCertPhoto(p.id)}
+                          title="Eliminar foto"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Historial previo si existe */}
+              {Array.isArray(certTask.certifications) && certTask.certifications.length > 0 && (
+                <div style={{ marginTop: '18px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
+                  <h4 style={{ margin: '0 0 8px', fontSize: '0.9rem', color: '#475569' }}>
+                    Historial de Inspecciones Previas ({certTask.certifications.length})
+                  </h4>
+                  <div style={{ maxHeight: '160px', overflowY: 'auto' }}>
+                    {certTask.certifications.map(c => (
+                      <div key={c.id} className="cert-history-item">
+                        <div className="cert-history-header">
+                          <strong style={{ color: '#047857' }}>{c.certifiedPercent}% Certificado</strong>
+                          <small style={{ color: '#64748b' }}>{c.date} • {c.inspector}</small>
+                        </div>
+                        {c.notes && <p style={{ margin: '2px 0 6px', fontSize: '0.8rem', color: '#334155' }}>{c.notes}</p>}
+                        {Array.isArray(c.photos) && c.photos.length > 0 && (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            {c.photos.map((ph, pi) => (
+                              <img
+                                key={pi}
+                                src={ph.dataUrl}
+                                alt="Evidencia"
+                                onClick={() => setSelectedPhotoPreview(ph.dataUrl)}
+                                style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer', border: '1px solid #cbd5e1' }}
+                                title="Ver foto ampliada"
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="modal-actions" style={{ marginTop: '16px' }}>
+                <button type="button" className="btn-cancel" onClick={() => setShowCertModal(false)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="oxi-btn-primary">
+                  ✓ Guardar Certificación & Actualizar Avance
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: AUTO-ONBOARDING DE OBRAS CON IA (Paso 5) ── */}
+      {showAiModal && (
+        <div className="oxi-modal-backdrop" onClick={() => setShowAiModal(false)}>
+          <div className="oxi-modal-content" style={{ maxWidth: '720px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '2rem' }}>⚡</span>
+              <div>
+                <h3 style={{ margin: 0 }}>Auto-Onboarding de Obras con Inteligencia Artificial</h3>
+                <small style={{ color: '#737373' }}>
+                  Generá cronograma Gantt, cuadrillas, leyes sociales BPS (65%) y rubros a partir de pliegos o memorias descriptivas.
+                </small>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '10px' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#475569' }}>Plantillas Rápidas:</span>
+              <div className="ai-templates-grid">
+                <button
+                  type="button"
+                  className="ai-template-card"
+                  onClick={() => setAiPrompt('Edificio Residencial de 4 niveles en Montevideo. Estructura de hormigón armado, mampostería cerámica, instalaciones completas, terminaciones finas y fachada con herrería integral y barandas Óxida.')}
+                >
+                  <strong>🏢 Edificio Residencial</strong>
+                  <small>4 niveles, hormigón, albañilería y herrería de fachada</small>
+                </button>
+                <button
+                  type="button"
+                  className="ai-template-card"
+                  onClick={() => setAiPrompt('Nave Industrial Logística de 1.200 m² con piso de hormigón pulido, estructura metálica reticulada de acero Óxida, cerramientos de chapa termoacústica e instalación eléctrica trifásica.')}
+                >
+                  <strong>🏭 Nave Industrial Logística</strong>
+                  <small>1.200 m², estructura metálica, pisos y cerramientos</small>
+                </button>
+                <button
+                  type="button"
+                  className="ai-template-card"
+                  onClick={() => setAiPrompt('Reforma Integral y Ampliación de Local Comercial de 300 m². Demolición, tabiquería de yeso, herrería comercial de frente vidriado, climatización, pisos de porcelanato y pintura general.')}
+                >
+                  <strong>🏬 Reforma Comercial</strong>
+                  <small>300 m², frente vidriado, yeso, pisos y climatización</small>
+                </button>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <label>
+                Fecha Estimada de Inicio de Obra
+                <input
+                  type="date"
+                  value={aiStartDate}
+                  onChange={e => setAiStartDate(e.target.value)}
+                />
+              </label>
+            </div>
+
+            <label style={{ display: 'block', marginTop: '10px' }}>
+              Pliego de Condiciones / Memoria Descriptiva / Requerimientos:
+              <textarea
+                rows="5"
+                placeholder="Pegá aquí el texto del pliego, especificaciones de licitación o descripción de la obra a cotizar..."
+                value={aiPrompt}
+                onChange={e => setAiPrompt(e.target.value)}
+                style={{ fontFamily: 'monospace', fontSize: '0.86rem' }}
+              />
+            </label>
+
+            {aiError && (
+              <div style={{ color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', padding: '8px 12px', borderRadius: '6px', margin: '10px 0', fontSize: '0.85rem' }}>
+                ⚠️ {aiError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+              <button
+                type="button"
+                className="oxi-btn-ai"
+                onClick={handleGenerateAiPlan}
+                disabled={aiLoading}
+                style={{ flex: 1, padding: '10px', fontSize: '0.95rem' }}
+              >
+                {aiLoading ? '⏳ Analizando Pliego y Generando Plan...' : '✨ Procesar Pliego y Generar Plan con IA'}
+              </button>
+            </div>
+
+            {aiResult && (
+              <div className="ai-preview-box">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <h4 style={{ margin: 0, color: '#166534' }}>✓ Plan de Obra Generado</h4>
+                  <span style={{ fontSize: '0.78rem', background: '#dcfce7', color: '#15803d', padding: '3px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                    {aiResult.source === 'openai' ? '🧠 Modelo OpenAI' : '⚡ Heurística Experta'}
+                  </span>
+                </div>
+                <p style={{ margin: '0 0 10px', fontSize: '0.84rem', color: '#14532d' }}>
+                  {aiResult.summary}
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px', textAlign: 'center' }}>
+                  <div style={{ background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                    <small style={{ color: '#4b5563', display: 'block' }}>Tareas</small>
+                    <strong style={{ fontSize: '1.1rem', color: '#1e293b' }}>{aiResult.tasks?.length || 0}</strong>
+                  </div>
+                  <div style={{ background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                    <small style={{ color: '#4b5563', display: 'block' }}>Rubros</small>
+                    <strong style={{ fontSize: '1.1rem', color: '#1e293b' }}>{aiResult.rubros?.length || 0}</strong>
+                  </div>
+                  <div style={{ background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                    <small style={{ color: '#4b5563', display: 'block' }}>Presupuesto Estimado</small>
+                    <strong style={{ fontSize: '1.05rem', color: '#047857' }}>
+                      {formatMoney(aiResult.tasks?.reduce((sum, t) => sum + (t.assignedLaborCost || 0) + (t.socialLawsCost || 0) + (t.materialCost || 0), 0) || 0)}
+                    </strong>
+                  </div>
+                </div>
+
+                <div style={{ maxHeight: '180px', overflowY: 'auto', background: '#fff', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                  <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                        <th style={{ padding: '6px 8px', textAlign: 'left' }}>Tarea</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left' }}>Plazo</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left' }}>Cuadrilla</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'right' }}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(aiResult.tasks || []).map((t, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '6px 8px' }}><strong>{t.name}</strong></td>
+                          <td style={{ padding: '6px 8px' }}>{t.startDate} al {t.endDate}</td>
+                          <td style={{ padding: '6px 8px' }}>{t.peopleCount}x {t.category}</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>
+                            {formatMoney((t.assignedLaborCost || 0) + (t.socialLawsCost || 0) + (t.materialCost || 0))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                  <button
+                    type="button"
+                    className="oxi-btn-primary"
+                    style={{ flex: 1 }}
+                    onClick={() => handleApplyAiPlan('replace')}
+                  >
+                    🚀 Reemplazar y Cargar en Cronograma
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    style={{ flex: 1 }}
+                    onClick={() => handleApplyAiPlan('append')}
+                  >
+                    ➕ Anexar a Tareas Actuales
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="modal-actions" style={{ marginTop: '16px' }}>
+              <button type="button" className="btn-cancel" onClick={() => setShowAiModal(false)}>
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── LIGHTBOX: VISOR DE FOTO DE INSPECCIÓN EN ALTA DEFINICIÓN ── */}
+      {selectedPhotoPreview && (
+        <div
+          className="oxi-modal-backdrop"
+          style={{ background: 'rgba(0, 0, 0, 0.85)', zIndex: 99999 }}
+          onClick={() => setSelectedPhotoPreview(null)}
+        >
+          <div style={{ maxWidth: '90vw', maxHeight: '90vh', position: 'relative' }} onClick={e => e.stopPropagation()}>
+            <img
+              src={selectedPhotoPreview}
+              alt="Inspección Ampliada"
+              style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
+            />
+            <button
+              type="button"
+              onClick={() => setSelectedPhotoPreview(null)}
+              style={{
+                position: 'absolute',
+                top: '-15px',
+                right: '-15px',
+                background: '#dc2626',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+

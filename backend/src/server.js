@@ -4,6 +4,7 @@ import cors from 'cors'
 import { getRepository } from './repository.js'
 import { isPostgresEnabled } from './db.js'
 import { generateChatReply } from './chatService.js'
+import { generateOxiProPlanFromSpec } from './oxiProAiService.js'
 import { notifyAdminCustomerRegistered, notifyAdminCustomerReply, notifyAdminNewQuoteRequest, notifyAdminQuoteStale, notifyAdminTransferReported, notifyCustomerQuoteActivity, notifyCustomerQuoteReminder, notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifyQuoteDepositApproved, notifySearchRecommendations, sendCustomerInvitationEmail, sendCustomerInvitationWhatsapp } from './notificationService.js'
 import {
   createMercadoPagoPreference,
@@ -535,6 +536,46 @@ app.patch('/customer/quotes/:quoteId/b2b-project', authMiddleware, customerOnly,
   const quote = await repo.assignQuoteToB2bProject(quoteId, b2bProjectId, req.authUser.id)
   if (!quote) throw new NotFoundError('Cotización')
   return res.json(quote)
+}))
+
+app.get('/customer/b2b-projects/:projectId/oxipro', authMiddleware, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  const projectId = validateNumber(req.params.projectId, 'Proyecto ID', 1)
+  const data = await repo.getOxiProProjectData(projectId)
+  return res.json(data)
+}))
+
+app.put('/customer/b2b-projects/:projectId/oxipro/tasks', authMiddleware, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  const projectId = validateNumber(req.params.projectId, 'Proyecto ID', 1)
+  const tasks = Array.isArray(req.body.tasks) ? req.body.tasks : []
+  const saved = await repo.saveOxiProTasks(projectId, tasks)
+  return res.json({ tasks: saved })
+}))
+
+app.put('/customer/b2b-projects/:projectId/oxipro/rubros', authMiddleware, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  const projectId = validateNumber(req.params.projectId, 'Proyecto ID', 1)
+  const rubros = Array.isArray(req.body.rubros) ? req.body.rubros : []
+  const saved = await repo.saveOxiProRubros(projectId, rubros)
+  return res.json({ rubros: saved })
+}))
+
+app.post('/customer/b2b-projects/:projectId/oxipro/delays', authMiddleware, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  const projectId = validateNumber(req.params.projectId, 'Proyecto ID', 1)
+  const delay = req.body || {}
+  const created = await repo.createOxiProDelay(projectId, delay)
+  return res.status(201).json(created)
+}))
+
+app.delete('/customer/b2b-projects/:projectId/oxipro/delays/:delayId', authMiddleware, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  const projectId = validateNumber(req.params.projectId, 'Proyecto ID', 1)
+  const delayId = validateNumber(req.params.delayId, 'Demora ID', 1)
+  const deleted = await repo.deleteOxiProDelay(delayId, projectId)
+  if (!deleted) throw new NotFoundError('Registro de demora')
+  return res.json({ success: true, deleted })
 }))
 
 app.get('/customer/quotes', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
@@ -1938,6 +1979,18 @@ app.post('/oxipro/report/pdf', asyncHandler(async (req, res) => {
   })
   return res.send(pdfBuffer)
 }))
+
+app.post('/oxipro/ai-onboarding', asyncHandler(async (req, res) => {
+  const { prompt, text, projectName, startDate } = req.body || {}
+  const plan = await generateOxiProPlanFromSpec({
+    prompt: prompt || '',
+    text: text || '',
+    projectName: projectName || 'Nueva Obra',
+    startDate: startDate || null
+  })
+  return res.json(plan)
+}))
+
 
 app.post('/admin/costing/convert-to-quote', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const { customerId, result, customTitle, notes } = req.body || {}

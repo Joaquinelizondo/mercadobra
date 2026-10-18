@@ -396,13 +396,133 @@ async function getJsonRepo() {
       const quote=(readDb().customerQuotes||[]).find((item)=>Number(item.id)===Number(id)); return quote?mapCustomerQuoteRow(quote):null
     },
     async createB2bProject(payload) {
-      return { id: 1, customerUserId: payload.customerUserId, name: payload.name, location: payload.location || '', status: 'active', createdAt: new Date().toISOString() }
+      const db = readDb()
+      if (!Array.isArray(db.b2bProjects)) db.b2bProjects = []
+      const project = {
+        id: nextId(db.b2bProjects),
+        customerUserId: Number(payload.customerUserId),
+        name: payload.name,
+        location: payload.location || '',
+        status: 'active',
+        createdAt: new Date().toISOString()
+      }
+      db.b2bProjects.push(project)
+      writeDb(db)
+      return project
     },
     async getB2bProjects(customerUserId) {
-      return []
+      const db = readDb()
+      return (db.b2bProjects || []).filter(p => Number(p.customerUserId) === Number(customerUserId))
     },
     async assignQuoteToB2bProject(quoteId, projectId, customerUserId) {
-      return null
+      const db = readDb()
+      const quote = (db.customerQuotes || []).find(q => Number(q.id) === Number(quoteId) && Number(q.customerUserId || q.customerId) === Number(customerUserId))
+      if (!quote) return null
+      quote.b2bProjectId = Number(projectId)
+      writeDb(db)
+      return mapCustomerQuoteRow(quote)
+    },
+    async getOxiProProjectData(projectId) {
+      const db = readDb()
+      const pid = Number(projectId)
+      const tasks = (db.oxiProTasks || [])
+        .filter(t => Number(t.b2bProjectId) === pid)
+        .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
+      const rubros = (db.oxiProRubros || [])
+        .filter(r => Number(r.b2bProjectId) === pid)
+        .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
+      const delays = (db.oxiProDelays || [])
+        .filter(d => Number(d.b2bProjectId) === pid)
+        .sort((a, b) => new Date(b.date || b.eventDate || 0) - new Date(a.date || a.eventDate || 0))
+      return { tasks, rubros, delays }
+    },
+    async saveOxiProTasks(projectId, tasks) {
+      const db = readDb()
+      const pid = Number(projectId)
+      if (!Array.isArray(db.oxiProTasks)) db.oxiProTasks = []
+      db.oxiProTasks = db.oxiProTasks.filter(t => Number(t.b2bProjectId) !== pid)
+      let nextTaskId = 1
+      if (db.oxiProTasks.length > 0) {
+        nextTaskId = Math.max(...db.oxiProTasks.map(t => Number(t.id) || 0)) + 1
+      }
+      const saved = (tasks || []).map((t, idx) => ({
+        id: nextTaskId++,
+        b2bProjectId: pid,
+        name: t.name || 'Tarea',
+        startDate: t.startDate || '',
+        endDate: t.endDate || '',
+        peopleCount: Number(t.peopleCount) || 1,
+        category: t.category || 'Oficial',
+        categoryRate: Number(t.categoryRate) || 2800,
+        assignedLaborCost: Number(t.assignedLaborCost) || 0,
+        socialLawsCost: Number(t.socialLawsCost) || 0,
+        materialCost: Number(t.materialCost) || 0,
+        month: t.month || 'Mes 1',
+        plannedPercent: Number(t.plannedPercent) || 0,
+        progressPercent: Number(t.progressPercent) || 0,
+        orderIndex: idx,
+        certifications: Array.isArray(t.certifications) ? t.certifications : []
+      }))
+      db.oxiProTasks.push(...saved)
+      writeDb(db)
+      return saved
+    },
+    async saveOxiProRubros(projectId, rubros) {
+      const db = readDb()
+      const pid = Number(projectId)
+      if (!Array.isArray(db.oxiProRubros)) db.oxiProRubros = []
+      db.oxiProRubros = db.oxiProRubros.filter(r => Number(r.b2bProjectId) !== pid)
+      let nextRubroId = 1
+      if (db.oxiProRubros.length > 0) {
+        nextRubroId = Math.max(...db.oxiProRubros.map(r => Number(r.dbId || r.id) || 0)) + 1
+      }
+      const saved = (rubros || []).map((r, idx) => ({
+        id: r.id || r.rubroKey || `rubro_${idx}`,
+        dbId: nextRubroId++,
+        b2bProjectId: pid,
+        rubroKey: r.rubroKey || r.id || `rubro_${idx}`,
+        name: r.name || 'Rubro',
+        laborCost: Number(r.laborCost) || 0,
+        socialLawsCost: Number(r.socialLawsCost) || 0,
+        materialCost: Number(r.materialCost) || 0,
+        budgeted: Number(r.budgeted) || 0,
+        executed: Number(r.executed) || 0,
+        orderIndex: idx
+      }))
+      db.oxiProRubros.push(...saved)
+      writeDb(db)
+      return saved
+    },
+    async createOxiProDelay(projectId, delay) {
+      const db = readDb()
+      const pid = Number(projectId)
+      if (!Array.isArray(db.oxiProDelays)) db.oxiProDelays = []
+      const nextDelayId = db.oxiProDelays.length > 0 ? Math.max(...db.oxiProDelays.map(d => Number(d.id) || 0)) + 1 : 1
+      const created = {
+        id: nextDelayId,
+        b2bProjectId: pid,
+        date: delay.eventDate || delay.date || new Date().toISOString().split('T')[0],
+        eventDate: delay.eventDate || delay.date || new Date().toISOString().split('T')[0],
+        days: Number(delay.days) || 1,
+        cause: delay.cause || 'Lluvia intensa y precipitaciones',
+        notes: delay.notes || '',
+        tasksSnapshot: delay.tasksSnapshot || [],
+        createdAt: new Date().toISOString()
+      }
+      db.oxiProDelays.push(created)
+      writeDb(db)
+      return created
+    },
+    async deleteOxiProDelay(delayId, projectId) {
+      const db = readDb()
+      const pid = Number(projectId)
+      const did = Number(delayId)
+      if (!Array.isArray(db.oxiProDelays)) db.oxiProDelays = []
+      const existing = db.oxiProDelays.find(d => Number(d.id) === did && Number(d.b2bProjectId) === pid)
+      if (!existing) return null
+      db.oxiProDelays = db.oxiProDelays.filter(d => !(Number(d.id) === did && Number(d.b2bProjectId) === pid))
+      writeDb(db)
+      return existing
     },
     async createCustomerQuote(payload) {
       const db = readDb()
@@ -986,6 +1106,68 @@ async function ensureFabricationOrdersTable(pool) {
   fabricationTableChecked = true
 }
 
+let oxiProTablesChecked = false
+async function ensureOxiProTables(pool) {
+  if (oxiProTablesChecked) return
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS b2b_project_tasks (
+        id SERIAL PRIMARY KEY,
+        b2b_project_id INTEGER NOT NULL REFERENCES b2b_projects(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        start_date DATE,
+        end_date DATE,
+        people_count INTEGER DEFAULT 1,
+        category TEXT DEFAULT 'Oficial',
+        category_rate NUMERIC DEFAULT 2800,
+        assigned_labor_cost NUMERIC DEFAULT 0,
+        social_laws_cost NUMERIC DEFAULT 0,
+        material_cost NUMERIC DEFAULT 0,
+        month TEXT DEFAULT 'Mes 1',
+        planned_percent NUMERIC DEFAULT 0,
+        progress_percent NUMERIC DEFAULT 0,
+        order_index INTEGER DEFAULT 0,
+        certifications JSONB DEFAULT '[]'::jsonb,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+      ALTER TABLE b2b_project_tasks ADD COLUMN IF NOT EXISTS certifications JSONB DEFAULT '[]'::jsonb;
+      CREATE INDEX IF NOT EXISTS idx_b2b_project_tasks_project_id ON b2b_project_tasks(b2b_project_id);
+
+      CREATE TABLE IF NOT EXISTS b2b_project_rubros (
+        id SERIAL PRIMARY KEY,
+        b2b_project_id INTEGER NOT NULL REFERENCES b2b_projects(id) ON DELETE CASCADE,
+        rubro_key TEXT NOT NULL,
+        name TEXT NOT NULL,
+        labor_cost NUMERIC DEFAULT 0,
+        social_laws_cost NUMERIC DEFAULT 0,
+        material_cost NUMERIC DEFAULT 0,
+        budgeted NUMERIC DEFAULT 0,
+        executed NUMERIC DEFAULT 0,
+        order_index INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_b2b_project_rubros_project_id ON b2b_project_rubros(b2b_project_id);
+
+      CREATE TABLE IF NOT EXISTS b2b_project_delays (
+        id SERIAL PRIMARY KEY,
+        b2b_project_id INTEGER NOT NULL REFERENCES b2b_projects(id) ON DELETE CASCADE,
+        event_date DATE NOT NULL,
+        days INTEGER NOT NULL DEFAULT 1,
+        cause TEXT NOT NULL DEFAULT 'Lluvia intensa y precipitaciones',
+        notes TEXT DEFAULT '',
+        tasks_snapshot JSONB DEFAULT '[]'::jsonb,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_b2b_project_delays_project_id ON b2b_project_delays(b2b_project_id);
+    `)
+  } catch (err) {
+    console.error('[ensureOxiProTables:warning]', err.message)
+  }
+  oxiProTablesChecked = true
+}
+
 async function getPgRepo() {
   const pool = getPool()
   return {
@@ -1253,6 +1435,219 @@ async function getPgRepo() {
         [projectId, quoteId, customerUserId]
       )
       return rows[0] ? mapCustomerQuoteRow(rows[0]) : null
+    },
+    async getOxiProProjectData(projectId) {
+      await ensureOxiProTables(pool)
+      const tasksRes = await pool.query(
+        `SELECT * FROM b2b_project_tasks WHERE b2b_project_id = $1 ORDER BY order_index ASC, id ASC`,
+        [projectId]
+      )
+      const rubrosRes = await pool.query(
+        `SELECT * FROM b2b_project_rubros WHERE b2b_project_id = $1 ORDER BY order_index ASC, id ASC`,
+        [projectId]
+      )
+      const delaysRes = await pool.query(
+        `SELECT * FROM b2b_project_delays WHERE b2b_project_id = $1 ORDER BY event_date DESC, id DESC`,
+        [projectId]
+      )
+
+      return {
+        tasks: tasksRes.rows.map(r => ({
+          id: r.id,
+          b2bProjectId: r.b2b_project_id,
+          name: r.name,
+          startDate: r.start_date ? new Date(r.start_date).toISOString().split('T')[0] : '',
+          endDate: r.end_date ? new Date(r.end_date).toISOString().split('T')[0] : '',
+          peopleCount: Number(r.people_count) || 1,
+          category: r.category,
+          categoryRate: Number(r.category_rate) || 0,
+          assignedLaborCost: Number(r.assigned_labor_cost) || 0,
+          socialLawsCost: Number(r.social_laws_cost) || 0,
+          materialCost: Number(r.material_cost) || 0,
+          month: r.month,
+          plannedPercent: Number(r.planned_percent) || 0,
+          progressPercent: Number(r.progress_percent) || 0,
+          orderIndex: r.order_index,
+          certifications: r.certifications || []
+        })),
+        rubros: rubrosRes.rows.map(r => ({
+          id: r.rubro_key || String(r.id),
+          dbId: r.id,
+          b2bProjectId: r.b2b_project_id,
+          rubroKey: r.rubro_key,
+          name: r.name,
+          laborCost: Number(r.labor_cost) || 0,
+          socialLawsCost: Number(r.social_laws_cost) || 0,
+          materialCost: Number(r.material_cost) || 0,
+          budgeted: Number(r.budgeted) || 0,
+          executed: Number(r.executed) || 0,
+          orderIndex: r.order_index
+        })),
+        delays: delaysRes.rows.map(r => ({
+          id: r.id,
+          b2bProjectId: r.b2b_project_id,
+          date: r.event_date ? new Date(r.event_date).toISOString().split('T')[0] : '',
+          eventDate: r.event_date ? new Date(r.event_date).toISOString().split('T')[0] : '',
+          days: Number(r.days) || 1,
+          cause: r.cause,
+          notes: r.notes || '',
+          tasksSnapshot: r.tasks_snapshot || [],
+          createdAt: r.created_at
+        }))
+      }
+    },
+    async saveOxiProTasks(projectId, tasks) {
+      await ensureOxiProTables(pool)
+      const client = await pool.connect()
+      try {
+        await client.query('BEGIN')
+        await client.query('DELETE FROM b2b_project_tasks WHERE b2b_project_id = $1', [projectId])
+        const inserted = []
+        for (let i = 0; i < (tasks || []).length; i++) {
+          const t = tasks[i]
+          const { rows } = await client.query(
+            `INSERT INTO b2b_project_tasks (
+              b2b_project_id, name, start_date, end_date, people_count, category, category_rate,
+              assigned_labor_cost, social_laws_cost, material_cost, month, planned_percent, progress_percent, order_index, certifications
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
+            [
+              projectId,
+              t.name || 'Tarea',
+              t.startDate || null,
+              t.endDate || null,
+              Number(t.peopleCount) || 1,
+              t.category || 'Oficial',
+              Number(t.categoryRate) || 2800,
+              Number(t.assignedLaborCost) || 0,
+              Number(t.socialLawsCost) || 0,
+              Number(t.materialCost) || 0,
+              t.month || 'Mes 1',
+              Number(t.plannedPercent) || 0,
+              Number(t.progressPercent) || 0,
+              i,
+              JSON.stringify(t.certifications || [])
+            ]
+          )
+          const r = rows[0]
+          inserted.push({
+            id: r.id,
+            b2bProjectId: r.b2b_project_id,
+            name: r.name,
+            startDate: r.start_date ? new Date(r.start_date).toISOString().split('T')[0] : '',
+            endDate: r.end_date ? new Date(r.end_date).toISOString().split('T')[0] : '',
+            peopleCount: Number(r.people_count) || 1,
+            category: r.category,
+            categoryRate: Number(r.category_rate) || 0,
+            assignedLaborCost: Number(r.assigned_labor_cost) || 0,
+            socialLawsCost: Number(r.social_laws_cost) || 0,
+            materialCost: Number(r.material_cost) || 0,
+            month: r.month,
+            plannedPercent: Number(r.planned_percent) || 0,
+            progressPercent: Number(r.progress_percent) || 0,
+            orderIndex: r.order_index,
+            certifications: r.certifications || []
+          })
+        }
+        await client.query('COMMIT')
+        return inserted
+      } catch (err) {
+        await client.query('ROLLBACK')
+        throw err
+      } finally {
+        client.release()
+      }
+    },
+    async saveOxiProRubros(projectId, rubros) {
+      await ensureOxiProTables(pool)
+      const client = await pool.connect()
+      try {
+        await client.query('BEGIN')
+        await client.query('DELETE FROM b2b_project_rubros WHERE b2b_project_id = $1', [projectId])
+        const inserted = []
+        for (let i = 0; i < (rubros || []).length; i++) {
+          const r = rubros[i]
+          const { rows } = await client.query(
+            `INSERT INTO b2b_project_rubros (
+              b2b_project_id, rubro_key, name, labor_cost, social_laws_cost, material_cost, budgeted, executed, order_index
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+            [
+              projectId,
+              r.id || r.rubroKey || `rubro_${i}`,
+              r.name || 'Rubro',
+              Number(r.laborCost) || 0,
+              Number(r.socialLawsCost) || 0,
+              Number(r.materialCost) || 0,
+              Number(r.budgeted) || 0,
+              Number(r.executed) || 0,
+              i
+            ]
+          )
+          const row = rows[0]
+          inserted.push({
+            id: row.rubro_key || String(row.id),
+            dbId: row.id,
+            b2bProjectId: row.b2b_project_id,
+            rubroKey: row.rubro_key,
+            name: row.name,
+            laborCost: Number(row.labor_cost) || 0,
+            socialLawsCost: Number(row.social_laws_cost) || 0,
+            materialCost: Number(row.material_cost) || 0,
+            budgeted: Number(row.budgeted) || 0,
+            executed: Number(row.executed) || 0,
+            orderIndex: row.order_index
+          })
+        }
+        await client.query('COMMIT')
+        return inserted
+      } catch (err) {
+        await client.query('ROLLBACK')
+        throw err
+      } finally {
+        client.release()
+      }
+    },
+    async createOxiProDelay(projectId, delay) {
+      await ensureOxiProTables(pool)
+      const { rows } = await pool.query(
+        `INSERT INTO b2b_project_delays (
+          b2b_project_id, event_date, days, cause, notes, tasks_snapshot
+        ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        [
+          projectId,
+          delay.eventDate || new Date().toISOString().split('T')[0],
+          Number(delay.days) || 1,
+          delay.cause || 'Lluvia intensa y precipitaciones',
+          delay.notes || '',
+          JSON.stringify(delay.tasksSnapshot || [])
+        ]
+      )
+      const r = rows[0]
+      return {
+        id: r.id,
+        b2bProjectId: r.b2b_project_id,
+        date: r.event_date ? new Date(r.event_date).toISOString().split('T')[0] : '',
+        eventDate: r.event_date ? new Date(r.event_date).toISOString().split('T')[0] : '',
+        days: Number(r.days) || 1,
+        cause: r.cause,
+        notes: r.notes || '',
+        tasksSnapshot: r.tasks_snapshot || [],
+        createdAt: r.created_at
+      }
+    },
+    async deleteOxiProDelay(delayId, projectId) {
+      await ensureOxiProTables(pool)
+      const { rows } = await pool.query(
+        `DELETE FROM b2b_project_delays WHERE id = $1 AND b2b_project_id = $2 RETURNING *`,
+        [delayId, projectId]
+      )
+      if (!rows[0]) return null
+      const r = rows[0]
+      return {
+        id: r.id,
+        b2bProjectId: r.b2b_project_id,
+        date: r.event_date ? new Date(r.event_date).toISOString().split('T')[0] : '',
+        days: Number(r.days) || 1
+      }
     },
     async createCustomerQuote(payload) {
       const { rows } = await pool.query(
