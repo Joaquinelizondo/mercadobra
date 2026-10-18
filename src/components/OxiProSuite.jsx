@@ -9,6 +9,7 @@ import {
   generateOxiProAiPlan
 } from '../lib/api'
 import { generateHeuristicConstructionPlan } from '../utils/constructionAiEngine'
+import OxiProCopilot from './OxiProCopilot'
 import './OxiProSuite.css'
 
 function getAuthToken() {
@@ -4143,6 +4144,63 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
           </div>
         </div>
       )}
+
+      {/* ── COPILOT DE OBRA (ASISTENTE IA CONVERSACIONAL) ── */}
+      <OxiProCopilot
+        project={project}
+        schedule={schedule}
+        setSchedule={setSchedule}
+        rubros={rubros}
+        setRubros={setRubros}
+        rainLogs={rainLogs}
+        setRainLogs={setRainLogs}
+        setActiveTab={setActiveTab}
+        onApplyRainShift={(days, date, reason) => {
+          const delayDays = Math.max(1, Number(days) || 1)
+          const eventDate = date || new Date().toISOString().split('T')[0]
+          let affectedTasksCount = 0
+          const updatedSchedule = schedule.map(t => {
+            if (Number(t.progressPercent) === 100) return t
+            if (t.endDate < eventDate) return t
+            affectedTasksCount++
+            let newStart = t.startDate
+            let newEnd = t.endDate
+            if (t.startDate <= eventDate && t.endDate >= eventDate) {
+              newEnd = addDays(t.endDate, delayDays)
+            } else if (t.startDate > eventDate) {
+              newStart = addDays(t.startDate, delayDays)
+              newEnd = addDays(t.endDate, delayDays)
+            }
+            return { ...t, startDate: newStart, endDate: newEnd }
+          })
+          setSchedule(updatedSchedule)
+          const newRainLog = {
+            id: Date.now(),
+            date: eventDate,
+            days: delayDays,
+            reason: reason || 'Lluvias vía Copilot',
+            affectedCount: affectedTasksCount,
+            createdAt: new Date().toISOString()
+          }
+          setRainLogs(prev => [newRainLog, ...prev])
+          const newDocEntry = {
+            id: Date.now(),
+            name: `Acta Técnica - Suspensión por Lluvia (${eventDate}).pdf`,
+            type: 'certificaciones',
+            version: 'v1.0',
+            uploadedBy: 'OxI Copilot',
+            date: new Date().toISOString().split('T')[0],
+            fileSize: '320 KB',
+            history: [{
+              version: 'v1.0',
+              date: new Date().toISOString().split('T')[0],
+              responsible: 'OxI Copilot',
+              notes: `Emisión de acta técnica por ${delayDays} días de lluvia. ${affectedTasksCount} tareas desplazadas en cascada.`
+            }]
+          }
+          setDocuments(prev => [newDocEntry, ...prev])
+        }}
+      />
     </div>
   )
 }

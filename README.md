@@ -28,6 +28,7 @@ La plataforma se encuentra operativa con:
     - *Informe Ejecutivo en PDF (1 Clic):* Generador de informe directivo de 4 páginas de alta calidad gráfica (`POST /oxipro/report/pdf`) con portada, ficha técnica, cronograma, partidas con leyes sociales, actas de lluvia y firmas de comitente y director de obra.
     - *Persistencia Relacional Multi-usuario:* Modelo de datos en PostgreSQL (`b2b_project_tasks`, `b2b_project_rubros`, `b2b_project_delays`) con auto-sincronización debounceada y badge de estado en vivo (`☁️ Guardado en la nube (PostgreSQL)` / `📁 Modo Local / Demo`).
     - *Auto-Onboarding Asistido por IA:* Ingestión inteligente de memorias y pliegos con OpenAI (`gpt-4o-mini`) y motor heurístico offline de ingeniería civil en cliente y servidor, con perfiles adaptados para pérgolas, herrería de fachada, galpones industriales, reformas y edificios, respaldado por una arquitectura de resiliencia Zero-Downtime.
+    - *OxI Copilot (Asistente Conversacional de Obra con IA):* Chat interactivo contextual en vivo (`💬 Copilot de Obra`) para gobernar el proyecto mediante prompts en lenguaje natural: alta de tareas con cuadrillas SUNCA y leyes sociales BPS (65%), certificación de avances, desplazamiento en cascada por lluvias, creación de partidas presupuestarias y consultas analíticas de atrasos y saldo disponible, con tarjetas de previsualización estructuradas y aplicación en 1 clic (*Human-in-the-Loop*).
   - **Gestión de niveles:** Conmutador de plataforma en la barra lateral, control y asignación administrativa de tiers (`classic` / `pro`) y solicitud directa de habilitación a Pro desde modal interactivo en 1 clic.
 - **OXI Network (Marketplace de Fabricación Distribuida):**
   - Adjudicación de piezas y proyectos desde el espacio de cotización administrativo (`/admin/cotizaciones/:id`) a talleres asociados homologados con precio objetivo, moneda y fecha límite.
@@ -209,6 +210,7 @@ Esta es la lista ordenada de tareas accionables para completar la transición a 
 - [x] **Paso 3 — Persistencia en Backend (PostgreSQL Multi-usuario):** Migración y persistencia completa del modelo de datos de OxI Pro en tablas relacionales PostgreSQL (`b2b_project_tasks`, `b2b_project_rubros`, `b2b_project_delays` en migración `038_oxipro_collaboration_tables.sql`) y soporte dual en memoria/JSON. Endpoints REST dedicados (`GET/PUT /customer/b2b-projects/:projectId/oxipro/...`) con auto-sincronización debounceada en segundo plano, indicador de estado en vivo (`☁️ Guardado en la nube (PostgreSQL)` / `📁 Modo Local / Demo`) y persistencia multi-usuario colaborativa para directores de obra y administración.
 - [x] **Paso 4 — Certificaciones de Obra con Fotos y Registro de Inspección:** Sistema de certificación técnica de avance físico con registro de inspecciones por tarea. Modal interactivo para certificar porcentaje real con nombre de inspector/dirección de obra, fecha de relevamiento, observaciones técnicas de ensayos de calidad y carga de fotos de evidencia con vista previa de miniaturas, visor lightbox en alta resolución y bitácora histórica de certificaciones por partida.
 - [x] **Paso 5 — Auto-Onboarding de Obras con IA (Pliegos a Gantt):** Motor de ingestión asistida con Inteligencia Artificial (`POST /oxipro/ai-onboarding`) para estructurar obras automáticamente a partir de pliegos técnicos o memorias descriptivas. Soporte para OpenAI (`gpt-4o-mini`) y motor heurístico de construcción (normativa BPS 65%, categorías SUNCA, herrería y cerramientos Óxida). Plantillas rápidas para Edificio Residencial, Nave Industrial y Reforma Comercial con previsualización interactiva y botón de inyección directa en el cronograma Gantt y rubros en 1 clic.
+- [x] **Paso 6 — OxI Copilot: Asistente Conversacional de Obra con IA:** Chat interactivo contextual (`OxiProCopilot.jsx` y `oxiProCopilotEngine.js`) accesible desde botón flotante industrial `💬 Copilot de Obra`. Permite ingresar comandos y cambios mediante prompts en lenguaje natural: alta de tareas con cuadrillas SUNCA y cálculo de leyes sociales BPS (65%), certificación de avances físicos, desplazamiento en cascada por lluvias y contingencias, creación de partidas presupuestarias y consultas analíticas en vivo (tareas atrasadas, saldo devengado, SPI/SV). Diseñado con tarjetas de previsualización estructuradas para confirmación en 1 clic (*Human-in-the-Loop*).
 
 ### 🏗️ Arquitectura y Funcionamiento de OxI Pro Suite (ConstructionTech)
 
@@ -2070,9 +2072,18 @@ El desarrollo se realizará en este orden. No se iniciará una etapa posterior h
   - Motor heurístico cliente offline en navegador (`src/utils/constructionAiEngine.js`) con ejecución instantánea y cero latencia.
   - Perfiles adaptados para Pérgolas y Herrería Óxida (medidas exactas, kilos de acero, pintura y horas), Galpones / Naves Industriales, Reformas Comerciales y Edificios Residenciales.
   - Arquitectura de alta disponibilidad con Zero-Downtime Fallback: si el backend remoto responde 404/500 por encontrarse en despliegue, el frontend resuelve la solicitud de manera transparente mediante el motor local.
+- [x] **OxI Copilot — Asistente Conversacional de Obra con IA:**
+  - Componente `src/components/OxiProCopilot.jsx` y motor de lenguaje natural `src/utils/oxiProCopilotEngine.js`.
+  - Botón flotante accesible desde cualquier pestaña de OxI Pro para interactuar con la obra mediante prompts.
+  - Creación de tareas con cálculo automático de cuadrillas SUNCA, leyes sociales BPS (65%) y costos de materiales.
+  - Certificación de avance físico de partidas y actualización de fechas en tiempo real.
+  - Registro de días de lluvia y suspensiones climáticas con desplazamiento automático en cascada.
+  - Alta y ajuste de partidas presupuestarias.
+  - Consultas analíticas de atrasos de obra, SPI/SV y balance financiero con respuestas ejecutivas.
+  - Tarjetas interactivas de cambio con confirmación humana (*Human-in-the-Loop*) antes de aplicar al proyecto.
 - [x] **Verificación y Cobertura de Pruebas:**
   - 14/14 pruebas unitarias de backend pasando exitosamente.
-  - 32/32 pruebas unitarias de modelador y componentes frontend pasando exitosamente.
+  - 37/37 pruebas unitarias de frontend (modelador y motor Copilot) pasando exitosamente.
   - Compilación de producción validada (`npm run build`).
 
 ### Criterio de salida del MVP

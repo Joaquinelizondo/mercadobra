@@ -13,7 +13,7 @@
     "preflight": "npm run db:check",
     "build": "vite build",
     "lint": "eslint .",
-    "test": "node --test src/modeler/*.test.js",
+    "test": "node --test src/modeler/*.test.js src/utils/*.test.js",
     "preview": "vite preview"
   },
   "dependencies": {
