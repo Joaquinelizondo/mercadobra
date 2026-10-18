@@ -206,7 +206,56 @@ Esta es la lista ordenada de tareas accionables para completar la transición a 
 - [x] **Paso 4 — Certificaciones de Obra con Fotos y Registro de Inspección:** Sistema de certificación técnica de avance físico con registro de inspecciones por tarea. Modal interactivo para certificar porcentaje real con nombre de inspector/dirección de obra, fecha de relevamiento, observaciones técnicas de ensayos de calidad y carga de fotos de evidencia con vista previa de miniaturas, visor lightbox en alta resolución y bitácora histórica de certificaciones por partida.
 - [x] **Paso 5 — Auto-Onboarding de Obras con IA (Pliegos a Gantt):** Motor de ingestión asistida con Inteligencia Artificial (`POST /oxipro/ai-onboarding`) para estructurar obras automáticamente a partir de pliegos técnicos o memorias descriptivas. Soporte para OpenAI (`gpt-4o-mini`) y motor heurístico de construcción (normativa BPS 65%, categorías SUNCA, herrería y cerramientos Óxida). Plantillas rápidas para Edificio Residencial, Nave Industrial y Reforma Comercial con previsualización interactiva y botón de inyección directa en el cronograma Gantt y rubros en 1 clic.
 
+### 🏗️ Arquitectura y Funcionamiento de OxI Pro Suite (ConstructionTech)
+
+OxI Pro es la solución integral de gestión técnica y financiera de obras para estudios de arquitectura, constructoras y desarrolladores. Está articulada en 4 pestañas operativas y respaldada por servicios de backend dedicados:
+
+#### Pestaña 1: Gestor Documental Técnico & Versionado de Planos
+- **Clasificación por tipo:** Planos arquitectónicos y estructurales, Certificaciones de avance, No Conformidades de auditoría, Seguridad y Salud laboral (SST), y Gestión Ambiental.
+- **Versionado incremental de iteraciones:** Carga de nuevas versiones (`v1.0` -> `v2.0` -> `v2.1`) con reemplazo de archivo, memoria técnica de cambios, responsable y trazabilidad histórica completa.
+- **Descargas directas:** Acceso directo a archivos originales en formato CAD (`.dwg`, `.dxf`), PDF, imágenes o planillas técnicas.
+
+#### Pestaña 2: Cronograma Gantt Interactivo & Asignación de Cuadrillas
+- **Doble vista operativa:** Selector rápido entre vista gráfica `[📊 Diagrama de Gantt]` y vista matricial `[📋 Planilla & Costos]`.
+- **Estructuración de tareas:** Fechas de inicio y fin, cálculo dinámico de días hábiles, mes calendario y cuadrillas asignadas por categoría salarial (Capataz General, Oficial Especializado, Oficial, Medio Oficial, Peón Práctico).
+- **Control dual de avance:** Comparativa visual en barra de avance programado (Plan contractual) vs. avance real físico ejecutado, con badges automáticos de desvío de plazo (`+X% Adelantada`, `0% En plazo`, `-X% Atrasada`).
+- **Desplazamiento en cascada por lluvias:** Registro de temporales climáticos con corrimiento automático de fechas para tareas activas y futuras, preservando duraciones, con opción de reversión en 1 clic y generación automática de Acta de Suspensión en el gestor documental.
+- **Certificaciones con fotos de evidencia:** Botón `📸 Certificar` por partida para registrar porcentaje real, inspector responsable, fecha, observaciones técnicas y fotos de obra con visor Lightbox en alta definición.
+
+#### Pestaña 3: Curva S Dinámica & Control Físico-Financiero (EVM)
+- **Conexión reactiva en tiempo real:** Se recalcula automáticamente a partir de las tareas del Gantt y de los rubros presupuestarios.
+- **Earned Value Management (EVM):**
+  - Curva Planificada (P0): Inversión y avance programado acumulado en el tiempo.
+  - Curva Real: Inversión devengada real según certificaciones físicas de avance.
+  - Línea vertical indicadora de la fecha actual (*"Hoy"*).
+  - Indicadores clave de desempeño: **SPI** (*Schedule Performance Index*) y **SV** (*Schedule Variance*).
+- **Gráfico SVG interactivo:** Puntos de control semanales con tooltips detallados de avance y montos, tabla mensual de devengamiento y exportación completa a CSV.
+
+#### Pestaña 4: Presupuestos vs. Ejecutados & Leyes Sociales por Rubro
+- **Desglose tripartito de costos:** Mano de Obra directa, Leyes Sociales (aportes BPS estimados al 65% sobre mano de obra según Ley 14.411) y Materiales / Subcontratos.
+- **Semáforo automático de sobrecosto:** Estado *Normal*, *Advertencia* ($\ge 85\%$) y *Crítico* ($> 100\%$) con alertas visuales destacadas.
+- **Consolidado financiero:** Presupuesto total asignado, costo ejecutado devengado y saldo restante por ejecutar.
+- **Exportación ejecutiva a CSV:** Descarga con formato compatible Excel y codificación UTF-8 BOM.
+
+#### Servicios y Motores de Backend de OxI Pro
+1. **Informe Ejecutivo en PDF (`POST /oxipro/report/pdf`):**
+   - Motor: PDFKit ([`backend/src/oxiProReportPdfService.js`](backend/src/oxiProReportPdfService.js)).
+   - Reporte directivo de 4 páginas de alta calidad gráfica:
+     - Página 1: Ficha técnica de obra, métricas globales de avance, SPI, SV, devengamiento económico y días de lluvia acumulados.
+     - Página 2: Cronograma detallado de tareas con cuadrillas, tarifas salariales y plazos.
+     - Página 3: Desglose de rubros presupuestarios con leyes sociales BPS y saldo por ejecutar.
+     - Página 4: Historial de actas de lluvia / suspensiones climáticas y bloques formales de firma técnica homologada.
+2. **Persistencia Relacional Multi-usuario (PostgreSQL):**
+   - Tablas dedicadas: `b2b_project_tasks`, `b2b_project_rubros`, `b2b_project_delays` vinculadas a `b2b_projects(id)` con borrado en cascada (migración `038_oxipro_collaboration_tables.sql`).
+   - Sincronización colaborativa: El cliente web detecta modificaciones y las guarda automáticamente en segundo plano con debounce de 1.2s.
+   - Indicador de estado en tiempo real en la barra de OxI Pro: `☁️ Guardado en la nube (PostgreSQL)` / `📁 Modo Local / Demo`.
+3. **Auto-Onboarding con Inteligencia Artificial (`POST /oxipro/ai-onboarding`):**
+   - Motor híbrido ([`backend/src/oxiProAiService.js`](backend/src/oxiProAiService.js)): Conexión con OpenAI (`gpt-4o-mini`) y motor heurístico offline de ingeniería civil.
+   - Ingestión de memorias descriptivas o pliegos técnicos con generación automática de tareas secuenciales, cuadrillas, cálculos BPS (65%) y rubros.
+   - Plantillas rápidas para Edificio Residencial, Nave Industrial y Reforma Comercial con inyección en 1 clic (*Reemplazar* o *Anexar*).
+
 ## Experiencia pública e identidad vigente
+
 
 ### Escritura de marca
 
