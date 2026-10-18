@@ -8,6 +8,7 @@ import {
   deleteOxiProDelay,
   generateOxiProAiPlan
 } from '../lib/api'
+import { generateHeuristicConstructionPlan } from '../utils/constructionAiEngine'
 import './OxiProSuite.css'
 
 function getAuthToken() {
@@ -659,7 +660,11 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         .then(() => setCloudSyncStatus('synced'))
         .catch(err => {
           console.warn('Error syncing tasks to cloud', err)
-          setCloudSyncStatus('error')
+          if (String(err?.message || '').includes('404')) {
+            setCloudSyncStatus('idle')
+          } else {
+            setCloudSyncStatus('error')
+          }
         })
     }, 1200)
 
@@ -678,7 +683,11 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         .then(() => setCloudSyncStatus('synced'))
         .catch(err => {
           console.warn('Error syncing rubros to cloud', err)
-          setCloudSyncStatus('error')
+          if (String(err?.message || '').includes('404')) {
+            setCloudSyncStatus('idle')
+          } else {
+            setCloudSyncStatus('error')
+          }
         })
     }, 1200)
 
@@ -1567,10 +1576,20 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         projectName: project?.name || 'Obra Óxida',
         startDate: aiStartDate
       })
-      setAiResult(res)
+      if (res && Array.isArray(res.tasks) && res.tasks.length > 0) {
+        setAiResult(res)
+      } else {
+        const fallback = generateHeuristicConstructionPlan(aiPrompt, { startDate: aiStartDate })
+        setAiResult(fallback)
+      }
     } catch (err) {
-      console.warn('AI Onboarding API error', err)
-      setAiError(err.message || 'Error al procesar con IA')
+      console.warn('AI Onboarding API error, activating expert construction engine fallback', err)
+      try {
+        const fallback = generateHeuristicConstructionPlan(aiPrompt, { startDate: aiStartDate })
+        setAiResult(fallback)
+      } catch (fallbackErr) {
+        setAiError(fallbackErr.message || 'Error al procesar con IA')
+      }
     } finally {
       setAiLoading(false)
     }

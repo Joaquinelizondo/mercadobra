@@ -40,13 +40,24 @@ export function generateHeuristicConstructionPlan(inputText = '', options = {}) 
   if (baseStartDate.getDay() === 0) baseStartDate.setDate(baseStartDate.getDate() + 1)
   if (baseStartDate.getDay() === 6) baseStartDate.setDate(baseStartDate.getDate() + 2)
 
-  let isIndustrial = /nave|galp[oó]n|log[ií]stic|metalic|met[aá]lica|tinglado/.test(lower)
-  let isCommercial = /local|comercial|oficina|reforma|ampliaci[oó]n/.test(lower)
-  let isResidential = !isIndustrial && !isCommercial
+  const isPergolaOrRailing = /p[eé]rgola|baranda|reja|herrer[ií]a|escalera|alero|port[oó]n|hierro/.test(lower)
+  const isIndustrial = !isPergolaOrRailing && /nave|galp[oó]n|log[ií]stic|metalic|met[aá]lica|tinglado/.test(lower)
+  const isCommercial = !isPergolaOrRailing && !isIndustrial && /local|comercial|oficina|reforma|ampliaci[oó]n/.test(lower)
 
   let tasksDef = []
+  let projectTypeLabel = 'Residencial'
 
-  if (isIndustrial) {
+  if (isPergolaOrRailing) {
+    projectTypeLabel = 'Herrería y Estructura Metálica Óxida'
+    tasksDef = [
+      { name: 'Relevamiento en Sitio, Replanteo y Cálculo de Anclajes', duration: 4, people: 2, role: 'Oficial Especializado', rate: 3400, matCost: 45000, rubro: 'Ingeniería y Replanteo' },
+      { name: 'Fabricación en Taller Óxida: Corte, Conformado y Soldadura MIG/MAG', duration: 12, people: 3, role: 'Oficial Especializado', rate: 3400, matCost: 280000, rubro: 'Fabricación en Taller' },
+      { name: 'Tratamiento Superficial: Desengrase, Fondo Anticorrosivo y Pintura Epoxi', duration: 6, people: 2, role: 'Oficial', rate: 2800, matCost: 95000, rubro: 'Pintura y Acabado' },
+      { name: 'Montaje en Obra: Izaje, Fijación con Anclajes Químicos y Soldadura de Unión', duration: 8, people: 4, role: 'Oficial Especializado', rate: 3400, matCost: 110000, rubro: 'Montaje en Obra' },
+      { name: 'Colocación de Cubierta / Cerramiento (Vidrio Laminado o Policarbonato)', duration: 6, people: 3, role: 'Oficial', rate: 2800, matCost: 190000, rubro: 'Cubierta y Cerramiento' },
+      { name: 'Sellado Poliuretánico, Control de Calidad y Entrega de Obra', duration: 3, people: 2, role: 'Medio Oficial', rate: 2200, matCost: 35000, rubro: 'Final de Obra' }
+    ]
+  } else if (isIndustrial) {
     tasksDef = [
       { name: 'Replanteo, Movimiento de Suelos y Nivelación', duration: 15, people: 4, role: 'Peón Práctico', rate: 1800, matCost: 350000, rubro: 'Movimiento de Suelos' },
       { name: 'Fundaciones, Dados de Hormigón y Anclajes', duration: 25, people: 6, role: 'Oficial', rate: 2800, matCost: 1200000, rubro: 'Fundaciones' },

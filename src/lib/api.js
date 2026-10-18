@@ -1,8 +1,11 @@
+import { generateHeuristicConstructionPlan } from '../utils/constructionAiEngine'
+
 const ENV_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').trim()
 const DEFAULT_API_BASE_URL = import.meta.env.DEV
   ? 'http://localhost:4000'
   : 'https://mercadobra.onrender.com'
 const API_BASE_URL = ENV_API_BASE_URL || DEFAULT_API_BASE_URL
+
 
 function normalizeBaseUrl(url) {
   return String(url || '').replace(/\/+$/, '')
@@ -611,12 +614,18 @@ export async function deleteOxiProDelay(token, projectId, delayId) {
 }
 
 export async function generateOxiProAiPlan(token, payload) {
-  return request('/oxipro/ai-onboarding', {
-    method: 'POST',
-    token,
-    body: JSON.stringify(payload),
-  })
+  try {
+    return await request('/oxipro/ai-onboarding', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(payload),
+    })
+  } catch (err) {
+    console.warn('[generateOxiProAiPlan] Backend endpoint unavailable, falling back to client-side engine', err)
+    return generateHeuristicConstructionPlan(payload?.prompt || payload?.text || '', { startDate: payload?.startDate })
+  }
 }
+
 
 
 
