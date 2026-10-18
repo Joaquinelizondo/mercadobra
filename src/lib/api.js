@@ -1,4 +1,4 @@
-import { generateHeuristicConstructionPlan } from '../utils/constructionAiEngine'
+import { generateHeuristicConstructionPlan } from '../utils/constructionAiEngine.js'
 
 const ENV_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').trim()
 const DEFAULT_API_BASE_URL = import.meta.env.DEV

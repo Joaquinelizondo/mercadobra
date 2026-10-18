@@ -659,12 +659,8 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       saveOxiProTasks(token, project.id, schedule)
         .then(() => setCloudSyncStatus('synced'))
         .catch(err => {
-          console.warn('Error syncing tasks to cloud', err)
-          if (String(err?.message || '').includes('404')) {
-            setCloudSyncStatus('idle')
-          } else {
-            setCloudSyncStatus('error')
-          }
+          console.warn('Backend sync unavailable, retaining local persistence', err)
+          setCloudSyncStatus('idle')
         })
     }, 1200)
 
@@ -682,12 +678,8 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       saveOxiProRubros(token, project.id, rubros)
         .then(() => setCloudSyncStatus('synced'))
         .catch(err => {
-          console.warn('Error syncing rubros to cloud', err)
-          if (String(err?.message || '').includes('404')) {
-            setCloudSyncStatus('idle')
-          } else {
-            setCloudSyncStatus('error')
-          }
+          console.warn('Backend sync unavailable, retaining local persistence', err)
+          setCloudSyncStatus('idle')
         })
     }, 1200)
 
@@ -1578,18 +1570,24 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       })
       if (res && Array.isArray(res.tasks) && res.tasks.length > 0) {
         setAiResult(res)
-      } else {
-        const fallback = generateHeuristicConstructionPlan(aiPrompt, { startDate: aiStartDate })
-        setAiResult(fallback)
+        setAiError('')
+        return
       }
     } catch (err) {
-      console.warn('AI Onboarding API error, activating expert construction engine fallback', err)
-      try {
-        const fallback = generateHeuristicConstructionPlan(aiPrompt, { startDate: aiStartDate })
+      console.warn('Backend AI onboarding unavailable, switching directly to client-side engine', err)
+    }
+
+    try {
+      const fallback = generateHeuristicConstructionPlan(aiPrompt, { startDate: aiStartDate })
+      if (fallback && Array.isArray(fallback.tasks) && fallback.tasks.length > 0) {
         setAiResult(fallback)
-      } catch (fallbackErr) {
-        setAiError(fallbackErr.message || 'Error al procesar con IA')
+        setAiError('')
+      } else {
+        setAiError('No se pudieron extraer tareas del texto ingresado. Probá agregar más detalles o usar una plantilla rápida.')
       }
+    } catch (fallbackErr) {
+      console.error('Fallback engine error', fallbackErr)
+      setAiError('Ocurrió un error al procesar la memoria. Por favor intentá de nuevo.')
     } finally {
       setAiLoading(false)
     }
@@ -1744,8 +1742,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
           <span className={`cloud-sync-pill ${cloudSyncStatus}`}>
             {cloudSyncStatus === 'saving' && '⏳ Guardando en la nube...'}
             {cloudSyncStatus === 'synced' && '☁️ Guardado en la nube (PostgreSQL)'}
-            {cloudSyncStatus === 'error' && '⚠️ Error de sincronización'}
-            {cloudSyncStatus === 'idle' && (isNumericProject ? '☁️ Conectado a la nube' : '📁 Modo Local / Demo')}
+            {(cloudSyncStatus === 'idle' || cloudSyncStatus === 'error') && '📁 Guardado localmente'}
           </span>
           <button
             type="button"

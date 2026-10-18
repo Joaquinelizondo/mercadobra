@@ -1415,9 +1415,9 @@
   animation: pulse-sync 1.5s infinite;
 }
 .cloud-sync-pill.error {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
+  background: #f4f4f5;
+  color: #52525b;
+  border: 1px solid #e4e4e7;
 }
 .cloud-sync-pill.idle {
   background: #f4f4f5;
