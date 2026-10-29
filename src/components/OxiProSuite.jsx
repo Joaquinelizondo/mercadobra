@@ -913,23 +913,22 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     function handleKeyDown(e) {
       if (e.key === 'Escape') {
         setShowAiModal(false)
-        setShowDocModal(false)
-        setShowNewTaskModal(false)
-        setShowEditTaskModal(false)
+        setShowAddDocModal(false)
+        setShowAddIterationModal(false)
+        setShowAddTaskModal(false)
         setShowRainModal(false)
         setShowCertModal(false)
         setShowWeeklyCloseModal(false)
         setShowMonthlyCertModal(false)
-        setShowLaborModal(false)
-        setShowLaborCatModal(false)
+        setShowLaborReportModal(false)
+        setShowCategoriesModal(false)
         setShowBudgetModal(false)
-        setShowDailyLaborModal(false)
-        setShowMaterialInvoiceModal(false)
+        setShowInvoiceModal(false)
         setShowAssignInvoiceModal(false)
         setShowSubcontractModal(false)
         setShowAddContractModal(false)
         setShowAddAdditionalModal(false)
-        setShowIndirectModal(false)
+        setShowAddIndirectModal(false)
         setShowAddRubroModal(false)
       }
     }
@@ -1561,6 +1560,10 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     if (!totalPlannedCost) return '1.00'
     return (totalExecutedCost / totalPlannedCost).toFixed(2)
   }, [totalExecutedCost, totalPlannedCost])
+
+  const projectEVM = useMemo(() => {
+    return calculateProjectEVM(schedule, { actualTotalCost: totalExecutedCost })
+  }, [schedule, totalExecutedCost])
 
   const dynamicMonthlyComp = useMemo(() => {
     if (!schedule.length) return DEFAULT_MONTHLY_COMPARISON
@@ -4578,7 +4581,7 @@ ${validation.message}
               <button
                 type="button"
                 className="oxi-btn-back-classic"
-                onClick={() => setShowLaborCategoriesModal(true)}
+                onClick={() => setShowCategoriesModal(true)}
                 title="Configurar categorías laborales, laudos y cargas sociales"
               >
                 ⚙️ Categorías & Laudos
@@ -5144,7 +5147,7 @@ ${validation.message}
                   <div style={{ fontSize: '2.2rem', marginBottom: '8px' }}>👷‍♂️</div>
                   <strong style={{ display: 'block', color: '#0f172a', fontSize: '0.95rem', marginBottom: '4px' }}>Sin partes diarios de mano de obra</strong>
                   <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0 0 14px' }}>Registrá los jornales de cuadrilla diarios para computar el costo directo y leyes sociales de la jornada.</p>
-                  <button type="button" className="oxi-btn-primary" onClick={() => setShowDailyLaborModal(true)} style={{ background: '#059669', borderColor: '#047857', fontSize: '0.82rem', padding: '6px 14px' }}>
+                  <button type="button" className="oxi-btn-primary" onClick={() => setShowLaborReportModal(true)} style={{ background: '#059669', borderColor: '#047857', fontSize: '0.82rem', padding: '6px 14px' }}>
                     ＋ Cargar Primer Parte Diario
                   </button>
                 </div>
@@ -5246,7 +5249,7 @@ ${validation.message}
                   <div style={{ fontSize: '2.2rem', marginBottom: '8px' }}>🧾</div>
                   <strong style={{ display: 'block', color: '#0f172a', fontSize: '0.95rem', marginBottom: '4px' }}>Sin facturas ni remitos de materiales</strong>
                   <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0 0 14px' }}>Cargá comprobantes de compras para imputar materiales a tareas y rubros de obra.</p>
-                  <button type="button" className="oxi-btn-primary" onClick={() => setShowMaterialInvoiceModal(true)} style={{ background: '#4f46e5', borderColor: '#4338ca', fontSize: '0.82rem', padding: '6px 14px' }}>
+                  <button type="button" className="oxi-btn-primary" onClick={() => setShowInvoiceModal(true)} style={{ background: '#4f46e5', borderColor: '#4338ca', fontSize: '0.82rem', padding: '6px 14px' }}>
                     ＋ Cargar Primera Factura
                   </button>
                 </div>
@@ -5787,7 +5790,7 @@ ${validation.message}
                           <div style={{ fontSize: '1.8rem', marginBottom: '6px' }}>🏢</div>
                           <strong>No hay costos indirectos registrados aún</strong>
                           <p style={{ margin: '4px 0 10px', fontSize: '0.84rem' }}>Cargá gastos de obrador, suministros, seguros o logística de obra.</p>
-                          <button type="button" className="oxi-btn-primary" onClick={() => setShowIndirectModal(true)} style={{ background: '#7c3aed', borderColor: '#6d28d9', fontSize: '0.8rem', padding: '5px 12px' }}>
+                          <button type="button" className="oxi-btn-primary" onClick={() => setShowAddIndirectModal(true)} style={{ background: '#7c3aed', borderColor: '#6d28d9', fontSize: '0.8rem', padding: '5px 12px' }}>
                             ＋ Agregar Gasto General
                           </button>
                         </td>
@@ -6334,7 +6337,9 @@ ${validation.message}
                 const laborCalc = laborCalcResult.laborCost
                 const socialCalc = laborCalcResult.socialLawsCost
                 const isCustom = laborCalcResult.isCustomSocial
-                const effSocialPct = Math.round(laborCalcResult.effectiveSocialRate * 100)
+                const effSocialRate = laborCalcResult.effectiveSocialRate
+                const effSocialPct = Math.round(effSocialRate * 100)
+                const activeCat = laborCategories.find(c => c.role === newTask.category || c.id === newTask.category)
                 const totalPeopleCount = isCrew ? laborCalcResult.peopleCount : (Number(newTask.peopleCount) || 1)
                 const dailyCrewCost = laborCalcResult.dailyCost
 
