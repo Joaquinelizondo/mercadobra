@@ -106,7 +106,8 @@ export function generateHeuristicConstructionPlan(inputText = '', options = {}) 
 
     const workDays = Math.max(1, Math.round(def.duration * 0.72))
     const laborCost = Math.round(workDays * def.people * def.rate)
-    const socialLawsCost = Math.round(laborCost * 0.65) // 65% Leyes sociales BPS
+    const socialLawsRate = options.socialLawsRate != null ? Number(options.socialLawsRate) : 0.60
+    const socialLawsCost = Math.round(laborCost * socialLawsRate) // 60% Leyes sociales BPS (Ley 14.411) por defecto
     const monthIndex = Math.floor(idx / 3) + 1
 
     const taskItem = {
@@ -264,7 +265,7 @@ Reglas mandatorias:
         category: t.category || 'Oficial',
         categoryRate: Number(t.categoryRate) || 2800,
         assignedLaborCost: Number(t.assignedLaborCost) || 0,
-        socialLawsCost: Number(t.socialLawsCost) || Math.round((Number(t.assignedLaborCost) || 0) * 0.65),
+        socialLawsCost: Number(t.socialLawsCost) || Math.round((Number(t.assignedLaborCost) || 0) * 0.60),
         materialCost: Number(t.materialCost) || 0,
         month: t.month || `Mes ${Math.floor(idx / 3) + 1}`,
         plannedPercent: Number(t.plannedPercent) || 0,

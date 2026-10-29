@@ -1,8 +1,10 @@
 /**
  * Motor heurístico experto de ConstructionTech para OxI Pro (Frontend fallback)
- * Genera tareas Gantt, cuadrillas SUNCA, leyes sociales BPS (65%) y rubros
+ * Genera tareas Gantt, cuadrillas SUNCA, leyes sociales BPS (60% configurable) y rubros
  * instantáneamente incluso si el backend está en frío, offline o en despliegue.
  */
+
+import { calculateWorkingDays, distributeCostByMonths } from './constructionCalendar.js'
 
 function formatDate(date) {
   const d = new Date(date)
@@ -88,23 +90,30 @@ export function generateHeuristicConstructionPlan(inputText = '', options = {}) 
     const endDate = addDays(startDate, def.duration)
     currentDate = addDays(startDate, Math.max(2, Math.round(def.duration * 0.6)))
 
-    const workDays = Math.max(1, Math.round(def.duration * 0.72))
+    const startDateStr = formatDate(startDate)
+    const endDateStr = formatDate(endDate)
+    const workDays = calculateWorkingDays(startDateStr, endDateStr)
+    const socialLawsRate = options.socialLawsRate != null ? Number(options.socialLawsRate) : 0.60
     const laborCost = Math.round(workDays * def.people * def.rate)
-    const socialLawsCost = Math.round(laborCost * 0.65) // 65% Leyes sociales BPS
-    const monthIndex = Math.floor(idx / 3) + 1
+    const socialLawsCost = Math.round(laborCost * socialLawsRate) // 60% Leyes sociales BPS por defecto
+
+    const monthDistribution = distributeCostByMonths(startDateStr, endDateStr, laborCost + socialLawsCost + def.matCost)
+    const monthLabel = monthDistribution.primaryMonthLabel || `Mes ${Math.floor(idx / 3) + 1}`
 
     const taskItem = {
       id: idx + 1,
       name: def.name,
-      startDate: formatDate(startDate),
-      endDate: formatDate(endDate),
+      startDate: startDateStr,
+      endDate: endDateStr,
+      workDays,
       peopleCount: def.people,
       category: def.role,
       categoryRate: def.rate,
       assignedLaborCost: laborCost,
       socialLawsCost: socialLawsCost,
       materialCost: def.matCost,
-      month: `Mes ${monthIndex}`,
+      month: monthLabel,
+      monthBreakdown: monthDistribution.breakdown,
       plannedPercent: idx === 0 ? 100 : idx === 1 ? 70 : idx === 2 ? 30 : 0,
       progressPercent: idx === 0 ? 95 : idx === 1 ? 60 : idx === 2 ? 25 : 0,
       certifications: []

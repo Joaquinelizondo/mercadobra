@@ -12,10 +12,10 @@ export function setupSecurityMiddleware(app) {
   // Protege contra ataques comunes: XSS, clickjacking, MIME-type sniffing, etc.
   app.use(helmet())
 
-  // 2. GLOBAL RATE LIMITER
+  // 2. GLOBAL RATE LIMITER (Calibrado para soportar oficinas y estudios multi-usuario en la misma IP)
   const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 1000,
+    max: 5000,
     message: 'Demasiadas solicitudes desde esta IP, por favor intenta más tarde.',
     standardHeaders: true,
     legacyHeaders: true,
@@ -25,11 +25,10 @@ export function setupSecurityMiddleware(app) {
   })
   app.use(globalLimiter)
 
-  // 3. RATE LIMITER para auth
-  // Permite hasta 50 intentos por 15 minutos por IP
+  // 3. RATE LIMITER para auth (Permite múltiples inicios de sesión concurrentes por oficina)
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 50,
+    max: 150,
     message: 'Demasiados intentos de login. Intenta de nuevo en 15 minutos.',
     skip: (req) => {
       if (req.method === 'OPTIONS') return true
@@ -38,10 +37,10 @@ export function setupSecurityMiddleware(app) {
   })
   app.use(authLimiter)
 
-  // 4. RATE LIMITER para operaciones costosas
+  // 4. RATE LIMITER para operaciones de escritura (Soporta autosaves concurrentes de múltiples usuarios)
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 500,
+    max: 3000,
     message: 'Demasiados requests. Intenta más tarde.',
     skip: (req) => {
       if (req.method === 'OPTIONS') return true

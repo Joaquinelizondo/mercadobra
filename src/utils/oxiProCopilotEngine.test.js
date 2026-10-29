@@ -41,7 +41,7 @@ test('OxI Pro Copilot: extrae y genera acción de creación de tarea con cuadril
   assert.equal(res.action.payload.categoryRate, 3400)
   assert.equal(res.action.payload.materialCost, 150000)
   assert.ok(res.action.payload.assignedLaborCost > 0)
-  assert.equal(res.action.payload.socialLawsCost, Math.round(res.action.payload.assignedLaborCost * 0.65))
+  assert.equal(res.action.payload.socialLawsCost, Math.round(res.action.payload.assignedLaborCost * 0.60))
 })
 
 test('OxI Pro Copilot: genera acción para actualizar avance físico de una tarea', () => {
@@ -83,5 +83,6 @@ test('OxI Pro Copilot: crea partida presupuestaria con desglose de leyes sociale
   assert.match(res.action.payload.name, /Aberturas de PVC/i)
   assert.equal(res.action.payload.budgeted, 400000)
   assert.ok(res.action.payload.laborCost > 0)
-  assert.equal(res.action.payload.socialLawsCost, Math.round(res.action.payload.laborCost * 0.65))
+  assert.equal(res.action.payload.socialLawsCost, Math.round(res.action.payload.laborCost * 0.60))
 })
+

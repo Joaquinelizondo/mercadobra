@@ -27,6 +27,8 @@ const MONTH_NAMES = {
   'setiembre': '09', 'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12'
 }
 
+import { calculateWorkingDays, distributeCostByMonths } from './constructionCalendar.js'
+
 function formatDateStr(date) {
   const d = new Date(date)
   const yyyy = d.getFullYear()
@@ -42,17 +44,7 @@ function addDaysToDate(dateStr, days) {
 }
 
 function countWorkingDays(startStr, endStr) {
-  const start = new Date(startStr)
-  const end = new Date(endStr)
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return 1
-  let count = 0
-  const cur = new Date(start)
-  while (cur <= end) {
-    const day = cur.getDay()
-    if (day !== 0 && day !== 6) count++
-    cur.setDate(cur.getDate() + 1)
-  }
-  return Math.max(1, count)
+  return calculateWorkingDays(startStr, endStr)
 }
 
 function parseDatesFromText(text) {
@@ -436,7 +428,11 @@ function handleCreateTaskAction(lower, text, context) {
   }
 
   const assignedLaborCost = workingDays * peopleCount * categoryRate
-  const socialLawsCost = Math.round(assignedLaborCost * 0.65) // BPS 65%
+  const socialRate = context.socialLawsRate != null ? Number(context.socialLawsRate) : 0.60
+  const socialLawsCost = Math.round(assignedLaborCost * socialRate) // BPS 60% por defecto (Ley 14.411)
+
+  const monthDistribution = distributeCostByMonths(startDate, endDate, assignedLaborCost + socialLawsCost + matCost)
+  const monthLabel = monthDistribution.primaryMonthLabel || `Mes ${Math.max(1, Math.ceil(workingDays / 20))}`
 
   const maxId = schedule.reduce((max, t) => Math.max(max, Number(t.id) || 0), 0)
   const newTask = {
@@ -444,13 +440,15 @@ function handleCreateTaskAction(lower, text, context) {
     name: taskName,
     startDate,
     endDate,
+    workDays: workingDays,
     peopleCount,
     category,
     categoryRate,
     assignedLaborCost,
     socialLawsCost,
     materialCost: matCost,
-    month: `Mes ${Math.max(1, Math.ceil(workingDays / 20))}`,
+    month: monthLabel,
+    monthBreakdown: monthDistribution.breakdown,
     plannedPercent: 0,
     progressPercent: 0,
     certifications: []
@@ -459,7 +457,7 @@ function handleCreateTaskAction(lower, text, context) {
   const totalCost = assignedLaborCost + socialLawsCost + matCost
 
   return {
-    reply: `Entendido. Calculé la cuadrilla, leyes sociales BPS y plazos para **"${taskName}"**:`,
+    reply: `Entendido. Calculé la cuadrilla, leyes sociales BPS (${Math.round(socialRate * 100)}%) y plazos para **"${taskName}"**:`,
     action: {
       type: 'CREATE_TASK',
       title: 'Crear Nueva Tarea en Cronograma Gantt',
@@ -470,8 +468,9 @@ function handleCreateTaskAction(lower, text, context) {
         `Plazo de ejecución: ${startDate} al ${endDate} (${workingDays} días hábiles)`,
         `Cuadrilla asignada: ${peopleCount} × ${category} ($${categoryRate.toLocaleString()}/día)`,
         `Mano de Obra directa: $${assignedLaborCost.toLocaleString()}`,
-        `Aportes BPS Leyes Sociales (65%): $${socialLawsCost.toLocaleString()}`,
+        `Aportes BPS Leyes Sociales (${Math.round(socialRate * 100)}%): $${socialLawsCost.toLocaleString()}`,
         `Costo estimado de Materiales: $${matCost.toLocaleString()}`,
+        `Mes asignado: ${monthLabel}`,
         `Presupuesto Total de Partida: $${totalCost.toLocaleString()}`
       ],
       payload: newTask
@@ -492,9 +491,10 @@ function handleCreateRubroAction(lower, text, context) {
     rubroName = rubroName.charAt(0).toUpperCase() + rubroName.slice(1)
   }
 
+  const socialRate = context.socialLawsRate != null ? Number(context.socialLawsRate) : 0.60
   const amount = parseMoneyAmount(text) || 350000
   const laborCost = Math.round(amount * 0.35)
-  const socialLawsCost = Math.round(laborCost * 0.65)
+  const socialLawsCost = Math.round(laborCost * socialRate)
   const materialCost = Math.max(0, amount - laborCost - socialLawsCost)
 
   const newRubro = {

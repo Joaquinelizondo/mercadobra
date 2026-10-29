@@ -372,3 +372,4 @@ Puedo ayudarte a cargar tareas en el Gantt, certificar avances reales, registrar
     </>
   )
 }
+

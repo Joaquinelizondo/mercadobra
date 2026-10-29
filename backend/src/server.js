@@ -51,7 +51,7 @@ import {
 } from './authService.js'
 import { isCloudinaryConfigured, uploadProductImage } from './cloudinaryService.js'
 import { createQuotePdf } from './quotePdfService.js'
-import { createOxiProReportPdf } from './oxiProReportPdfService.js'
+import { createOxiProReportPdf, createMonthlyCertificatePdf } from './oxiProReportPdfService.js'
 import { interpretModelerPrompt } from './modelerChatService.js'
 import { calculateTemplateWithCurrentVariables, calculateCircularTableWithCurrentVariables, getCurrentCostVariables } from './costingService.js'
 
@@ -1972,6 +1972,26 @@ app.post('/oxipro/report/pdf', asyncHandler(async (req, res) => {
   })
 
   const rawFilename = `Informe_Ejecutivo_${String(project?.name || 'Obra').replace(/[^a-z0-9-]/gi, '_')}.pdf`
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `attachment; filename="${rawFilename}"`,
+    'Content-Length': String(pdfBuffer.length),
+  })
+  return res.send(pdfBuffer)
+}))
+
+app.post('/oxipro/monthly-certificate/pdf', asyncHandler(async (req, res) => {
+  const { project, certificate, monthItem, evm, schedule, user } = req.body || {}
+  const pdfBuffer = await createMonthlyCertificatePdf({
+    project: project || {},
+    certificate: certificate || {},
+    monthItem: monthItem || {},
+    evm: evm || {},
+    schedule: Array.isArray(schedule) ? schedule : [],
+    user: user || req.authUser || {}
+  })
+
+  const rawFilename = `Certificado_Mensual_${String(certificate?.month || 'Periodo').replace(/[^a-z0-9-]/gi, '_')}.pdf`
   res.set({
     'Content-Type': 'application/pdf',
     'Content-Disposition': `attachment; filename="${rawFilename}"`,

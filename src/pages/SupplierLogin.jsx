@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import logoImg from '../assets/oxida/logo-clean.png'
+import logoImg from '../assets/mercadobra.png'
 
 export default function SupplierLogin() {
   const { supplierUser, login, authError, authLoading } = useAuth()
@@ -42,9 +42,6 @@ export default function SupplierLogin() {
       </div>
       <div className="oxi-login-form-container">
         <div className="login-card" style={{ boxShadow: 'none', border: '1px solid #e5e5e5' }}>
-          <Link to="/">
-            <img src={logoImg} className="login-logo" alt="Mercadobra" style={{ width: '140px', marginBottom: '1rem' }} />
-          </Link>
           <div className="login-card-header">
             <div className="login-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
@@ -100,15 +97,8 @@ export default function SupplierLogin() {
 
         <div className="login-demo-hint">
           <p>
-            <strong>Cuenta proveedor:</strong> proveedor@mercadobra.com con contraseña 123456
+            <strong>Cuenta seed:</strong> proveedor@mercadobra.com con contraseña 123456
           </p>
-          <button
-            type="button"
-            onClick={() => { setForm({ email: 'proveedor@mercadobra.com', password: '123456' }); setError(''); }}
-            style={{ display: 'block', margin: '0.5rem auto 0', padding: '0.35rem 0.85rem', background: '#0f172a', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }}
-          >
-            Completar datos proveedor
-          </button>
         </div>
       </div>
     </div>

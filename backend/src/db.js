@@ -14,7 +14,12 @@ export function getPool() {
   }
 
   if (!pool) {
-    pool = new Pool({ connectionString: DATABASE_URL })
+    pool = new Pool({
+      connectionString: DATABASE_URL,
+      max: 20, // Soporta hasta 20 conexiones concurrentes en pool para múltiples usuarios
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    })
   }
 
   return pool

@@ -21,14 +21,14 @@ La plataforma se encuentra operativa con:
   - **OxI Clásico:** Solicitud y seguimiento de cotizaciones de herrería y obra, carga clasificada de documentación técnica (planos CAD/PDF, memorias, fotos de obra), tablero Kanban en vivo de 5 etapas y mensajería directa con ingeniería.
   - **OxI Pro Suite (ConstructionTech de Control y Planificación de Obra):**
     - *Pilar 1 (Proyectos):* Conmutador directo de obras en cabecera con persistencia reactiva, visualización de dirección y vinculación estricta en base de datos (`b2b_project_id`).
-    - *Pilar 2 (Schedule Gantt & Recursos):* Cronograma interactivo con doble vista (`[📊 Diagrama de Gantt]` y `[📋 Planilla & Costos]`), cálculo dinámico de días hábiles, control dual de avance (% Plan contractual vs. % Real físico), badges de desvío de plazo, asignación de cuadrillas SUNCA, desplazamiento en cascada por lluvias con actas técnicas y reversión en 1 clic, certificaciones de obra con fotos de evidencia y visor lightbox, y descarga a Excel con `📥 Exportar Cronograma (CSV)`.
-    - *Pilar 3 (Presupuestos & Leyes Sociales):* Partidas presupuestarias editables (`＋ Agregar Rubro / Partida`), desglose tripartito de costos (Mano de Obra directa, Leyes Sociales BPS al 65% s/mano de obra según Ley 14.411, Materiales / Subcontratos), alertas automáticas de sobrecosto (Normal, Advertencia $\ge 85\%$, Crítico $> 100\%$), comparativa semanal (% Real vs P0) y descarga con `📥 Exportar Balance (CSV)`.
+    - *Pilar 2 (Schedule Gantt & Recursos):* Cronograma interactivo con doble vista (`[📊 Diagrama de Gantt]` y `[📋 Planilla & Costos]`), cálculo dinámico de días hábiles reales (descontando sábados, domingos y feriados SUNCA Grupo 9 de Uruguay), distribución proporcional automática de costos por meses calendarios, control dual de avance (% Plan contractual vs. % Real físico), badges de desvío de plazo, asignación de cuadrillas SUNCA (simples y mixtas), desplazamiento en cascada por lluvias con actas técnicas y reversión en 1 clic, certificaciones de obra con fotos de evidencia y visor lightbox, y descarga a Excel con `📥 Exportar Cronograma (CSV)`.
+    - *Pilar 3 (Presupuestos & Leyes Sociales):* Partidas presupuestarias editables (`＋ Agregar Rubro / Partida`), desglose tripartito de costos (Mano de Obra directa, Leyes Sociales BPS al 60% s/mano de obra según Ley 14.411 configurable, Materiales / Subcontratos vinculados), alertas automáticas de sobrecosto (Normal, Advertencia $\ge 85\%$, Crítico $> 100\%$), comparativa semanal (% Real vs P0) y descarga con `📥 Exportar Balance (CSV)`.
     - *Pilar 4 (Gestor Documental Técnico):* Selector drag-and-drop con lectura real Base64 y cálculo de peso, descargas directas (`⬇ Descargar`), modal de nuevas iteraciones (`+ Iteración`) con trazabilidad histórica de cambios, y soporte ampliado para formatos técnicos (.dwg, .dxf, .cad, .pdf, .docx, .xlsx, imágenes) hasta 15 MB.
-    - *Control Físico-Financiero & Curva S (EVM):* Conexión reactiva en tiempo real al cronograma y rubros, cálculo de métricas de valor ganado (SPI, SV, devengamiento económico) y exportación de datos a CSV.
-    - *Informe Ejecutivo en PDF (1 Clic):* Generador de informe directivo de 4 páginas de alta calidad gráfica (`POST /oxipro/report/pdf`) con portada, ficha técnica, cronograma, partidas con leyes sociales, actas de lluvia y firmas de comitente y director de obra.
-    - *Persistencia Relacional Multi-usuario:* Modelo de datos en PostgreSQL (`b2b_project_tasks`, `b2b_project_rubros`, `b2b_project_delays`) con auto-sincronización debounceada y badge de estado en vivo (`☁️ Guardado en la nube (PostgreSQL)` / `📁 Modo Local / Demo`).
+    - *Control Físico-Financiero & Curva S (EVM):* Conexión reactiva en tiempo real al cronograma y rubros, cálculo estricto de Valor Ganado (Earned Value Management: EV, PV, AC, CV, SV, CPI y SPI con semáforo para no confundir atrasos con ahorros), y exportación de datos a CSV.
+    - *Informe Ejecutivo en PDF (1 Clic):* Generador de informe directivo de 4 páginas de alta calidad gráfica (`POST /oxipro/report/pdf`) con portada, ficha técnica, cronograma, partidas con leyes sociales (BPS 60%), actas de lluvia y firmas de comitente y director de obra.
+    - *Persistencia Relacional Multi-usuario:* Modelo de datos en PostgreSQL (`b2b_project_tasks`, `b2b_project_rubros`, `b2b_project_delays`) con auto-sincronización debounceada y badge de estado en vivo (`☁️ Guardado en la nube (PostgreSQL)` / `📁 Guardado localmente`).
     - *Auto-Onboarding Asistido por IA:* Ingestión inteligente de memorias y pliegos con OpenAI (`gpt-4o-mini`) y motor heurístico offline de ingeniería civil en cliente y servidor, con perfiles adaptados para pérgolas, herrería de fachada, galpones industriales, reformas y edificios, respaldado por una arquitectura de resiliencia Zero-Downtime.
-    - *OxI Copilot (Asistente Conversacional de Obra con IA):* Chat interactivo contextual en vivo (`💬 Copilot de Obra`) para gobernar el proyecto mediante prompts en lenguaje natural: alta de tareas con cuadrillas SUNCA y leyes sociales BPS (65%), certificación de avances, desplazamiento en cascada por lluvias, creación de partidas presupuestarias y consultas analíticas de atrasos y saldo disponible, con tarjetas de previsualización estructuradas y aplicación en 1 clic (*Human-in-the-Loop*).
+    - *OxI Copilot (Asistente Conversacional de Obra con IA):* Chat interactivo contextual en vivo (`💬 Copilot de Obra`) para gobernar el proyecto mediante prompts en lenguaje natural: alta de tareas con cuadrillas SUNCA y leyes sociales BPS (60%), certificación de avances, desplazamiento en cascada por lluvias, creación de partidas presupuestarias y consultas analíticas de atrasos y saldo disponible, con tarjetas de previsualización estructuradas y aplicación en 1 clic (*Human-in-the-Loop*).
   - **Gestión de niveles:** Conmutador de plataforma en la barra lateral, control y asignación administrativa de tiers (`classic` / `pro`) y solicitud directa de habilitación a Pro desde modal interactivo en 1 clic.
 - **OXI Network (Marketplace de Fabricación Distribuida):**
   - Adjudicación de piezas y proyectos desde el espacio de cotización administrativo (`/admin/cotizaciones/:id`) a talleres asociados homologados con precio objetivo, moneda y fecha límite.
@@ -83,6 +83,30 @@ Para lograr un modelo de negocio altamente escalable y atractivo, el ecosistema 
 5. **OXI OS (SaaS para Construcción):** Apertura de la tecnología para que las constructoras puedan cargar un plano y obtener automáticamente detección de elementos, estimaciones, solicitud de presupuestos (RFQ) a proveedores y seguimiento de ejecución.
 
 **Estrella Norte (North Star Metric):** En lugar de medir solo la facturación aislada, el objetivo es maximizar el **GMV (Gross Merchandise Value) anual gestionado**, capturando valor a través del margen de proyectos, fee de red de fabricación y contratos recurrentes.
+
+### 🌐 Principio Rector de Diseño: Escalabilidad Global y Agnosticismo de País (Multi-Country Ready)
+
+> [!IMPORTANT]
+> **Mandato de Producto y Arquitectura:** Todo desarrollo, módulo, cálculo matemático o flujo operativo en Mercadobra / OxI Platform debe concebirse desde el día uno como un **producto escalable internacionalmente**, operable en distintos países y adaptable a sus respectivos marcos legales, fiscales, laborales y monetarios sin requerir reescrituras de código ni crear dependencias cableadas (hardcoded).
+
+Para asegurar la internacionalización y escalabilidad en cualquier país de la región o del mundo, el sistema se rige por las siguientes directrices:
+
+1. **Agnosticismo de Regulación Laboral y Cargas Sociales (Multi-Régimen):**
+   - Aunque la plataforma arranque con soporte precargado y especializado para Uruguay (BPS, Ley 14.411 al 60%, laudos del Grupo 9 SUNCA), la arquitectura modela estos conceptos de forma abstracta y configurable:
+     * `socialLawsRate`: porcentaje de cargas y aportes sociales configurable a nivel de país, empresa, obra o categoría (ej. 60% BPS en Uruguay, 32-35% en Chile con AFP/Fonasa/Mutual, 40-50% en Argentina con UOCRA/FOCRA, IMSS en México).
+     * `laborCategories`: nomenclador de categorías y jornales laborales configurable por cada empresa, con plantillas oficiales precargadas por país/convenio colectivo.
+     * `workingCalendar`: motor de cálculo de días hábiles desacoplado (`constructionCalendar.js`) que permite cargar calendarios de feriados nacionales, días no laborables gremiales y licencias por país o provincia.
+
+2. **Multi-Moneda, Reajustes y Cláusulas Paramétricas:**
+   - Capacidad nativa para cotizar, contratar y certificar obras en monedas locales (UYU, ARS, CLP, BRL, PYG, COP, etc.) o en moneda dura internacional (USD, EUR).
+   - Soporte para unidades de cuenta indexadas y reajustes paramétricos por inflación (ej. UI/UR en Uruguay, UF en Chile, UVA en Argentina, IPC global).
+
+3. **Multi-Tenant y Multi-Empresa con Localización Dinámica:**
+   - Separación estricta entre el **motor de reglas de negocio** y los **datos de localización**.
+   - Cada empresa o cuenta puede configurar su país de operación, moneda principal y secundaria, formato numérico/fechas (`locale`), alícuotas impositivas (IVA, VAT, Sales Tax) y plantillas contractuales homologadas.
+
+4. **Estándares Universales de la Construcción:**
+   - Cómputos métricos en unidades universales ($m^2, m^3, ml, kg, ton, gl, un$) y metodologías de gestión estandarizadas a nivel global: **PMI**, **Earned Value Management (EVM / Valor Ganado: EV, PV, AC, CPI, SPI)** y **Lean Construction**.
 
 ### 🚀 Ejes de Innovación Disruptiva (De Software Administrativo a Plataforma ConstructionTech)
 
@@ -210,7 +234,155 @@ Esta es la lista ordenada de tareas accionables para completar la transición a 
 - [x] **Paso 3 — Persistencia en Backend (PostgreSQL Multi-usuario):** Migración y persistencia completa del modelo de datos de OxI Pro en tablas relacionales PostgreSQL (`b2b_project_tasks`, `b2b_project_rubros`, `b2b_project_delays` en migración `038_oxipro_collaboration_tables.sql`) y soporte dual en memoria/JSON. Endpoints REST dedicados (`GET/PUT /customer/b2b-projects/:projectId/oxipro/...`) con auto-sincronización debounceada en segundo plano, indicador de estado en vivo (`☁️ Guardado en la nube (PostgreSQL)` / `📁 Modo Local / Demo`) y persistencia multi-usuario colaborativa para directores de obra y administración.
 - [x] **Paso 4 — Certificaciones de Obra con Fotos y Registro de Inspección:** Sistema de certificación técnica de avance físico con registro de inspecciones por tarea. Modal interactivo para certificar porcentaje real con nombre de inspector/dirección de obra, fecha de relevamiento, observaciones técnicas de ensayos de calidad y carga de fotos de evidencia con vista previa de miniaturas, visor lightbox en alta resolución y bitácora histórica de certificaciones por partida.
 - [x] **Paso 5 — Auto-Onboarding de Obras con IA (Pliegos a Gantt):** Motor de ingestión asistida con Inteligencia Artificial (`POST /oxipro/ai-onboarding`) para estructurar obras automáticamente a partir de pliegos técnicos o memorias descriptivas. Soporte para OpenAI (`gpt-4o-mini`) y motor heurístico de construcción (normativa BPS 65%, categorías SUNCA, herrería y cerramientos Óxida). Plantillas rápidas para Edificio Residencial, Nave Industrial y Reforma Comercial con previsualización interactiva y botón de inyección directa en el cronograma Gantt y rubros en 1 clic.
-- [x] **Paso 6 — OxI Copilot: Asistente Conversacional de Obra con IA:** Chat interactivo contextual (`OxiProCopilot.jsx` y `oxiProCopilotEngine.js`) accesible desde botón flotante industrial `💬 Copilot de Obra`. Permite ingresar comandos y cambios mediante prompts en lenguaje natural: alta de tareas con cuadrillas SUNCA y cálculo de leyes sociales BPS (65%), certificación de avances físicos, desplazamiento en cascada por lluvias y contingencias, creación de partidas presupuestarias y consultas analíticas en vivo (tareas atrasadas, saldo devengado, SPI/SV). Diseñado con tarjetas de previsualización estructuradas para confirmación en 1 clic (*Human-in-the-Loop*).
+- [x] **Paso 6 — OxI Copilot: Asistente Conversacional de Obra con IA:** Chat interactivo contextual (`OxiProCopilot.jsx` y `oxiProCopilotEngine.js`) accesible desde botón flotante industrial `💬 Copilot de Obra`. Permite ingresar comandos y cambios mediante prompts en lenguaje natural: alta de tareas con cuadrillas SUNCA y cálculo de leyes sociales BPS (60% configurable), certificación de avances físicos, desplazamiento en cascada por lluvias y contingencias, creación de partidas presupuestarias y consultas analíticas en vivo (tareas atrasadas, saldo devengado, SPI/SV). Diseñado con tarjetas de previsualización estructuradas para confirmación en 1 clic (*Human-in-the-Loop*).
+
+#### 11. Hoja de Ruta Fase 3: Mejoras de Campo y Control de Ingeniería (Documento de Relevamiento)
+
+Consolidación técnica del documento *"Mejoras propuestas para MercadoObra — Documento de relevamiento a partir del uso de la herramienta 'Control de Ingeniería, Costos y Cronograma de Obra'"*.
+
+##### 📌 Parte 1: Los 11 Puntos Relevados y Criterio de Implementación
+
+1. **Valor de cada categoría de personal (SUNCA Grupo 9):**
+   - *Problema actual:* Categorías con tarifa cableada fija sin control del usuario.
+   - *Propuesta:* Pantalla de configuración para que cada empresa cargue sus categorías (Peón Práctico, Peón Común, Medio Oficial, Oficial, Oficial Especializado, Capataz) y valor del jornal.
+   - *Vigencia temporal:* Opción de ingresar jornal con fecha de vigencia ("Vigencia desde") para que los laudos semestrales del Grupo 9 / SUNCA no alteren retroactivamente tareas de meses anteriores.
+   - *Plantilla oficial:* Precargada con laudos vigentes de la construcción en Uruguay.
+   - *Estado:* Motor implementado en `src/utils/constructionLaborCategories.js`.
+
+2. **"Mes asignado" automático a partir de las fechas de la tarea:**
+   - *Problema actual:* Campo manual ("Mes 1, Mes 2...") con riesgo de inconsistencias (ej. tareas del 08/09 al 26/09 asignadas a un "Mes 1" de agosto).
+   - *Propuesta:* Eliminar el campo manual. El mes se determina automáticamente desde `startDate` y `endDate`.
+   - *Distribución proporcional:* Si una tarea cruza de mes (ej. fin de setiembre a mediados de octubre), se prorratea el costo por los días hábiles de cada mes (ej. 10 días en setiembre y 8 en octubre → 55% / 45%), mostrando el mini desglose ("Setiembre: $X / Octubre: $Y").
+   - *Nombres calendario reales:* Uso de meses reales ("Set. 2026", "Oct. 2026") en vez de ordinales.
+   - *Estado:* Motor implementado en `src/utils/constructionCalendar.js` (`distributeCostByMonths`).
+
+3. **Leyes Sociales (LLSS) al 60% por defecto y configurable:**
+   - *Problema actual:* Fijo automático al 65% sin personalización por obra o categoría.
+   - *Propuesta:* Modificar el valor base a **60%** (estándar de aportes unificados BPS Ley 14.411) y hacerlo configurable a nivel de proyecto u obra, permitiendo sobreescritura puntual por tarea o por categoría salarial.
+   - *Estado:* Actualizado en motores de frontend (`constructionLaborCategories.js`, `constructionAiEngine.js`), backend (`oxiProAiService.js`) y tests unitarios.
+
+4. **Materiales: Estimación vinculada al Presupuesto de Obra:**
+   - *Problema actual:* Carga de números a mano sin trazabilidad respecto al cómputo original.
+   - *Propuesta:*
+     - Importación del presupuesto de obra (Excel/CSV) con rubros y subrubros, metrados, unidades ($m^2, m^3, ml$) y costos unitarios.
+     - Al crear una tarea, vincularla a una partida del presupuesto y traer automáticamente el monto de materiales correspondiente.
+     - Asignación fraccional: si la tarea ejecuta parte del rubro, asignar porcentaje (ej. 60%) o metrado. Indicación visual: *"Esta tarea toma de: Rubro 5 Albañilería, partida 5.2 Revoques, 60%"*.
+     - Alerta de sobreasignación si un rubro supera el 100% entre todas las tareas o si queda presupuesto sin asignar. Fallback de "estimación manual" para casos sin presupuesto importado.
+   - *Estado:* Motor implementado en `src/utils/constructionBudgetEngine.js` y `src/utils/constructionBudgetEngine.test.js` (6 tests pasando). Integrado en `OxiProSuite.jsx` con importador de Excel/CSV tolerante (normalizador numérico multi-país), vinculación de tareas a partidas por % o metrado con desglose explicativo, y auditoría en vivo en barra de herramientas y modales.
+
+5. **Comparar por rubro: Trazabilidad de lo gastado (Imputación en obra):**
+   - *Problema actual:* Comparación certificado vs. gasto a nivel global/mensual sin desglose de a qué rubro fue la mano de obra y los materiales.
+   - *Propuesta:*
+     - Mano de obra: Parte diario/semanal simple ("Hoy en Tarea X trabajaron 2 oficiales y 1 peón") convertido a jornales y costo imputado directamente a la partida.
+     - Materiales: Carga de facturas/remitos imputados a una o varias tareas (por porcentaje o monto), con opción de adjuntar fotografía del comprobante.
+     - Subcontratos: Certificados de contratistas imputados al rubro correspondiente.
+     - Bandeja de facturas "sin imputar" para no extraviar gastos antes de su asignación.
+     - Reporte por rubro: presupuestado vs. real (MO / Materiales / Subcontrato) con análisis de desvío y causa.
+   - *Estado:* Motor implementado en `src/utils/constructionExpenseEngine.js` y `src/utils/constructionExpenseEngine.test.js` (6 tests pasando). Integrado en `OxiProSuite.jsx` con partes diarios ágiles de MO para celular/tablet, imputación fraccional de facturas de materiales, bandeja de comprobantes sin imputar, registro de certificados de subcontratistas y reporte comparativo por rubro con diagnóstico automático de causa de desvío (exceso de jornales, sobrecosto de materiales o certificados de subcontrato).
+
+6. **Combinaciones de personal (Cuadrillas Mixtas) y Costos Indirectos separados:**
+   - *Problema actual:* Tarea restringida a una única categoría de operarios; costos indirectos mezclados dentro de partidas directas.
+   - *Propuesta:*
+     - Cuadrillas mixtas: Multi-líneas de personal por tarea (ej. 1 Oficial + 1 Medio Oficial + 2 Peones), cada una con su cantidad y tarifa diaria.
+     - Plantillas reutilizables: "Cuadrilla de albañilería", "Cuadrilla de hormigón", "Cuadrilla de herrería".
+     - Costos indirectos / Gastos generales: Módulo independiente para capataz/jefe de obra, sereno, alquiler de obrador, baños químicos, conexión de energía UTE provisoria, agua OSE, seguros BSE (accidentes de trabajo y RC) y volquetas/fletes. No se cargan a tareas individuales; se prorratean en el balance: `Costo Directo + Costo Indirecto = Costo Total de Obra`.
+   - *Estado:* Modelo de datos y utilidades listas en `constructionLaborCategories.js`.
+
+7. **Aclaración y limpieza de "% Avance programado" y "% Avance real inicial":**
+   - *Problema actual:* Aparecen como campos manuales al crear una tarea, generando confusión técnica.
+   - *Propuesta:*
+     - Eliminar el campo manual de "Avance programado": se calcula automáticamente a partir del calendario de la tarea.
+     - Renombrar el avance real a "Avance ya ejecutado a la fecha de carga" (con nota aclaratoria de que solo aplica a obras ya iniciadas).
+     - Incorporar tooltips interactivos (ⓘ) con terminología de obra.
+   - *Estado:* Cálculo automático implementado en `src/utils/constructionEVM.js`.
+
+8. **Fórmulas de cálculo de avance programado y real:**
+   - *Programado de una tarea:* Lineal en días hábiles entre inicio y fin ($días\ hábiles\ transcurridos\ /\ total\ días\ hábiles$).
+   - *Programado de la obra:* Suma ponderada de las tareas según su presupuesto ($Presupuesto_i\ /\ TotalPresupuesto$).
+   - *Real de la obra:* Ponderación del avance real de cada tarea sobre el presupuesto total.
+   - *Métodos de medición:* Soporte para % estimado, cantidades ejecutadas o hitos de obra (ej. 0% / 50% encofrado / 100% hormigonado).
+   - *Estado:* Motor matemático implementado en `constructionEVM.js`.
+
+9. **Curva S Semanal y Cierre Semanal de Avance:**
+   - *Problema actual:* Discrepancia entre tarjetas semanales (0% real) y KPI global (12%), sin claridad sobre el origen del dato real.
+   - *Propuesta:*
+     - Plan semanal automático calculado desde el cronograma.
+     - Cierre semanal de obra: Modal ágil donde el jefe de obra visualiza tareas activas y reporta el % real acumulado.
+     - Gráfico de Curva S acumulada (Línea Plan vs. Línea Real) compartiendo una única fuente de verdad con los KPIs.
+     - Recordatorio visual de cierre semanal pendiente.
+
+10. **Avance Físico Certificado vs. Costos Mensuales y Lógica de Desvío (Earned Value):**
+    - *Problema actual:* El sistema indicaba falsamente "En presupuesto" y desvío de costo negativo en períodos con 0% de avance (gastar menos por estar atrasado se interpretaba como un ahorro).
+    - *Propuesta:* Aplicar metodología estricta de Earned Value Management (EVM / Valor Ganado):
+      - **Valor Ganado ($EV$):** $\text{Avance Real} \times \text{Presupuesto Total}$.
+      - **Desvío de Costo ($CV$):** $EV - AC$ (Costo Real devengado). Positivo = Ahorro real; Negativo = Sobrecosto real.
+      - **Desvío de Plazo ($SV$):** $EV - PV$ (Valor Planificado). Positivo = Adelanto; Negativo = Atraso en plazo.
+      - **Índices de Desempeño con Semáforo:** $CPI = EV / AC$ e $SPI = EV / PV$ (Verde $\ge 1.0$, Amarillo $0.90-0.99$, Rojo $< 0.90$).
+      - Botón "Generar certificado del mes" para homologación oficial.
+    - *Estado:* Algoritmo implementado en `src/utils/constructionEVM.js` con tests unitarios.
+
+11. **Presupuesto vs. Ejecutado y Control de Subcontratos:**
+    - *Problema actual:* Costos reales escritos a mano en celdas aisladas sin control de saldo.
+    - *Propuesta:*
+      - Registro de contratos de subcontrato y carga progresiva de certificados.
+      - Control de saldo contra contrato: alerta y bloqueo si un certificado excede el monto disponible.
+      - Gestión de adicionales y modificaciones de contrato (ampliaciones, ajustes paramétricos) en líneas separadas para no computar ampliaciones aprobadas como desvíos operativos.
+      - Alertas escalonadas: 80% (amarillo), 100% (rojo) y estimación de proyección a término (EAC).
+
+---
+
+##### 📌 Parte 2: Inconsistencias Corregidas y Automatizaciones Relevadas
+
+- **Fechas vs. Días Hábiles (Inconsistencia 1):** Tareas con 15 días hábiles en fechas calculaban mano de obra con 48 días inflando costos. Corregido con `calculateWorkingDays()` descontando fines de semana y feriados uruguayos de la construcción (Carnaval, Turismo, 1 de Mayo, 18 de Julio, 25 de Agosto, 25 de Diciembre y Día de la Construcción - 3er lunes de octubre Ley 19.292).
+- **Conciliación de Totales (Inconsistencias 2 y 3):** Unificación y trazabilidad clara entre el costo total directo de tareas del cronograma, los costos indirectos de obra y las partidas de materiales/subcontratos.
+- **Mes Calendario Real (Inconsistencia 4):** Reemplazo definitivo de "Mes 1, Mes 2, Mes 3" por meses de calendario reales ("Set. 2026", "Oct. 2026").
+- **Automatizaciones Futuras Relevadas:**
+  - *Cronograma:* Calendario de feriados y días de lluvia uruguayos, dependencias fin-inicio y ruta crítica automática, diagramación con drag-and-drop y congelamiento de línea base (P0).
+  - *Costos:* Biblioteca de rendimientos (jornales por $m^2, m^3$), precios de materiales actualizables, imprevistos/contingencias separadas, flujo de caja proyectado, liquidación mensual estimada BPS/BSE, retenciones y fondo de reparo.
+  - *Jefe de Obra / Campo:* Parte diario móvil con asistencia por categoría, carga fotográfica de facturas con OCR/IA, registro fotográfico por tarea como respaldo de certificación y sincronización offline en zonas sin cobertura.
+  - *Documentación y Reportes:* Certificado mensual en PDF/Excel, informe semanal automático para directores, exportación a Excel/PDF de todos los tableros y analítica comparativa histórica entre obras.
+  - *Control y Permisos:* Roles diferenciados (Jefe de obra, Administración, Dirección, Comitente/Cliente), log de auditoría inmutable de cambios y notificaciones de alerta (Email/WhatsApp).
+  - *Usabilidad:* Tooltips y glosario en lenguaje de obra (Presupuesto Cero, Curva S, Devengado, Certificado, EVM) y asistente de primera configuración paso a paso.
+
+---
+
+##### 📌 Parte 3: Matriz de Prioridades & Scope MVP para Estudios de Arquitectura
+
+Para la presentación comercial y validación técnica ante **estudios de arquitectura, constructoras y desarrolladoras**, el alcance se organiza en tres fases claras:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│               HOJA DE RUTA MVP PRESENTABLE A ESTUDIOS DE ARQUITECTURA                  │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│  FASE 1: NÚCLEO OPERATIVO DE CAMPO (Puntos 1 al 5)             ──▶ [ ✅ 100% LISTO ]  │
+│  FASE 2: RIGOR CONSTRUCTIVO Y CONTROL DIRECTIVO (Puntos 6 a 10) ──▶ [ ✅ 100% LISTO ]  │
+│  FASE 3: GESTIÓN CONTRACTUAL Y CERTIFICACIÓN PDF (Punto 11 +)   ──▶ [ ✅ 100% LISTO ]  │
+│  FASE 4: PULIDO UX/UI & EXCELENCIA VISUAL (UX-1 al UX-6)        ──▶ [ ✅ 100% LISTO ]  │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+| Nivel / Fase | Ítem / Módulo | Estado de Ejecución | Criterio de Aceptación para Estudios |
+| :--- | :--- | :---: | :--- |
+| **Fase 1 (Hecho)** | **Punto 1:** Laudos salariales y categorías con vigencia | ✅ **Terminado** | Nomenclador de salarios SUNCA editable, vigencia temporal semestral sin alterar tareas históricas. |
+| **Fase 1 (Hecho)** | **Punto 2:** Mes automático por fechas y días hábiles | ✅ **Terminado** | Eliminación de campo manual, cálculo por días hábiles sin feriados/lluvias y prorrateo multi-mes. |
+| **Fase 1 (Hecho)** | **Punto 3:** Leyes sociales (LLSS) al 60% configurable | ✅ **Terminado** | Base 60% BPS, configurable por obra o categoría, sobreescritura manual y 1-clic reset. |
+| **Fase 1 (Hecho)** | **Punto 4:** Presupuesto Excel/CSV & materiales por metrado | ✅ **Terminado** | Importador tolerante de Excel/CSV, asignación por % o metrado ($m^2, m^3, ml$) y alertas de sobreasignación. |
+| **Fase 1 (Hecho)** | **Punto 5:** Partes diarios móviles MO & facturas imputadas | ✅ **Terminado** | Carga de jornales desde celular, facturas imputadas, bandeja sin imputar y causas de desvío. |
+| **Fase 2 (Hecho)** | **Punto 6:** Cuadrillas mixtas en tareas + Costos indirectos | ✅ **Terminado** | Multi-categoría por tarea (ej. 1 Of + 1 MO + 2 Peones), plantillas y módulo de gastos generales (15-25%). |
+| **Fase 2 (Hecho)** | **Punto 7 y 8:** Formulario de tareas limpio & tooltips (ⓘ) | ✅ **Terminado** | % avance programado automático desde calendario, renombrado de avance inicial y tooltips de obra. |
+| **Fase 2 (Hecho)** | **Punto 9:** Curva S semanal acumulada & Cierre semanal | ✅ **Terminado** | Curva S Plan vs Real unificada con KPIs y modal ágil de cierre semanal de avance físico en 1 minuto. |
+| **Fase 2 (Hecho)** | **Punto 10:** Certificación mensual con Earned Value (EVM) | ✅ **Terminado** | Conectar CPI, SPI, CV, SV para distinguir atraso real de falso ahorro; botón "Generar Certificado del Mes". |
+| **Fase 3 (Hecho)** | **Punto 11:** Subcontratos avanzados con contratos tope | ✅ **Terminado** | Contratos con techo presupuestal, control contra saldo, adicionales en líneas separadas y retención 5% garantía. |
+| **Fase 3 (Hecho)** | **Certificados en PDF:** Exportador oficial A4 membretado | ✅ **Terminado** | Generación descargable de certificado formal con liquidación (Bruto, Fondo Reparo 5%, Neto) y 3 firmas técnicas. |
+| **Fase 3 (Hecho)** | **Multi-País:** Perfiles regionales (UY, AR, CL, INT) | ✅ **Terminado** | Selector en cabecera con monedas (UYU, ARS, CLP, USD) y leyes sociales / sindicatos correspondientes (SUNCA, UOCRA, CChC). |
+| **Fase 4 (Hecho)** | **UX-1:** Cabecera en 2 niveles (Contexto vs Mando) | ✅ **Terminado** | Nivel 1: Obra, Perfil Regional, Sync y Salida. Nivel 2: Título claro y acciones jerarquizadas (PDF primario, IA especial, Reset secundario). |
+| **Fase 4 (Hecho)** | **UX-2:** Tablas con números tabulares (`tabular-nums`) y alineación | ✅ **Terminado** | Tipografía monetaria no proporcional en importes y porcentajes; alineación numérica estricta a la derecha y hover suave. |
+| **Fase 4 (Hecho)** | **UX-3:** Segmented Control en sub-pestañas de Rubros (Tab 4) | ✅ **Terminado** | Reemplazo de pills sueltos por control segmentado con badges numéricos (`[2]`, `[5]`), active indicator y sin quiebres de línea erráticos. |
+| **Fase 4 (Hecho)** | **UX-4:** Modales con desenfoque (`backdrop-filter`) y moneda dinámica | ✅ **Terminado** | Desenfoque tipo macOS/iOS en modales, prefijo visual de moneda activa en inputs monetarios y cierre intuitivo con Escape. |
+| **Fase 4 (Hecho)** | **UX-5:** Semáforos semánticos unificados (EVM, techos y lluvias) | ✅ **Terminado** | Paleta semántica armónica (Verde `#059669`, Ámbar `#d97706`, Rojo `#dc2626`, Azul `#0284c7`) estandarizada en Gantt, Curva S y Subcontratos. |
+| **Fase 4 (Hecho)** | **UX-6:** Estados vacíos (*Empty States*) con acción directa | ✅ **Terminado** | Bloques ilustrados con llamadas a la acción directas (`＋ Crear primer contrato`, `＋ Cargar primera factura`) en listas vacías. |
+
+---
 
 ### 🏗️ Arquitectura y Funcionamiento de OxI Pro Suite (ConstructionTech)
 
@@ -906,6 +1078,7 @@ Mercadobra debe evolucionar como una plataforma modular, no como una suma de pan
 
 ### Base escalable
 
+- **Diseño Multi-País y Escalabilidad Global:** Todo cálculo laboral (leyes sociales, laudos, categorías salariales, calendarios de días hábiles y feriados), fiscal (IVA, retenciones, impuestos), monetario (multi-divisa, inflación, indexaciones) y contractual debe modelarse como entidades parametrizables por país, región, empresa u obra. Queda prohibido hardcodear reglas de un único país en los motores de cálculo centrales.
 - Navegación administrativa común para todos los módulos.
 - Componentes reutilizables de búsqueda, filtros, paginación, tabla, tarjeta y panel de edición.
 - Datos consultados mediante API; no duplicar reglas comerciales en componentes React.

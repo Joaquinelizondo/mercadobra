@@ -578,6 +578,46 @@ export async function downloadOxiProReportPdf(payload, token) {
   URL.revokeObjectURL(url)
 }
 
+export async function downloadOxiProMonthlyCertificatePdf(payload, token) {
+  const baseCandidates = getApiBaseCandidates()
+  let response = null
+  let lastErr = null
+
+  for (const base of baseCandidates) {
+    try {
+      const url = `${base}/oxipro/monthly-certificate/pdf`
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      })
+      if (res.ok) {
+        response = res
+        break
+      }
+    } catch (err) {
+      lastErr = err
+    }
+  }
+
+  if (!response || !response.ok) {
+    throw new Error(lastErr?.message || 'No se pudo generar el certificado mensual en PDF')
+  }
+
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `Certificado_Mensual_${String(payload.certificate?.month || 'Periodo').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
 export async function getOxiProProjectData(token, projectId) {
   return request(`/customer/b2b-projects/${projectId}/oxipro`, { token })
 }

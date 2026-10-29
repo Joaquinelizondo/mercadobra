@@ -461,7 +461,10 @@ async function getJsonRepo() {
         plannedPercent: Number(t.plannedPercent) || 0,
         progressPercent: Number(t.progressPercent) || 0,
         orderIndex: idx,
-        certifications: Array.isArray(t.certifications) ? t.certifications : []
+        certifications: Array.isArray(t.certifications) ? t.certifications : [],
+        crewLines: Array.isArray(t.crewLines) ? t.crewLines : [],
+        customSocialLaws: t.customSocialLaws || null,
+        materialBudgetAssignment: t.materialBudgetAssignment || null
       }))
       db.oxiProTasks.push(...saved)
       writeDb(db)
@@ -1132,6 +1135,9 @@ async function ensureOxiProTables(pool) {
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
       ALTER TABLE b2b_project_tasks ADD COLUMN IF NOT EXISTS certifications JSONB DEFAULT '[]'::jsonb;
+      ALTER TABLE b2b_project_tasks ADD COLUMN IF NOT EXISTS crew_lines JSONB DEFAULT '[]'::jsonb;
+      ALTER TABLE b2b_project_tasks ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
+      ALTER TABLE b2b_projects ADD COLUMN IF NOT EXISTS oxipro_state JSONB DEFAULT '{}'::jsonb;
       CREATE INDEX IF NOT EXISTS idx_b2b_project_tasks_project_id ON b2b_project_tasks(b2b_project_id);
 
       CREATE TABLE IF NOT EXISTS b2b_project_rubros (
@@ -1468,7 +1474,10 @@ async function getPgRepo() {
           plannedPercent: Number(r.planned_percent) || 0,
           progressPercent: Number(r.progress_percent) || 0,
           orderIndex: r.order_index,
-          certifications: r.certifications || []
+          certifications: r.certifications || [],
+          crewLines: r.crew_lines || [],
+          customSocialLaws: r.metadata?.customSocialLaws || null,
+          materialBudgetAssignment: r.metadata?.materialBudgetAssignment || null
         })),
         rubros: rubrosRes.rows.map(r => ({
           id: r.rubro_key || String(r.id),
@@ -1508,8 +1517,8 @@ async function getPgRepo() {
           const { rows } = await client.query(
             `INSERT INTO b2b_project_tasks (
               b2b_project_id, name, start_date, end_date, people_count, category, category_rate,
-              assigned_labor_cost, social_laws_cost, material_cost, month, planned_percent, progress_percent, order_index, certifications
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
+              assigned_labor_cost, social_laws_cost, material_cost, month, planned_percent, progress_percent, order_index, certifications, crew_lines, metadata
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *`,
             [
               projectId,
               t.name || 'Tarea',
@@ -1525,7 +1534,12 @@ async function getPgRepo() {
               Number(t.plannedPercent) || 0,
               Number(t.progressPercent) || 0,
               i,
-              JSON.stringify(t.certifications || [])
+              JSON.stringify(t.certifications || []),
+              JSON.stringify(t.crewLines || []),
+              JSON.stringify({
+                customSocialLaws: t.customSocialLaws || null,
+                materialBudgetAssignment: t.materialBudgetAssignment || null
+              })
             ]
           )
           const r = rows[0]
@@ -1545,7 +1559,10 @@ async function getPgRepo() {
             plannedPercent: Number(r.planned_percent) || 0,
             progressPercent: Number(r.progress_percent) || 0,
             orderIndex: r.order_index,
-            certifications: r.certifications || []
+            certifications: r.certifications || [],
+            crewLines: r.crew_lines || [],
+            customSocialLaws: r.metadata?.customSocialLaws || null,
+            materialBudgetAssignment: r.metadata?.materialBudgetAssignment || null
           })
         }
         await client.query('COMMIT')

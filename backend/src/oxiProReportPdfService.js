@@ -259,7 +259,8 @@ export function createOxiProReportPdf({ project = {}, schedule = [], rubros = []
         doc.rect(40, rowY, 515, rowH).fill(isEven ? WHITE : LIGHT_BG)
         doc.rect(40, rowY, 515, rowH).strokeColor(CARD_BORDER).lineWidth(0.5).stroke()
 
-        const taskBudget = (task.assignedLaborCost || 0) + (task.socialLawsCost || Math.round((task.assignedLaborCost || 0) * 0.65)) + (task.materialCost || 0)
+        const defaultSocialRate = project?.socialLawsRate ? (Number(project.socialLawsRate) / 100) : 0.60
+        const taskBudget = (task.assignedLaborCost || 0) + (task.socialLawsCost || Math.round((task.assignedLaborCost || 0) * defaultSocialRate)) + (task.materialCost || 0)
         const plannedPct = Math.min(100, Math.max(0, Number(task.plannedPercent) || 0))
         const realPct = Math.min(100, Math.max(0, Number(task.progressPercent) || 0))
         const delta = realPct - plannedPct
@@ -346,7 +347,8 @@ export function createOxiProReportPdf({ project = {}, schedule = [], rubros = []
         doc.rect(40, rubroRowY, 515, rubroH).strokeColor(CARD_BORDER).lineWidth(0.5).stroke()
 
         const labor = Number(r.laborCost != null ? r.laborCost : Math.round((Number(r.budgeted) || 0) * 0.35))
-        const social = Number(r.socialLawsCost != null ? r.socialLawsCost : Math.round(labor * 0.65))
+        const defaultSocialRate = project?.socialLawsRate ? (Number(project.socialLawsRate) / 100) : 0.60
+        const social = Number(r.socialLawsCost != null ? r.socialLawsCost : Math.round(labor * defaultSocialRate))
         const material = Number(r.materialCost != null ? r.materialCost : Math.max(0, (Number(r.budgeted) || 0) - labor - social))
         const total = (r.laborCost != null || r.socialLawsCost != null || r.materialCost != null) ? (labor + social + material) : (Number(r.budgeted) || 0)
         const executed = Number(r.executed) || 0
@@ -501,6 +503,148 @@ export function createOxiProReportPdf({ project = {}, schedule = [], rubros = []
       doc.text('Conformidad de Avance', 400, sigY + 90, { width: sigW, align: 'center' })
 
       footer(doc, 4, 4)
+
+      doc.end()
+    } catch (err) {
+      reject(err)
+    }
+  })
+}
+
+/**
+ * Genera el Certificado Mensual de Obra formal en PDF membretado (Punto 10 & 2).
+ */
+export function createMonthlyCertificatePdf({ project = {}, certificate = {}, monthItem = {}, evm = {}, schedule = [], user = {} }) {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margin: 0,
+        info: {
+          Title: `Certificado Mensual de Obra - ${certificate.month || 'Período'}`,
+          Author: 'OxI Pro Suite by Óxida Studio',
+          Subject: 'Certificado de Avance Físico y Liquidación de Obra'
+        }
+      })
+
+      const chunks = []
+      doc.on('data', chunk => chunks.push(chunk))
+      doc.on('end', () => resolve(Buffer.concat(chunks)))
+
+      // Encabezado
+      header(doc, `CERTIFICADO MENSUAL · ${String(certificate.month || 'Período').toUpperCase()}`)
+
+      // Tarjeta de proyecto
+      doc.rect(40, 75, 515, 60).fill(LIGHT_BG)
+      doc.rect(40, 75, 515, 60).strokeColor(CARD_BORDER).lineWidth(1).stroke()
+
+      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(12).text(project.name || 'Torre Libertador', 55, 87)
+      doc.fillColor(MUTED).font('Helvetica').fontSize(8.5).text(`Ubicación: ${project.location || 'Montevideo, Uruguay'} | Fecha de Emisión: ${certificate.date || new Date().toISOString().slice(0, 10)}`, 55, 103)
+      doc.text(`Director de Obra: ${certificate.inspector || 'Director Técnico'} | Comitente: ${certificate.clientApprover || 'Propietario / Comitente'}`, 55, 117)
+
+      // Box: Resumen Financiero Contractual del Mes
+      doc.rect(40, 150, 515, 100).fill(WHITE)
+      doc.rect(40, 150, 515, 100).strokeColor(LINE).lineWidth(1).stroke()
+
+      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(10).text('RESUMEN DE LIQUIDACIÓN MENSUAL DE OBRA', 55, 162)
+      doc.strokeColor(OXIDE).lineWidth(1).moveTo(55, 176).lineTo(540, 176).stroke()
+
+      const grossAmount = Number(certificate.certifiedAmount || monthItem.certCost || 0)
+      const retentionRate = Number(certificate.retentionRate || 5)
+      const retentionAmount = Math.round(grossAmount * (retentionRate / 100))
+      const netAmount = grossAmount - retentionAmount
+
+      // Fila 1: Monto Bruto
+      doc.fillColor(MUTED).font('Helvetica').fontSize(8).text('Monto Bruto Certificado del Mes:', 55, 188)
+      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(10).text(money(grossAmount), 300, 187, { width: 235, align: 'right' })
+
+      // Fila 2: Retención Fondo de Reparo
+      doc.fillColor(MUTED).font('Helvetica').fontSize(8).text(`Fondo de Reparo / Garantía (${retentionRate}% retenido):`, 55, 204)
+      doc.fillColor(OXIDE).font('Helvetica-Bold').fontSize(9.5).text(`- ${money(retentionAmount)}`, 300, 203, { width: 235, align: 'right' })
+
+      // Fila 3: Líquido a pagar
+      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(9).text('MONTO LÍQUIDO A PAGAR / FACTURAR:', 55, 224)
+      doc.fillColor(GREEN).font('Helvetica-Bold').fontSize(12).text(money(netAmount), 300, 222, { width: 235, align: 'right' })
+
+      // Box: Auditoría EVM
+      doc.rect(40, 265, 515, 140).fill(LIGHT_BG)
+      doc.rect(40, 265, 515, 140).strokeColor(CARD_BORDER).lineWidth(1).stroke()
+
+      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(9.5).text('AUDITORÍA DE VALOR GANADO (EARNED VALUE MANAGEMENT - EVM)', 55, 278)
+
+      const pv = Number(evm.pv || monthItem.budgetedCost || 0)
+      const ev = Number(evm.ev || grossAmount)
+      const ac = Number(evm.ac || grossAmount)
+      const sv = ev - pv
+      const cv = ev - ac
+      const spi = pv > 0 ? (ev / pv).toFixed(2) : '1.00'
+      const cpi = ac > 0 ? (ev / ac).toFixed(2) : '1.00'
+
+      const evmCardW = 118
+      const evmCardH = 48
+      const evmY = 296
+
+      // Card 1: PV
+      doc.rect(55, evmY, evmCardW, evmCardH).fill(WHITE)
+      doc.rect(55, evmY, evmCardW, evmCardH).strokeColor(LINE).lineWidth(0.8).stroke()
+      doc.fillColor(MUTED).font('Helvetica').fontSize(7).text('VALOR PLANIFICADO (PV)', 62, evmY + 8)
+      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(10).text(money(pv), 62, evmY + 24)
+
+      // Card 2: EV
+      doc.rect(180, evmY, evmCardW, evmCardH).fill(WHITE)
+      doc.rect(180, evmY, evmCardW, evmCardH).strokeColor(LINE).lineWidth(0.8).stroke()
+      doc.fillColor(MUTED).font('Helvetica').fontSize(7).text('VALOR GANADO (EV)', 187, evmY + 8)
+      doc.fillColor(BLUE).font('Helvetica-Bold').fontSize(10).text(money(ev), 187, evmY + 24)
+
+      // Card 3: SV & SPI
+      doc.rect(305, evmY, evmCardW, evmCardH).fill(WHITE)
+      doc.rect(305, evmY, evmCardW, evmCardH).strokeColor(LINE).lineWidth(0.8).stroke()
+      doc.fillColor(MUTED).font('Helvetica').fontSize(7).text('DESVÍO PLAZO (SV / SPI)', 312, evmY + 8)
+      doc.fillColor(sv < 0 ? OXIDE : GREEN).font('Helvetica-Bold').fontSize(9).text(`${money(sv)} (SPI: ${spi})`, 312, evmY + 24)
+
+      // Card 4: CV & CPI
+      doc.rect(430, evmY, evmCardW, evmCardH).fill(WHITE)
+      doc.rect(430, evmY, evmCardW, evmCardH).strokeColor(LINE).lineWidth(0.8).stroke()
+      doc.fillColor(MUTED).font('Helvetica').fontSize(7).text('DESVÍO COSTO (CV / CPI)', 437, evmY + 8)
+      doc.fillColor(cv < 0 ? RED : GREEN).font('Helvetica-Bold').fontSize(9).text(`${money(cv)} (CPI: ${cpi})`, 437, evmY + 24)
+
+      // Dictamen EVM
+      doc.fillColor(MUTED).font('Helvetica').fontSize(8).text(
+        sv < 0
+          ? '• Diagnóstico Técnico: La obra presenta un atraso de cronograma valorizado (SV < 0). El menor desembolso corresponde a retraso en la ejecución física y no a un ahorro de obra.'
+          : '• Diagnóstico Técnico: La obra se encuentra en plazo contractual o adelantada al cronograma (SPI ≥ 1.0) con desempeño financiero alineado.',
+        55, 356, { width: 485, lineGap: 2 }
+      )
+
+      // Observaciones / Memoria
+      doc.rect(40, 420, 515, 80).fill(WHITE)
+      doc.rect(40, 420, 515, 80).strokeColor(LINE).lineWidth(1).stroke()
+      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(8.5).text('MEMORIA TÉCNICA DE AVANCE & OBSERVACIONES', 55, 432)
+      doc.fillColor(MUTED).font('Helvetica').fontSize(7.5).text(
+        certificate.notes || 'Certificación mensual correspondiente al avance de obra homologado en sitio.',
+        55, 448, { width: 485, lineGap: 2 }
+      )
+
+      // Firmas formales
+      const sigY = 560
+      const sigW = 155
+
+      doc.strokeColor(LINE).lineWidth(0.8).moveTo(40, sigY + 60).lineTo(40 + sigW, sigY + 60).stroke()
+      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(8).text('DIRECCIÓN DE OBRA', 40, sigY + 68, { width: sigW, align: 'center' })
+      doc.fillColor(MUTED).font('Helvetica').fontSize(6.5).text(certificate.inspector || 'Director Técnico', 40, sigY + 80, { width: sigW, align: 'center' })
+      doc.text('Aprobación Técnica', 40, sigY + 90, { width: sigW, align: 'center' })
+
+      doc.strokeColor(LINE).lineWidth(0.8).moveTo(220, sigY + 60).lineTo(220 + sigW, sigY + 60).stroke()
+      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(8).text('EMPRESA CONSTRUCTORA', 220, sigY + 68, { width: sigW, align: 'center' })
+      doc.fillColor(MUTED).font('Helvetica').fontSize(6.5).text('Jefe de Obra / Representante', 220, sigY + 80, { width: sigW, align: 'center' })
+      doc.text('Conformidad de Liquidación', 220, sigY + 90, { width: sigW, align: 'center' })
+
+      doc.strokeColor(LINE).lineWidth(0.8).moveTo(400, sigY + 60).lineTo(400 + sigW, sigY + 60).stroke()
+      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(8).text('COMITENTE / FISCALIZACIÓN', 400, sigY + 68, { width: sigW, align: 'center' })
+      doc.fillColor(MUTED).font('Helvetica').fontSize(6.5).text(certificate.clientApprover || 'Propietario / Inversor', 400, sigY + 80, { width: sigW, align: 'center' })
+      doc.text('Aprobación de Pago', 400, sigY + 90, { width: sigW, align: 'center' })
+
+      footer(doc, 1, 1)
 
       doc.end()
     } catch (err) {

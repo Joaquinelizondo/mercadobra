@@ -2,8 +2,9 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { generateHeuristicConstructionPlan, generateOxiProPlanFromSpec } from './oxiProAiService.js'
 import { getRepository } from './repository.js'
+import { createMonthlyCertificatePdf } from './oxiProReportPdfService.js'
 
-test('generateHeuristicConstructionPlan genera cronograma coherente con BPS al 65%', () => {
+test('generateHeuristicConstructionPlan genera cronograma coherente con BPS al 60%', () => {
   const plan = generateHeuristicConstructionPlan('Edificio residencial de 4 niveles con herrería', {
     startDate: '2026-11-02'
   })
@@ -12,11 +13,11 @@ test('generateHeuristicConstructionPlan genera cronograma coherente con BPS al 6
   assert.ok(Array.isArray(plan.rubros) && plan.rubros.length >= 4, 'Debe generar al menos 4 rubros')
   assert.ok(plan.totalBudget > 0, 'El presupuesto total debe ser positivo')
 
-  // Verificar leyes sociales al 65% de la mano de obra
+  // Verificar leyes sociales al 60% de la mano de obra
   plan.tasks.forEach(task => {
     assert.ok(task.name && task.name.length > 2)
     assert.ok(task.startDate <= task.endDate)
-    assert.equal(task.socialLawsCost, Math.round(task.assignedLaborCost * 0.65))
+    assert.equal(task.socialLawsCost, Math.round(task.assignedLaborCost * 0.60))
     assert.ok(Array.isArray(task.certifications))
   })
 })
@@ -94,5 +95,27 @@ test('oxipro repository methods funcionan en memoria (dual repo fallback)', asyn
 
   const updatedData = await repo.getOxiProProjectData(projectId)
   assert.equal(updatedData.delays.length, 0)
+})
+
+test('createMonthlyCertificatePdf genera buffer de PDF membretado con EVM y liquidación', async () => {
+  const pdfBuffer = await createMonthlyCertificatePdf({
+    project: { name: 'Torre Libertador', location: 'Punta del Este, Uruguay' },
+    certificate: {
+      month: 'Nov. 2026',
+      date: '2026-11-30',
+      certifiedAmount: 2850000,
+      retentionRate: 5,
+      inspector: 'Arq. Javier Méndez',
+      clientApprover: 'Grupo Desarrollador S.A.',
+      notes: 'Certificación del 42% del avance físico acumulado de estructura y albañilería.'
+    },
+    monthItem: { certCost: 2850000, budgetedCost: 3000000 },
+    evm: { pv: 3000000, ev: 2850000, ac: 2850000 }
+  })
+
+  assert.ok(Buffer.isBuffer(pdfBuffer))
+  assert.ok(pdfBuffer.length > 1000, 'El PDF debe contener contenido binario estructurado')
+  // Validar cabecera mágica de PDF (%PDF)
+  assert.equal(pdfBuffer.toString('utf8', 0, 4), '%PDF')
 })
 
