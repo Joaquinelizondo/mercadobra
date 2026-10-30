@@ -18,7 +18,10 @@ export default function Layout() {
   const isOxiPlatform = location.pathname.startsWith('/cliente') || location.pathname.startsWith('/proveedor') || location.pathname.startsWith('/admin')
 
   return (
-    <main className="page" style={isOxiPlatform ? { padding: 0, width: '100%', maxWidth: '100%' } : {}}>
+    <main
+      className="page"
+      style={isOxiPlatform ? { padding: 0, width: '100%', maxWidth: '100%', margin: 0, gap: 0, flex: 1, minHeight: '100vh' } : {}}
+    >
       {!isOxiPlatform && <Topbar />}
       <Outlet />
       {!isOxiPlatform && (

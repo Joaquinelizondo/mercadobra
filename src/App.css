@@ -4699,6 +4699,94 @@
   border-color: #ef4444;
 }
 
+/* ── OXI B2B LOGIN & REGISTER SPLIT SCREEN ───────────── */
+.oxi-login-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+  width: 100%;
+  background: #ffffff;
+}
+
+.oxi-login-cover {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 50%, #c2410c 100%);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem 5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.oxi-login-cover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+.oxi-login-cover h1 {
+  font-size: clamp(3rem, 5.5vw, 4.8rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin: 0 0 1rem;
+  color: #ffffff !important;
+  position: relative;
+  z-index: 1;
+  line-height: 1.05;
+}
+
+.oxi-login-cover p {
+  color: rgba(255, 255, 255, 0.92) !important;
+  font-size: 1.25rem;
+  max-width: 440px;
+  line-height: 1.5;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.oxi-login-form-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 2rem;
+  background: #fafafa;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.oxi-login-form-container .login-card {
+  width: min(440px, 100%);
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 32px 28px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+@media (max-width: 900px) {
+  .oxi-login-layout {
+    grid-template-columns: 1fr;
+  }
+  .oxi-login-cover {
+    padding: 3rem 1.5rem 2.5rem;
+    min-height: auto;
+  }
+  .oxi-login-cover h1 {
+    font-size: 2.8rem;
+  }
+  .oxi-login-form-container {
+    padding: 2rem 1rem 3rem;
+    min-height: auto;
+  }
+}
+
 /* ── SUPPLIER LOGIN PAGE ───────────────────────────── */
 .login-page {
   display: flex;

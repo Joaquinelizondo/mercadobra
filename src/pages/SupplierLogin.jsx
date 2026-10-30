@@ -41,7 +41,7 @@ export default function SupplierLogin() {
         <p>Tu portal de fabricación. Recibí cotizaciones y gestioná tus pedidos.</p>
       </div>
       <div className="oxi-login-form-container">
-        <div className="login-card" style={{ boxShadow: 'none', border: '1px solid #e5e5e5' }}>
+        <div className="login-card">
           <div className="login-card-header">
             <div className="login-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">

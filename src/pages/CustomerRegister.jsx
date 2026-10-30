@@ -63,7 +63,7 @@ export default function CustomerRegister() {
         <p>Architecture Solutions as a Service. La plataforma operativa para tus obras.</p>
       </div>
       <div className="oxi-login-form-container">
-        <div className="login-card" style={{ boxShadow: 'none', border: '1px solid #e5e5e5' }}>
+        <div className="login-card">
           <div className="login-card-header">
             <div className="login-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">

@@ -46,7 +46,7 @@ export default function CustomerLogin() {
         <p>Architecture Solutions as a Service. La plataforma operativa para tus obras.</p>
       </div>
       <div className="oxi-login-form-container">
-        <div className="login-card" style={{ boxShadow: 'none', border: '1px solid #e5e5e5' }}>
+        <div className="login-card">
           <Link to="/">
             <img src={logoImg} className="login-logo" alt="Mercadobra" style={{ width: '140px', marginBottom: '1rem' }} />
           </Link>
