@@ -1577,6 +1577,38 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     return calculateProjectEVM(schedule, { actualTotalCost: totalExecutedCost })
   }, [schedule, totalExecutedCost])
 
+  // Control de costos: presupuestado a la fecha de corte (según calendario) vs. ejecutado real
+  const [costCutoffDate, setCostCutoffDate] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })
+
+  const costControl = useMemo(() => {
+    const byTask = new Map()
+    let totalPlannedToDate = 0
+    let totalExecuted = 0
+    schedule.forEach(t => {
+      const budget = getTaskBudget(t, projectSocialLawsRate / 100, laborCategories)
+      const plannedPct = calculateTaskPlannedPercent({ startDate: t.startDate, endDate: t.endDate }, costCutoffDate)
+      const plannedToDate = Math.round(budget * (plannedPct / 100))
+      const executed = getTaskExecutedCost(t, projectSocialLawsRate / 100, laborCategories)
+      byTask.set(String(t.id), { budget, plannedPct, plannedToDate, executed, variance: executed - plannedToDate })
+      totalPlannedToDate += plannedToDate
+      totalExecuted += executed
+    })
+    const totalVariance = totalExecuted - totalPlannedToDate
+    const pct = v => (totalProjectBudget > 0 ? Math.round((v / totalProjectBudget) * 100) : 0)
+    return {
+      byTask,
+      totalPlannedToDate,
+      totalExecuted,
+      totalVariance,
+      variancePct: totalPlannedToDate > 0 ? Math.round((totalVariance / totalPlannedToDate) * 100) : 0,
+      plannedPctOfTotal: pct(totalPlannedToDate),
+      executedPctOfTotal: pct(totalExecuted)
+    }
+  }, [schedule, costCutoffDate, projectSocialLawsRate, laborCategories, totalProjectBudget])
+
   const dynamicMonthlyComp = useMemo(() => {
     if (!schedule.length) return DEFAULT_MONTHLY_COMPARISON
 
@@ -3752,6 +3784,75 @@ ${validation.message}
                   </button>
                 </div>
               )}
+
+              {/* ── DASHBOARD: COSTO PRESUPUESTADO A LA FECHA vs COSTO EJECUTADO ── */}
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+                  <div>
+                    <strong style={{ fontSize: '0.95rem', color: '#0f172a' }}>📊 Control de Costos al día de corte</strong>
+                    <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                      Lo que deberíamos haber gastado según el cronograma vs. lo realmente ejecutado, sumando todas las tareas.
+                    </div>
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>
+                    Fecha de corte
+                    <input
+                      type="date"
+                      value={costCutoffDate}
+                      onChange={e => setCostCutoffDate(e.target.value || costCutoffDate)}
+                      style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
+                    />
+                  </label>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '12px' }}>
+                  <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '10px 12px' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#0369a1', textTransform: 'uppercase', fontWeight: 700 }}>Presupuestado a la fecha</span>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0369a1' }}>{formatMoney(costControl.totalPlannedToDate)}</div>
+                    <small style={{ color: '#64748b' }}>{costControl.plannedPctOfTotal}% del presupuesto total</small>
+                  </div>
+                  <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '10px 12px' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#c2410c', textTransform: 'uppercase', fontWeight: 700 }}>Costo ejecutado real</span>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ea580c' }}>{formatMoney(costControl.totalExecuted)}</div>
+                    <small style={{ color: '#64748b' }}>{costControl.executedPctOfTotal}% del presupuesto total</small>
+                  </div>
+                  <div style={{
+                    background: costControl.totalVariance < 0 ? '#fef2f2' : '#f0fdf4',
+                    border: `1px solid ${costControl.totalVariance < 0 ? '#fecaca' : '#bbf7d0'}`,
+                    borderRadius: '8px',
+                    padding: '10px 12px'
+                  }}>
+                    <span style={{ fontSize: '0.72rem', color: costControl.totalVariance < 0 ? '#b91c1c' : '#15803d', textTransform: 'uppercase', fontWeight: 700 }}>Desvío (real − plan)</span>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: costControl.totalVariance < 0 ? '#dc2626' : '#059669' }}>
+                      {costControl.totalVariance > 0 ? '+' : ''}{formatMoney(costControl.totalVariance)}
+                    </div>
+                    <small style={{ color: '#64748b' }}>
+                      {costControl.variancePct > 0 ? '+' : ''}{costControl.variancePct}% • {costControl.totalVariance === 0 ? 'en línea con el plan' : costControl.totalVariance < 0 ? 'ejecución por debajo del plan' : 'ejecución por encima del plan'}
+                    </small>
+                  </div>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#475569', textTransform: 'uppercase', fontWeight: 700 }}>Presupuesto total obra</span>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#262626' }}>{formatMoney(totalProjectBudget)}</div>
+                    <small style={{ color: '#64748b' }}>Saldo por ejecutar: {formatMoney(totalBalanceCost)}</small>
+                  </div>
+                </div>
+
+                {/* Barras comparativas */}
+                <div style={{ marginTop: '12px', display: 'grid', gap: '6px' }}>
+                  {[
+                    { label: 'Plan a la fecha', value: costControl.plannedPctOfTotal, color: '#0284c7' },
+                    { label: 'Ejecutado real', value: costControl.executedPctOfTotal, color: '#ea580c' }
+                  ].map(bar => (
+                    <div key={bar.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.76rem', color: '#475569' }}>
+                      <span style={{ width: '100px', fontWeight: 600 }}>{bar.label}</span>
+                      <div style={{ flex: 1, height: '10px', background: '#e2e8f0', borderRadius: '5px', overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.min(100, bar.value)}%`, height: '100%', background: bar.color }} />
+                      </div>
+                      <span style={{ width: '40px', textAlign: 'right', fontWeight: 700 }}>{bar.value}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="table-responsive">
               <table className="oxi-pro-table schedule-table">
                 <thead>
@@ -3764,10 +3865,12 @@ ${validation.message}
                     <th>Leyes Sociales (BPS)</th>
                     <th>Costo Materiales</th>
                     <th>Presupuesto Tarea</th>
+                    <th style={{ minWidth: '120px' }}>Presup. a la Fecha</th>
                     <th style={{ minWidth: '130px' }}>% Programado</th>
                     <th style={{ minWidth: '130px' }}>% Real Certificado</th>
                     <th>Desvío / Plazo</th>
-                    <th style={{ minWidth: '140px' }}>Costo Ejecutado ($)</th>
+                    <th style={{ minWidth: '140px' }}>Costo Real ($)</th>
+                    <th style={{ minWidth: '140px' }}>Desvío Costo ($)</th>
                     <th>Acción</th>
                   </tr>
                 </thead>
@@ -3785,6 +3888,7 @@ ${validation.message}
                     const taskExecuted = Math.round(totalTask * (real / 100))
                     const taskBalance = Math.max(0, totalTask - taskExecuted)
                     const predTask = task.dependsOnTaskId ? schedule.find(t => String(t.id) === String(task.dependsOnTaskId)) : null
+                    const rowCC = costControl.byTask.get(String(task.id)) || { plannedToDate: 0, executed: 0, variance: 0, plannedPct: 0 }
 
                     return (
                       <tr key={task.id}>
@@ -4017,6 +4121,14 @@ ${validation.message}
                         </strong>
                       </td>
                       <td>
+                        <strong style={{ color: '#0369a1', fontSize: '0.9rem' }}>
+                          {formatMoney(rowCC.plannedToDate)}
+                        </strong>
+                        <small style={{ color: '#737373', fontSize: '0.72rem', display: 'block' }}>
+                          {rowCC.plannedPct}% del calendario
+                        </small>
+                      </td>
+                      <td>
                         <div className="progress-control">
                           <div className="progress-bar-wrap" style={{ background: '#e0f2fe', width: '55px' }}>
                             <div
@@ -4094,6 +4206,20 @@ ${validation.message}
                         </div>
                       </td>
                       <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                          <span
+                            className={`delta-badge ${rowCC.variance > 0 ? 'ahead' : rowCC.variance < 0 ? 'delayed' : 'ontrack'}`}
+                            style={{ whiteSpace: 'nowrap' }}
+                            title={`Real ${formatMoney(rowCC.executed)} vs presupuestado a la fecha ${formatMoney(rowCC.plannedToDate)}`}
+                          >
+                            {rowCC.variance > 0 ? '+' : ''}{formatMoney(rowCC.variance)}
+                          </span>
+                          <small style={{ color: '#737373', fontSize: '0.72rem' }}>
+                            {rowCC.variance === 0 ? 'En línea con el plan' : rowCC.variance < 0 ? 'Por debajo del plan' : 'Por encima del plan'}
+                          </small>
+                        </div>
+                      </td>
+                      <td>
                         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                           <button
                             type="button"
@@ -4135,6 +4261,10 @@ ${validation.message}
                   <td style={{ padding: '12px' }}>{formatMoney(totalMaterialCost)}</td>
                   <td style={{ padding: '12px', color: '#262626' }}>{formatMoney(totalProjectBudget)}</td>
                   <td style={{ padding: '12px', color: '#0369a1' }}>
+                    <div>{formatMoney(costControl.totalPlannedToDate)}</div>
+                    <small style={{ color: '#737373', fontWeight: 'normal', fontSize: '0.75rem', display: 'block' }}>a la fecha de corte</small>
+                  </td>
+                  <td style={{ padding: '12px', color: '#0369a1' }}>
                     <div>{plannedGlobalProgress}%</div>
                     <small style={{ color: '#737373', fontWeight: 'normal', fontSize: '0.75rem' }}>prom. plan</small>
                   </td>
@@ -4151,6 +4281,12 @@ ${validation.message}
                     <div>{formatMoney(totalExecutedCost)}</div>
                     <small style={{ color: '#737373', fontWeight: 'normal', fontSize: '0.75rem', display: 'block' }}>
                       Saldo: {formatMoney(totalBalanceCost)}
+                    </small>
+                  </td>
+                  <td style={{ padding: '12px', color: costControl.totalVariance < 0 ? '#dc2626' : '#059669' }}>
+                    <div>{costControl.totalVariance > 0 ? '+' : ''}{formatMoney(costControl.totalVariance)}</div>
+                    <small style={{ color: '#737373', fontWeight: 'normal', fontSize: '0.75rem', display: 'block' }}>
+                      {costControl.variancePct > 0 ? '+' : ''}{costControl.variancePct}%
                     </small>
                   </td>
                   <td></td>
