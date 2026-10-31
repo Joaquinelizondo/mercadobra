@@ -243,3 +243,161 @@ export function distributeCostByMonths(startDate, endDate, totalCost = 0, includ
       : `${breakdown[0].monthLabel} - ${breakdown[breakdown.length - 1].monthLabel}`
   }
 }
+
+/**
+ * Formatea un objeto Date en string 'YYYY-MM-DD' en hora local
+ */
+export function formatDateIso(dateObj) {
+  if (!dateObj) return ''
+  const d = dateObj instanceof Date ? dateObj : new Date(dateObj)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/**
+ * Suma o resta días hábiles a una fecha dada, saltando fines de semana y feriados.
+ * Si daysToAdd === 0, normaliza la fecha al primer día hábil siguiente si cae en día no laborable.
+ */
+export function addWorkingDays(startDate, daysToAdd = 0, includeSaturdays = false) {
+  if (!startDate) return ''
+  const d = parseLocalDate(startDate)
+  d.setHours(12, 0, 0, 0)
+  const count = Number(daysToAdd) || 0
+
+  if (count === 0) {
+    while (!isWorkingDay(d, includeSaturdays)) {
+      d.setDate(d.getDate() + 1)
+    }
+    return formatDateIso(d)
+  }
+
+  const step = count > 0 ? 1 : -1
+  let added = 0
+  const target = Math.abs(count)
+
+  while (added < target) {
+    d.setDate(d.getDate() + step)
+    if (isWorkingDay(d, includeSaturdays)) {
+      added++
+    }
+  }
+
+  return formatDateIso(d)
+}
+
+/**
+ * Calcula la fecha de fin de una tarea a partir de su fecha de inicio y duración en días hábiles.
+ * Para una tarea de 1 día hábil, la fecha de fin es igual a la fecha de inicio.
+ */
+export function calculateTaskEndDateFromDuration(startDate, workDays = 1, includeSaturdays = false) {
+  const duration = Math.max(1, Number(workDays) || 1)
+  if (duration === 1) {
+    return addWorkingDays(startDate, 0, includeSaturdays)
+  }
+  return addWorkingDays(startDate, duration - 1, includeSaturdays)
+}
+
+/**
+ * Calcula las fechas automáticas de una tarea dependiente de otra (Predecesora).
+ * Soporta relaciones de precedencia clásicas de obra:
+ * - 'FS' (Fin a Inicio): la tarea comienza tras finalizar la predecesora (+ lagDays hábiles).
+ * - 'SS' (Inicio a Inicio): la tarea comienza junto o tras el inicio de la predecesora (+ lagDays hábiles).
+ * 
+ * Ejemplo del usuario: "comienzo este pilar 3 días luego de hacer la losa"
+ * -> predecessor: Losa, dependencyType: 'FS', lagDays: 3, workDays: 5.
+ */
+export function calculateDependentTaskDates(predecessorTask, options = {}) {
+  if (!predecessorTask || !predecessorTask.startDate || !predecessorTask.endDate) {
+    return null
+  }
+
+  const {
+    dependencyType = 'FS',
+    lagDays = 0,
+    workDays = 1,
+    includeSaturdays = false
+  } = options
+
+  const duration = Math.max(1, Number(workDays) || 1)
+  const lag = Number(lagDays) || 0
+  let calculatedStart = ''
+
+  if (dependencyType === 'SS') {
+    const baseStart = predecessorTask.startDate
+    if (lag === 0) {
+      calculatedStart = addWorkingDays(baseStart, 0, includeSaturdays)
+    } else {
+      calculatedStart = addWorkingDays(baseStart, lag, includeSaturdays)
+    }
+  } else {
+    // Default 'FS' (Fin a Inicio)
+    const baseEnd = predecessorTask.endDate
+    // lag === 0 -> comienza el día hábil inmediato posterior (+1 día hábil)
+    // lag === 3 -> espera 3 días hábiles adicionales, comienza en (+1 + 3 = +4 días hábiles)
+    const offset = 1 + lag
+    calculatedStart = addWorkingDays(baseEnd, offset, includeSaturdays)
+  }
+
+  const calculatedEnd = calculateTaskEndDateFromDuration(calculatedStart, duration, includeSaturdays)
+  const actualWorkDays = calculateWorkingDays(calculatedStart, calculatedEnd, includeSaturdays)
+
+  return {
+    startDate: calculatedStart,
+    endDate: calculatedEnd,
+    workDays: actualWorkDays,
+    dependencyType,
+    lagDays: lag,
+    predecessorId: predecessorTask.id,
+    predecessorName: predecessorTask.name
+  }
+}
+
+/**
+ * Recorre y propaga en cascada las dependencias del cronograma.
+ * Si una predecesora cambia de fecha o se desplaza por lluvia/demoras,
+ * actualiza automáticamente las fechas de inicio y fin de todas sus tareas dependientes.
+ */
+export function recalculateScheduleDependencies(schedule = [], includeSaturdays = false) {
+  if (!Array.isArray(schedule) || schedule.length === 0) return []
+
+  const taskMap = new Map()
+  schedule.forEach(t => taskMap.set(String(t.id), { ...t }))
+
+  let changed = true
+  let iterations = 0
+  const maxIterations = schedule.length * 3
+
+  while (changed && iterations < maxIterations) {
+    changed = false
+    iterations++
+
+    for (const [id, task] of taskMap.entries()) {
+      if (task.dependsOnTaskId) {
+        const pred = taskMap.get(String(task.dependsOnTaskId))
+        if (pred && pred.startDate && pred.endDate) {
+          const depType = task.dependencyType || 'FS'
+          const lag = Number(task.lagDays) || 0
+          const duration = Math.max(1, Number(task.workDays) || calculateWorkingDays(task.startDate, task.endDate, includeSaturdays))
+
+          const dates = calculateDependentTaskDates(pred, {
+            dependencyType: depType,
+            lagDays: lag,
+            workDays: duration,
+            includeSaturdays
+          })
+
+          if (dates && (dates.startDate !== task.startDate || dates.endDate !== task.endDate)) {
+            task.startDate = dates.startDate
+            task.endDate = dates.endDate
+            task.workDays = dates.workDays
+            changed = true
+          }
+        }
+      }
+    }
+  }
+
+  return Array.from(taskMap.values())
+}

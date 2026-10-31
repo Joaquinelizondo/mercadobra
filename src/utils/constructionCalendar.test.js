@@ -4,7 +4,11 @@ import {
   calculateWorkingDays,
   distributeCostByMonths,
   getUruguayHolidaysForYear,
-  isWorkingDay
+  isWorkingDay,
+  addWorkingDays,
+  calculateTaskEndDateFromDuration,
+  calculateDependentTaskDates,
+  recalculateScheduleDependencies
 } from './constructionCalendar.js'
 
 test('calculateWorkingDays descuenta fines de semana y feriados en Uruguay', () => {
@@ -51,4 +55,54 @@ test('distributeCostByMonths reparte presupuesto proporcionalmente por días há
   assert.ok(res.breakdown[0].workDays > 0)
   assert.ok(res.breakdown[1].workDays > 0)
   assert.ok(res.primaryMonthLabel.includes('Set. 2026'))
+})
+
+test('addWorkingDays avanza y descuenta días hábiles respetando fines de semana', () => {
+  // Viernes 2026-10-02 + 1 día hábil = Lunes 2026-10-05
+  assert.equal(addWorkingDays('2026-10-02', 1), '2026-10-05')
+  // Lunes 2026-10-05 + 5 días hábiles = Lunes 2026-10-12
+  assert.equal(addWorkingDays('2026-10-05', 5), '2026-10-12')
+})
+
+test('calculateDependentTaskDates calcula inicio y fin al terminar predecesora (FS lag 0)', () => {
+  // Predecesora: Losa termina el jueves 2026-10-08
+  const losa = { id: 101, name: 'Losa de Hormigón', startDate: '2026-10-01', endDate: '2026-10-08' }
+  // Tarea dependiente: Desencofrado (duración 2 días hábiles, inmediatamente al terminar)
+  const desencofrado = calculateDependentTaskDates(losa, { dependencyType: 'FS', lagDays: 0, workDays: 2 })
+  // Inicia el viernes 2026-10-09 y termina el lunes 2026-10-12 (2 días hábiles)
+  assert.equal(desencofrado.startDate, '2026-10-09')
+  assert.equal(desencofrado.endDate, '2026-10-12')
+  assert.equal(desencofrado.workDays, 2)
+})
+
+test('calculateDependentTaskDates soporta desfase (ej: pilar 3 días hábiles luego de hacer la losa)', () => {
+  // Caso exacto pedido por el usuario:
+  // Losa termina el viernes 2026-10-02
+  const losa = { id: 101, name: 'Losa', startDate: '2026-09-25', endDate: '2026-10-02' }
+  // Pilar inicia 3 días hábiles después del fin de la losa
+  // Días de espera hábiles: lun 5, mar 6, mie 7.
+  // Inicia el 4to día hábil: jueves 2026-10-08
+  const pilar = calculateDependentTaskDates(losa, { dependencyType: 'FS', lagDays: 3, workDays: 5 })
+  assert.equal(pilar.startDate, '2026-10-08')
+  // Duración 5 días hábiles: jue 8, vie 9, lun 12, mar 13, mie 14
+  assert.equal(pilar.endDate, '2026-10-14')
+  assert.equal(pilar.workDays, 5)
+})
+
+test('recalculateScheduleDependencies actualiza tareas dependientes en cascada si cambia la predecesora', () => {
+  const schedule = [
+    { id: 't1', name: 'Losa', startDate: '2026-10-01', endDate: '2026-10-07', workDays: 5 },
+    { id: 't2', name: 'Pilar', dependsOnTaskId: 't1', dependencyType: 'FS', lagDays: 1, workDays: 3, startDate: '2026-10-09', endDate: '2026-10-13' }
+  ]
+
+  // Simulamos que la Losa se extiende hasta el viernes 2026-10-09
+  schedule[0].endDate = '2026-10-09'
+
+  const updated = recalculateScheduleDependencies(schedule)
+  const pilarUpdated = updated.find(t => t.id === 't2')
+
+  // Tras el fin del viernes 09, con lag 1:
+  // Día 1 hábil después es lunes 12. Con lag 1 día adicional, inicia el martes 13
+  assert.equal(pilarUpdated.startDate, '2026-10-13')
+  assert.equal(pilarUpdated.workDays, 3)
 })

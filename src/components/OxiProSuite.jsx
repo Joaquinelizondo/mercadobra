@@ -21,7 +21,14 @@ import {
   calculateIndirectCostsTotals,
   calculateProjectCostBreakdown
 } from '../utils/constructionLaborCategories'
-import { calculateWorkingDays, distributeCostByMonths } from '../utils/constructionCalendar'
+import {
+  calculateWorkingDays,
+  distributeCostByMonths,
+  addWorkingDays,
+  calculateTaskEndDateFromDuration,
+  calculateDependentTaskDates,
+  recalculateScheduleDependencies
+} from '../utils/constructionCalendar'
 import { calculateTaskPlannedPercent, calculateProjectEVM, getTaskTotalBudget } from '../utils/constructionEVM'
 import {
   DEFAULT_BUDGET_ITEMS,
@@ -1096,11 +1103,16 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
   // Schedule modal
   const [showAddTaskModal, setShowAddTaskModal] = useState(false)
+  const [editingTaskId, setEditingTaskId] = useState(null)
   const [newTask, setNewTask] = useState({
     name: '',
     startDate: '2026-11-02',
     endDate: '2026-11-20',
     workDays: 15,
+    schedulingMode: 'dates', // 'dates' (manual) | 'dependency' (enganchada a otra tarea)
+    dependsOnTaskId: '',
+    dependencyType: 'FS',    // 'FS' (Fin a Inicio) | 'SS' (Inicio a Inicio)
+    lagDays: 0,              // Desfase en días hábiles
     crewMode: 'template', // 'template' | 'custom' | 'single' (Punto 6)
     selectedTemplateId: 'crew_albanileria',
     crewLines: [
@@ -1401,7 +1413,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   }, [showRainModal, rainForm.date, rainForm.days, schedule])
 
   // Gantt State & Calculations
-  const [scheduleViewMode, setScheduleViewMode] = useState('gantt')
+  const [scheduleViewMode, setScheduleViewMode] = useState('combined')
 
   const ganttBounds = useMemo(() => {
     if (!schedule.length) {
@@ -1922,6 +1934,41 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     }))
   }
 
+  function handleOpenEditTask(task) {
+    setEditingTaskId(task.id)
+    const isCrew = Array.isArray(task.crewLines) && task.crewLines.length > 0
+    setNewTask({
+      name: task.name,
+      startDate: task.startDate,
+      endDate: task.endDate,
+      workDays: task.workDays || calculateWorkingDays(task.startDate, task.endDate),
+      schedulingMode: task.dependsOnTaskId ? 'dependency' : 'dates',
+      dependsOnTaskId: task.dependsOnTaskId || '',
+      dependencyType: task.dependencyType || 'FS',
+      lagDays: task.lagDays != null ? task.lagDays : 0,
+      crewMode: isCrew ? 'custom' : 'single',
+      selectedTemplateId: 'crew_albanileria',
+      crewLines: isCrew ? task.crewLines.map(l => ({ ...l })) : [
+        { role: 'Oficial', count: 1, dailyRate: 2800 },
+        { role: 'Medio Oficial', count: 1, dailyRate: 2200 },
+        { role: 'Peón Práctico', count: 1, dailyRate: 1800 }
+      ],
+      peopleCount: task.peopleCount || (isCrew ? task.crewLines.reduce((s, l) => s + (Number(l.count) || 1), 0) : 1),
+      category: task.category || 'Oficial',
+      categoryRate: task.categoryRate || 2800,
+      socialLawsCost: task.customSocialLaws ? task.socialLawsCost : '',
+      materialMode: task.linkedPartidaId ? 'partida' : 'manual',
+      linkedPartidaId: task.linkedPartidaId || '',
+      partidaAssignMode: task.assignedPartidaQuantity ? 'quantity' : 'percent',
+      partidaAssignValue: task.assignedPartidaQuantity || task.assignedPartidaPercent || 100,
+      partidaDescription: task.partidaDescription || '',
+      materialCost: task.materialCost || 0,
+      month: task.month || 'Nov. 2026',
+      initialProgressPercent: task.progressPercent || 0
+    })
+    setShowAddTaskModal(true)
+  }
+
   function handleAddTask(e) {
     e.preventDefault()
     if (!newTask.name) return
@@ -1983,11 +2030,15 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     ) || rubros[0]
 
     const taskEntry = {
-      id: Date.now(),
+      id: editingTaskId || Date.now(),
       name: newTask.name,
       startDate: newTask.startDate || '2026-11-02',
       endDate: newTask.endDate || '2026-11-20',
       workDays: days,
+      schedulingMode: newTask.schedulingMode || 'dates',
+      dependsOnTaskId: newTask.schedulingMode === 'dependency' ? (newTask.dependsOnTaskId || null) : null,
+      dependencyType: newTask.dependencyType || 'FS',
+      lagDays: Number(newTask.lagDays) || 0,
       crewLines: crewLinesToUse,
       peopleCount: totalPeople,
       category: isCrewMode ? 'Cuadrilla Mixta' : newTask.category,
@@ -2010,7 +2061,16 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       plannedPercent: autoPlanned,
       progressPercent: initialProgress
     }
-    setSchedule([...schedule, taskEntry])
+
+    let nextSchedule = []
+    if (editingTaskId) {
+      nextSchedule = schedule.map(t => t.id === editingTaskId ? { ...t, ...taskEntry } : t)
+      setEditingTaskId(null)
+    } else {
+      nextSchedule = [...schedule, taskEntry]
+    }
+    const cascaded = recalculateScheduleDependencies(nextSchedule)
+    setSchedule(cascaded)
     setShowAddTaskModal(false)
 
     const defaultStart = '2026-11-02'
@@ -2022,6 +2082,10 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       startDate: defaultStart,
       endDate: defaultEnd,
       workDays: defaultDays,
+      schedulingMode: 'dates',
+      dependsOnTaskId: '',
+      dependencyType: 'FS',
+      lagDays: 0,
       crewMode: 'template',
       selectedTemplateId: 'crew_albanileria',
       crewLines: [
@@ -2230,7 +2294,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     }
 
     setRainLogs(prev => [logEntry, ...prev])
-    setSchedule(updatedSchedule)
+    setSchedule(recalculateScheduleDependencies(updatedSchedule))
     setShowRainModal(false)
   }
 
@@ -3316,19 +3380,27 @@ ${validation.message}
               <div className="gantt-view-switch">
                 <button
                   type="button"
+                  className={`gantt-view-btn ${scheduleViewMode === 'combined' ? 'is-active' : ''}`}
+                  onClick={() => setScheduleViewMode('combined')}
+                  title="Vista Integrada: Diagrama de Gantt visual arriba y Planilla de tareas abajo"
+                >
+                  📊 Gantt + Planilla
+                </button>
+                <button
+                  type="button"
                   className={`gantt-view-btn ${scheduleViewMode === 'gantt' ? 'is-active' : ''}`}
                   onClick={() => setScheduleViewMode('gantt')}
-                  title="Vista Diagrama de Gantt temporal interactivo"
+                  title="Vista Solo Diagrama de Gantt temporal interactivo"
                 >
-                  📊 Diagrama de Gantt
+                  📈 Solo Gantt
                 </button>
                 <button
                   type="button"
                   className={`gantt-view-btn ${scheduleViewMode === 'tabla' ? 'is-active' : ''}`}
                   onClick={() => setScheduleViewMode('tabla')}
-                  title="Vista Planilla analítica detallada de costos y leyes sociales"
+                  title="Vista Solo Planilla analítica detallada de costos y leyes sociales"
                 >
-                  📋 Planilla & Costos
+                  📋 Solo Planilla
                 </button>
               </div>
 
@@ -3375,7 +3447,7 @@ ${validation.message}
               >
                 📦 Partidas Presupuesto ({budgetItems.length})
               </button>
-              <button className="oxi-btn-primary" onClick={() => setShowAddTaskModal(true)}>
+              <button className="oxi-btn-primary" onClick={() => { setEditingTaskId(null); setShowAddTaskModal(true) }}>
                 ＋ Agregar Tarea al Cronograma
               </button>
             </div>
@@ -3468,7 +3540,7 @@ ${validation.message}
           </div>
 
           {/* ── VISTA 1: DIAGRAMA DE GANTT INTERACTIVO ── */}
-          {scheduleViewMode === 'gantt' && (
+          {(scheduleViewMode === 'gantt' || scheduleViewMode === 'combined') && (
             <div className="gantt-card">
               {/* Top bar with legend and summary */}
               <div className="gantt-top-bar">
@@ -3511,6 +3583,7 @@ ${validation.message}
                     const real = Math.min(100, Math.max(0, Number(task.progressPercent) || 0))
                     const delta = real - planned
                     const isDone = real === 100
+                    const predTask = task.dependsOnTaskId ? schedule.find(t => String(t.id) === String(task.dependsOnTaskId)) : null
 
                     return (
                       <div key={task.id} className="gantt-task-meta-cell">
@@ -3520,13 +3593,21 @@ ${validation.message}
                             {delta > 0 ? `+${delta}%` : `${delta}%`}
                           </span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#737373', fontSize: '0.74rem' }}>
-                          <span>{task.startDate} al {task.endDate}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#737373', fontSize: '0.74rem', marginTop: '2px' }}>
+                          <span>📅 {task.startDate} al {task.endDate} ({task.workDays || 1}d)</span>
                           <div>
                             <strong style={{ color: isDone ? '#10b981' : '#ea580c' }}>{real}%</strong>
                             <span style={{ color: '#0284c7', marginLeft: '3px' }}>({planned}%)</span>
                           </div>
                         </div>
+                        {predTask && (
+                          <div style={{ fontSize: '0.7rem', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                            <span>🔗</span>
+                            <span title={`Depende de ${predTask.name} (${task.dependencyType || 'FS'} ${task.lagDays > 0 ? `+${task.lagDays}d` : ''})`}>
+                              Tras: {predTask.name} {Number(task.lagDays) > 0 ? `(+${task.lagDays}d)` : ''}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -3648,76 +3729,123 @@ ${validation.message}
           )}
 
           {/* ── VISTA 2: PLANILLA ANALÍTICA & COSTOS ── */}
-          {scheduleViewMode === 'tabla' && (
-            <div className="table-responsive">
-            <table className="oxi-pro-table schedule-table">
-              <thead>
-                <tr>
-                  <th style={{ minWidth: '180px' }}>Tarea de Obra</th>
-                  <th style={{ minWidth: '130px' }}>Plazo (Inicio - Fin)</th>
-                  <th>Personal</th>
-                  <th>Categoría & Tarifa</th>
-                  <th>Costo Mano Obra</th>
-                  <th>Leyes Sociales (BPS)</th>
-                  <th>Costo Materiales</th>
-                  <th>Presupuesto Tarea</th>
-                  <th style={{ minWidth: '130px' }}>% Programado</th>
-                  <th style={{ minWidth: '130px' }}>% Real Certificado</th>
-                  <th>Desvío / Plazo</th>
-                  <th style={{ minWidth: '140px' }}>Costo Ejecutado ($)</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {schedule.map(task => {
-                  const planned = getTaskPlannedPercent(task)
-                  const real = Math.min(100, Math.max(0, Number(task.progressPercent) || 0))
-                  const delta = real - planned
-                  const isDone = real === 100
-                  const isProgress = real > 0 && real < 100
-                  const labor = task.assignedLaborCost || 0
-                  const social = getTaskSocialLaws(task, projectSocialLawsRate / 100, laborCategories)
-                  const material = task.materialCost || 0
-                  const totalTask = labor + social + material
-                  const taskExecuted = Math.round(totalTask * (real / 100))
-                  const taskBalance = Math.max(0, totalTask - taskExecuted)
+          {(scheduleViewMode === 'tabla' || scheduleViewMode === 'combined') && (
+            <div style={{ marginTop: scheduleViewMode === 'combined' ? '28px' : '0' }}>
+              {scheduleViewMode === 'combined' && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 16px' }}>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '1rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>📋</span>
+                      <span>Planilla Detallada de Tareas ({schedule.length})</span>
+                    </h4>
+                    <p style={{ margin: '3px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                      Seguimiento caso a caso: plazos de inicio y fin, vínculos de dependencia, cuadrilla asignada y control de costos.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="oxi-btn-primary"
+                    onClick={() => { setEditingTaskId(null); setShowAddTaskModal(true) }}
+                    style={{ fontSize: '0.82rem', padding: '6px 14px' }}
+                  >
+                    ＋ Agregar Tarea
+                  </button>
+                </div>
+              )}
+              <div className="table-responsive">
+              <table className="oxi-pro-table schedule-table">
+                <thead>
+                  <tr>
+                    <th style={{ minWidth: '180px' }}>Tarea de Obra</th>
+                    <th style={{ minWidth: '130px' }}>Plazo (Inicio - Fin)</th>
+                    <th>Personal</th>
+                    <th>Categoría & Tarifa</th>
+                    <th>Costo Mano Obra</th>
+                    <th>Leyes Sociales (BPS)</th>
+                    <th>Costo Materiales</th>
+                    <th>Presupuesto Tarea</th>
+                    <th style={{ minWidth: '130px' }}>% Programado</th>
+                    <th style={{ minWidth: '130px' }}>% Real Certificado</th>
+                    <th>Desvío / Plazo</th>
+                    <th style={{ minWidth: '140px' }}>Costo Ejecutado ($)</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {schedule.map(task => {
+                    const planned = getTaskPlannedPercent(task)
+                    const real = Math.min(100, Math.max(0, Number(task.progressPercent) || 0))
+                    const delta = real - planned
+                    const isDone = real === 100
+                    const isProgress = real > 0 && real < 100
+                    const labor = task.assignedLaborCost || 0
+                    const social = getTaskSocialLaws(task, projectSocialLawsRate / 100, laborCategories)
+                    const material = task.materialCost || 0
+                    const totalTask = labor + social + material
+                    const taskExecuted = Math.round(totalTask * (real / 100))
+                    const taskBalance = Math.max(0, totalTask - taskExecuted)
+                    const predTask = task.dependsOnTaskId ? schedule.find(t => String(t.id) === String(task.dependsOnTaskId)) : null
 
-                  return (
-                    <tr key={task.id}>
-                      <td>
-                        <strong>{task.name}</strong>
-                        <div style={{ marginTop: '4px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                          <span className="month-pill">
-                            {task.month && !task.month.startsWith('Mes ')
-                              ? task.month
-                              : (distributeCostByMonths(task.startDate, task.endDate).primaryMonthLabel || task.month)}
-                          </span>
-                          {(() => {
-                            const dist = distributeCostByMonths(task.startDate, task.endDate, totalTask)
-                            if (!dist.breakdown || dist.breakdown.length <= 1) return null
-                            return (
-                              <span
-                                title={dist.breakdown.map(b => `${b.monthLabel}: ${formatMoney(b.cost)} (${b.workDays}d / ${b.percent}%)`).join(' • ')}
-                                style={{
-                                  fontSize: '0.72rem',
-                                  background: '#eff6ff',
-                                  border: '1px solid #bfdbfe',
-                                  color: '#1d4ed8',
-                                  padding: '2px 6px',
-                                  borderRadius: '4px',
-                                  cursor: 'help',
-                                  fontWeight: 600
-                                }}
-                              >
-                                📊 {dist.breakdown.map(b => `${b.monthLabel.split(' ')[0]} ${b.percent}%`).join(' / ')}
+                    return (
+                      <tr key={task.id}>
+                        <td>
+                          <strong>{task.name}</strong>
+                          <div style={{ marginTop: '4px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <span className="month-pill">
+                              {task.month && !task.month.startsWith('Mes ')
+                                ? task.month
+                                : (distributeCostByMonths(task.startDate, task.endDate).primaryMonthLabel || task.month)}
+                            </span>
+                            {predTask && (
+                              <span style={{
+                                background: '#ecfdf5',
+                                border: '1px solid #a7f3d0',
+                                color: '#065f46',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontSize: '0.72rem',
+                                fontWeight: 600,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}>
+                                <span>🔗</span>
+                                <span>
+                                  Tras: {predTask.name} {Number(task.lagDays) > 0 ? `(+${task.lagDays}d hábiles)` : '(inmediato)'}
+                                </span>
                               </span>
-                            )
-                          })()}
-                        </div>
-                      </td>
-                      <td>
-                        <small>{task.startDate} al {task.endDate}</small>
-                      </td>
+                            )}
+                            {(() => {
+                              const dist = distributeCostByMonths(task.startDate, task.endDate, totalTask)
+                              if (!dist.breakdown || dist.breakdown.length <= 1) return null
+                              return (
+                                <span
+                                  title={dist.breakdown.map(b => `${b.monthLabel}: ${formatMoney(b.cost)} (${b.workDays}d / ${b.percent}%)`).join(' • ')}
+                                  style={{
+                                    fontSize: '0.72rem',
+                                    background: '#eff6ff',
+                                    border: '1px solid #bfdbfe',
+                                    color: '#1d4ed8',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    cursor: 'help',
+                                    fontWeight: 600
+                                  }}
+                                >
+                                  📊 {dist.breakdown.map(b => `${b.monthLabel.split(' ')[0]} ${b.percent}%`).join(' / ')}
+                                </span>
+                              )
+                            })()}
+                          </div>
+                        </td>
+                        <td>
+                          <strong style={{ fontSize: '0.84rem', color: '#0f172a', display: 'block' }}>
+                            {task.startDate} al {task.endDate}
+                          </strong>
+                          <small style={{ color: '#059669', fontSize: '0.74rem', marginTop: '2px', display: 'block' }}>
+                            ⏱️ {task.workDays || 1} días hábiles {task.dependsOnTaskId ? '• 🔗 Enganchada' : '• 📅 Fija'}
+                          </small>
+                        </td>
                       <td>
                         {Array.isArray(task.crewLines) && task.crewLines.length > 0 ? (
                           <span
@@ -3970,6 +4098,15 @@ ${validation.message}
                           <button
                             type="button"
                             className="btn-certify"
+                            onClick={() => handleOpenEditTask(task)}
+                            title="Editar tarea (plazos, dependencias, cuadrilla, metrado)"
+                            style={{ background: '#f8fafc', borderColor: '#cbd5e1' }}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-certify"
                             onClick={() => handleOpenCertModal(task)}
                             title="Abrir acta de certificación e inspección con fotos"
                           >
@@ -4021,7 +4158,8 @@ ${validation.message}
               </tfoot>
             </table>
           </div>
-        )}
+        </div>
+      )}
         </section>
       )}
 
@@ -6033,12 +6171,12 @@ ${validation.message}
         </div>
       )}
 
-      {/* ── MODAL: AGREGAR TAREA AL CRONOGRAMA ── */}
+      {/* ── MODAL: AGREGAR / EDITAR TAREA AL CRONOGRAMA ── */}
       {showAddTaskModal && (
-        <div className="oxi-modal-backdrop" onClick={() => setShowAddTaskModal(false)}>
+        <div className="oxi-modal-backdrop" onClick={() => { setShowAddTaskModal(false); setEditingTaskId(null) }}>
           <div className="oxi-modal-content" onClick={e => e.stopPropagation()}>
-            <h3>Agregar Tarea de Obra</h3>
-            <p>Define plazos, dotación de personal por categoría y costos asociados.</p>
+            <h3>{editingTaskId ? 'Editar Tarea de Obra' : 'Agregar Tarea de Obra'}</h3>
+            <p>{editingTaskId ? 'Modificá plazos, vínculos de precedencia o asignación de recursos.' : 'Define plazos, vínculos con otras tareas, dotación de personal y costos asociados.'}</p>
 
             <form onSubmit={handleAddTask}>
               <label>
@@ -6051,62 +6189,274 @@ ${validation.message}
                 />
               </label>
 
-              <div className="form-row">
-                <label>
-                  Fecha de Inicio
-                  <input
-                    type="date"
-                    required
-                    value={newTask.startDate}
-                    onChange={e => handleTaskDatesChange(e.target.value, newTask.endDate)}
-                  />
-                </label>
-                <label>
-                  Fecha de Fin
-                  <input
-                    type="date"
-                    required
-                    value={newTask.endDate}
-                    onChange={e => handleTaskDatesChange(newTask.startDate, e.target.value)}
-                  />
-                </label>
-              </div>
-
-              <div className="form-row">
-                <label>
-                  Días Hábiles Estimados (Automático)
-                  <input
-                    type="number"
-                    min="1"
-                    value={newTask.workDays}
-                    onChange={e => setNewTask({ ...newTask, workDays: Number(e.target.value) })}
-                    title="Días hábiles calculados sin fines de semana ni feriados SUNCA"
-                  />
-                  <small style={{ color: '#059669', fontSize: '0.74rem', marginTop: '2px', display: 'block' }}>
-                    ✓ Descuenta fines de semana y feriados de obra
-                  </small>
-                </label>
-                <label>
-                  Mes Asignado (Automático por fechas)
-                  <div style={{
-                    padding: '10px 12px',
-                    background: '#f8fafc',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '6px',
-                    fontSize: '0.92rem',
-                    fontWeight: 'bold',
-                    color: '#0f172a',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span>📅</span>
-                    <span>{distributeCostByMonths(newTask.startDate, newTask.endDate).primaryMonthLabel || 'Calculando...'}</span>
+              {/* SECCIÓN MODO DE PROGRAMACIÓN TEMPORAL (Dependencias / Predecesoras) */}
+              <div style={{ background: '#f1f5f9', borderRadius: '8px', padding: '12px 14px', marginBottom: '14px', border: '1px solid #cbd5e1' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                  <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>⏱️</span>
+                    <span>Modo de Programación Temporal</span>
+                  </span>
+                  <div style={{ display: 'inline-flex', background: '#e2e8f0', borderRadius: '6px', padding: '2px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setNewTask(prev => ({ ...prev, schedulingMode: 'dates', dependsOnTaskId: '' }))}
+                      style={{
+                        border: 'none', padding: '4px 10px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
+                        background: newTask.schedulingMode !== 'dependency' ? '#2563eb' : 'transparent',
+                        color: newTask.schedulingMode !== 'dependency' ? '#ffffff' : '#475569'
+                      }}
+                    >
+                      📅 Fechas Directas (Manual)
+                    </button>
+                    <button
+                      type="button"
+                      disabled={schedule.filter(t => t.id !== editingTaskId).length === 0}
+                      onClick={() => {
+                        const available = schedule.filter(t => t.id !== editingTaskId)
+                        const firstPred = available[0]
+                        const lag = Number(newTask.lagDays) || 0
+                        const duration = Math.max(1, Number(newTask.workDays) || 5)
+                        const calc = firstPred ? calculateDependentTaskDates(firstPred, { dependencyType: 'FS', lagDays: lag, workDays: duration }) : null
+                        setNewTask(prev => ({
+                          ...prev,
+                          schedulingMode: 'dependency',
+                          dependsOnTaskId: firstPred ? firstPred.id : '',
+                          dependencyType: 'FS',
+                          lagDays: lag,
+                          workDays: duration,
+                          startDate: calc ? calc.startDate : prev.startDate,
+                          endDate: calc ? calc.endDate : prev.endDate
+                        }))
+                      }}
+                      title={schedule.filter(t => t.id !== editingTaskId).length === 0 ? 'No hay otras tareas previas en el cronograma para enganchar' : 'Enganchar esta tarea al fin o inicio de otra tarea'}
+                      style={{
+                        border: 'none', padding: '4px 10px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 600, cursor: schedule.filter(t => t.id !== editingTaskId).length === 0 ? 'not-allowed' : 'pointer',
+                        background: newTask.schedulingMode === 'dependency' ? '#059669' : 'transparent',
+                        color: newTask.schedulingMode === 'dependency' ? '#ffffff' : '#475569',
+                        opacity: schedule.filter(t => t.id !== editingTaskId).length === 0 ? 0.5 : 1
+                      }}
+                    >
+                      🔗 Enganchar a otra Tarea (Dependencia)
+                    </button>
                   </div>
-                  <small style={{ color: '#64748b', fontSize: '0.74rem', marginTop: '2px', display: 'block' }}>
-                    Se calcula desde fecha de inicio y fin
-                  </small>
-                </label>
+                </div>
+
+                {newTask.schedulingMode === 'dependency' ? (
+                  <div>
+                    <div className="form-row" style={{ marginBottom: '8px' }}>
+                      <label style={{ flex: 2 }}>
+                        Tarea Predecesora (de la cual depende)
+                        <select
+                          required
+                          value={newTask.dependsOnTaskId || ''}
+                          onChange={e => {
+                            const predId = e.target.value
+                            const pred = schedule.find(t => String(t.id) === String(predId))
+                            if (pred) {
+                              const calc = calculateDependentTaskDates(pred, {
+                                dependencyType: newTask.dependencyType || 'FS',
+                                lagDays: Number(newTask.lagDays) || 0,
+                                workDays: Number(newTask.workDays) || 5
+                              })
+                              setNewTask(prev => ({
+                                ...prev,
+                                dependsOnTaskId: pred.id,
+                                startDate: calc.startDate,
+                                endDate: calc.endDate,
+                                workDays: calc.workDays
+                              }))
+                            } else {
+                              setNewTask(prev => ({ ...prev, dependsOnTaskId: '' }))
+                            }
+                          }}
+                          style={{ width: '100%', padding: '7px 10px', fontSize: '0.85rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                        >
+                          <option value="">-- Seleccionar tarea predecesora --</option>
+                          {schedule.filter(t => t.id !== editingTaskId).map(t => (
+                            <option key={t.id} value={t.id}>
+                              {t.name} (Fin: {t.endDate} • {t.workDays || 1}d)
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label style={{ flex: 1.5 }}>
+                        Tipo de Vínculo
+                        <select
+                          value={newTask.dependencyType || 'FS'}
+                          onChange={e => {
+                            const depType = e.target.value
+                            const pred = schedule.find(t => String(t.id) === String(newTask.dependsOnTaskId))
+                            if (pred) {
+                              const calc = calculateDependentTaskDates(pred, {
+                                dependencyType: depType,
+                                lagDays: Number(newTask.lagDays) || 0,
+                                workDays: Number(newTask.workDays) || 5
+                              })
+                              setNewTask(prev => ({
+                                ...prev,
+                                dependencyType: depType,
+                                startDate: calc.startDate,
+                                endDate: calc.endDate,
+                                workDays: calc.workDays
+                              }))
+                            } else {
+                              setNewTask(prev => ({ ...prev, dependencyType: depType }))
+                            }
+                          }}
+                          style={{ width: '100%', padding: '7px 10px', fontSize: '0.85rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                        >
+                          <option value="FS">Fin a Inicio (FS) — Al terminar la anterior</option>
+                          <option value="SS">Inicio a Inicio (SS) — Al iniciar la anterior</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <div className="form-row">
+                      <label>
+                        Desfase de Espera (días hábiles)
+                        <input
+                          type="number"
+                          min="0"
+                          value={newTask.lagDays != null ? newTask.lagDays : 0}
+                          onChange={e => {
+                            const lag = Math.max(0, Number(e.target.value) || 0)
+                            const pred = schedule.find(t => String(t.id) === String(newTask.dependsOnTaskId))
+                            if (pred) {
+                              const calc = calculateDependentTaskDates(pred, {
+                                dependencyType: newTask.dependencyType || 'FS',
+                                lagDays: lag,
+                                workDays: Number(newTask.workDays) || 5
+                              })
+                              setNewTask(prev => ({
+                                ...prev,
+                                lagDays: lag,
+                                startDate: calc.startDate,
+                                endDate: calc.endDate,
+                                workDays: calc.workDays
+                              }))
+                            } else {
+                              setNewTask(prev => ({ ...prev, lagDays: lag }))
+                            }
+                          }}
+                          placeholder="0 (inmediato)"
+                        />
+                        <small style={{ color: '#64748b', fontSize: '0.74rem', marginTop: '2px', display: 'block' }}>
+                          Ej: 3 = esperar 3 días hábiles (fraguado/curado) tras terminar la losa
+                        </small>
+                      </label>
+                      <label>
+                        Duración de esta Tarea (días hábiles)
+                        <input
+                          type="number"
+                          min="1"
+                          required
+                          value={newTask.workDays}
+                          onChange={e => {
+                            const duration = Math.max(1, Number(e.target.value) || 1)
+                            const pred = schedule.find(t => String(t.id) === String(newTask.dependsOnTaskId))
+                            if (pred) {
+                              const calc = calculateDependentTaskDates(pred, {
+                                dependencyType: newTask.dependencyType || 'FS',
+                                lagDays: Number(newTask.lagDays) || 0,
+                                workDays: duration
+                              })
+                              setNewTask(prev => ({
+                                ...prev,
+                                workDays: duration,
+                                startDate: calc.startDate,
+                                endDate: calc.endDate
+                              }))
+                            } else {
+                              const newEnd = calculateTaskEndDateFromDuration(newTask.startDate, duration)
+                              setNewTask(prev => ({ ...prev, workDays: duration, endDate: newEnd }))
+                            }
+                          }}
+                        />
+                        <small style={{ color: '#059669', fontSize: '0.74rem', marginTop: '2px', display: 'block' }}>
+                          ✓ Descuenta fines de semana y feriados
+                        </small>
+                      </label>
+                    </div>
+
+                    {newTask.dependsOnTaskId && (
+                      <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '6px', padding: '10px 14px', marginTop: '8px', fontSize: '0.82rem', color: '#065f46' }}>
+                        <div>
+                          <strong>🔗 Vínculo Activo:</strong> Comienza el <strong>{newTask.startDate}</strong> y finaliza el <strong>{newTask.endDate}</strong> ({newTask.workDays} días hábiles).
+                        </div>
+                        <small style={{ color: '#047857', display: 'block', marginTop: '3px', lineHeight: 1.4 }}>
+                          {newTask.dependencyType === 'FS'
+                            ? `Inicia ${Number(newTask.lagDays) > 0 ? `${newTask.lagDays} días hábiles después de terminar` : 'inmediatamente al día hábil siguiente a la terminación de'} "${schedule.find(t => String(t.id) === String(newTask.dependsOnTaskId))?.name}".`
+                            : `Inicia ${Number(newTask.lagDays) > 0 ? `${newTask.lagDays} días hábiles después del inicio de` : 'en simultáneo al iniciar'} "${schedule.find(t => String(t.id) === String(newTask.dependsOnTaskId))?.name}".`
+                          } Si la predecesora se retrasa o corre por lluvia, esta tarea se actualizará automáticamente en cascada.
+                        </small>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <div className="form-row">
+                      <label>
+                        Fecha de Inicio
+                        <input
+                          type="date"
+                          required
+                          value={newTask.startDate}
+                          onChange={e => handleTaskDatesChange(e.target.value, newTask.endDate)}
+                        />
+                      </label>
+                      <label>
+                        Fecha de Fin
+                        <input
+                          type="date"
+                          required
+                          value={newTask.endDate}
+                          onChange={e => handleTaskDatesChange(newTask.startDate, e.target.value)}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="form-row">
+                      <label>
+                        Días Hábiles Estimados (Automático)
+                        <input
+                          type="number"
+                          min="1"
+                          value={newTask.workDays}
+                          onChange={e => {
+                            const days = Math.max(1, Number(e.target.value) || 1)
+                            const newEnd = calculateTaskEndDateFromDuration(newTask.startDate, days)
+                            handleTaskDatesChange(newTask.startDate, newEnd)
+                          }}
+                          title="Días hábiles calculados sin fines de semana ni feriados SUNCA"
+                        />
+                        <small style={{ color: '#059669', fontSize: '0.74rem', marginTop: '2px', display: 'block' }}>
+                          ✓ Descuenta fines de semana y feriados de obra
+                        </small>
+                      </label>
+                      <label>
+                        Mes Asignado (Automático por fechas)
+                        <div style={{
+                          padding: '10px 12px',
+                          background: '#f8fafc',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '6px',
+                          fontSize: '0.92rem',
+                          fontWeight: 'bold',
+                          color: '#0f172a',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          <span>📅</span>
+                          <span>{distributeCostByMonths(newTask.startDate, newTask.endDate).primaryMonthLabel || 'Calculando...'}</span>
+                        </div>
+                        <small style={{ color: '#64748b', fontSize: '0.74rem', marginTop: '2px', display: 'block' }}>
+                          Se calcula desde fecha de inicio y fin
+                        </small>
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* SECCIÓN PUNTO 6: DOTACIÓN DE PERSONAL & CUADRILLAS MIXTAS */}
@@ -6637,11 +6987,11 @@ ${validation.message}
               })()}
 
               <div className="modal-actions">
-                <button type="button" className="btn-cancel" onClick={() => setShowAddTaskModal(false)}>
+                <button type="button" className="btn-cancel" onClick={() => { setShowAddTaskModal(false); setEditingTaskId(null) }}>
                   Cancelar
                 </button>
                 <button type="submit" className="oxi-btn-primary">
-                  Agregar Tarea al Cronograma
+                  {editingTaskId ? 'Guardar Cambios de la Tarea' : 'Agregar Tarea al Cronograma'}
                 </button>
               </div>
             </form>
