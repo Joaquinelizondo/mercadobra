@@ -2351,37 +2351,45 @@ A continuación se listan las prioridades operativas para abordar secuencialment
 
 ### 🏗️ Próximas Funcionalidades Estratégicas para Arquitectos e Ingenieros (Pendientes a Desarrollar)
 
-A continuación se detallan los 5 módulos clave para posicionar a OxI Pro como la herramienta de referencia de gestión de obra para estudios y constructoras:
+A continuación se detallan los módulos clave para posicionar a OxI Pro como la herramienta de referencia de gestión de obra para estudios y constructoras:
 
-#### 8. 📱 Bitácora Móvil de Obra con Fotos y Pines sobre el Plano (Site Diary & Photo Pinning) [PENDIENTE]
+#### 8. ⚡ Ingesta Inteligente de Excel: Auto-Creación de Rubros, Cronograma Gantt y Formularios con Agente IA (Excel-to-Gantt & Budget Auto-Pipeline) [EN CURSO / SIGUIENTE PASO]
+- **Objetivo:** Permitir que un arquitecto o constructor pegue su planilla de Excel (o suba un archivo `.csv`/`.xlsx`) y que el sistema o el Agente Copilot interprete los capítulos, cree los rubros presupuestarios consolidados, arme el cronograma de Gantt con secuencia constructiva lógica (fundaciones -> estructura -> albañilería -> instalaciones -> terminaciones) con dependencias FS y cuadrillas estimadas, completando todos los formularios de la obra en segundos.
+- **Alcance planificado:**
+  - **Sincronización Automática de Partidas a Rubros (`syncBudgetItemsToRubros`):** Agrupa automáticamente las partidas importadas por su rubro padre, totalizando montos de materiales, mano de obra y subcontratos, dando de alta o actualizando los rubros de la obra sin carga manual repetitiva.
+  - **Motor de Inferencia Constructiva para Gantt (`generateScheduleFromBudgetItems`):** Heurística que clasifica cada partida/rubro por disciplina constructiva, calcula la duración estimada en días hábiles (según metrado y monto), asigna fechas sucesivas respetando fines de semana y feriados del país, y encadena las dependencias (`predecessorId`, lag en días).
+  - **Asignación Sugerida de Cuadrillas & Leyes Sociales (BPS/SUNCA u otros países):** Asigna cuadrilla sugerida (Oficiales, Medios Oficiales, Peones) según la especialidad, calculando automáticamente el costo diario de mano de obra y leyes sociales.
+  - **Integración 1-Clic en Modal de Importación y Chat con Copilot:** Botón directo `⚡ Generar Cronograma Gantt y Rubros automáticamente desde este Excel` en la pestaña de Presupuesto, y soporte en el chat de OxI Copilot para procesar tablas de presupuesto en lenguaje natural.
+
+#### 9. 📱 Bitácora Móvil de Obra con Fotos y Pines sobre el Plano (Site Diary & Photo Pinning) [PENDIENTE]
 - **Objetivo:** Permitir a directores de obra, capataces e inspectores registrar avances y hallazgos directamente desde el celular en el terreno, incluso sin conexión a internet.
 - **Alcance planificado:**
   - PWA / interfaz móvil táctil offline con captura de fotos, timestamp inmutable y georreferenciación (GPS).
   - Marcador sobre plano de arquitectura/estructuras en PDF: clavar un "pin" interactivo en la ubicación exacta del hallazgo o control de calidad.
   - Generador automático del Libro Diario de Obra reglamentario con firmas digitales táctiles para presentación ante intendencias o comitentes.
 
-#### 9. 📐 Comparador Visual de Versiones de Planos (Visual Diff Overlay en PDF) [PENDIENTE]
+#### 10. 📐 Comparador Visual de Versiones de Planos (Visual Diff Overlay en PDF) [PENDIENTE]
 - **Objetivo:** Evitar sobrecostos y demoliciones por modificaciones de proyecto no detectadas entre versiones de planos técnicos.
 - **Alcance planificado:**
   - Visor interactivo con superposición gráfica en capas (Overlay Diff) de dos versiones de un mismo plano PDF.
   - Código cromático instantáneo: **Rojo** (elementos eliminados), **Azul** (elementos nuevos/modificados) y **Gris** (sin cambios).
   - Detección visual inmediata de desplazamientos de muros, ensanche de vigas o reubicación de aberturas e instalaciones.
 
-#### 10. 📑 Gestión Formal de Órdenes de Cambio (Change Orders) y RFIs Técnicos [PENDIENTE]
+#### 11. 📑 Gestión Formal de Órdenes de Cambio (Change Orders) y RFIs Técnicos [PENDIENTE]
 - **Objetivo:** Blindar la rentabilidad económica de la constructora y documentar formalmente pedidos de información y adicionales para evitar litigios.
 - **Alcance planificado:**
   - Módulo de RFI (Request for Information / Pedido de Aclaración Técnica) con seguimiento de plazos de respuesta del proyectista para justificar ampliaciones de plazo.
   - Flujo de Órdenes de Cambio aprobadas con cálculo automático de su doble impacto: **+$ en presupuesto de obra** y **+días hábiles en el Cronograma Gantt**.
   - Registro de aprobaciones y firma electrónica vinculada al contrato marco.
 
-#### 11. 🏛️ Portal del Inversor / Comitente (Client & Investor Dashboard) [PENDIENTE]
+#### 12. 🏛️ Portal del Inversor / Comitente (Client & Investor Dashboard) [PENDIENTE]
 - **Objetivo:** Brindar a constructoras y desarrolladores un portal ejecutivo de solo lectura con marca blanca para reportar a comitentes e inversores del fideicomiso al pozo.
 - **Alcance planificado:**
   - Enlace de acceso público o protegido por clave para clientes finales.
   - Vista de alto nivel con fotos semanales de progreso, Curva S de avance físico certificado y estados de pago sin exponer márgenes ni costos internos de subcontratos.
   - Emisión de informe mensual ejecutivo en formato web interactivo o PDF de presentación.
 
-#### 12. 🤖 Cómputo Métrico Inteligente desde Planos (AI Quantity Takeoff) [PENDIENTE]
+#### 13. 🤖 Cómputo Métrico Inteligente desde Planos (AI Quantity Takeoff) [PENDIENTE]
 - **Objetivo:** Reducir de días a minutos el tiempo requerido para armar cómputos y presupuestos de obra nueva o reformas.
 - **Alcance planificado:**
   - Extracción asistida con IA y visión por computadora sobre planos PDF de arquitectura: cómputo automático de $m^2$ de solados, $m^2$ de cielorrasos, metros lineales de tabiques y aberturas.
