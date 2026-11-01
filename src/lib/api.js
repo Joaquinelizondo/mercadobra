@@ -638,6 +638,14 @@ export async function saveOxiProRubros(token, projectId, rubros) {
   })
 }
 
+export async function saveOxiProState(token, projectId, oxiproState) {
+  return request(`/customer/b2b-projects/${projectId}/oxipro/state`, {
+    method: 'PUT',
+    token,
+    body: JSON.stringify({ oxiproState }),
+  })
+}
+
 export async function createOxiProDelay(token, projectId, delay) {
   return request(`/customer/b2b-projects/${projectId}/oxipro/delays`, {
     method: 'POST',

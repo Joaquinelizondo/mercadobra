@@ -2334,13 +2334,18 @@ A continuación se listan las prioridades operativas para abordar secuencialment
     * 🌦️ **Control Climático & Lluvias:** Alertas de suspensión meteorológica y cálculo de días hábiles.
   - Botón de acceso directo sin fricción `⚡ Probar Demo en Vivo de OxI Pro (1 Clic)` con inicio de sesión automático usando credenciales modelo (`pro@mercadobra.com`) y enlace a registro corporativo.
 
-### 6. ☁️ Persistencia Completa en PostgreSQL (`oxipro_state JSONB`)
+### 6. ☁️ Persistencia Completa en PostgreSQL (`oxipro_state JSONB`) [✓ IMPLEMENTADO]
 - **Objetivo:** Garantizar sincronización multi-dispositivo y multi-usuario integral de todos los módulos de OxI Pro.
-- **Alcance:**
-  - Almacenar contratos de subcontratistas, facturas de materiales, partes diarios de mano de obra y partidas en la columna `oxipro_state JSONB` de `b2b_projects`.
+- **Alcance implementado:**
+  - Endpoint `PUT /customer/b2b-projects/:projectId/oxipro/state` y soporte dual en `repository.js` (PostgreSQL `UPDATE b2b_projects SET oxipro_state = $1` y fallback en memoria).
+  - Almacenamiento y sincronización de contratos de subcontratistas, certificaciones, facturas de compras imputadas, partes diarios de mano de obra, nómina de operarios BPS (Ley 14.411), partidas de presupuesto y gastos indirectos.
+  - Hidratación inicial automática en `OxiProSuite.jsx` al cambiar de proyecto o dispositivo, con debounced auto-save (1.5s) y feedback de estado en vivo (`☁️ Guardado en la nube (PostgreSQL)`).
 
-### 7. 🧹 Limpieza y Optimización de Código Legado en `src/App.jsx`
+### 7. 🧹 Limpieza y Optimización de Código Legado en `src/App.jsx` [✓ IMPLEMENTADO]
 - **Objetivo:** Eliminar el bloque obsoleto `AppLegacy` (~600 líneas) para mantener la base de código ágil y clara.
+- **Alcance implementado:**
+  - Remoción de ~650 líneas de prototipo inicial desacoplado (`AppLegacy`, arrays dummy de productos y constantes obsoletas).
+  - Estructuración limpia del enrutador central de React Router (`App.jsx`), optimizando el peso del bundle y tiempos de carga.
 
 ---
 

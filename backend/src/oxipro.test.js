@@ -89,7 +89,22 @@ test('oxipro repository methods funcionan en memoria (dual repo fallback)', asyn
   assert.equal(projectData.rubros.length, 1)
   assert.equal(projectData.delays.length, 1)
 
-  // 5. Eliminar demora
+  // 5. Guardar estado completo oxipro_state (subcontratos, facturas, partes diarios, nómina BPS)
+  const stateToPersist = {
+    subcontractContracts: [{ id: 'sub-1', contractorName: 'Herrería del Sur', contractAmount: 850000 }],
+    materialInvoices: [{ id: 'inv-1', invoiceNumber: 'A-001', totalAmount: 420000 }],
+    bpsMeta: { bpsWorkRegistry: 'BPS-OBRA-9988', companyRut: '21.000.000.0001' },
+    projectSocialLawsRate: 60
+  }
+  const savedState = await repo.saveOxiProState(projectId, stateToPersist)
+  assert.equal(savedState.subcontractContracts.length, 1)
+  assert.equal(savedState.bpsMeta.bpsWorkRegistry, 'BPS-OBRA-9988')
+
+  const stateData = await repo.getOxiProProjectData(projectId)
+  assert.equal(stateData.oxiproState.subcontractContracts[0].contractorName, 'Herrería del Sur')
+  assert.equal(stateData.oxiproState.projectSocialLawsRate, 60)
+
+  // 6. Eliminar demora
   const deleted = await repo.deleteOxiProDelay(delay.id, projectId)
   assert.ok(deleted)
 

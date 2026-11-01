@@ -578,6 +578,14 @@ app.delete('/customer/b2b-projects/:projectId/oxipro/delays/:delayId', authMiddl
   return res.json({ success: true, deleted })
 }))
 
+app.put('/customer/b2b-projects/:projectId/oxipro/state', authMiddleware, asyncHandler(async (req, res) => {
+  const repo = await getRepository()
+  const projectId = validateNumber(req.params.projectId, 'Proyecto ID', 1)
+  const oxiproState = req.body?.oxiproState || req.body || {}
+  const saved = await repo.saveOxiProState(projectId, oxiproState)
+  return res.json({ oxiproState: saved })
+}))
+
 app.get('/customer/quotes', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
   const repo = await getRepository(); const rows = await repo.getCustomerQuotes(req.authUser.id)
   return res.json({ rows, total: rows.length })

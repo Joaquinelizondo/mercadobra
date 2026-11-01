@@ -5,6 +5,7 @@ import {
   getOxiProProjectData,
   saveOxiProTasks,
   saveOxiProRubros,
+  saveOxiProState,
   createOxiProDelay,
   deleteOxiProDelay,
   generateOxiProAiPlan
@@ -1081,6 +1082,36 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         if (Array.isArray(data?.delays) && data.delays.length > 0) {
           setRainLogs(data.delays)
         }
+        if (data?.oxiproState && typeof data.oxiproState === 'object') {
+          const s = data.oxiproState
+          if (Array.isArray(s.subcontractContracts) && s.subcontractContracts.length > 0) {
+            setSubcontractContracts(s.subcontractContracts)
+          }
+          if (Array.isArray(s.subcontractCertificates) && s.subcontractCertificates.length > 0) {
+            setSubcontractCertificates(s.subcontractCertificates)
+          }
+          if (Array.isArray(s.materialInvoices) && s.materialInvoices.length > 0) {
+            setMaterialInvoices(s.materialInvoices)
+          }
+          if (Array.isArray(s.laborReports) && s.laborReports.length > 0) {
+            setLaborReports(s.laborReports)
+          }
+          if (Array.isArray(s.bpsEmployees) && s.bpsEmployees.length > 0) {
+            setBpsEmployees(s.bpsEmployees)
+          }
+          if (s.bpsMeta && typeof s.bpsMeta === 'object') {
+            setBpsMeta(prev => ({ ...prev, ...s.bpsMeta }))
+          }
+          if (Array.isArray(s.budgetItems) && s.budgetItems.length > 0) {
+            setBudgetItems(s.budgetItems)
+          }
+          if (Array.isArray(s.indirectCostSettings) && s.indirectCostSettings.length > 0) {
+            setIndirectCostSettings(s.indirectCostSettings)
+          }
+          if (s.projectSocialLawsRate != null) {
+            setProjectSocialLawsRate(Number(s.projectSocialLawsRate))
+          }
+        }
         setCloudSyncStatus('synced')
         setIsInitialLoadDone(true)
       })
@@ -1132,6 +1163,49 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
     return () => clearTimeout(timer)
   }, [rubros, isInitialLoadDone, isNumericProject, project?.id])
+
+  // Debounced auto-save full oxipro_state (subcontratos, facturas, partes diarios, BPS, partidas) to PostgreSQL
+  useEffect(() => {
+    if (!isInitialLoadDone || !isNumericProject) return
+    const token = getAuthToken()
+    if (!token) return
+
+    setCloudSyncStatus('saving')
+    const timer = setTimeout(() => {
+      const stateToPersist = {
+        subcontractContracts,
+        subcontractCertificates,
+        materialInvoices,
+        laborReports,
+        bpsEmployees,
+        bpsMeta,
+        budgetItems,
+        indirectCostSettings,
+        projectSocialLawsRate
+      }
+      saveOxiProState(token, project.id, stateToPersist)
+        .then(() => setCloudSyncStatus('synced'))
+        .catch(err => {
+          console.warn('Backend sync unavailable, retaining local persistence', err)
+          setCloudSyncStatus('idle')
+        })
+    }, 1500)
+
+    return () => clearTimeout(timer)
+  }, [
+    subcontractContracts,
+    subcontractCertificates,
+    materialInvoices,
+    laborReports,
+    bpsEmployees,
+    bpsMeta,
+    budgetItems,
+    indirectCostSettings,
+    projectSocialLawsRate,
+    isInitialLoadDone,
+    isNumericProject,
+    project?.id
+  ])
 
 
   // Modals & form state

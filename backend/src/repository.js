@@ -434,7 +434,9 @@ async function getJsonRepo() {
       const delays = (db.oxiProDelays || [])
         .filter(d => Number(d.b2bProjectId) === pid)
         .sort((a, b) => new Date(b.date || b.eventDate || 0) - new Date(a.date || a.eventDate || 0))
-      return { tasks, rubros, delays }
+      const project = (db.b2bProjects || []).find(p => Number(p.id) === pid)
+      const oxiproState = project?.oxiproState || {}
+      return { tasks, rubros, delays, oxiproState }
     },
     async saveOxiProTasks(projectId, tasks) {
       const db = readDb()
@@ -526,6 +528,19 @@ async function getJsonRepo() {
       db.oxiProDelays = db.oxiProDelays.filter(d => !(Number(d.id) === did && Number(d.b2bProjectId) === pid))
       writeDb(db)
       return existing
+    },
+    async saveOxiProState(projectId, oxiproState) {
+      const db = readDb()
+      const pid = Number(projectId)
+      if (!Array.isArray(db.b2bProjects)) db.b2bProjects = []
+      let project = db.b2bProjects.find(p => Number(p.id) === pid)
+      if (!project) {
+        project = { id: pid, name: `Obra #${pid}`, oxiproState: {} }
+        db.b2bProjects.push(project)
+      }
+      project.oxiproState = oxiproState || {}
+      writeDb(db)
+      return project.oxiproState
     },
     async createCustomerQuote(payload) {
       const db = readDb()
@@ -1456,8 +1471,14 @@ async function getPgRepo() {
         `SELECT * FROM b2b_project_delays WHERE b2b_project_id = $1 ORDER BY event_date DESC, id DESC`,
         [projectId]
       )
+      const projRes = await pool.query(
+        `SELECT oxipro_state FROM b2b_projects WHERE id = $1`,
+        [projectId]
+      )
+      const oxiproState = projRes.rows[0]?.oxipro_state || {}
 
       return {
+        oxiproState,
         tasks: tasksRes.rows.map(r => ({
           id: r.id,
           b2bProjectId: r.b2b_project_id,
@@ -1665,6 +1686,14 @@ async function getPgRepo() {
         date: r.event_date ? new Date(r.event_date).toISOString().split('T')[0] : '',
         days: Number(r.days) || 1
       }
+    },
+    async saveOxiProState(projectId, oxiproState) {
+      await ensureOxiProTables(pool)
+      const { rows } = await pool.query(
+        `UPDATE b2b_projects SET oxipro_state = $1 WHERE id = $2 RETURNING oxipro_state`,
+        [JSON.stringify(oxiproState || {}), projectId]
+      )
+      return rows[0]?.oxipro_state || oxiproState || {}
     },
     async createCustomerQuote(payload) {
       const { rows } = await pool.query(
