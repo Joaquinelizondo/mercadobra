@@ -2322,11 +2322,17 @@ A continuación se listan las prioridades operativas para abordar secuencialment
   - Modal formal membretado "Informe Ejecutivo de Control de Costos al Día de Corte" con KPIs consolidados, desglose de desvíos ($ y %), modo de imputación contable (imputado/manual/auto) y 3 bloques de firma profesional (Dirección Técnica, Control de Gestión y Comitente).
   - Reglas `@media print` dedicadas para impresión limpia en formato A4 / guardar en PDF directo desde el navegador.
 
-### 5. 🌐 Modernización de la Landing Comercial `/partner`
+### 5. 🌐 Modernización de la Landing Comercial `/partner` [✓ IMPLEMENTADO]
 - **Objetivo:** Reemplazar los wireframes de "Próximamente: OXI OS" por la presentación comercial de la suite real activa.
-- **Alcance:**
-  - Muestra interactiva de capacidades reales: Gantt sincronizado, Curva S, EVM, Control Climático y Certificaciones.
-  - Botones directos para acceder con credenciales de prueba o iniciar sesión.
+- **Alcance implementado:**
+  - Hero corporativo de alto impacto ConstructionTech con propuesta de valor integral para constructoras y estudios de arquitectura.
+  - Showcase interactivo en vivo con selector dinámico de módulos:
+    * 📊 **Gantt con Cascada & Vínculos:** Predecesoras con lag (`↳ Tras Implantación +2d`), badges de sucesoras y plazos reales.
+    * 📈 **Curva S & EVM:** Indicadores de PV, EV, AC, EAC, CPI y proyección analítica de desviaciones con gráfico comparativo.
+    * 🏛️ **Nómina & Aportes BPS Ley 14.411:** Tabla nominal de operarios con cédulas, categorías SUNCA y liquidación unificada de leyes sociales (60%), FOCER y BSE.
+    * 💰 **Control de Costos al Día de Corte:** Comparativa de presupuesto a la fecha vs. devengado y saldo disponible.
+    * 🌦️ **Control Climático & Lluvias:** Alertas de suspensión meteorológica y cálculo de días hábiles.
+  - Botón de acceso directo sin fricción `⚡ Probar Demo en Vivo de OxI Pro (1 Clic)` con inicio de sesión automático usando credenciales modelo (`pro@mercadobra.com`) y enlace a registro corporativo.
 
 ### 6. ☁️ Persistencia Completa en PostgreSQL (`oxipro_state JSONB`)
 - **Objetivo:** Garantizar sincronización multi-dispositivo y multi-usuario integral de todos los módulos de OxI Pro.
