@@ -1593,6 +1593,55 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     return null
   }, [ganttBounds])
 
+  // Estado de interactividad y vínculos del Gantt
+  const [hoveredGanttTaskId, setHoveredGanttTaskId] = useState(null)
+
+  const taskGanttPositions = useMemo(() => {
+    const map = new Map()
+    const totalSpan = ganttBounds.endMs - ganttBounds.startMs
+    schedule.forEach((task, index) => {
+      const partsStart = String(task.startDate || '').split('-').map(Number)
+      const partsEnd = String(task.endDate || '').split('-').map(Number)
+      const startMs = partsStart.length === 3 ? new Date(partsStart[0], partsStart[1] - 1, partsStart[2]).getTime() : ganttBounds.startMs
+      const endMs = partsEnd.length === 3 ? new Date(partsEnd[0], partsEnd[1] - 1, partsEnd[2]).getTime() : ganttBounds.endMs
+      const leftPct = totalSpan > 0 ? Math.max(0, Math.min(100, ((startMs - ganttBounds.startMs) / totalSpan) * 100)) : 0
+      const widthPct = totalSpan > 0 ? Math.max(2, Math.min(100 - leftPct, ((endMs - startMs) / totalSpan) * 100)) : 10
+      map.set(String(task.id), {
+        index,
+        leftPct,
+        widthPct,
+        rightPct: leftPct + widthPct,
+        yCenter: index * 68 + 34
+      })
+    })
+    return map
+  }, [schedule, ganttBounds])
+
+  const ganttConnectors = useMemo(() => {
+    const list = []
+    schedule.forEach(task => {
+      if (!task.dependsOnTaskId) return
+      const predPos = taskGanttPositions.get(String(task.dependsOnTaskId))
+      const taskPos = taskGanttPositions.get(String(task.id))
+      const predTask = schedule.find(t => String(t.id) === String(task.dependsOnTaskId))
+      if (!predPos || !taskPos || !predTask) return
+
+      list.push({
+        fromId: String(task.dependsOnTaskId),
+        toId: String(task.id),
+        predName: predTask.name,
+        taskName: task.name,
+        startX: predPos.rightPct,
+        startY: predPos.yCenter,
+        endX: taskPos.leftPct,
+        endY: taskPos.yCenter,
+        lagDays: Number(task.lagDays) || 0,
+        dependencyType: task.dependencyType || 'FS'
+      })
+    })
+    return list
+  }, [schedule, taskGanttPositions])
+
   // Calculated global stats
   const totalLaborCost = useMemo(() => schedule.reduce((sum, t) => sum + (t.assignedLaborCost || 0), 0), [schedule])
   const totalSocialLawsCost = useMemo(() => schedule.reduce((sum, t) => sum + getTaskSocialLaws(t, projectSocialLawsRate / 100, laborCategories), 0), [schedule, projectSocialLawsRate, laborCategories])
@@ -3741,6 +3790,12 @@ ${validation.message}
                     <span style={{ width: '14px', height: '2px', background: '#ef4444', display: 'inline-block' }} />
                     <span>Línea de Hoy (18/10)</span>
                   </div>
+                  <div className="gantt-legend-item">
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.74rem', color: '#059669', fontWeight: 700 }}>
+                      <span style={{ width: '14px', height: '0', borderTop: '2px dashed #059669', display: 'inline-block' }} />
+                      <span>🔗➔ Predecesoras</span>
+                    </span>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#737373' }}>
@@ -3764,9 +3819,21 @@ ${validation.message}
                     const delta = real - planned
                     const isDone = real === 100
                     const predTask = task.dependsOnTaskId ? schedule.find(t => String(t.id) === String(task.dependsOnTaskId)) : null
+                    const isHovered = hoveredGanttTaskId && String(hoveredGanttTaskId) === String(task.id)
+                    const isPred = hoveredGanttTaskId && task.id && schedule.some(t => String(t.id) === String(hoveredGanttTaskId) && String(t.dependsOnTaskId) === String(task.id))
+                    const isSucc = hoveredGanttTaskId && task.dependsOnTaskId && String(task.dependsOnTaskId) === String(hoveredGanttTaskId)
 
                     return (
-                      <div key={task.id} className="gantt-task-meta-cell">
+                      <div
+                        key={task.id}
+                        className="gantt-task-meta-cell"
+                        onMouseEnter={() => setHoveredGanttTaskId(task.id)}
+                        onMouseLeave={() => setHoveredGanttTaskId(null)}
+                        style={{
+                          background: isHovered ? '#fff7ed' : isPred ? '#f0fdf4' : isSucc ? '#f0f9ff' : 'transparent',
+                          transition: 'background 0.15s ease'
+                        }}
+                      >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span className="gantt-task-title" title={task.name}>{task.name}</span>
                           <span className={`delta-badge ${delta > 0 ? 'ahead' : delta < 0 ? 'delayed' : 'ontrack'}`} style={{ fontSize: '0.68rem', padding: '1px 5px' }}>
@@ -3853,29 +3920,83 @@ ${validation.message}
                       />
                     )}
 
+                    {/* SVG Dependency Connectors between tasks */}
+                    {ganttConnectors.length > 0 && (
+                      <svg
+                        className="gantt-connectors-svg"
+                        viewBox={`0 0 1000 ${schedule.length * 68}`}
+                        preserveAspectRatio="none"
+                        style={{ height: `${schedule.length * 68}px` }}
+                      >
+                        <defs>
+                          <marker id="gantt-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                            <path d="M 0 1 L 9 5 L 0 9 z" fill="#059669" />
+                          </marker>
+                          <marker id="gantt-arrow-active" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                            <path d="M 0 1 L 9 5 L 0 9 z" fill="#ea580c" />
+                          </marker>
+                        </defs>
+                        {ganttConnectors.map((conn, idx) => {
+                          const sx = conn.startX * 10
+                          const sy = conn.startY
+                          const ex = conn.endX * 10
+                          const ey = conn.endY
+                          const isActive = hoveredGanttTaskId && (String(hoveredGanttTaskId) === conn.fromId || String(hoveredGanttTaskId) === conn.toId)
+
+                          let pathD = ''
+                          if (ex >= sx) {
+                            const midX = (sx + ex) / 2
+                            pathD = `M ${sx} ${sy} L ${midX} ${sy} L ${midX} ${ey} L ${ex - 4} ${ey}`
+                          } else {
+                            const midY = (sy + ey) / 2
+                            pathD = `M ${sx} ${sy} L ${sx + 8} ${sy} L ${sx + 8} ${midY} L ${ex - 8} ${midY} L ${ex - 8} ${ey} L ${ex - 4} ${ey}`
+                          }
+
+                          return (
+                            <path
+                              key={idx}
+                              d={pathD}
+                              stroke={isActive ? '#ea580c' : '#059669'}
+                              strokeWidth={isActive ? 2.5 : 1.5}
+                              strokeDasharray={conn.lagDays > 0 ? '4,3' : 'none'}
+                              fill="none"
+                              opacity={hoveredGanttTaskId ? (isActive ? 1 : 0.25) : 0.75}
+                              markerEnd={isActive ? 'url(#gantt-arrow-active)' : 'url(#gantt-arrow)'}
+                            />
+                          )
+                        })}
+                      </svg>
+                    )}
+
                     {/* Task Rows with Gantt Bars */}
                     {schedule.map(task => {
-                      const partsStart = String(task.startDate || '').split('-').map(Number)
-                      const partsEnd = String(task.endDate || '').split('-').map(Number)
-                      const startMs = partsStart.length === 3 ? new Date(partsStart[0], partsStart[1] - 1, partsStart[2]).getTime() : ganttBounds.startMs
-                      const endMs = partsEnd.length === 3 ? new Date(partsEnd[0], partsEnd[1] - 1, partsEnd[2]).getTime() : ganttBounds.endMs
-                      const totalSpan = ganttBounds.endMs - ganttBounds.startMs
-
-                      const leftPct = Math.max(0, Math.min(100, ((startMs - ganttBounds.startMs) / totalSpan) * 100))
-                      const widthPct = Math.max(2, Math.min(100 - leftPct, ((endMs - startMs) / totalSpan) * 100))
+                      const pos = taskGanttPositions.get(String(task.id))
+                      const leftPct = pos ? pos.leftPct : 0
+                      const widthPct = pos ? pos.widthPct : 10
 
                       const planned = getTaskPlannedPercent(task)
                       const real = Math.min(100, Math.max(0, Number(task.progressPercent) || 0))
                       const isDone = real === 100
                       const totalTask = getTaskBudget(task)
-                      const taskExecuted = getTaskExecutedCost(task)
+                      const taskExecuted = getTaskExecutedCost(task, projectSocialLawsRate / 100, laborCategories, { laborReports, materialInvoices })
+
+                      const predTask = task.dependsOnTaskId ? schedule.find(t => String(t.id) === String(task.dependsOnTaskId)) : null
+                      const successorTasks = schedule.filter(t => String(t.dependsOnTaskId) === String(task.id))
+
+                      const isHovered = hoveredGanttTaskId && String(hoveredGanttTaskId) === String(task.id)
+                      const isPred = hoveredGanttTaskId && task.id && schedule.some(t => String(t.id) === String(hoveredGanttTaskId) && String(t.dependsOnTaskId) === String(task.id))
+                      const isSucc = hoveredGanttTaskId && task.dependsOnTaskId && String(task.dependsOnTaskId) === String(hoveredGanttTaskId)
+
+                      const tooltipText = `${task.name}\n• Plazo: ${task.startDate} al ${task.endDate} (${task.workDays || 1} días hábiles)\n• Avance Real Físico: ${real}%\n• Avance Programado: ${planned}%\n• Presupuesto: ${formatMoney(totalTask)}\n• Costo Real Devengado: ${formatMoney(taskExecuted)}${predTask ? `\n• Predecesora: 🔗 ${predTask.name} (${task.dependencyType || 'FS'} ${Number(task.lagDays) > 0 ? `+${task.lagDays}d hábiles de espera` : 'inmediata'})` : ''}${successorTasks.length > 0 ? `\n• Sucesoras vinculadas: ➔ ${successorTasks.map(s => s.name).join(', ')}` : ''}`
 
                       return (
                         <div key={task.id} className="gantt-row">
                           <div
-                            className="gantt-bar-box"
+                            className={`gantt-bar-box ${isHovered ? 'is-hovered' : ''} ${isPred ? 'is-predecessor' : ''} ${isSucc ? 'is-successor' : ''}`}
                             style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-                            title={`${task.name}\n• Plazo: ${task.startDate} al ${task.endDate}\n• Avance Real Físico: ${real}%\n• Avance Programado: ${planned}%\n• Presupuesto: ${formatMoney(totalTask)}\n• Ejecutado a la fecha: ${formatMoney(taskExecuted)}`}
+                            onMouseEnter={() => setHoveredGanttTaskId(task.id)}
+                            onMouseLeave={() => setHoveredGanttTaskId(null)}
+                            title={tooltipText}
                           >
                             {/* Plan Progress Fill */}
                             <div
@@ -3889,12 +4010,30 @@ ${validation.message}
                               style={{ width: `${real}%` }}
                             />
 
-                            {/* Label */}
+                            {/* Content with Badges */}
                             <div className="gantt-bar-content">
-                              <span style={{ color: real > 40 ? '#fff' : '#1e293b' }}>
-                                {task.name}
-                              </span>
-                              <span style={{ color: real > 60 ? '#fff' : '#334155' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0, overflow: 'hidden' }}>
+                                <span style={{ color: real > 40 ? '#fff' : '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {task.name}
+                                </span>
+                                {predTask && (
+                                  <span
+                                    className="gantt-dep-badge pred"
+                                    title={`Predecesora: ${predTask.name} (${task.dependencyType || 'FS'} ${Number(task.lagDays) > 0 ? `+${task.lagDays}d hábiles` : 'inmediata'})`}
+                                  >
+                                    ↳ {predTask.name.length > 12 ? `${predTask.name.slice(0, 10)}…` : predTask.name} {Number(task.lagDays) > 0 ? `+${task.lagDays}d` : ''}
+                                  </span>
+                                )}
+                                {successorTasks.length > 0 && (
+                                  <span
+                                    className="gantt-dep-badge succ"
+                                    title={`Empuja a: ${successorTasks.map(s => s.name).join(', ')}`}
+                                  >
+                                    ➔ {successorTasks.length > 1 ? `${successorTasks.length} suc.` : (successorTasks[0].name.length > 10 ? `${successorTasks[0].name.slice(0, 8)}…` : successorTasks[0].name)}
+                                  </span>
+                                )}
+                              </div>
+                              <span style={{ color: real > 60 ? '#fff' : '#334155', fontWeight: 800, marginLeft: '6px' }}>
                                 {real}%
                               </span>
                             </div>

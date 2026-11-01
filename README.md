@@ -2304,11 +2304,15 @@ A continuación se listan las prioridades operativas para abordar secuencialment
     * `Manual ($)`: Sobrescritura directa del monto real devengado para registrar sobrecostos o ahorros contables exactos.
   - Sincronización automática con el Dashboard de Control de Costos al Día de Corte y métricas EVM (CPI, CV, EAC).
 
-### 3. 📊 Conectores y Badges Visuales de Dependencias en el Gantt Gráfico
+### 3. 📊 Conectores y Badges Visuales de Dependencias en el Gantt Gráfico [✓ IMPLEMENTADO]
 - **Objetivo:** Visualizar de forma inmediata en la barra superior del Gantt qué tarea precede a cuál.
-- **Alcance:**
-  - Badge o etiqueta identificatoria en la barra (`[↳ Losa +3d]`).
-  - Líneas o flechas conectoras de camino crítico entre la tarea origen y la tarea sucesora.
+- **Alcance implementado:**
+  - Badges contextuales directos dentro de cada barra de tarea:
+    * Predecesora con desfase de días (`↳ Nombre +Nd`) en verde esmeralda.
+    * Indicador de tareas sucesoras (`➔ N suc.`) en azul cielo.
+  - Trazado vectorial de líneas y curvas SVG con puntas de flecha entre barras vinculadas.
+  - Resaltado interactivo (`hover`): al pasar el cursor sobre cualquier tarea, se iluminan automáticamente sus tareas predecesoras y sucesoras en la línea de tiempo.
+  - Leyenda informativa en cabecera del Gantt y tooltips detallados con nombres y condiciones de dependencia.
 
 ### 4. 📑 Exportación del Dashboard de Control de Costos al Día de Corte (PDF / Excel)
 - **Objetivo:** Permitir descargar el informe ejecutivo de presupuesto a la fecha vs. costo real y desvíos ($ y %).
