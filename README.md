@@ -2283,22 +2283,26 @@ El desarrollo se realizará en este orden. No se iniciará una etapa posterior h
 
 A continuación se listan las prioridades operativas para abordar secuencialmente de a una:
 
-### 1. 👷 Reporte de Nómina de Personal y Jornales para BPS (Ley 14.411 / SUNCA Grupo 9)
+### 1. 👷 Reporte de Nómina de Personal y Jornales para BPS (Ley 14.411 / SUNCA Grupo 9) [✓ IMPLEMENTADO]
 - **Objetivo:** Generar un reporte formal descargable (PDF / Excel) de operarios y jornales trabajados en la quincena o mes para declarar ante BPS (Banco de Previsión Social) y para auditorías laborales.
-- **Alcance del reporte:**
+- **Alcance implementado:**
   - Ficha de la obra (nº de registro de obra BPS, comitente, ubicación, período/quincena).
   - Nómina de personal con documento/cédula, nombre y categoría oficial (Peón común, Medio Oficial, Oficial, Especializado).
   - Cómputo de jornales trabajados, horas comunes y horas extras.
   - Total de mano de obra imponible devengada en el período.
   - Estimación y liquidación de leyes sociales unificadas (BPS 60-65% s/mano de obra, FOCER, seguro de accidentes de trabajo BSE).
-  - Bloque de firma del Director de Obra y responsable técnico.
-  - *Arquitectura escalable:* parametrizable para soportar otros países (FOCAT / UOCRA en Argentina, Libro de Remuneraciones DT en Chile).
+  - Hoja oficial A4 para imprimir con 3 bloques de firma (Director Técnico de Obra, Responsable RRHH / Empresa, Comitente).
+  - Exportación instantánea a CSV compatible con Excel y sistemas contables BPS (`exportBpsReportToCsv`).
 
-### 2. 💰 Imputación de Costo Real Contable a Tareas (Costo Real vs. % Certificado)
+### 2. 💰 Imputación de Costo Real Contable a Tareas (Costo Real vs. % Certificado) [✓ IMPLEMENTADO]
 - **Objetivo:** Desacoplar el costo ejecutado del simple cálculo teórico (`% avance × presupuesto`).
-- **Alcance:**
-  - Permitir imputar directamente comprobantes de compra/facturas de materiales y partes diarios de mano de obra a una tarea específica del cronograma.
-  - Opción de ingresar el costo real devengado manualmente por tarea para reflejar sobrecostos reales de obra (ej: 30% de avance físico pero con $380 gastados sobre $300 presupuestados).
+- **Alcance implementado:**
+  - Imputación directa automática de comprobantes de compra/facturas de materiales y partes diarios de mano de obra vinculados a cada tarea (`calculateTaskActualCost`).
+  - Tres modos de cálculo seleccionables por tarea:
+    * `Auto (Imputado o %)`: Suma facturas y partes reales si existen; si no, recurre a cálculo teórico por % certificado.
+    * `% Avance`: Modo contractual estricto proporcional al avance físico.
+    * `Manual ($)`: Sobrescritura directa del monto real devengado para registrar sobrecostos o ahorros contables exactos.
+  - Sincronización automática con el Dashboard de Control de Costos al Día de Corte y métricas EVM (CPI, CV, EAC).
 
 ### 3. 📊 Conectores y Badges Visuales de Dependencias en el Gantt Gráfico
 - **Objetivo:** Visualizar de forma inmediata en la barra superior del Gantt qué tarea precede a cuál.

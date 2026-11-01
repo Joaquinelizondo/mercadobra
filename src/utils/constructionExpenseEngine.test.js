@@ -8,6 +8,7 @@ import {
   calculateSubcontractContractStatus,
   validateSubcontractCertificate,
   calculateAllContractsSummary,
+  calculateTaskActualCost,
   DEFAULT_LABOR_REPORTS,
   DEFAULT_MATERIAL_INVOICES,
   DEFAULT_SUBCONTRACT_CERTIFICATES,
@@ -259,4 +260,76 @@ test('Punto 11: calculateAllContractsSummary consolida garantías retenidas y sa
   assert.equal(summary.totalRemainingBalance, 1350000)
   assert.equal(summary.contractsOverCeilingCount, 0)
 })
+
+test('calculateTaskActualCost calcula costo teórico cuando no hay comprobantes imputados', () => {
+  const task = {
+    id: 1,
+    name: 'Excavación',
+    assignedLaborCost: 100000,
+    socialLawsCost: 60000,
+    materialCost: 40000,
+    progressPercent: 25 // 25% de 200.000 = 50.000
+  }
+
+  const res = calculateTaskActualCost(task, { laborReports: [], materialInvoices: [] })
+  assert.equal(res.budget, 200000)
+  assert.equal(res.actualCost, 50000)
+  assert.equal(res.mode, 'percent')
+  assert.equal(res.totalImputed, 0)
+})
+
+test('calculateTaskActualCost prioriza costo imputado de partes diarios y facturas', () => {
+  const task = {
+    id: 2,
+    name: 'Hormigonado de Pilares',
+    assignedLaborCost: 200000,
+    socialLawsCost: 120000,
+    materialCost: 180000,
+    progressPercent: 30 // Teórico sería 30% de 500.000 = 150.000
+  }
+
+  const laborReports = [
+    { taskId: 2, totalLaborCost: 45000 },
+    { taskId: 2, totalLaborCost: 35000 }
+  ]
+
+  const materialInvoices = [
+    {
+      allocations: [
+        { taskId: 2, amount: 110000 },
+        { taskId: 99, amount: 50000 } // otra tarea
+      ]
+    }
+  ]
+
+  const res = calculateTaskActualCost(task, { laborReports, materialInvoices })
+  // Imputed: MO (45k + 35k = 80k) + Mat (110k) = 190.000 (sobrecosto real vs 150k teórico)
+  assert.equal(res.imputedLabor, 80000)
+  assert.equal(res.imputedMaterials, 110000)
+  assert.equal(res.totalImputed, 190000)
+  assert.equal(res.actualCost, 190000)
+  assert.equal(res.mode, 'imputed')
+})
+
+test('calculateTaskActualCost respeta sobrescritura manual', () => {
+  const task = {
+    id: 3,
+    name: 'Pintura',
+    assignedLaborCost: 50000,
+    socialLawsCost: 30000,
+    materialCost: 20000,
+    progressPercent: 50,
+    actualCostMode: 'manual',
+    actualIncurredCost: 75000
+  }
+
+  const res = calculateTaskActualCost(task, {
+    laborReports: [{ taskId: 3, totalLaborCost: 20000 }],
+    materialInvoices: []
+  })
+
+  assert.equal(res.mode, 'manual')
+  assert.equal(res.actualCost, 75000)
+})
+
 

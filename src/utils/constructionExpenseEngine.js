@@ -639,3 +639,89 @@ export function calculateRubroExpensesReport(
   }
 }
 
+/**
+ * Calcula el costo real devengado de una tarea de obra, considerando:
+ * 1. Imputaciones reales de partes diarios de mano de obra vinculados a esta tarea.
+ * 2. Imputaciones reales de facturas de materiales vinculadas a esta tarea.
+ * 3. Opción de sobrescritura manual explícita (task.actualIncurredCost).
+ * 4. Estimación teórica fallback por porcentaje certificado (% Real × Presupuesto).
+ */
+export function calculateTaskActualCost(task, {
+  laborReports = [],
+  materialInvoices = [],
+  socialLawsRate = 60,
+  laborCategories = []
+} = {}) {
+  const taskIdStr = String(task?.id || '')
+  const taskNameNorm = String(task?.name || '').trim().toLowerCase()
+
+  // 1. Imputaciones de Mano de Obra
+  const matchingLaborReports = laborReports.filter(lr => {
+    if (lr.taskId != null && String(lr.taskId) === taskIdStr) return true
+    if (!lr.taskId && lr.taskName && String(lr.taskName).trim().toLowerCase() === taskNameNorm) return true
+    return false
+  })
+  const imputedLabor = matchingLaborReports.reduce((sum, lr) => sum + (Number(lr.totalLaborCost) || 0), 0)
+
+  // 2. Imputaciones de Materiales
+  let imputedMaterials = 0
+  materialInvoices.forEach(inv => {
+    const allocations = Array.isArray(inv.allocations) ? inv.allocations : []
+    allocations.forEach(al => {
+      if (al.taskId != null && String(al.taskId) === taskIdStr) {
+        imputedMaterials += Number(al.amount) || 0
+      } else if (!al.taskId && al.taskName && String(al.taskName).trim().toLowerCase() === taskNameNorm) {
+        imputedMaterials += Number(al.amount) || 0
+      }
+    })
+  })
+
+  const totalImputed = imputedLabor + imputedMaterials
+
+  // 3. Presupuesto y cálculo teórico
+  const labor = Number(task?.assignedLaborCost) || 0
+  const social = Number(task?.socialLawsCost) || Math.round(labor * ((Number(socialLawsRate) || 60) / 100))
+  const material = Number(task?.materialCost) || 0
+  const budget = labor + social + material
+
+  const realPct = Math.min(100, Math.max(0, Number(task?.progressPercent) || 0))
+  const theoreticalCost = Math.round(budget * (realPct / 100))
+
+  // 4. Determinación del costo final según modo
+  let actualCost = theoreticalCost
+  let mode = 'percent'
+
+  if (task?.actualCostMode === 'manual' && task?.actualIncurredCost != null && task?.actualIncurredCost !== '') {
+    actualCost = Number(task.actualIncurredCost) || 0
+    mode = 'manual'
+  } else if (task?.actualCostMode === 'imputed') {
+    actualCost = totalImputed
+    mode = 'imputed'
+  } else if (task?.actualCostMode === 'percent') {
+    actualCost = theoreticalCost
+    mode = 'percent'
+  } else {
+    // Modo automático: si hay comprobantes reales de la tarea, se toma el costo imputado
+    if (totalImputed > 0) {
+      actualCost = totalImputed
+      mode = 'imputed'
+    } else {
+      actualCost = theoreticalCost
+      mode = 'percent'
+    }
+  }
+
+  return {
+    actualCost,
+    mode,
+    imputedLabor,
+    imputedMaterials,
+    totalImputed,
+    theoreticalCost,
+    budget,
+    balance: Math.max(0, budget - actualCost),
+    isOverBudget: actualCost > budget,
+    varianceVsBudget: actualCost - budget
+  }
+}
+

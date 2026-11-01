@@ -47,7 +47,8 @@ import {
   calculateRubroExpensesReport,
   calculateSubcontractContractStatus,
   validateSubcontractCertificate,
-  calculateAllContractsSummary
+  calculateAllContractsSummary,
+  calculateTaskActualCost
 } from '../utils/constructionExpenseEngine'
 import {
   generateBpsPayrollReport,
@@ -509,14 +510,18 @@ function getTaskBudget(task, rate = DEFAULT_SOCIAL_LAWS_RATE, categories = []) {
   return (task?.assignedLaborCost || 0) + getTaskSocialLaws(task, rate, categories) + (task?.materialCost || 0)
 }
 
-function getTaskExecutedCost(task, rate = DEFAULT_SOCIAL_LAWS_RATE, categories = []) {
-  const budget = getTaskBudget(task, rate, categories)
-  const real = Math.min(100, Math.max(0, Number(task?.progressPercent) || 0))
-  return Math.round(budget * (real / 100))
+function getTaskExecutedCost(task, rate = DEFAULT_SOCIAL_LAWS_RATE, categories = [], context = {}) {
+  const res = calculateTaskActualCost(task, {
+    laborReports: context.laborReports || [],
+    materialInvoices: context.materialInvoices || [],
+    socialLawsRate: rate > 1 ? rate : rate * 100,
+    laborCategories: categories
+  })
+  return res.actualCost
 }
 
-function getTaskBalance(task, rate = DEFAULT_SOCIAL_LAWS_RATE, categories = []) {
-  return Math.max(0, getTaskBudget(task, rate, categories) - getTaskExecutedCost(task, rate, categories))
+function getTaskBalance(task, rate = DEFAULT_SOCIAL_LAWS_RATE, categories = [], context = {}) {
+  return Math.max(0, getTaskBudget(task, rate, categories) - getTaskExecutedCost(task, rate, categories, context))
 }
 
 function exportScheduleCsv(schedule, projectName) {
@@ -1183,7 +1188,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     partidaDescription: '05. Albañilería — [05.02] Revoque grueso y fino (100% • 680 m²)',
     materialCost: 190400,
     month: 'Nov. 2026',
-    initialProgressPercent: 0 // Punto 7: Avance ya ejecutado a la fecha de carga
+    initialProgressPercent: 0, // Punto 7: Avance ya ejecutado a la fecha de carga
+    actualCostMode: 'auto', // 'auto' | 'imputed' | 'manual' | 'percent'
+    actualIncurredCost: '' // Monto manual en pesos
   })
 
   // Costos Indirectos modal state (Punto 6)
@@ -1593,8 +1600,8 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   const totalProjectBudget = totalLaborCost + totalSocialLawsCost + totalMaterialCost
 
   const totalExecutedCost = useMemo(() => {
-    return schedule.reduce((sum, t) => sum + getTaskExecutedCost(t, projectSocialLawsRate / 100, laborCategories), 0)
-  }, [schedule, projectSocialLawsRate, laborCategories])
+    return schedule.reduce((sum, t) => sum + getTaskExecutedCost(t, projectSocialLawsRate / 100, laborCategories, { laborReports, materialInvoices }), 0)
+  }, [schedule, projectSocialLawsRate, laborCategories, laborReports, materialInvoices])
 
   const totalBalanceCost = Math.max(0, totalProjectBudget - totalExecutedCost)
 
@@ -1628,7 +1635,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   }, [totalExecutedCost, totalPlannedCost])
 
   const projectEVM = useMemo(() => {
-    return calculateProjectEVM(schedule, { actualTotalCost: totalExecutedCost })
+    return calculateProjectEVM(schedule, { totalActualCost: totalExecutedCost })
   }, [schedule, totalExecutedCost])
 
   // Control de costos: presupuestado a la fecha de corte (según calendario) vs. ejecutado real
@@ -1645,8 +1652,21 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       const budget = getTaskBudget(t, projectSocialLawsRate / 100, laborCategories)
       const plannedPct = calculateTaskPlannedPercent({ startDate: t.startDate, endDate: t.endDate }, costCutoffDate)
       const plannedToDate = Math.round(budget * (plannedPct / 100))
-      const executed = getTaskExecutedCost(t, projectSocialLawsRate / 100, laborCategories)
-      byTask.set(String(t.id), { budget, plannedPct, plannedToDate, executed, variance: executed - plannedToDate })
+      const costDetails = calculateTaskActualCost(t, {
+        laborReports,
+        materialInvoices,
+        socialLawsRate: projectSocialLawsRate,
+        laborCategories
+      })
+      const executed = costDetails.actualCost
+      byTask.set(String(t.id), {
+        budget,
+        plannedPct,
+        plannedToDate,
+        executed,
+        variance: executed - plannedToDate,
+        costDetails
+      })
       totalPlannedToDate += plannedToDate
       totalExecuted += executed
     })
@@ -1661,7 +1681,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       plannedPctOfTotal: pct(totalPlannedToDate),
       executedPctOfTotal: pct(totalExecuted)
     }
-  }, [schedule, costCutoffDate, projectSocialLawsRate, laborCategories, totalProjectBudget])
+  }, [schedule, costCutoffDate, projectSocialLawsRate, laborCategories, totalProjectBudget, laborReports, materialInvoices])
 
   const dynamicMonthlyComp = useMemo(() => {
     if (!schedule.length) return DEFAULT_MONTHLY_COMPARISON
@@ -2050,7 +2070,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       partidaDescription: task.partidaDescription || '',
       materialCost: task.materialCost || 0,
       month: task.month || 'Nov. 2026',
-      initialProgressPercent: task.progressPercent || 0
+      initialProgressPercent: task.progressPercent || 0,
+      actualCostMode: task.actualCostMode || 'auto',
+      actualIncurredCost: task.actualIncurredCost != null ? task.actualIncurredCost : ''
     })
     setShowAddTaskModal(true)
   }
@@ -2145,7 +2167,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       month: taskMonth,
       monthBreakdown: dist.breakdown || [],
       plannedPercent: autoPlanned,
-      progressPercent: initialProgress
+      progressPercent: initialProgress,
+      actualCostMode: newTask.actualCostMode || 'auto',
+      actualIncurredCost: newTask.actualCostMode === 'manual' && newTask.actualIncurredCost !== '' ? Number(newTask.actualIncurredCost) : null
     }
 
     let nextSchedule = []
@@ -4009,10 +4033,11 @@ ${validation.message}
                     const social = getTaskSocialLaws(task, projectSocialLawsRate / 100, laborCategories)
                     const material = task.materialCost || 0
                     const totalTask = labor + social + material
-                    const taskExecuted = Math.round(totalTask * (real / 100))
+                    const rowCC = costControl.byTask.get(String(task.id)) || { plannedToDate: 0, executed: 0, variance: 0, plannedPct: 0 }
+                    const costDetails = rowCC.costDetails || calculateTaskActualCost(task, { laborReports, materialInvoices, socialLawsRate: projectSocialLawsRate, laborCategories })
+                    const taskExecuted = rowCC.executed
                     const taskBalance = Math.max(0, totalTask - taskExecuted)
                     const predTask = task.dependsOnTaskId ? schedule.find(t => String(t.id) === String(task.dependsOnTaskId)) : null
-                    const rowCC = costControl.byTask.get(String(task.id)) || { plannedToDate: 0, executed: 0, variance: 0, plannedPct: 0 }
 
                     return (
                       <tr key={task.id}>
@@ -4320,13 +4345,62 @@ ${validation.message}
                         </div>
                       </td>
                       <td>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                           <strong style={{ color: '#ea580c', fontSize: '0.92rem' }}>
                             {formatMoney(taskExecuted)}
                           </strong>
-                          <small style={{ color: '#737373', fontSize: '0.75rem' }}>
-                            Saldo: {formatMoney(taskBalance)}
-                          </small>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                            {costDetails.mode === 'imputed' ? (
+                              <span
+                                style={{
+                                  background: '#fef3c7',
+                                  border: '1px solid #fde68a',
+                                  color: '#92400e',
+                                  fontSize: '0.68rem',
+                                  fontWeight: 600,
+                                  padding: '1px 5px',
+                                  borderRadius: '3px',
+                                  cursor: 'help'
+                                }}
+                                title={`Costo real de comprobantes: MO $${Math.round(costDetails.imputedLabor).toLocaleString('es-UY')} (partes diarios) + Materiales $${Math.round(costDetails.imputedMaterials).toLocaleString('es-UY')} (facturas)`}
+                              >
+                                🧾 Imputado
+                              </span>
+                            ) : costDetails.mode === 'manual' ? (
+                              <span
+                                style={{
+                                  background: '#ffedd5',
+                                  border: '1px solid #fdba74',
+                                  color: '#c2410c',
+                                  fontSize: '0.68rem',
+                                  fontWeight: 600,
+                                  padding: '1px 5px',
+                                  borderRadius: '3px'
+                                }}
+                                title="Costo fijado manualmente en la ficha de la tarea"
+                              >
+                                ✍️ Manual
+                              </span>
+                            ) : (
+                              <span
+                                style={{
+                                  background: '#f1f5f9',
+                                  border: '1px solid #cbd5e1',
+                                  color: '#64748b',
+                                  fontSize: '0.68rem',
+                                  fontWeight: 600,
+                                  padding: '1px 5px',
+                                  borderRadius: '3px'
+                                }}
+                                title={`Cálculo proporcional teórico: ${real}% × ${formatMoney(totalTask)}`}
+                              >
+                                ⚙️ Auto (%)
+                              </span>
+                            )}
+                            <small style={{ color: '#737373', fontSize: '0.74rem' }}>
+                              Saldo: {formatMoney(taskBalance)}
+                            </small>
+                          </div>
                         </div>
                       </td>
                       <td>
@@ -7254,6 +7328,93 @@ ${validation.message}
                       </div>
                     </div>
                   </>
+                )
+              })()}
+
+              {/* SECCIÓN MODO DE COSTO REAL CONTABLE */}
+              {(() => {
+                const existingTask = editingTaskId ? schedule.find(t => t.id === editingTaskId) : null
+                const taskDetails = existingTask ? calculateTaskActualCost(existingTask, {
+                  laborReports,
+                  materialInvoices,
+                  socialLawsRate: projectSocialLawsRate,
+                  laborCategories
+                }) : null
+
+                return (
+                  <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '12px 14px', marginBottom: '14px', border: '1px solid #cbd5e1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+                      <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>💰</span>
+                        <span>Cómputo de Costo Real Devengado</span>
+                      </span>
+                      <div style={{ display: 'inline-flex', background: '#e2e8f0', borderRadius: '6px', padding: '2px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setNewTask(prev => ({ ...prev, actualCostMode: 'auto' }))}
+                          style={{
+                            border: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 600, cursor: 'pointer',
+                            background: newTask.actualCostMode === 'auto' || !newTask.actualCostMode ? '#0284c7' : 'transparent',
+                            color: newTask.actualCostMode === 'auto' || !newTask.actualCostMode ? '#ffffff' : '#475569'
+                          }}
+                        >
+                          Auto (Imputado o %)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewTask(prev => ({ ...prev, actualCostMode: 'percent' }))}
+                          style={{
+                            border: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 600, cursor: 'pointer',
+                            background: newTask.actualCostMode === 'percent' ? '#2563eb' : 'transparent',
+                            color: newTask.actualCostMode === 'percent' ? '#ffffff' : '#475569'
+                          }}
+                        >
+                          % Avance
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewTask(prev => ({ ...prev, actualCostMode: 'manual', actualIncurredCost: prev.actualIncurredCost || (taskDetails?.actualCost || 0) }))}
+                          style={{
+                            border: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 600, cursor: 'pointer',
+                            background: newTask.actualCostMode === 'manual' ? '#ea580c' : 'transparent',
+                            color: newTask.actualCostMode === 'manual' ? '#ffffff' : '#475569'
+                          }}
+                        >
+                          Manual ($)
+                        </button>
+                      </div>
+                    </div>
+
+                    {taskDetails && taskDetails.totalImputed > 0 && (
+                      <div style={{ fontSize: '0.78rem', color: '#0369a1', background: '#e0f2fe', padding: '6px 10px', borderRadius: '6px', marginBottom: '8px' }}>
+                        <strong>Comprobantes vinculados a esta tarea:</strong> MO Partes diarios: <strong>{formatMoney(taskDetails.imputedLabor)}</strong> • Materiales facturas: <strong>{formatMoney(taskDetails.imputedMaterials)}</strong> (Total imputado: <strong>{formatMoney(taskDetails.totalImputed)}</strong>)
+                      </div>
+                    )}
+
+                    {newTask.actualCostMode === 'manual' ? (
+                      <label style={{ display: 'block', fontSize: '0.8rem', color: '#334155' }}>
+                        Monto Real Devengado a la Fecha ($ UYU)
+                        <input
+                          type="number"
+                          min="0"
+                          step="1000"
+                          placeholder="Ej: 380000"
+                          value={newTask.actualIncurredCost}
+                          onChange={e => setNewTask(prev => ({ ...prev, actualIncurredCost: e.target.value }))}
+                          style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #fdba74', background: '#fff7ed', fontWeight: 'bold', fontSize: '0.85rem' }}
+                        />
+                        <small style={{ color: '#c2410c', display: 'block', marginTop: '2px' }}>
+                          Fija el costo real contable exacto con sobrecostos o ahorros sin depender del % de avance teórico.
+                        </small>
+                      </label>
+                    ) : (
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b' }}>
+                        {newTask.actualCostMode === 'percent'
+                          ? 'El costo ejecutado se calculará estrictamente como el % de avance certificado multiplicado por el presupuesto de la tarea.'
+                          : 'Toma la suma de partes diarios y facturas de materiales imputadas a esta tarea. Si aún no hay comprobantes, calcula automáticamente por % certificado.'}
+                      </p>
+                    )}
+                  </div>
                 )
               })()}
 
