@@ -1105,8 +1105,8 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
           if (Array.isArray(s.budgetItems) && s.budgetItems.length > 0) {
             setBudgetItems(s.budgetItems)
           }
-          if (Array.isArray(s.indirectCostSettings) && s.indirectCostSettings.length > 0) {
-            setIndirectCostSettings(s.indirectCostSettings)
+          if (Array.isArray(s.indirectExpenses || s.indirectCostSettings) && (s.indirectExpenses || s.indirectCostSettings).length > 0) {
+            setIndirectExpenses(s.indirectExpenses || s.indirectCostSettings)
           }
           if (s.projectSocialLawsRate != null) {
             setProjectSocialLawsRate(Number(s.projectSocialLawsRate))
@@ -1180,7 +1180,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         bpsEmployees,
         bpsMeta,
         budgetItems,
-        indirectCostSettings,
+        indirectExpenses,
         projectSocialLawsRate
       }
       saveOxiProState(token, project.id, stateToPersist)
@@ -1200,7 +1200,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     bpsEmployees,
     bpsMeta,
     budgetItems,
-    indirectCostSettings,
+    indirectExpenses,
     projectSocialLawsRate,
     isInitialLoadDone,
     isNumericProject,
