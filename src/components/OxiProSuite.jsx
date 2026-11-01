@@ -50,6 +50,11 @@ import {
   calculateAllContractsSummary
 } from '../utils/constructionExpenseEngine'
 import {
+  generateBpsPayrollReport,
+  exportBpsReportToCsv,
+  DEFAULT_BPS_EMPLOYEES
+} from '../utils/constructionBpsReportEngine'
+import {
   REGIONAL_PROFILES,
   getRegionalProfile,
   formatRegionalMoney
@@ -911,6 +916,47 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     }
   })
 
+  // Nómina de Personal y Aportes BPS (Ley 14.411)
+  const [bpsEmployees, setBpsEmployees] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`${storageKey}_bps_employees`)
+      return saved ? JSON.parse(saved) : DEFAULT_BPS_EMPLOYEES
+    } catch {
+      return DEFAULT_BPS_EMPLOYEES
+    }
+  })
+
+  const [bpsMeta, setBpsMeta] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`${storageKey}_bps_meta`)
+      return saved ? JSON.parse(saved) : {
+        bpsWorkRegistry: project?.bpsWorkRegistry || 'BPS-OBRA-489104',
+        companyRut: project?.companyRut || '21.849.201.0019',
+        companyName: project?.companyName || 'Estudio & Constructora Óxida',
+        clientName: project?.clientName || 'Comitente Principal'
+      }
+    } catch {
+      return {
+        bpsWorkRegistry: 'BPS-OBRA-489104',
+        companyRut: '21.849.201.0019',
+        companyName: 'Estudio & Constructora Óxida',
+        clientName: 'Comitente Principal'
+      }
+    }
+  })
+
+  const [showBpsReportModal, setShowBpsReportModal] = useState(false)
+  const [bpsFilterMonth, setBpsFilterMonth] = useState('all')
+  const [bpsFilterQuincena, setBpsFilterQuincena] = useState('all')
+  const [bpsModalTab, setBpsModalTab] = useState('roster') // 'roster' | 'categories' | 'print'
+  const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false)
+  const [newEmployeeForm, setNewEmployeeForm] = useState({
+    name: '',
+    documentId: '',
+    categoryId: 'oficial',
+    phone: ''
+  })
+
   const isNumericProject = Number(project?.id) > 0
   const [cloudSyncStatus, setCloudSyncStatus] = useState('idle') // 'idle' | 'saving' | 'synced' | 'error'
   const [isInitialLoadDone, setIsInitialLoadDone] = useState(false)
@@ -990,6 +1036,12 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
       const savedIndirect = localStorage.getItem(`${storageKey}_indirect_expenses`)
       setIndirectExpenses(savedIndirect ? JSON.parse(savedIndirect) : DEFAULT_INDIRECT_EXPENSES)
+
+      const savedBpsEmployees = localStorage.getItem(`${storageKey}_bps_employees`)
+      if (savedBpsEmployees) setBpsEmployees(JSON.parse(savedBpsEmployees))
+
+      const savedBpsMeta = localStorage.getItem(`${storageKey}_bps_meta`)
+      if (savedBpsMeta) setBpsMeta(JSON.parse(savedBpsMeta))
     } catch (e) {
       console.warn('Error reloading project state', e)
     }
@@ -1373,10 +1425,12 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       localStorage.setItem(`${storageKey}_subcontract_contracts`, JSON.stringify(subcontractContracts))
       localStorage.setItem(`${storageKey}_country_code`, selectedCountryCode)
       localStorage.setItem(`${storageKey}_indirect_expenses`, JSON.stringify(indirectExpenses))
+      localStorage.setItem(`${storageKey}_bps_employees`, JSON.stringify(bpsEmployees))
+      localStorage.setItem(`${storageKey}_bps_meta`, JSON.stringify(bpsMeta))
     } catch (e) {
       console.warn('Error saving Oxi Pro state', e)
     }
-  }, [documents, schedule, monthlyComp, weeklyProgress, rubros, rainLogs, laborCategories, projectSocialLawsRate, budgetItems, laborReports, materialInvoices, subcontractCertificates, subcontractContracts, selectedCountryCode, indirectExpenses, storageKey])
+  }, [documents, schedule, monthlyComp, weeklyProgress, rubros, rainLogs, laborCategories, projectSocialLawsRate, budgetItems, laborReports, materialInvoices, subcontractCertificates, subcontractContracts, selectedCountryCode, indirectExpenses, bpsEmployees, bpsMeta, storageKey])
 
   // Rain calculations
   const totalRainDays = useMemo(() => {
@@ -2594,6 +2648,67 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     }
   }
 
+  // Motor y cálculos de nómina de personal BPS (Ley 14.411)
+  const bpsPayrollReport = useMemo(() => {
+    return generateBpsPayrollReport({
+      project: {
+        id: project?.id,
+        name: project?.name,
+        location: project?.location,
+        clientName: bpsMeta.clientName,
+        companyName: bpsMeta.companyName,
+        companyRut: bpsMeta.companyRut,
+        bpsWorkRegistry: bpsMeta.bpsWorkRegistry
+      },
+      laborReports,
+      employees: bpsEmployees,
+      laborCategories,
+      socialLawsRate: projectSocialLawsRate,
+      filterMonth: bpsFilterMonth,
+      filterQuincena: bpsFilterQuincena
+    })
+  }, [project, bpsMeta, laborReports, bpsEmployees, laborCategories, projectSocialLawsRate, bpsFilterMonth, bpsFilterQuincena])
+
+  function handleDownloadBpsCsv() {
+    const csvContent = exportBpsReportToCsv(bpsPayrollReport)
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `Nomina_BPS_Ley14411_${project?.name || 'Obra'}_${bpsFilterMonth !== 'all' ? bpsFilterMonth : 'Historico'}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  function handlePrintBpsReport() {
+    window.print()
+  }
+
+  function handleSaveNewEmployee(e) {
+    e.preventDefault()
+    if (!newEmployeeForm.name.trim()) return
+    const matchedCat = laborCategories.find(c => c.id === newEmployeeForm.categoryId) || laborCategories[0]
+    const newEmp = {
+      id: `emp-${Date.now()}`,
+      name: newEmployeeForm.name.trim(),
+      documentId: newEmployeeForm.documentId.trim() || 'S/D',
+      categoryId: newEmployeeForm.categoryId,
+      role: matchedCat ? matchedCat.role : 'Operario',
+      phone: newEmployeeForm.phone.trim()
+    }
+    setBpsEmployees(prev => [...prev, newEmp])
+    setNewEmployeeForm({ name: '', documentId: '', categoryId: 'oficial', phone: '' })
+    setShowAddEmployeeModal(false)
+  }
+
+  function handleDeleteEmployee(id) {
+    if (window.confirm('¿Deseas quitar a este operario de la nómina de la obra?')) {
+      setBpsEmployees(prev => prev.filter(e => e.id !== id))
+    }
+  }
+
   function handleAddMaterialInvoice(e) {
     e.preventDefault()
     const totalAmount = Number(invoiceForm.totalAmount) || 0
@@ -3469,6 +3584,15 @@ ${validation.message}
                 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
               >
                 ⚙️ Categorías & Laudos
+              </button>
+              <button
+                type="button"
+                className="oxi-btn-back-classic"
+                onClick={() => setShowBpsReportModal(true)}
+                title="Generar planilla oficial de nómina de personal y aportes BPS Ley 14.411"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f0fdf4', borderColor: '#86efac', color: '#166534' }}
+              >
+                🏛️ Nómina & BPS (Ley 14.411)
               </button>
               <button
                 type="button"
@@ -5406,14 +5530,25 @@ ${validation.message}
                     Registro diario simple desde celular o tablet: imputación directa de operarios a tareas y conversión a jornales con BPS ({projectSocialLawsRate}%).
                   </p>
                 </div>
-                <button
-                  type="button"
-                  className="oxi-btn-primary"
-                  onClick={() => setShowLaborReportModal(true)}
-                  style={{ background: '#059669', borderColor: '#047857' }}
-                >
-                  ＋ Cargar Parte Diario (MO)
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="oxi-btn-back-classic"
+                    onClick={() => setShowBpsReportModal(true)}
+                    style={{ background: '#f0fdf4', borderColor: '#86efac', color: '#166534', fontWeight: 600 }}
+                    title="Generar planilla oficial de nómina de personal y aportes BPS Ley 14.411"
+                  >
+                    🏛️ Nómina & BPS (Ley 14.411)
+                  </button>
+                  <button
+                    type="button"
+                    className="oxi-btn-primary"
+                    onClick={() => setShowLaborReportModal(true)}
+                    style={{ background: '#059669', borderColor: '#047857' }}
+                  >
+                    ＋ Cargar Parte Diario (MO)
+                  </button>
+                </div>
               </div>
 
               {laborReports.length === 0 ? (
@@ -8605,6 +8740,512 @@ ${validation.message}
                   style={{ background: '#059669', borderColor: '#047857' }}
                 >
                   ✓ Guardar Parte Diario
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: PLANILLA DE PERSONAL Y NÓMINA DE APORTES BPS (LEY 14.411) ── */}
+      {showBpsReportModal && (
+        <div className="oxi-modal-backdrop" onClick={() => setShowBpsReportModal(false)}>
+          <div className="oxi-modal-content bps-report-modal" onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div>
+                <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>🏛️</span>
+                  <span>Planilla de Personal & Nómina de Aportes BPS</span>
+                  <span style={{ fontSize: '0.72rem', background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                    Ley 14.411 · SUNCA Grupo 9
+                  </span>
+                </h3>
+                <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                  Cómputo formal de jornales, categorías de laudo, nómina de operarios y liquidación unificada de leyes sociales para auditoría y declaración de BPS.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBpsReportModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Barra de metadatos de obra y filtros temporales */}
+            <div className="bps-meta-bar">
+              <div className="bps-meta-inputs">
+                <div className="bps-meta-field">
+                  <span>🏢 Registro Obra BPS:</span>
+                  <input
+                    type="text"
+                    value={bpsMeta.bpsWorkRegistry}
+                    onChange={e => setBpsMeta({ ...bpsMeta, bpsWorkRegistry: e.target.value })}
+                    placeholder="BPS-OBRA-0000"
+                    style={{ width: '130px' }}
+                  />
+                </div>
+                <div className="bps-meta-field">
+                  <span>📄 RUT Empresa:</span>
+                  <input
+                    type="text"
+                    value={bpsMeta.companyRut}
+                    onChange={e => setBpsMeta({ ...bpsMeta, companyRut: e.target.value })}
+                    placeholder="21.000.000.0000"
+                    style={{ width: '130px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  📅 Mes:
+                  <select
+                    value={bpsFilterMonth}
+                    onChange={e => setBpsFilterMonth(e.target.value)}
+                    style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #86efac', fontSize: '0.8rem', background: '#fff' }}
+                  >
+                    <option value="all">Todo el histórico</option>
+                    <option value="2026-10">Octubre 2026</option>
+                    <option value="2026-09">Septiembre 2026</option>
+                    <option value="2026-08">Agosto 2026</option>
+                  </select>
+                </label>
+
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  ⏱️ Quincena:
+                  <select
+                    value={bpsFilterQuincena}
+                    onChange={e => setBpsFilterQuincena(e.target.value)}
+                    style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #86efac', fontSize: '0.8rem', background: '#fff' }}
+                  >
+                    <option value="all">Mes completo</option>
+                    <option value="q1">1ª Quincena (1 al 15)</option>
+                    <option value="q2">2ª Quincena (16 al 31)</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            {/* Tarjetas KPI de liquidación */}
+            <div className="bps-kpi-grid">
+              <div className="bps-kpi-card">
+                <span>Operarios en Obra</span>
+                <strong>{bpsPayrollReport.totals.employeesCount}</strong>
+              </div>
+              <div className="bps-kpi-card">
+                <span>Jornales Liquidados</span>
+                <strong>{bpsPayrollReport.totals.totalJournals} d</strong>
+              </div>
+              <div className="bps-kpi-card">
+                <span>Mano de Obra Imponible</span>
+                <strong style={{ color: '#0369a1' }}>{formatMoney(bpsPayrollReport.totals.totalDirectLaborCost)}</strong>
+              </div>
+              <div className="bps-kpi-card">
+                <span>Aporte BPS ({bpsPayrollReport.rates.bpsUnifiedRatePercent}%)</span>
+                <strong style={{ color: '#15803d' }}>{formatMoney(bpsPayrollReport.totals.totalBpsUnified)}</strong>
+              </div>
+              <div className="bps-kpi-card">
+                <span>FOCER (4%) + BSE (4.5%)</span>
+                <strong style={{ color: '#64748b' }}>{formatMoney(bpsPayrollReport.totals.totalFocer + bpsPayrollReport.totals.totalBse)}</strong>
+              </div>
+              <div className="bps-kpi-card" style={{ background: '#f0fdf4', borderColor: '#86efac' }}>
+                <span style={{ color: '#166534' }}>Costo Total Cargas</span>
+                <strong style={{ color: '#15803d' }}>{formatMoney(bpsPayrollReport.totals.totalSocialCharges)}</strong>
+              </div>
+            </div>
+
+            {/* Pestañas internas del reporte */}
+            <div className="bps-tabs-bar">
+              <button
+                type="button"
+                className={`bps-tab-btn ${bpsModalTab === 'roster' ? 'is-active' : ''}`}
+                onClick={() => setBpsModalTab('roster')}
+              >
+                👷 Nómina Nominal de Operarios ({bpsPayrollReport.employeeRoster.length})
+              </button>
+              <button
+                type="button"
+                className={`bps-tab-btn ${bpsModalTab === 'categories' ? 'is-active' : ''}`}
+                onClick={() => setBpsModalTab('categories')}
+              >
+                📊 Resumen por Categoría SUNCA
+              </button>
+              <button
+                type="button"
+                className={`bps-tab-btn ${bpsModalTab === 'print' ? 'is-active' : ''}`}
+                onClick={() => setBpsModalTab('print')}
+              >
+                📄 Hoja Oficial A4 para Imprimir / PDF
+              </button>
+            </div>
+
+            {/* Tab 1: Nómina Nominal */}
+            {bpsModalTab === 'roster' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                    Personal asignado a la obra para declaración ante BPS y auditorías laborales.
+                  </span>
+                  <button
+                    type="button"
+                    className="oxi-btn-primary"
+                    onClick={() => setShowAddEmployeeModal(true)}
+                    style={{ fontSize: '0.78rem', padding: '5px 12px', background: '#0284c7', borderColor: '#0369a1' }}
+                  >
+                    ＋ Agregar Operario a Nómina
+                  </button>
+                </div>
+
+                <div className="table-responsive" style={{ maxHeight: '360px', overflowY: 'auto' }}>
+                  <table className="oxi-pro-table">
+                    <thead>
+                      <tr>
+                        <th>Cédula (C.I.)</th>
+                        <th>Nombre y Apellido</th>
+                        <th>Categoría SUNCA</th>
+                        <th>Laudo Diario</th>
+                        <th>Jornales</th>
+                        <th>M.O. Imponible</th>
+                        <th>BPS (60%)</th>
+                        <th>FOCER (4%)</th>
+                        <th>Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bpsPayrollReport.employeeRoster.map(emp => (
+                        <tr key={emp.id}>
+                          <td><strong>{emp.documentId}</strong></td>
+                          <td>
+                            <strong>{emp.name}</strong>
+                            {emp.phone && <div style={{ fontSize: '0.72rem', color: '#64748b' }}>📞 {emp.phone}</div>}
+                          </td>
+                          <td>
+                            <span style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 6px', borderRadius: '4px', fontSize: '0.76rem', fontWeight: 600 }}>
+                              {emp.categoryCode} · {emp.role}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>{formatMoney(emp.dailyRate)}</td>
+                          <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{emp.journalsWorked} d</td>
+                          <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#0f172a' }}>{formatMoney(emp.nominalTaxable)}</td>
+                          <td style={{ textAlign: 'right', color: '#15803d' }}>{formatMoney(emp.bpsContribution)}</td>
+                          <td style={{ textAlign: 'right', color: '#64748b' }}>{formatMoney(emp.focerContribution)}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              className="btn-delete"
+                              onClick={() => handleDeleteEmployee(emp.id)}
+                              title="Quitar operario"
+                            >
+                              ✕
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ background: '#f8fafc', fontWeight: 'bold' }}>
+                        <td colSpan="4">TOTALES CONSOLIDADOS:</td>
+                        <td style={{ textAlign: 'center' }}>{bpsPayrollReport.totals.totalJournals} d</td>
+                        <td style={{ textAlign: 'right', color: '#0f172a' }}>{formatMoney(bpsPayrollReport.totals.totalDirectLaborCost)}</td>
+                        <td style={{ textAlign: 'right', color: '#15803d' }}>{formatMoney(bpsPayrollReport.totals.totalBpsUnified)}</td>
+                        <td style={{ textAlign: 'right', color: '#64748b' }}>{formatMoney(bpsPayrollReport.totals.totalFocer)}</td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: Resumen por Categoría */}
+            {bpsModalTab === 'categories' && (
+              <div className="table-responsive">
+                <table className="oxi-pro-table">
+                  <thead>
+                    <tr>
+                      <th>Código</th>
+                      <th>Categoría Laboral SUNCA</th>
+                      <th>Laudo Oficial Diario</th>
+                      <th>Jornales Computados</th>
+                      <th>Mano de Obra Imponible</th>
+                      <th>Aporte Unificado BPS (60%)</th>
+                      <th>FOCER (4%)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bpsPayrollReport.categorySummary.map(cat => (
+                      <tr key={cat.categoryId}>
+                        <td><strong>{cat.categoryCode}</strong></td>
+                        <td><strong>{cat.role}</strong></td>
+                        <td style={{ textAlign: 'right' }}>{formatMoney(cat.dailyRate)}</td>
+                        <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{cat.journalsCount} d</td>
+                        <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{formatMoney(cat.directLaborCost)}</td>
+                        <td style={{ textAlign: 'right', color: '#15803d' }}>{formatMoney(cat.directLaborCost * (bpsPayrollReport.rates.bpsUnifiedRatePercent / 100))}</td>
+                        <td style={{ textAlign: 'right', color: '#64748b' }}>{formatMoney(cat.directLaborCost * (bpsPayrollReport.rates.focerRatePercent / 100))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ background: '#f8fafc', fontWeight: 'bold' }}>
+                      <td colSpan="3">TOTALES GENERALES:</td>
+                      <td style={{ textAlign: 'center' }}>{bpsPayrollReport.totals.totalJournals} d</td>
+                      <td style={{ textAlign: 'right' }}>{formatMoney(bpsPayrollReport.totals.totalDirectLaborCost)}</td>
+                      <td style={{ textAlign: 'right', color: '#15803d' }}>{formatMoney(bpsPayrollReport.totals.totalBpsUnified)}</td>
+                      <td style={{ textAlign: 'right', color: '#64748b' }}>{formatMoney(bpsPayrollReport.totals.totalFocer)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+
+            {/* Tab 3: Hoja Oficial Imprimible A4 */}
+            {bpsModalTab === 'print' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                  <button
+                    type="button"
+                    className="oxi-btn-primary"
+                    onClick={handlePrintBpsReport}
+                    style={{ background: '#0f172a', borderColor: '#0f172a', fontSize: '0.82rem', padding: '6px 14px' }}
+                  >
+                    🖨️ Imprimir / Guardar en PDF
+                  </button>
+                </div>
+
+                <div className="bps-print-sheet">
+                  <div className="bps-print-header">
+                    <div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#ea580c', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '2px' }}>
+                        ÓXIDA STUDIO · MERCADOBRA CONSTRUCTIONTECH
+                      </div>
+                      <h2 style={{ margin: 0, fontSize: '1.35rem', color: '#0f172a' }}>
+                        PLANILLA DE PERSONAL Y APORTES BPS (LEY 14.411)
+                      </h2>
+                      <div style={{ fontSize: '0.84rem', color: '#64748b', marginTop: '2px' }}>
+                        Aporte Unificado de la Construcción · Grupo 9 SUNCA Uruguay
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', fontSize: '0.78rem', color: '#475569' }}>
+                      <div><strong>Fecha de Emisión:</strong> {new Date().toLocaleDateString('es-UY')}</div>
+                      <div><strong>Estado:</strong> Liquidación Preliminar</div>
+                    </div>
+                  </div>
+
+                  {/* Ficha técnica */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', background: '#f8fafc', padding: '10px 14px', borderRadius: '6px', fontSize: '0.8rem', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
+                    <div><strong>Obra:</strong> {bpsPayrollReport.projectInfo.name}</div>
+                    <div><strong>N° Registro Obra BPS:</strong> {bpsPayrollReport.projectInfo.bpsWorkRegistry}</div>
+                    <div><strong>Ubicación:</strong> {bpsPayrollReport.projectInfo.location}</div>
+                    <div><strong>Empresa / RUT:</strong> {bpsPayrollReport.projectInfo.companyName} ({bpsPayrollReport.projectInfo.companyRut})</div>
+                    <div><strong>Período:</strong> {bpsPayrollReport.projectInfo.filterMonth === 'all' ? 'Histórico General' : bpsPayrollReport.projectInfo.filterMonth} (Quincena: {bpsPayrollReport.projectInfo.filterQuincena})</div>
+                    <div><strong>Comitente:</strong> {bpsPayrollReport.projectInfo.clientName}</div>
+                  </div>
+
+                  {/* Liquidación resumen */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <h4 style={{ margin: '0 0 6px', fontSize: '0.88rem', color: '#0f172a' }}>1. LIQUIDACIÓN CONSOLIDADA DE CARGAS SOCIALES</h4>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                      <thead>
+                        <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
+                          <th style={{ padding: '6px' }}>Concepto</th>
+                          <th style={{ padding: '6px', textAlign: 'center' }}>Alícuota</th>
+                          <th style={{ padding: '6px', textAlign: 'right' }}>Monto Liquidado ($)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '6px' }}><strong>Mano de Obra Nominal Imponible</strong></td>
+                          <td style={{ padding: '6px', textAlign: 'center' }}>—</td>
+                          <td style={{ padding: '6px', textAlign: 'right', fontWeight: 'bold' }}>{formatMoney(bpsPayrollReport.totals.totalDirectLaborCost)}</td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '6px' }}>Aporte Unificado BPS (Ley 14.411)</td>
+                          <td style={{ padding: '6px', textAlign: 'center' }}>{bpsPayrollReport.rates.bpsUnifiedRatePercent}%</td>
+                          <td style={{ padding: '6px', textAlign: 'right', color: '#15803d' }}>{formatMoney(bpsPayrollReport.totals.totalBpsUnified)}</td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '6px' }}>Fondo de Cesantía y Retiro (FOCER)</td>
+                          <td style={{ padding: '6px', textAlign: 'center' }}>{bpsPayrollReport.rates.focerRatePercent}%</td>
+                          <td style={{ padding: '6px', textAlign: 'right' }}>{formatMoney(bpsPayrollReport.totals.totalFocer)}</td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '6px' }}>Seguro Accidentes Laborales (BSE)</td>
+                          <td style={{ padding: '6px', textAlign: 'center' }}>{bpsPayrollReport.rates.bseRatePercent}%</td>
+                          <td style={{ padding: '6px', textAlign: 'right' }}>{formatMoney(bpsPayrollReport.totals.totalBse)}</td>
+                        </tr>
+                        <tr style={{ background: '#f8fafc', fontWeight: 'bold' }}>
+                          <td style={{ padding: '6px' }}>TOTAL LEYES SOCIALES Y CARGAS</td>
+                          <td style={{ padding: '6px', textAlign: 'center' }}>{bpsPayrollReport.rates.totalSocialRatePercent.toFixed(1)}%</td>
+                          <td style={{ padding: '6px', textAlign: 'right', color: '#15803d' }}>{formatMoney(bpsPayrollReport.totals.totalSocialCharges)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Tabla nominal resumida */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <h4 style={{ margin: '0 0 6px', fontSize: '0.88rem', color: '#0f172a' }}>2. DETALLE DE NÓMINA DE OPERARIOS</h4>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.74rem' }}>
+                      <thead>
+                        <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
+                          <th style={{ padding: '4px 6px' }}>C.I.</th>
+                          <th style={{ padding: '4px 6px' }}>Operario</th>
+                          <th style={{ padding: '4px 6px' }}>Categoría</th>
+                          <th style={{ padding: '4px 6px', textAlign: 'center' }}>Jornales</th>
+                          <th style={{ padding: '4px 6px', textAlign: 'right' }}>M.O. Imponible</th>
+                          <th style={{ padding: '4px 6px', textAlign: 'right' }}>BPS 60%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bpsPayrollReport.employeeRoster.map(emp => (
+                          <tr key={emp.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '4px 6px' }}>{emp.documentId}</td>
+                            <td style={{ padding: '4px 6px' }}><strong>{emp.name}</strong></td>
+                            <td style={{ padding: '4px 6px' }}>{emp.role}</td>
+                            <td style={{ padding: '4px 6px', textAlign: 'center' }}>{emp.journalsWorked} d</td>
+                            <td style={{ padding: '4px 6px', textAlign: 'right' }}>{formatMoney(emp.nominalTaxable)}</td>
+                            <td style={{ padding: '4px 6px', textAlign: 'right' }}>{formatMoney(emp.bpsContribution)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Firmas de ingeniería y RRHH */}
+                  <div className="bps-print-signatures">
+                    <div className="bps-signature-box">
+                      <strong>DIRECTOR TÉCNICO DE OBRA</strong>
+                      <div>Firma y C.I. de Arq. / Ing. Residente</div>
+                    </div>
+                    <div className="bps-signature-box">
+                      <strong>RESPONSABLE DE RRHH / EMPRESA</strong>
+                      <div>Firma del Delegado / Administrador</div>
+                    </div>
+                    <div className="bps-signature-box">
+                      <strong>COMITENTE / PROPIETARIO</strong>
+                      <div>Recepción y Conformidad de Declaración</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Footer con acciones */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', borderTop: '1px solid #e2e8f0', paddingTop: '12px', flexWrap: 'wrap', gap: '8px' }}>
+              <button
+                type="button"
+                className="oxi-btn-back-classic"
+                onClick={handleDownloadBpsCsv}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
+              >
+                📥 Descargar Planilla CSV (Excel / BPS)
+              </button>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="oxi-btn-back-classic"
+                  onClick={handlePrintBpsReport}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  🖨️ Imprimir / Guardar PDF
+                </button>
+                <button
+                  type="button"
+                  className="oxi-btn-primary"
+                  onClick={() => setShowBpsReportModal(false)}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MINI-MODAL: AGREGAR OPERARIO A NÓMINA ── */}
+      {showAddEmployeeModal && (
+        <div className="oxi-modal-backdrop" style={{ zIndex: 1100 }} onClick={() => setShowAddEmployeeModal(false)}>
+          <div className="oxi-modal-content" style={{ maxWidth: '440px', width: '90%' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 6px', color: '#0f172a' }}>＋ Alta de Operario para Nómina BPS</h3>
+            <p style={{ margin: '0 0 14px', fontSize: '0.82rem', color: '#64748b' }}>
+              Registrá el personal que trabaja en la obra para asignar jornales y leyes sociales.
+            </p>
+
+            <form onSubmit={handleSaveNewEmployee}>
+              <div className="form-group" style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
+                  Nombre y Apellido
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Marcelo Fagúndez"
+                  value={newEmployeeForm.name}
+                  onChange={e => setNewEmployeeForm({ ...newEmployeeForm, name: e.target.value })}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
+                  Cédula de Identidad (C.I.)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: 4.892.104-5"
+                  value={newEmployeeForm.documentId}
+                  onChange={e => setNewEmployeeForm({ ...newEmployeeForm, documentId: e.target.value })}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
+                  Categoría SUNCA Grupo 9
+                </label>
+                <select
+                  value={newEmployeeForm.categoryId}
+                  onChange={e => setNewEmployeeForm({ ...newEmployeeForm, categoryId: e.target.value })}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                >
+                  {laborCategories.map(cat => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.categoryCode} · {cat.role} (${Number(cat.dailyRate).toLocaleString('es-UY')}/d)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
+                  Teléfono de Contacto (Opcional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="099 123 456"
+                  value={newEmployeeForm.phone}
+                  onChange={e => setNewEmployeeForm({ ...newEmployeeForm, phone: e.target.value })}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="oxi-btn-back-classic"
+                  onClick={() => setShowAddEmployeeModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="oxi-btn-primary"
+                  style={{ background: '#0284c7', borderColor: '#0369a1' }}
+                >
+                  ✓ Agregar a Nómina
                 </button>
               </div>
             </form>
