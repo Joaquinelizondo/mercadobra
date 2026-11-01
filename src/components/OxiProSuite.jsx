@@ -35,7 +35,9 @@ import {
   DEFAULT_BUDGET_ITEMS,
   parseBudgetSpreadsheet,
   calculateTaskMaterialCostFromPartida,
-  auditBudgetAssignments
+  auditBudgetAssignments,
+  syncBudgetItemsToRubros,
+  generateScheduleFromBudgetItems
 } from '../utils/constructionBudgetEngine'
 import {
   DEFAULT_LABOR_REPORTS,
@@ -2415,6 +2417,39 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     setImportPasteText('')
     setImportPreviewResult(null)
     setBudgetModalTab('items')
+  }
+
+  function handleImportAndGenerateGantt() {
+    if (!importPreviewResult || !importPreviewResult.success || !importPreviewResult.items.length) return
+    const newItems = importMode === 'replace'
+      ? importPreviewResult.items
+      : [...budgetItems, ...importPreviewResult.items]
+
+    // 1. Sincronizar partidas a rubros
+    const updatedRubros = syncBudgetItemsToRubros(newItems, rubros, projectSocialLawsRate)
+
+    // 2. Generar cronograma Gantt secuencial
+    const newSchedule = generateScheduleFromBudgetItems(newItems, {
+      projectStartDate: project?.startDate,
+      socialLawsRate: projectSocialLawsRate,
+      existingSchedule: schedule,
+      mode: importMode
+    })
+
+    setBudgetItems(newItems)
+    setRubros(updatedRubros)
+    setSchedule(newSchedule)
+
+    try {
+      localStorage.setItem(`${storageKey}_budget_items`, JSON.stringify(newItems))
+      localStorage.setItem(`${storageKey}_rubros`, JSON.stringify(updatedRubros))
+      localStorage.setItem(`${storageKey}_sched`, JSON.stringify(newSchedule))
+    } catch {}
+
+    setImportPasteText('')
+    setImportPreviewResult(null)
+    setShowBudgetModal(false)
+    setActiveTab('cronograma')
   }
 
   function handleSpreadsheetFileUpload(e) {
@@ -8854,14 +8889,24 @@ ${validation.message}
                           </table>
                         </div>
 
-                        <button
-                          type="button"
-                          className="oxi-btn-primary"
-                          onClick={handleConfirmImportBudget}
-                          style={{ fontSize: '0.88rem', padding: '8px 16px', background: '#16a34a' }}
-                        >
-                          ✓ Confirmar e Incorporar {importPreviewResult.items.length} Partidas
-                        </button>
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                          <button
+                            type="button"
+                            className="oxi-btn-primary"
+                            onClick={handleImportAndGenerateGantt}
+                            style={{ fontSize: '0.88rem', padding: '8px 18px', background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          >
+                            ⚡ Generar Cronograma Gantt + Rubros automáticamente
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={handleConfirmImportBudget}
+                            style={{ fontSize: '0.88rem', padding: '8px 16px', border: '1px solid #cbd5e1' }}
+                          >
+                            ✓ Solo Incorporar Partidas
+                          </button>
+                        </div>
                       </>
                     ) : (
                       <div style={{ color: '#b91c1c', fontSize: '0.85rem' }}>
@@ -11113,6 +11158,9 @@ ${validation.message}
         setSchedule={setSchedule}
         rubros={rubros}
         setRubros={setRubros}
+        budgetItems={budgetItems}
+        setBudgetItems={setBudgetItems}
+        projectSocialLawsRate={projectSocialLawsRate}
         rainLogs={rainLogs}
         setRainLogs={setRainLogs}
         setActiveTab={setActiveTab}

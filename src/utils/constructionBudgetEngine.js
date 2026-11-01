@@ -4,6 +4,13 @@
  * Principio rector: Agnosticismo de país, soporte multi-moneda y unidades internacionales (m², m³, ml, kg, un, gl).
  */
 
+import {
+  calculateDependentTaskDates,
+  calculateTaskEndDateFromDuration,
+  addWorkingDays,
+  formatDateIso
+} from './constructionCalendar.js'
+
 export const DEFAULT_BUDGET_ITEMS = [
   {
     id: 'item_01_01',
@@ -479,4 +486,365 @@ export function auditBudgetAssignments(budgetItems = [], tasks = []) {
     hasOverallocations: overallocatedItems.length > 0,
     hasUnassignedItems: unassignedItems.length > 0
   }
+}
+
+export const CONSTRUCTION_PHASE_RULES = [
+  {
+    phase: 1,
+    categoryKey: 'fundaciones',
+    matchKeywords: ['implantac', 'demolic', 'movimiento', 'suelo', 'excavac', 'obrador', 'replanteo', 'fundac', 'cimiento', 'pilote', 'zapata', 'viga de fundac'],
+    defaultName: 'Movimiento de Suelos & Fundaciones',
+    crewLines: [
+      { role: 'Oficial Especializado', count: 2, dailyRate: 3400 },
+      { role: 'Peón Práctico', count: 4, dailyRate: 1800 }
+    ],
+    lagDays: 0
+  },
+  {
+    phase: 2,
+    categoryKey: 'estructura',
+    matchKeywords: ['estructur', 'hormig', 'encofrad', 'hierro', 'losa', 'columna', 'viga', 'armad', 'metalic'],
+    defaultName: 'Estructura de Hormigón Armado',
+    crewLines: [
+      { role: 'Oficial Especializado', count: 2, dailyRate: 3400 },
+      { role: 'Oficial', count: 3, dailyRate: 2800 },
+      { role: 'Peón Común', count: 3, dailyRate: 1950 }
+    ],
+    lagDays: 1
+  },
+  {
+    phase: 3,
+    categoryKey: 'albanileria',
+    matchKeywords: ['albanil', 'albañil', 'muro', 'ticholo', 'bloque', 'mamposter', 'tabique', 'impermeabiliz', 'aislac'],
+    defaultName: 'Albañilería y Mampostería',
+    crewLines: [
+      { role: 'Oficial', count: 2, dailyRate: 2800 },
+      { role: 'Medio Oficial', count: 2, dailyRate: 2200 },
+      { role: 'Peón Práctico', count: 2, dailyRate: 1800 }
+    ],
+    lagDays: 0
+  },
+  {
+    phase: 4,
+    categoryKey: 'contrapisos',
+    matchKeywords: ['contrapiso', 'carpeta', 'revoque', 'yeso', 'cielorraso'],
+    defaultName: 'Contrapisos, Revoques y Cielorrasos',
+    crewLines: [
+      { role: 'Oficial', count: 2, dailyRate: 2800 },
+      { role: 'Medio Oficial', count: 2, dailyRate: 2200 }
+    ],
+    lagDays: 0
+  },
+  {
+    phase: 5,
+    categoryKey: 'instalaciones',
+    matchKeywords: ['sanitaria', 'electr', 'eléctr', 'gas', 'climatiz', 'hvac', 'desague', 'cañer', 'plomer', 'canaliz'],
+    defaultName: 'Instalaciones (Eléctrica, Sanitaria, Climatización)',
+    crewLines: [
+      { role: 'Oficial Especializado', count: 2, dailyRate: 3400 },
+      { role: 'Medio Oficial', count: 1, dailyRate: 2200 }
+    ],
+    lagDays: 0
+  },
+  {
+    phase: 6,
+    categoryKey: 'herreria',
+    matchKeywords: ['abertur', 'aluminio', 'herrer', 'carpinter', 'vidrio', 'baranda', 'puerta', 'ventana', 'metal'],
+    defaultName: 'Aberturas, Carpintería y Herrería de Obra',
+    crewLines: [
+      { role: 'Oficial Especializado', count: 2, dailyRate: 3400 },
+      { role: 'Medio Oficial', count: 2, dailyRate: 2200 }
+    ],
+    lagDays: 0
+  },
+  {
+    phase: 7,
+    categoryKey: 'revestimientos',
+    matchKeywords: ['piso', 'porcelanat', 'ceramic', 'cerámic', 'azulejo', 'revestim'],
+    defaultName: 'Pavimentos, Revestimientos y Porcelanatos',
+    crewLines: [
+      { role: 'Oficial', count: 2, dailyRate: 2800 },
+      { role: 'Medio Oficial', count: 1, dailyRate: 2200 }
+    ],
+    lagDays: 0
+  },
+  {
+    phase: 8,
+    categoryKey: 'terminaciones',
+    matchKeywords: ['pintur', 'terminac', 'grifer', 'aparato', 'limpieza', 'entrega'],
+    defaultName: 'Terminaciones, Pintura y Entrega Final',
+    crewLines: [
+      { role: 'Oficial', count: 2, dailyRate: 2800 },
+      { role: 'Medio Oficial', count: 1, dailyRate: 2200 }
+    ],
+    lagDays: 0
+  }
+]
+
+export function matchPhaseRule(name = '') {
+  const lower = (name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  for (const rule of CONSTRUCTION_PHASE_RULES) {
+    if (rule.matchKeywords.some(kw => {
+      const cleanKw = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      return lower.includes(cleanKw)
+    })) {
+      return rule
+    }
+  }
+  return {
+    phase: 9,
+    categoryKey: 'otros',
+    defaultName: name || 'Trabajos Varios',
+    crewLines: [
+      { role: 'Oficial', count: 1, dailyRate: 2800 },
+      { role: 'Peón Práctico', count: 2, dailyRate: 1800 }
+    ],
+    lagDays: 0
+  }
+}
+
+/**
+ * Agrupa y sincroniza partidas presupuestarias hacia la lista oficial de Rubros de la obra.
+ * Preserva rubros existentes y montos ejecutados, actualizando los presupuestados.
+ */
+export function syncBudgetItemsToRubros(budgetItems = [], existingRubros = [], socialLawsRate = 60) {
+  if (!Array.isArray(budgetItems) || budgetItems.length === 0) return existingRubros
+
+  const effectiveRate = typeof socialLawsRate === 'number' && socialLawsRate > 1 ? socialLawsRate / 100 : (Number(socialLawsRate) || 0.60)
+
+  // Agrupar partidas por nombre de rubro normalizado
+  const rubroGroups = {}
+  budgetItems.forEach((item) => {
+    const rawName = (item.rubroName || item.rubro || 'General').trim()
+    const key = rawName.toLowerCase()
+    if (!rubroGroups[key]) {
+      rubroGroups[key] = {
+        name: rawName,
+        rubroId: item.rubroId || null,
+        items: [],
+        materialCost: 0,
+        laborCost: 0,
+        subcontractCost: 0,
+        totalBudget: 0
+      }
+    }
+    rubroGroups[key].items.push(item)
+    rubroGroups[key].materialCost += Number(item.totalMaterialCost) || 0
+    rubroGroups[key].laborCost += Number(item.totalLaborCost) || 0
+    rubroGroups[key].subcontractCost += Number(item.totalSubcontractCost) || 0
+    rubroGroups[key].totalBudget += Number(item.totalBudget) || (Number(item.totalMaterialCost) || 0)
+  })
+
+  const resultRubros = []
+  const processedKeys = new Set()
+
+  // 1. Actualizar rubros existentes
+  ;(existingRubros || []).forEach(existing => {
+    const key = (existing.name || '').trim().toLowerCase()
+    if (rubroGroups[key]) {
+      processedKeys.add(key)
+      const group = rubroGroups[key]
+      const labor = group.laborCost > 0 ? group.laborCost : (existing.laborCost || Math.round(group.totalBudget * 0.35))
+      const socialLaws = Math.round(labor * effectiveRate)
+      const material = group.materialCost > 0 ? group.materialCost : Math.max(0, group.totalBudget - labor - socialLaws)
+      resultRubros.push({
+        ...existing,
+        name: group.name,
+        laborCost: labor,
+        socialLawsCost: socialLaws,
+        materialCost: material,
+        subcontractCost: group.subcontractCost || existing.subcontractCost || 0,
+        budgeted: group.totalBudget || (labor + socialLaws + material),
+        executed: existing.executed || 0
+      })
+    } else {
+      resultRubros.push(existing)
+    }
+  })
+
+  // 2. Incorporar nuevos rubros detectados
+  Object.keys(rubroGroups).forEach(key => {
+    if (!processedKeys.has(key)) {
+      const group = rubroGroups[key]
+      const cleanSlug = key.replace(/[^a-z0-9]/g, '_').replace(/^_+|_+$/g, '').slice(0, 30)
+      const id = group.rubroId || cleanSlug || `rubro_${Date.now()}`
+      const labor = group.laborCost > 0 ? group.laborCost : Math.round(group.totalBudget * 0.35)
+      const socialLaws = Math.round(labor * effectiveRate)
+      const material = group.materialCost > 0 ? group.materialCost : Math.max(0, group.totalBudget - labor - socialLaws)
+      resultRubros.push({
+        id,
+        name: group.name,
+        laborCost: labor,
+        socialLawsCost: socialLaws,
+        materialCost: material,
+        subcontractCost: group.subcontractCost || 0,
+        budgeted: group.totalBudget || (labor + socialLaws + material),
+        executed: 0
+      })
+    }
+  })
+
+  return resultRubros
+}
+
+/**
+ * Genera el cronograma de Gantt de obra completo (schedule) a partir de las partidas presupuestarias.
+ * Aplica heurística constructiva (Fundaciones -> Estructura -> Albañilería -> Instalaciones -> Terminaciones),
+ * encadenamiento Finish-to-Start (FS), cálculo de días hábiles y asignación de cuadrillas SUNCA con leyes sociales.
+ */
+export function generateScheduleFromBudgetItems(budgetItems = [], options = {}) {
+  if (!Array.isArray(budgetItems) || budgetItems.length === 0) {
+    return []
+  }
+
+  const {
+    projectStartDate = null,
+    socialLawsRate = 60,
+    includeSaturdays = false,
+    existingSchedule = [],
+    mode = 'replace' // 'replace' | 'append'
+  } = options
+
+  const effectiveSocialRate = typeof socialLawsRate === 'number' && socialLawsRate > 1 ? socialLawsRate / 100 : (Number(socialLawsRate) || 0.60)
+
+  // Agrupar partidas por rubro
+  const rubroGroupsMap = {}
+  budgetItems.forEach(item => {
+    const rawName = (item.rubroName || item.rubro || 'General').trim()
+    const key = rawName.toLowerCase()
+    if (!rubroGroupsMap[key]) {
+      rubroGroupsMap[key] = {
+        name: rawName,
+        rubroId: item.rubroId || null,
+        items: [],
+        materialCost: 0,
+        laborCost: 0,
+        subcontractCost: 0,
+        totalBudget: 0
+      }
+    }
+    rubroGroupsMap[key].items.push(item)
+    rubroGroupsMap[key].materialCost += Number(item.totalMaterialCost) || 0
+    rubroGroupsMap[key].laborCost += Number(item.totalLaborCost) || 0
+    rubroGroupsMap[key].subcontractCost += Number(item.totalSubcontractCost) || 0
+    rubroGroupsMap[key].totalBudget += Number(item.totalBudget) || (Number(item.totalMaterialCost) || 0)
+  })
+
+  // Asociar regla de fase constructiva a cada grupo
+  const sortedGroups = Object.values(rubroGroupsMap).map(group => {
+    const representativeText = `${group.name} ${(group.items[0]?.name || '')} ${(group.items[1]?.name || '')}`
+    const rule = matchPhaseRule(representativeText)
+    return {
+      ...group,
+      phase: rule.phase,
+      rule
+    }
+  }).sort((a, b) => a.phase - b.phase)
+
+  let baseId = 1
+  if (mode === 'append' && Array.isArray(existingSchedule) && existingSchedule.length > 0) {
+    const maxId = existingSchedule.reduce((max, t) => {
+      const num = Number(t.id)
+      return !Number.isNaN(num) && num > max ? num : max
+    }, 0)
+    baseId = maxId + 1
+  }
+
+  // Determinar fecha de inicio del primer hito
+  let initialStartDate = projectStartDate
+  if (!initialStartDate) {
+    const today = new Date()
+    // Siguiente día hábil
+    initialStartDate = addWorkingDays(formatDateIso(today), 1, includeSaturdays)
+  } else {
+    initialStartDate = addWorkingDays(initialStartDate, 0, includeSaturdays)
+  }
+
+  const generatedTasks = []
+  let previousTask = (mode === 'append' && existingSchedule.length > 0)
+    ? existingSchedule[existingSchedule.length - 1]
+    : null
+
+  sortedGroups.forEach((group, index) => {
+    const rule = group.rule
+    const taskId = baseId + index
+    const budget = group.totalBudget || (group.materialCost * 2) || 150000
+
+    // Duración estimada según envergadura económica del rubro (entre 6 y 25 días hábiles)
+    const workDays = Math.max(6, Math.min(25, Math.round(budget / 75000)))
+
+    let startDate = ''
+    let endDate = ''
+    let predecessorId = null
+    let predecessorLagDays = 0
+
+    if (!previousTask) {
+      startDate = initialStartDate
+      endDate = calculateTaskEndDateFromDuration(startDate, workDays, includeSaturdays)
+    } else {
+      predecessorId = previousTask.id
+      predecessorLagDays = rule.lagDays || 0
+      const dep = calculateDependentTaskDates(previousTask, {
+        dependencyType: 'FS',
+        lagDays: predecessorLagDays,
+        workDays,
+        includeSaturdays
+      })
+      if (dep) {
+        startDate = dep.startDate
+        endDate = dep.endDate
+      } else {
+        startDate = addWorkingDays(previousTask.endDate, 1, includeSaturdays)
+        endDate = calculateTaskEndDateFromDuration(startDate, workDays, includeSaturdays)
+      }
+    }
+
+    const crewLines = rule.crewLines.map(c => ({ ...c }))
+    const peopleCount = crewLines.reduce((s, c) => s + c.count, 0)
+    const dailyLaborCost = crewLines.reduce((s, c) => s + (c.count * c.dailyRate), 0)
+
+    const assignedLaborCost = group.laborCost > 0
+      ? group.laborCost
+      : dailyLaborCost * workDays
+
+    const socialLawsCost = Math.round(assignedLaborCost * effectiveSocialRate)
+
+    const materialCost = group.materialCost > 0
+      ? group.materialCost
+      : Math.max(0, budget - assignedLaborCost - socialLawsCost)
+
+    const firstItem = group.items[0] || {}
+
+    const task = {
+      id: taskId,
+      name: group.name,
+      startDate,
+      endDate,
+      peopleCount,
+      crewLines,
+      assignedLaborCost,
+      socialLawsCost,
+      materialCost,
+      subcontractCost: group.subcontractCost || 0,
+      rubroId: group.rubroId || rule.categoryKey || `rubro_${taskId}`,
+      rubroName: group.name,
+      linkedPartidaId: firstItem.id || `item_${taskId}`,
+      partidaCode: firstItem.code || `${String(taskId).padStart(2, '0')}.01`,
+      partidaName: firstItem.name || group.name,
+      assignedPartidaPercent: 100,
+      partidaDescription: `${group.name} — [${firstItem.code || 'Partida'}] ${firstItem.name || group.name} (${group.items.length} partidas)`,
+      month: `${startDate.slice(0, 7)}`,
+      plannedPercent: 0,
+      progressPercent: 0,
+      predecessorId,
+      predecessorLagDays
+    }
+
+    generatedTasks.push(task)
+    previousTask = task
+  })
+
+  return mode === 'append'
+    ? [...existingSchedule, ...generatedTasks]
+    : generatedTasks
 }

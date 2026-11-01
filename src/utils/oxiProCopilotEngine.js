@@ -28,6 +28,12 @@ const MONTH_NAMES = {
 }
 
 import { calculateWorkingDays, distributeCostByMonths } from './constructionCalendar.js'
+import {
+  parseBudgetSpreadsheet,
+  syncBudgetItemsToRubros,
+  generateScheduleFromBudgetItems,
+  DEFAULT_BUDGET_ITEMS
+} from './constructionBudgetEngine.js'
 
 function formatDateStr(date) {
   const d = new Date(date)
@@ -143,7 +149,15 @@ function parseMoneyAmount(text) {
 export function interpretCopilotPrompt(promptText = '', context = {}) {
   const text = (promptText || '').trim()
   const lower = text.toLowerCase()
-  const { schedule = [], rubros = [], rainLogs = [], project = {} } = context
+
+  // 0. ACTION: Pipeline de Presupuesto a Cronograma Gantt y Rubros (Excel-to-Gantt)
+  const isBudgetPipeline = /(?:arm[aá]r?|gener[aá]r?|cre[aá]r?|hacer?|convert[ií]r?)\s+(?:el\s+)?(?:gantt|cronograma|plan\s+de\s+obra)(?:\s+con|\s+desde|\s+a\s+partir\s+de)?(?:\s+el\s+)?(?:presupuesto|excel|partidas)/i.test(lower)
+    || /(?:repart[ií]r?|distribu[ií]r?|organiz[aá]r?)\s+(?:los\s+)?rubros\s+y\s+(?:hacer?|arm[aá]r?|gener[aá]r?)\s+(?:el\s+)?gantt/i.test(lower)
+    || ((text.includes('\t') || text.includes(';') || (text.includes(',') && text.includes('\n'))) && /(?:c[oó]digo|partida|rubro|metrado|costo|total)/i.test(lower))
+
+  if (isBudgetPipeline) {
+    return handleBudgetPipelineAction(text, context)
+  }
 
   // 1. ACTION: Desplazamiento por lluvias / demoras climáticas
   const isRainAction = /(?:tuvimos|hubo|registr[aá]|desplaz[aá]|correr?|agreg[aá])\s+(?:\w+\s+)?\d+\s+d[ií]as?\s+de\s+lluvia/i.test(lower)
@@ -258,6 +272,77 @@ function handleQuery(lower, context) {
       `• **Partidas Presupuestarias:** ${rubros.length} rubros con BPS (65%)\n\n` +
       `¿Querés agregar alguna tarea, actualizar porcentajes o cargar una demora?`,
     action: null
+  }
+}
+
+/**
+ * Handle Budget Pipeline (Excel-to-Gantt & Rubros Auto-Generation)
+ */
+function handleBudgetPipelineAction(text, context) {
+  const {
+    budgetItems = [],
+    rubros = [],
+    schedule = [],
+    project = {},
+    projectSocialLawsRate = 60
+  } = context
+
+  let itemsToProcess = []
+  const hasTabularData = text.includes('\t') || text.includes(';') || (text.includes(',') && text.includes('\n'))
+
+  if (hasTabularData) {
+    const parsedSpreadsheet = parseBudgetSpreadsheet(text)
+    if (parsedSpreadsheet.success && parsedSpreadsheet.items.length > 0) {
+      itemsToProcess = parsedSpreadsheet.items
+    }
+  }
+
+  if (itemsToProcess.length === 0) {
+    if (Array.isArray(budgetItems) && budgetItems.length > 0) {
+      itemsToProcess = budgetItems
+    } else {
+      itemsToProcess = DEFAULT_BUDGET_ITEMS
+    }
+  }
+
+  const syncedRubros = syncBudgetItemsToRubros(itemsToProcess, rubros, projectSocialLawsRate)
+  const generatedSchedule = generateScheduleFromBudgetItems(itemsToProcess, {
+    projectStartDate: project.startDate,
+    socialLawsRate: projectSocialLawsRate,
+    existingSchedule: schedule,
+    mode: 'replace'
+  })
+
+  const totalBudget = syncedRubros.reduce((sum, r) => sum + (Number(r.budgeted) || 0), 0)
+  const taskNamesFlow = generatedSchedule.map(t => t.name).join(' ➔ ')
+
+  return {
+    reply: `📋 **¡Plan de Obra Inteligente Generado con Éxito!**\n\n` +
+      `He procesado **${itemsToProcess.length} partidas presupuestarias** y estructurado automáticamente el proyecto para **${project.name || 'la obra'}**:\n\n` +
+      `• **${syncedRubros.length} Rubros consolidados:** ${syncedRubros.map(r => r.name).join(', ')}.\n` +
+      `• **${generatedSchedule.length} Tareas encadenadas en el Gantt:** organizadas por secuencia constructiva lógica (Fundaciones ➔ Estructura ➔ Albañilería ➔ Instalaciones ➔ Terminaciones) con dependencias Fin-a-Inicio (FS).\n` +
+      `• **Cuadrillas y Leyes Sociales BPS (60%):** Oficiales, Medios Oficiales y Peones asignados con cálculo de jornales diarios.\n` +
+      `• **Presupuesto Total Autorizado:** $${totalBudget.toLocaleString('es-UY')}\n` +
+      `• **Plazo contractual estimado:** desde **${generatedSchedule[0]?.startDate}** hasta **${generatedSchedule[generatedSchedule.length - 1]?.endDate}**.\n\n` +
+      `¿Deseás aplicar este plan al cronograma y a la planilla de rubros?`,
+    action: {
+      type: 'APPLY_BUDGET_PIPELINE',
+      title: 'Aplicar Cronograma Gantt y Rubros a la Obra',
+      badge: '⚡ Plan de Obra IA',
+      color: 'green',
+      summary: `Generar ${generatedSchedule.length} tareas encadenadas en el Gantt y consolidar ${syncedRubros.length} rubros.`,
+      details: [
+        `📋 ${itemsToProcess.length} partidas organizadas en ${syncedRubros.length} rubros`,
+        `📅 Secuencia constructiva: ${taskNamesFlow}`,
+        `👷 Cuadrillas y aportes de leyes sociales calculados automáticamente`,
+        `💰 Presupuesto consolidado: $${totalBudget.toLocaleString('es-UY')}`
+      ],
+      payload: {
+        budgetItems: itemsToProcess,
+        rubros: syncedRubros,
+        schedule: generatedSchedule
+      }
+    }
   }
 }
 

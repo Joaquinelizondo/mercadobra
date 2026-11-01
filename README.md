@@ -2349,17 +2349,20 @@ A continuación se listan las prioridades operativas para abordar secuencialment
 
 ---
 
+### 8. ⚡ Ingesta Inteligente de Excel: Auto-Creación de Rubros, Cronograma Gantt y Formularios con Agente IA (Excel-to-Gantt & Budget Auto-Pipeline) [✓ IMPLEMENTADO]
+- **Objetivo:** Permitir que un arquitecto o constructor pegue su planilla de Excel (o suba un archivo `.csv`/`.xlsx`) y que el sistema o el Agente Copilot interprete los capítulos, cree los rubros presupuestarios consolidados, arme el cronograma de Gantt con secuencia constructiva lógica (fundaciones -> estructura -> albañilería -> instalaciones -> terminaciones) con dependencias FS y cuadrillas estimadas, completando todos los formularios de la obra en segundos.
+- **Alcance implementado:**
+  - **Sincronización Automática de Partidas a Rubros (`syncBudgetItemsToRubros`):** Agrupa automáticamente las partidas importadas por su rubro padre, totalizando montos de materiales, mano de obra y subcontratos, dando de alta o actualizando los rubros de la obra sin carga manual repetitiva, preservando montos ejecutados existentes.
+  - **Motor de Inferencia Constructiva para Gantt (`generateScheduleFromBudgetItems`):** Heurística que clasifica cada partida/rubro por disciplina constructiva (`CONSTRUCTION_PHASE_RULES`), calcula la duración estimada en días hábiles (según metrado y monto), asigna fechas sucesivas respetando fines de semana y feriados del país, y encadena las dependencias Finish-to-Start (`predecessorId`, lag en días).
+  - **Asignación Sugerida de Cuadrillas & Leyes Sociales (BPS/SUNCA u otros países):** Asigna cuadrilla sugerida (Oficiales Especializados, Oficiales, Medios Oficiales, Peones) según la especialidad, calculando automáticamente el costo diario de mano de obra y leyes sociales al 60%.
+  - **Integración 1-Clic en Modal de Importación:** Botón directo `⚡ Generar Cronograma Gantt + Rubros automáticamente` en la pestaña de Presupuesto con previsualización en vivo.
+  - **Agente Copilot Bidireccional (`APPLY_BUDGET_PIPELINE`):** Soporte en el chat de OxI Copilot para procesar tablas de presupuesto en lenguaje natural o texto copiado de Excel (`Ctrl+V`), generando una tarjeta de acción con un clic para aplicar todo el plan de obra.
+
+---
+
 ### 🏗️ Próximas Funcionalidades Estratégicas para Arquitectos e Ingenieros (Pendientes a Desarrollar)
 
 A continuación se detallan los módulos clave para posicionar a OxI Pro como la herramienta de referencia de gestión de obra para estudios y constructoras:
-
-#### 8. ⚡ Ingesta Inteligente de Excel: Auto-Creación de Rubros, Cronograma Gantt y Formularios con Agente IA (Excel-to-Gantt & Budget Auto-Pipeline) [EN CURSO / SIGUIENTE PASO]
-- **Objetivo:** Permitir que un arquitecto o constructor pegue su planilla de Excel (o suba un archivo `.csv`/`.xlsx`) y que el sistema o el Agente Copilot interprete los capítulos, cree los rubros presupuestarios consolidados, arme el cronograma de Gantt con secuencia constructiva lógica (fundaciones -> estructura -> albañilería -> instalaciones -> terminaciones) con dependencias FS y cuadrillas estimadas, completando todos los formularios de la obra en segundos.
-- **Alcance planificado:**
-  - **Sincronización Automática de Partidas a Rubros (`syncBudgetItemsToRubros`):** Agrupa automáticamente las partidas importadas por su rubro padre, totalizando montos de materiales, mano de obra y subcontratos, dando de alta o actualizando los rubros de la obra sin carga manual repetitiva.
-  - **Motor de Inferencia Constructiva para Gantt (`generateScheduleFromBudgetItems`):** Heurística que clasifica cada partida/rubro por disciplina constructiva, calcula la duración estimada en días hábiles (según metrado y monto), asigna fechas sucesivas respetando fines de semana y feriados del país, y encadena las dependencias (`predecessorId`, lag en días).
-  - **Asignación Sugerida de Cuadrillas & Leyes Sociales (BPS/SUNCA u otros países):** Asigna cuadrilla sugerida (Oficiales, Medios Oficiales, Peones) según la especialidad, calculando automáticamente el costo diario de mano de obra y leyes sociales.
-  - **Integración 1-Clic en Modal de Importación y Chat con Copilot:** Botón directo `⚡ Generar Cronograma Gantt y Rubros automáticamente desde este Excel` en la pestaña de Presupuesto, y soporte en el chat de OxI Copilot para procesar tablas de presupuesto en lenguaje natural.
 
 #### 9. 📱 Bitácora Móvil de Obra con Fotos y Pines sobre el Plano (Site Diary & Photo Pinning) [PENDIENTE]
 - **Objetivo:** Permitir a directores de obra, capataces e inspectores registrar avances y hallazgos directamente desde el celular en el terreno, incluso sin conexión a internet.

@@ -5,6 +5,8 @@ import {
   parseBudgetSpreadsheet,
   calculateTaskMaterialCostFromPartida,
   auditBudgetAssignments,
+  syncBudgetItemsToRubros,
+  generateScheduleFromBudgetItems,
   DEFAULT_BUDGET_ITEMS
 } from './constructionBudgetEngine.js'
 
@@ -125,5 +127,73 @@ test('auditBudgetAssignments detecta sobreasignación (> 100%) y presupuesto sin
   // Tarea 3 fue cargada a mano
   assert.equal(audit.manualTasksCount, 1)
   assert.equal(audit.totalManualMaterial, 20000)
+})
+
+test('syncBudgetItemsToRubros agrupa partidas importadas y sincroniza con los rubros', () => {
+  const items = [
+    { code: '01.01', rubroName: 'Movimiento de Suelos', name: 'Zanjas', totalMaterialCost: 50000, totalLaborCost: 80000, totalBudget: 130000 },
+    { code: '01.02', rubroName: 'Movimiento de Suelos', name: 'Relleno', totalMaterialCost: 20000, totalLaborCost: 30000, totalBudget: 50000 },
+    { code: '02.01', rubroName: 'Estructura de Hormigón', name: 'Pilares', totalMaterialCost: 150000, totalLaborCost: 120000, totalBudget: 270000 }
+  ]
+
+  const existingRubros = [
+    { id: 'mov_suelos', name: 'Movimiento de Suelos', budgeted: 100000, executed: 45000 }
+  ]
+
+  const synced = syncBudgetItemsToRubros(items, existingRubros, 60)
+  assert.equal(synced.length, 2)
+
+  // El rubro existente actualiza su presupuesto a 130k + 50k = 180k y preserva su ejecutado
+  const rubro1 = synced.find(r => r.name === 'Movimiento de Suelos')
+  assert.ok(rubro1)
+  assert.equal(rubro1.budgeted, 180000)
+  assert.equal(rubro1.materialCost, 70000)
+  assert.equal(rubro1.laborCost, 110000)
+  assert.equal(rubro1.socialLawsCost, 66000) // 110000 * 0.60
+  assert.equal(rubro1.executed, 45000)
+
+  // El nuevo rubro de estructura se da de alta automáticamente
+  const rubro2 = synced.find(r => r.name === 'Estructura de Hormigón')
+  assert.ok(rubro2)
+  assert.equal(rubro2.budgeted, 270000)
+  assert.equal(rubro2.materialCost, 150000)
+  assert.equal(rubro2.laborCost, 120000)
+  assert.equal(rubro2.executed, 0)
+})
+
+test('generateScheduleFromBudgetItems arma la secuencia cronológica lógica constructiva y encadena dependencias', () => {
+  // Partidas deliberadamente desordenadas: Pintura -> Fundaciones -> Estructura
+  const items = [
+    { id: 'p_pintura', code: '07.01', rubroName: 'Pintura y Terminaciones', name: 'Látex al agua', totalMaterialCost: 40000, totalBudget: 100000 },
+    { id: 'p_fundac', code: '01.01', rubroName: 'Excavación y Fundaciones', name: 'Cimentaciones', totalMaterialCost: 80000, totalBudget: 250000 },
+    { id: 'p_estruct', code: '02.01', rubroName: 'Estructura de Hormigón', name: 'Vigas y losas', totalMaterialCost: 180000, totalBudget: 500000 }
+  ]
+
+  const schedule = generateScheduleFromBudgetItems(items, {
+    projectStartDate: '2026-11-02', // Lunes
+    socialLawsRate: 60
+  })
+
+  assert.equal(schedule.length, 3)
+
+  // 1. Debe haber ordenado la secuencia: Fundaciones -> Estructura -> Pintura
+  assert.equal(schedule[0].name, 'Excavación y Fundaciones')
+  assert.equal(schedule[1].name, 'Estructura de Hormigón')
+  assert.equal(schedule[2].name, 'Pintura y Terminaciones')
+
+  // 2. Primera tarea inicia el 2026-11-02 sin predecesora
+  assert.equal(schedule[0].startDate, '2026-11-02')
+  assert.equal(schedule[0].predecessorId, null)
+  assert.ok(schedule[0].endDate > schedule[0].startDate)
+  assert.ok(schedule[0].crewLines.length > 0)
+  assert.ok(schedule[0].socialLawsCost > 0)
+
+  // 3. Segunda tarea (Estructura) debe encadenarse como sucesora de Fundaciones (FS)
+  assert.equal(schedule[1].predecessorId, schedule[0].id)
+  assert.ok(schedule[1].startDate > schedule[0].startDate)
+
+  // 4. Tercera tarea (Pintura) debe encadenarse como sucesora de Estructura (FS)
+  assert.equal(schedule[2].predecessorId, schedule[1].id)
+  assert.ok(schedule[2].startDate > schedule[1].startDate)
 })
 

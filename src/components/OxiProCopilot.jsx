@@ -8,6 +8,9 @@ export default function OxiProCopilot({
   setSchedule,
   rubros = [],
   setRubros,
+  budgetItems = [],
+  setBudgetItems,
+  projectSocialLawsRate = 60,
   rainLogs = [],
   setRainLogs,
   onApplyRainShift,
@@ -28,6 +31,7 @@ Puedo ayudarte a cargar tareas en el Gantt, certificar avances reales, registrar
 
 ¿Qué cambio o consulta querés hacer sobre **${project?.name || 'esta obra'}**?`,
       suggestions: [
+        '⚡ Armá el Gantt y los rubros a partir de mi Excel',
         '➕ Agregá colocación de barandas del 1 al 10 de noviembre con 3 oficiales',
         '⚡ Marcá fundaciones al 100%',
         '🌧️ Tuvimos 2 días de lluvia',
@@ -63,6 +67,8 @@ Puedo ayudarte a cargar tareas en el Gantt, certificar avances reales, registrar
       const context = {
         schedule,
         rubros,
+        budgetItems,
+        projectSocialLawsRate,
         rainLogs,
         project
       }
@@ -138,6 +144,18 @@ Puedo ayudarte a cargar tareas en el Gantt, certificar avances reales, registrar
       const newRubro = action.payload
       setRubros(prev => [...prev, newRubro])
       if (typeof setActiveTab === 'function') setActiveTab('rubros')
+    } else if (action.type === 'APPLY_BUDGET_PIPELINE') {
+      const { budgetItems: newBudgetItems, rubros: newRubros, schedule: newSchedule } = action.payload
+      if (Array.isArray(newSchedule) && typeof setSchedule === 'function') {
+        setSchedule(newSchedule)
+      }
+      if (Array.isArray(newRubros) && typeof setRubros === 'function') {
+        setRubros(newRubros)
+      }
+      if (Array.isArray(newBudgetItems) && typeof setBudgetItems === 'function') {
+        setBudgetItems(newBudgetItems)
+      }
+      if (typeof setActiveTab === 'function') setActiveTab('cronograma')
     }
 
     setMessages(prev => prev.map(m => m.id === msgId ? { ...m, actionApplied: true } : m))

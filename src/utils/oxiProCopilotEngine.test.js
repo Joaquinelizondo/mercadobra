@@ -86,3 +86,45 @@ test('OxI Pro Copilot: crea partida presupuestaria con desglose de leyes sociale
   assert.equal(res.action.payload.socialLawsCost, Math.round(res.action.payload.laborCost * 0.60))
 })
 
+test('OxI Pro Copilot: genera pipeline completo (Gantt + Rubros) cuando se pide armar cronograma desde presupuesto', () => {
+  const context = {
+    project: { name: 'Obra Pocitos', startDate: '2026-11-02' },
+    budgetItems: [
+      { id: 'b1', code: '01.01', rubroName: 'Fundaciones', name: 'Pilotes', totalMaterialCost: 90000, totalLaborCost: 60000, totalBudget: 150000 },
+      { id: 'b2', code: '02.01', rubroName: 'Estructura de Hormigón', name: 'Losa sobre PB', totalMaterialCost: 200000, totalLaborCost: 150000, totalBudget: 350000 }
+    ],
+    rubros: [],
+    schedule: []
+  }
+
+  const res = interpretCopilotPrompt('armá el gantt con el presupuesto y repartí los rubros', context)
+  assert.ok(res.action)
+  assert.equal(res.action.type, 'APPLY_BUDGET_PIPELINE')
+  assert.equal(res.action.payload.rubros.length, 2)
+  assert.equal(res.action.payload.schedule.length, 2)
+  assert.equal(res.action.payload.schedule[0].name, 'Fundaciones')
+  assert.equal(res.action.payload.schedule[1].name, 'Estructura de Hormigón')
+  assert.equal(res.action.payload.schedule[1].predecessorId, res.action.payload.schedule[0].id)
+})
+
+test('OxI Pro Copilot: procesa texto copiado de Excel directamente en el chat y genera el plan de obra', () => {
+  const excelClipboard = `Código\tRubro\tPartida\tUnidad\tCantidad\tCosto Unitario\tTotal Mat
+01.01\tFundaciones\tExcavación zanjas\tm3\t100\t800\t80000
+05.01\tAlbañilería\tMuros ticholo\tm2\t250\t400\t100000`
+
+  const context = {
+    project: { name: 'Edificio Punta Carretas' },
+    rubros: [],
+    schedule: []
+  }
+
+  const res = interpretCopilotPrompt(excelClipboard, context)
+  assert.ok(res.action)
+  assert.equal(res.action.type, 'APPLY_BUDGET_PIPELINE')
+  assert.equal(res.action.payload.budgetItems.length, 2)
+  assert.equal(res.action.payload.rubros.length, 2)
+  assert.equal(res.action.payload.schedule.length, 2)
+  assert.equal(res.action.payload.schedule[0].name, 'Fundaciones')
+  assert.equal(res.action.payload.schedule[1].name, 'Albañilería')
+})
+
