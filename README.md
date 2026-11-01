@@ -2259,6 +2259,74 @@ El desarrollo se realizará en este orden. No se iniciará una etapa posterior h
   - 37/37 pruebas unitarias de frontend (modelador y motor Copilot) pasando exitosamente.
   - Compilación de producción validada (`npm run build`).
 
+#### Fase 10 — MVP Comercial, Vista Combinada Gantt/Planilla, Predecesoras y Control de Costos al Día de Corte
+
+**Objetivo:** Consolidar OxI Pro para presentaciones comerciales a constructoras y estudios de arquitectura con herramientas avanzadas de planificación temporal, dependencias en días hábiles y trazabilidad de desvíos económicos.
+
+- [x] **Vista Unificada Gantt + Planilla & Costos:**
+  - Integración en un solo panel (`combined`) con Diagrama de Gantt visual en la parte superior y grilla detallada de tareas, recursos y costos en la parte inferior con scroll sincronizado.
+- [x] **Motor de Predecesoras y Dependencias de Tareas (FS / SS con Días Hábiles):**
+  - Configuración de dependencias sin obligar fechas fijas manuales (ej: comenzar pilar 3 días hábiles tras terminar losa por tiempo de fraguado).
+  - Cálculo de días hábiles respetando fines de semana y feriados de la construcción (`constructionCalendar.js`).
+  - Desplazamiento y corrimiento en cascada automático de tareas dependientes al mover fechas o registrar lluvias.
+- [x] **Dashboard de Control de Costos al Día de Corte:**
+  - Cálculo dinámico de lo que debería haberse gastado a la fecha según el cronograma vs. el costo real ejecutado.
+  - Métricas de Desvío ($) y Desvío (%) a nivel global y por cada tarea individual en la planilla.
+- [x] **Subcontratos con Fondo de Reparo (5%) y Certificado Mensual en PDF A4:**
+  - Gestión contractual de subcontratistas con techo presupuestario, adendas aprobadas, retención de fondo de reparo y certificado formal en PDF de alta resolución con 3 bloques de firmas.
+- [x] **Estabilidad de UI y Autenticación:**
+  - Reparación de variables no declaradas en modales de tareas y restauración del diseño split-screen 50/50 en login y registro corporativo.
+
+---
+
+## 📋 Hoja de Ruta Inmediata (Pendientes Priorizados)
+
+A continuación se listan las prioridades operativas para abordar secuencialmente de a una:
+
+### 1. 👷 Reporte de Nómina de Personal y Jornales para BPS (Ley 14.411 / SUNCA Grupo 9)
+- **Objetivo:** Generar un reporte formal descargable (PDF / Excel) de operarios y jornales trabajados en la quincena o mes para declarar ante BPS (Banco de Previsión Social) y para auditorías laborales.
+- **Alcance del reporte:**
+  - Ficha de la obra (nº de registro de obra BPS, comitente, ubicación, período/quincena).
+  - Nómina de personal con documento/cédula, nombre y categoría oficial (Peón común, Medio Oficial, Oficial, Especializado).
+  - Cómputo de jornales trabajados, horas comunes y horas extras.
+  - Total de mano de obra imponible devengada en el período.
+  - Estimación y liquidación de leyes sociales unificadas (BPS 60-65% s/mano de obra, FOCER, seguro de accidentes de trabajo BSE).
+  - Bloque de firma del Director de Obra y responsable técnico.
+  - *Arquitectura escalable:* parametrizable para soportar otros países (FOCAT / UOCRA en Argentina, Libro de Remuneraciones DT en Chile).
+
+### 2. 💰 Imputación de Costo Real Contable a Tareas (Costo Real vs. % Certificado)
+- **Objetivo:** Desacoplar el costo ejecutado del simple cálculo teórico (`% avance × presupuesto`).
+- **Alcance:**
+  - Permitir imputar directamente comprobantes de compra/facturas de materiales y partes diarios de mano de obra a una tarea específica del cronograma.
+  - Opción de ingresar el costo real devengado manualmente por tarea para reflejar sobrecostos reales de obra (ej: 30% de avance físico pero con $380 gastados sobre $300 presupuestados).
+
+### 3. 📊 Conectores y Badges Visuales de Dependencias en el Gantt Gráfico
+- **Objetivo:** Visualizar de forma inmediata en la barra superior del Gantt qué tarea precede a cuál.
+- **Alcance:**
+  - Badge o etiqueta identificatoria en la barra (`[↳ Losa +3d]`).
+  - Líneas o flechas conectoras de camino crítico entre la tarea origen y la tarea sucesora.
+
+### 4. 📑 Exportación del Dashboard de Control de Costos al Día de Corte (PDF / Excel)
+- **Objetivo:** Permitir descargar el informe ejecutivo de presupuesto a la fecha vs. costo real y desvíos ($ y %).
+- **Alcance:**
+  - Exportación en 1 clic de la comparativa de desvíos por tarea y resumen consolidado con formato de presentación para directorios y comitentes.
+
+### 5. 🌐 Modernización de la Landing Comercial `/partner`
+- **Objetivo:** Reemplazar los wireframes de "Próximamente: OXI OS" por la presentación comercial de la suite real activa.
+- **Alcance:**
+  - Muestra interactiva de capacidades reales: Gantt sincronizado, Curva S, EVM, Control Climático y Certificaciones.
+  - Botones directos para acceder con credenciales de prueba o iniciar sesión.
+
+### 6. ☁️ Persistencia Completa en PostgreSQL (`oxipro_state JSONB`)
+- **Objetivo:** Garantizar sincronización multi-dispositivo y multi-usuario integral de todos los módulos de OxI Pro.
+- **Alcance:**
+  - Almacenar contratos de subcontratistas, facturas de materiales, partes diarios de mano de obra y partidas en la columna `oxipro_state JSONB` de `b2b_projects`.
+
+### 7. 🧹 Limpieza y Optimización de Código Legado en `src/App.jsx`
+- **Objetivo:** Eliminar el bloque obsoleto `AppLegacy` (~600 líneas) para mantener la base de código ágil y clara.
+
+---
+
 ### Criterio de salida del MVP
 
 - Una mesa circular puede cotizarse de punta a punta sin editar código ni fórmulas en la base de datos.
