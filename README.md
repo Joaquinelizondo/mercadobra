@@ -2314,10 +2314,13 @@ A continuación se listan las prioridades operativas para abordar secuencialment
   - Resaltado interactivo (`hover`): al pasar el cursor sobre cualquier tarea, se iluminan automáticamente sus tareas predecesoras y sucesoras en la línea de tiempo.
   - Leyenda informativa en cabecera del Gantt y tooltips detallados con nombres y condiciones de dependencia.
 
-### 4. 📑 Exportación del Dashboard de Control de Costos al Día de Corte (PDF / Excel)
+### 4. 📑 Exportación del Dashboard de Control de Costos al Día de Corte (PDF / Excel) [✓ IMPLEMENTADO]
 - **Objetivo:** Permitir descargar el informe ejecutivo de presupuesto a la fecha vs. costo real y desvíos ($ y %).
-- **Alcance:**
-  - Exportación en 1 clic de la comparativa de desvíos por tarea y resumen consolidado con formato de presentación para directorios y comitentes.
+- **Alcance implementado:**
+  - Exportación en 1 clic a CSV/Excel con codificación UTF-8 BOM (`exportCostControlToCsv`) conteniendo metadatos de obra, fecha de corte, presupuesto a la fecha, costo real devengado, saldo por ejecutar y diagnóstico por tarea.
+  - Generador de datos y métricas normalizadas para auditoría y directorio (`generateCostControlReportData`).
+  - Modal formal membretado "Informe Ejecutivo de Control de Costos al Día de Corte" con KPIs consolidados, desglose de desvíos ($ y %), modo de imputación contable (imputado/manual/auto) y 3 bloques de firma profesional (Dirección Técnica, Control de Gestión y Comitente).
+  - Reglas `@media print` dedicadas para impresión limpia en formato A4 / guardar en PDF directo desde el navegador.
 
 ### 5. 🌐 Modernización de la Landing Comercial `/partner`
 - **Objetivo:** Reemplazar los wireframes de "Próximamente: OXI OS" por la presentación comercial de la suite real activa.

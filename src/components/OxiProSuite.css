@@ -1928,10 +1928,11 @@
   body * {
     visibility: hidden;
   }
-  .bps-print-sheet, .bps-print-sheet * {
+  .bps-print-sheet, .bps-print-sheet *,
+  .cost-control-print-sheet, .cost-control-print-sheet * {
     visibility: visible;
   }
-  .bps-print-sheet {
+  .bps-print-sheet, .cost-control-print-sheet {
     position: absolute;
     left: 0;
     top: 0;

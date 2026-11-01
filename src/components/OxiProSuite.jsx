@@ -56,6 +56,10 @@ import {
   DEFAULT_BPS_EMPLOYEES
 } from '../utils/constructionBpsReportEngine'
 import {
+  generateCostControlReportData,
+  exportCostControlToCsv
+} from '../utils/constructionCostControlExport'
+import {
   REGIONAL_PROFILES,
   getRegionalProfile,
   formatRegionalMoney
@@ -951,6 +955,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   })
 
   const [showBpsReportModal, setShowBpsReportModal] = useState(false)
+  const [showCostControlReportModal, setShowCostControlReportModal] = useState(false)
   const [bpsFilterMonth, setBpsFilterMonth] = useState('all')
   const [bpsFilterQuincena, setBpsFilterQuincena] = useState('all')
   const [bpsModalTab, setBpsModalTab] = useState('roster') // 'roster' | 'categories' | 'print'
@@ -988,6 +993,8 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         setShowAddAdditionalModal(false)
         setShowAddIndirectModal(false)
         setShowAddRubroModal(false)
+        setShowBpsReportModal(false)
+        setShowCostControlReportModal(false)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -2759,6 +2766,24 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     window.print()
   }
 
+  function handleExportCostControlCsv() {
+    const reportData = generateCostControlReportData(schedule, costControl, {
+      projectName: project?.name || 'Obra',
+      costCutoffDate,
+      totalProjectBudget
+    })
+    const csvContent = exportCostControlToCsv(reportData)
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `Control_Costos_${(project?.name || 'Obra').replace(/\s+/g, '_')}_${costCutoffDate}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   function handleSaveNewEmployee(e) {
     e.preventDefault()
     if (!newEmployeeForm.name.trim()) return
@@ -4081,15 +4106,35 @@ ${validation.message}
                       Lo que deberíamos haber gastado según el cronograma vs. lo realmente ejecutado, sumando todas las tareas.
                     </div>
                   </div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>
-                    Fecha de corte
-                    <input
-                      type="date"
-                      value={costCutoffDate}
-                      onChange={e => setCostCutoffDate(e.target.value || costCutoffDate)}
-                      style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
-                    />
-                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>
+                      Fecha de corte:
+                      <input
+                        type="date"
+                        value={costCutoffDate}
+                        onChange={e => setCostCutoffDate(e.target.value || costCutoffDate)}
+                        style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="oxi-btn oxi-btn-secondary"
+                      style={{ fontSize: '0.78rem', padding: '5px 10px', display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                      onClick={handleExportCostControlCsv}
+                      title="Descargar informe de costos a la fecha en formato CSV / Excel"
+                    >
+                      📥 Exportar CSV
+                    </button>
+                    <button
+                      type="button"
+                      className="oxi-btn oxi-btn-secondary"
+                      style={{ fontSize: '0.78rem', padding: '5px 10px', display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer', background: '#f8fafc', borderColor: '#cbd5e1' }}
+                      onClick={() => setShowCostControlReportModal(true)}
+                      title="Ver e imprimir informe ejecutivo formal para directorio y comitente"
+                    >
+                      📑 Informe Ejecutivo (PDF)
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '12px' }}>
@@ -9460,6 +9505,260 @@ ${validation.message}
                   Cerrar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: INFORME EJECUTIVO DE CONTROL DE COSTOS AL DÍA DE CORTE (PDF / PRINT) ── */}
+      {showCostControlReportModal && (
+        <div className="oxi-modal-backdrop" onClick={() => setShowCostControlReportModal(false)}>
+          <div className="oxi-modal-content cost-control-report-modal" style={{ maxWidth: '980px', width: '95%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div>
+                <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>📑</span>
+                  <span>Informe Ejecutivo de Control de Costos al Día de Corte</span>
+                  <span style={{ fontSize: '0.72rem', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                    EVM & Control Presupuestario
+                  </span>
+                </h3>
+                <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                  Comparativa formal de presupuesto planificado a la fecha vs. costo real devengado por comprobantes y desvíos para directorio y comitente.
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="oxi-btn oxi-btn-secondary"
+                  style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                  onClick={handleExportCostControlCsv}
+                  title="Exportar a CSV para Excel"
+                >
+                  📥 Exportar CSV
+                </button>
+                <button
+                  type="button"
+                  className="oxi-btn oxi-btn-primary"
+                  style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                  onClick={() => window.print()}
+                  title="Imprimir o guardar como PDF"
+                >
+                  🖨️ Imprimir / Guardar PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCostControlReportModal(false)}
+                  style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#64748b', marginLeft: '6px' }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Hoja Membretada Imprimible */}
+            <div className="cost-control-print-sheet" style={{ background: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              {/* Encabezado Obra */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '10px', marginBottom: '14px' }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#0f172a' }}>{project?.name || 'Obra en Ejecución'}</h2>
+                  <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>
+                    <span>📍 Ubicación: {project?.location || 'Montevideo, Uruguay'}</span>
+                    <span style={{ margin: '0 8px' }}>•</span>
+                    <span>🏢 Empresa: {bpsMeta.companyName}</span>
+                    <span style={{ margin: '0 8px' }}>•</span>
+                    <span>Comitente: {bpsMeta.clientName}</span>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 700 }}>Fecha de Corte</div>
+                  <strong style={{ fontSize: '1.05rem', color: '#0369a1' }}>{costCutoffDate}</strong>
+                  <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Emisión: {new Date().toLocaleDateString('es-UY')}</div>
+                </div>
+              </div>
+
+              {/* KPIs de Control */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px' }}>
+                  <span style={{ fontSize: '0.7rem', color: '#475569', textTransform: 'uppercase', fontWeight: 700 }}>Presupuesto Total</span>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>{formatMoney(totalProjectBudget)}</div>
+                  <small style={{ color: '#64748b', fontSize: '0.72rem' }}>100% contractual</small>
+                </div>
+                <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '10px' }}>
+                  <span style={{ fontSize: '0.7rem', color: '#0369a1', textTransform: 'uppercase', fontWeight: 700 }}>Plan a la Fecha</span>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0369a1' }}>{formatMoney(costControl.totalPlannedToDate)}</div>
+                  <small style={{ color: '#0369a1', fontSize: '0.72rem' }}>{costControl.plannedPctOfTotal}% previsto</small>
+                </div>
+                <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '6px', padding: '10px' }}>
+                  <span style={{ fontSize: '0.7rem', color: '#c2410c', textTransform: 'uppercase', fontWeight: 700 }}>Ejecutado Real</span>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ea580c' }}>{formatMoney(costControl.totalExecuted)}</div>
+                  <small style={{ color: '#ea580c', fontSize: '0.72rem' }}>{costControl.executedPctOfTotal}% devengado</small>
+                </div>
+                <div style={{
+                  background: costControl.totalVariance > 0 ? '#fef2f2' : '#f0fdf4',
+                  border: `1px solid ${costControl.totalVariance > 0 ? '#fecaca' : '#bbf7d0'}`,
+                  borderRadius: '6px',
+                  padding: '10px'
+                }}>
+                  <span style={{ fontSize: '0.7rem', color: costControl.totalVariance > 0 ? '#b91c1c' : '#15803d', textTransform: 'uppercase', fontWeight: 700 }}>Desvío Neto</span>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: costControl.totalVariance > 0 ? '#dc2626' : '#059669' }}>
+                    {costControl.totalVariance > 0 ? '+' : ''}{formatMoney(costControl.totalVariance)}
+                  </div>
+                  <small style={{ color: '#64748b', fontSize: '0.72rem' }}>{costControl.variancePct > 0 ? '+' : ''}{costControl.variancePct}% vs. plan</small>
+                </div>
+                <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: '6px', padding: '10px' }}>
+                  <span style={{ fontSize: '0.7rem', color: '#7e22ce', textTransform: 'uppercase', fontWeight: 700 }}>Saldo por Devengar</span>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#7e22ce' }}>{formatMoney(Math.max(0, totalProjectBudget - costControl.totalExecuted))}</div>
+                  <small style={{ color: '#64748b', fontSize: '0.72rem' }}>Remanente</small>
+                </div>
+              </div>
+
+              {/* Tabla Detallada por Tarea */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', marginBottom: '16px' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1', textAlign: 'left', color: '#334155' }}>
+                    <th style={{ padding: '8px 6px' }}>Tarea de Obra</th>
+                    <th style={{ padding: '8px 6px' }}>Plazo</th>
+                    <th style={{ padding: '8px 6px', textAlign: 'right' }}>Presupuesto</th>
+                    <th style={{ padding: '8px 6px', textAlign: 'right' }}>Plan a Fecha</th>
+                    <th style={{ padding: '8px 6px', textAlign: 'center' }}>% Prog / Real</th>
+                    <th style={{ padding: '8px 6px', textAlign: 'right' }}>Costo Real</th>
+                    <th style={{ padding: '8px 6px', textAlign: 'center' }}>Modo</th>
+                    <th style={{ padding: '8px 6px', textAlign: 'right' }}>Desvío ($)</th>
+                    <th style={{ padding: '8px 6px', textAlign: 'center' }}>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {schedule.map(t => {
+                    const rowCC = costControl.byTask.get(String(t.id)) || { budget: 0, plannedPct: 0, plannedToDate: 0, executed: 0, variance: 0, costDetails: { mode: 'auto' } }
+                    const real = Math.min(100, Math.max(0, Number(t.progressPercent) || 0))
+                    const variance = rowCC.variance || 0
+                    const variancePct = rowCC.plannedToDate > 0 ? Math.round((variance / rowCC.plannedToDate) * 100) : 0
+                    const isOver = variance > 0
+                    const isUnder = variance < 0
+
+                    return (
+                      <tr key={t.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '8px 6px' }}>
+                          <strong>{t.name}</strong>
+                          {t.dependsOnTaskId && (
+                            <div style={{ fontSize: '0.7rem', color: '#059669' }}>
+                              ↳ Tras tarea #{t.dependsOnTaskId}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '8px 6px', color: '#64748b', whiteSpace: 'nowrap' }}>
+                          {t.startDate} al {t.endDate}
+                        </td>
+                        <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 600 }}>
+                          {formatMoney(rowCC.budget)}
+                        </td>
+                        <td style={{ padding: '8px 6px', textAlign: 'right', color: '#0369a1', fontWeight: 600 }}>
+                          {formatMoney(rowCC.plannedToDate)}
+                        </td>
+                        <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                          <span style={{ color: '#0369a1', fontWeight: 700 }}>{rowCC.plannedPct}%</span>
+                          <span style={{ color: '#94a3b8', margin: '0 3px' }}>/</span>
+                          <span style={{ color: real >= rowCC.plannedPct ? '#166534' : '#b91c1c', fontWeight: 700 }}>{real}%</span>
+                        </td>
+                        <td style={{ padding: '8px 6px', textAlign: 'right', color: '#ea580c', fontWeight: 700 }}>
+                          {formatMoney(rowCC.executed)}
+                        </td>
+                        <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                          <span style={{
+                            fontSize: '0.68rem',
+                            padding: '2px 5px',
+                            borderRadius: '4px',
+                            background: rowCC.costDetails?.mode === 'actual' ? '#f0fdf4' : rowCC.costDetails?.mode === 'manual' ? '#fff7ed' : '#f8fafc',
+                            color: rowCC.costDetails?.mode === 'actual' ? '#166534' : rowCC.costDetails?.mode === 'manual' ? '#c2410c' : '#475569',
+                            fontWeight: 700
+                          }}>
+                            {rowCC.costDetails?.mode === 'actual' ? 'Imputado' : rowCC.costDetails?.mode === 'manual' ? 'Manual' : 'Auto (%)'}
+                          </span>
+                        </td>
+                        <td style={{
+                          padding: '8px 6px',
+                          textAlign: 'right',
+                          fontWeight: 700,
+                          color: isOver ? '#dc2626' : isUnder ? '#059669' : '#64748b'
+                        }}>
+                          {variance > 0 ? '+' : ''}{formatMoney(variance)}
+                          <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                            {variancePct > 0 ? '+' : ''}{variancePct}%
+                          </div>
+                        </td>
+                        <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                          <span style={{
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: isOver ? '#fee2e2' : isUnder ? '#dcfce7' : '#f1f5f9',
+                            color: isOver ? '#991b1b' : isUnder ? '#166534' : '#475569'
+                          }}>
+                            {isOver ? 'Sobrecosto' : isUnder ? 'Ahorro' : 'En Plan'}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{ background: '#f8fafc', borderTop: '2px solid #0f172a', fontWeight: 'bold' }}>
+                    <td colSpan="2" style={{ padding: '8px 6px' }}>TOTALES CONSOLIDADOS:</td>
+                    <td style={{ padding: '8px 6px', textAlign: 'right' }}>{formatMoney(totalProjectBudget)}</td>
+                    <td style={{ padding: '8px 6px', textAlign: 'right', color: '#0369a1' }}>{formatMoney(costControl.totalPlannedToDate)}</td>
+                    <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                      {costControl.plannedPctOfTotal}% / {costControl.executedPctOfTotal}%
+                    </td>
+                    <td style={{ padding: '8px 6px', textAlign: 'right', color: '#ea580c' }}>{formatMoney(costControl.totalExecuted)}</td>
+                    <td style={{ padding: '8px 6px', textAlign: 'center' }}>—</td>
+                    <td style={{ padding: '8px 6px', textAlign: 'right', color: costControl.totalVariance > 0 ? '#dc2626' : '#059669' }}>
+                      {costControl.totalVariance > 0 ? '+' : ''}{formatMoney(costControl.totalVariance)}
+                    </td>
+                    <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                      <span style={{
+                        fontSize: '0.7rem',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        background: costControl.totalVariance > 0 ? '#fee2e2' : '#dcfce7',
+                        color: costControl.totalVariance > 0 ? '#991b1b' : '#166534'
+                      }}>
+                        {costControl.totalVariance > 0 ? 'Sobrecosto' : 'En Margen'}
+                      </span>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+
+              {/* Bloque de Firmas para Presentación Formal */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginTop: '30px', paddingTop: '20px', borderTop: '1px dashed #cbd5e1' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ height: '45px', borderBottom: '1px solid #94a3b8', margin: '0 20px 8px' }}></div>
+                  <strong style={{ fontSize: '0.78rem', color: '#0f172a', display: 'block' }}>Dirección Técnica de Obra</strong>
+                  <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Firma y Sello Profesional</span>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ height: '45px', borderBottom: '1px solid #94a3b8', margin: '0 20px 8px' }}></div>
+                  <strong style={{ fontSize: '0.78rem', color: '#0f172a', display: 'block' }}>Control de Gestión / Administración</strong>
+                  <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{bpsMeta.companyName}</span>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ height: '45px', borderBottom: '1px solid #94a3b8', margin: '0 20px 8px' }}></div>
+                  <strong style={{ fontSize: '0.78rem', color: '#0f172a', display: 'block' }}>Comitente / Propietario</strong>
+                  <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Aprobación y Recibido</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
+              <button
+                type="button"
+                className="oxi-btn oxi-btn-secondary"
+                onClick={() => setShowCostControlReportModal(false)}
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
