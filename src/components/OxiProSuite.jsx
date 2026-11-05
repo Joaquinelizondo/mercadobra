@@ -3638,6 +3638,16 @@ ${validation.message}
 
             <button
               type="button"
+              className="oxi-btn-back-classic"
+              onClick={handleClearAllSchedule}
+              title="Vaciar todas las tareas del cronograma para comenzar una obra propia en blanco desde cero"
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', borderColor: '#fca5a5', color: '#b91c1c', background: '#fef2f2', padding: '9px 14px', fontSize: '0.85rem' }}
+            >
+              🗑️ Vaciar Obra
+            </button>
+
+            <button
+              type="button"
               className="oxi-btn-ai"
               onClick={() => {
                 setShowAiModal(true)
@@ -3977,7 +3987,7 @@ ${validation.message}
                 className="oxi-btn-back-classic"
                 onClick={handleClearAllSchedule}
                 title="Vaciar todas las tareas del cronograma para comenzar una obra propia en blanco desde cero"
-                style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#b91c1c', borderColor: '#fca5a5' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#b91c1c', borderColor: '#fca5a5', background: '#fef2f2', fontWeight: 600 }}
               >
                 🗑️ Vaciar Cronograma
               </button>
