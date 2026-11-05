@@ -622,12 +622,14 @@ function exportRubrosCsv(rubros, projectName) {
 
 function exportCurvaSCsv(weeklyProgress, monthlyComp, projectName) {
   const weeklyHeaders = [
-    'Semana / Periodo', 'Rango Fechas', '% Programado (P0)', '% Real Certificado', 'Desvio (%)', 'Estado'
+    'Semana / Periodo', 'Rango Fechas', '% Programado (P0)', '% Real / Proyectado', 'Desvio (%)', 'Tipo / Estado'
   ]
   const weeklyRows = (weeklyProgress || []).map(w => {
     const hasReal = w.realPercent != null
     const delta = hasReal ? (w.realPercent - w.budgetZeroPercent).toFixed(1) : null
-    const status = !hasReal ? 'Pendiente' : Number(delta) > 0 ? 'Adelantada' : Number(delta) < 0 ? 'Atrasada' : 'En plazo'
+    const status = w.isProjected
+      ? 'Proyección a fin de obra'
+      : (!hasReal ? 'Pendiente' : Number(delta) > 0 ? 'Adelantada' : Number(delta) < 0 ? 'Atrasada' : 'En plazo')
     return [
       `"${w.week}"`,
       `"${w.dateRange || ''}"`,
@@ -1708,13 +1710,13 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
   const todayGanttPositionPct = useMemo(() => {
     const { startMs, endMs } = ganttBounds
-    const refDateMs = new Date(2026, 9, 18).getTime()
-    if (refDateMs >= startMs && refDateMs <= endMs) {
-      return ((refDateMs - startMs) / (endMs - startMs)) * 100
-    }
     const realNow = Date.now()
     if (realNow >= startMs && realNow <= endMs) {
       return ((realNow - startMs) / (endMs - startMs)) * 100
+    }
+    const refDateMs = new Date(2026, 9, 18).getTime()
+    if (refDateMs >= startMs && refDateMs <= endMs) {
+      return ((refDateMs - startMs) / (endMs - startMs)) * 100
     }
     return null
   }, [ganttBounds])
@@ -1989,96 +1991,126 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     if (minMs === Infinity || maxMs === -Infinity) return DEFAULT_WEEKLY_PROGRESS
 
     const totalDays = Math.max(7, Math.round((maxMs - minMs) / 86400000))
-    const totalBudget = schedule.reduce((sum, t) => sum + getTaskBudget(t), 0)
+    const totalBudget = schedule.reduce((sum, t) => sum + getTaskBudget(t, projectSocialLawsRate / 100, laborCategories), 0)
     if (totalBudget <= 0) return DEFAULT_WEEKLY_PROGRESS
 
-    const weekCount = Math.min(20, Math.max(6, Math.ceil(totalDays / 7)))
-    const stepMs = (maxMs - minMs) / weekCount
+    // 10 períodos de control ejecutivo estándar
+    const periodCount = 10
+    const stepMs = (maxMs - minMs) / periodCount
 
+    const realNow = Date.now()
     const refDateMs = new Date(2026, 9, 18).getTime()
-    const todayMs = (refDateMs >= minMs && refDateMs <= maxMs) ? refDateMs : Date.now()
+    let todayMs = realNow
+    if (todayMs < minMs || todayMs > maxMs) {
+      if (refDateMs >= minMs && refDateMs <= maxMs) {
+        todayMs = refDateMs
+      } else {
+        todayMs = minMs + (maxMs - minMs) * 0.35
+      }
+    }
+
+    // Calcular avance real certificado global de la obra al momento de hoy
+    let totalCertifiedVal = 0
+    schedule.forEach(t => {
+      const pct = Math.min(100, Math.max(0, Number(t.progressPercent) || 0))
+      totalCertifiedVal += getTaskBudget(t, projectSocialLawsRate / 100, laborCategories) * (pct / 100)
+    })
+    const totalCertifiedPct = Number(Math.min(100, Math.max(0, (totalCertifiedVal / totalBudget) * 100)).toFixed(1))
+
+    // Identificar período actual de control donde se ubica 'Hoy'
+    let currentPeriodIdx = 1
+    for (let p = 1; p <= periodCount; p++) {
+      const pCutMs = minMs + p * stepMs
+      if (todayMs <= pCutMs) {
+        currentPeriodIdx = p
+        break
+      }
+    }
+    if (todayMs > minMs + periodCount * stepMs) currentPeriodIdx = periodCount
 
     const weeks = []
-    let prevRealPercent = 0
+    let prevReal = 0
 
-    for (let w = 1; w <= weekCount; w++) {
-      const wCutMs = minMs + w * stepMs
-      const wStartMs = minMs + (w - 1) * stepMs
-      const startD = new Date(wStartMs).toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit' })
-      const endD = new Date(wCutMs).toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit' })
+    for (let p = 1; p <= periodCount; p++) {
+      const pCutMs = minMs + p * stepMs
+      const pStartMs = minMs + (p - 1) * stepMs
+      const startD = new Date(pStartMs).toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit' })
+      const endD = new Date(pCutMs).toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit' })
 
+      // Plan Contractual P0 (Línea Base S-curve completa 0% a 100%)
       let cumPlanVal = 0
-      let cumRealVal = 0
-      const isPastOrCurrent = wStartMs <= todayMs
-
       schedule.forEach(t => {
         const tStart = parseDateLocal(t.startDate).getTime()
         const tEnd = parseDateLocal(t.endDate).getTime()
-        const tBudget = getTaskBudget(t)
-        const realPct = Math.min(100, Math.max(0, Number(t.progressPercent) || 0))
+        const tBudget = getTaskBudget(t, projectSocialLawsRate / 100, laborCategories)
 
-        // Plan Contractual P0 (Línea Base S-curve completa 0% a 100%)
         let planRatio = 0
-        if (wCutMs >= tEnd) {
+        if (pCutMs >= tEnd) {
           planRatio = 1.0
-        } else if (wCutMs <= tStart) {
+        } else if (pCutMs <= tStart) {
           planRatio = 0
         } else {
-          planRatio = (wCutMs - tStart) / Math.max(1, tEnd - tStart)
+          planRatio = (pCutMs - tStart) / Math.max(1, tEnd - tStart)
         }
         cumPlanVal += tBudget * planRatio
-
-        // Avance Real Certificado hasta la fecha de corte
-        if (isPastOrCurrent) {
-          let realRatio = 0
-          if (wCutMs >= todayMs) {
-            realRatio = realPct / 100
-          } else if (wCutMs <= tStart) {
-            realRatio = 0
-          } else {
-            if (tEnd <= wCutMs) {
-              realRatio = realPct / 100
-            } else {
-              const timeProgress = (wCutMs - tStart) / Math.max(1, Math.min(todayMs, tEnd) - tStart)
-              realRatio = (realPct / 100) * Math.min(1, Math.max(0, timeProgress))
-            }
-          }
-          cumRealVal += tBudget * realRatio
-        }
       })
 
-      const budgetZeroPercent = w === weekCount
+      const budgetZeroPercent = p === periodCount
         ? 100.0
         : Number(Math.min(100, Math.max(0, (cumPlanVal / totalBudget) * 100)).toFixed(1))
 
-      let realPercent = null
-      let delta = null
-      let isAhead = true
+      let realPercent = 0
+      let isProjected = false
 
-      if (isPastOrCurrent) {
-        let rawReal = Number(Math.min(100, Math.max(0, (cumRealVal / totalBudget) * 100)).toFixed(1))
-        if (rawReal < prevRealPercent) rawReal = prevRealPercent
-        else prevRealPercent = rawReal
-
-        realPercent = rawReal
-        delta = Number((realPercent - budgetZeroPercent).toFixed(1))
-        isAhead = delta >= 0
+      if (p < currentPeriodIdx) {
+        // Avance Real histórico certificado proporcional a la fecha de corte
+        let histVal = 0
+        schedule.forEach(t => {
+          const tStart = parseDateLocal(t.startDate).getTime()
+          const tEnd = parseDateLocal(t.endDate).getTime()
+          const tBudget = getTaskBudget(t, projectSocialLawsRate / 100, laborCategories)
+          const realPct = Math.min(100, Math.max(0, Number(t.progressPercent) || 0))
+          if (pCutMs <= tStart) return
+          const progressTime = Math.min(1, (pCutMs - tStart) / Math.max(1, Math.min(todayMs, tEnd) - tStart))
+          histVal += tBudget * (realPct / 100) * progressTime
+        })
+        let valPct = Number(Math.min(totalCertifiedPct, Math.max(0, (histVal / totalBudget) * 100)).toFixed(1))
+        if (valPct < prevReal) valPct = prevReal
+        else prevReal = valPct
+        realPercent = valPct
+      } else if (p === currentPeriodIdx) {
+        // Período actual: coincide con el total físico certificado a la fecha
+        realPercent = totalCertifiedPct
+        prevReal = totalCertifiedPct
+      } else {
+        // Períodos futuros: Proyección estimada a fin de obra (Forecast EAC hacia el 100%)
+        isProjected = true
+        const remainingSteps = periodCount - currentPeriodIdx
+        const stepProgress = (100.0 - totalCertifiedPct) / Math.max(1, remainingSteps)
+        const proj = p === periodCount
+          ? 100.0
+          : Number((totalCertifiedPct + (p - currentPeriodIdx) * stepProgress).toFixed(1))
+        realPercent = proj
       }
 
+      const delta = Number((realPercent - budgetZeroPercent).toFixed(1))
+      const isAhead = delta >= 0
+
       weeks.push({
-        week: `Semana ${w}`,
+        week: `Semana ${p}`,
+        periodIndex: p,
         dateRange: `${startD} - ${endD}`,
         budgetZeroPercent,
         realPercent,
         delta,
         isAhead,
-        isFuture: !isPastOrCurrent,
-        isCurrent: wStartMs <= todayMs && wCutMs >= todayMs
+        isProjected,
+        isCurrent: p === currentPeriodIdx
       })
     }
 
     return weeks
-  }, [schedule])
+  }, [schedule, projectSocialLawsRate, laborCategories])
 
   // Alerts by rubro with detailed breakdown (MO + Leyes Sociales + Materiales)
   const rubroAlerts = useMemo(() => {
@@ -3429,9 +3461,7 @@ ${validation.message}
 
   // ── Handlers Punto 9: Cierre Semanal en 1 minuto ──
   function handleOpenWeeklyClose() {
-    const curWeek = dynamicWeeklyProgress.length > 0
-      ? dynamicWeeklyProgress[Math.min(dynamicWeeklyProgress.length - 1, 3)]?.week || 'Semana 4'
-      : 'Semana 4'
+    const curWeek = dynamicWeeklyProgress.find(w => w.isCurrent)?.week || dynamicWeeklyProgress[0]?.week || 'Semana 1'
     const progressMap = {}
     schedule.forEach(t => {
       progressMap[t.id] = Number(t.progressPercent) || 0
@@ -5224,6 +5254,10 @@ ${validation.message}
                   <span className="curva-s-legend-line" style={{ background: globalDelta >= 0 ? '#10b981' : '#ea580c' }} />
                   <span><strong>Real Certificado</strong></span>
                 </div>
+                <div className="curva-s-legend-item">
+                  <span className="curva-s-legend-line" style={{ background: globalDelta >= 0 ? '#10b981' : '#ea580c', borderTop: '2px dashed #047857', opacity: 0.8 }} />
+                  <span><strong>Proyección a Fin de Obra</strong></span>
+                </div>
                 {todayGanttPositionPct != null && (
                   <div className="curva-s-legend-item">
                     <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
@@ -5237,10 +5271,10 @@ ${validation.message}
             <div className="curva-s-svg-wrap">
               {(() => {
                 const svgW = 920
-                const svgH = 260
+                const svgH = 270
                 const padL = 50
-                const padR = 30
-                const padT = 25
+                const padR = 40
+                const padT = 30
                 const padB = 40
                 const pW = svgW - padL - padR
                 const pH = svgH - padT - padB
@@ -5250,33 +5284,42 @@ ${validation.message}
                 const coords = pts.map((w, i) => {
                   const x = padL + (i / Math.max(1, nPts - 1)) * pW
                   const yPlan = padT + pH - (Math.min(100, Math.max(0, w.budgetZeroPercent)) / 100) * pH
-                  const yReal = w.realPercent != null
-                    ? padT + pH - (Math.min(100, Math.max(0, w.realPercent)) / 100) * pH
-                    : null
+                  const yReal = padT + pH - (Math.min(100, Math.max(0, w.realPercent)) / 100) * pH
                   return { ...w, x, yPlan, yReal }
                 })
 
                 const planPointsStr = coords.map(p => `${p.x.toFixed(1)},${p.yPlan.toFixed(1)}`).join(' ')
                 const planAreaStr = `${padL},${padT + pH} ${planPointsStr} ${padL + pW},${padT + pH}`
 
-                const realCoords = coords.filter(p => p.yReal != null)
-                const realPointsStr = realCoords.map(p => `${p.x.toFixed(1)},${p.yReal.toFixed(1)}`).join(' ')
-                const realAreaStr = realCoords.length > 0
-                  ? `${padL},${padT + pH} ${realPointsStr} ${realCoords[realCoords.length - 1].x.toFixed(1)},${padT + pH}`
+                const solidCoords = coords.filter(p => !p.isProjected)
+                const solidPointsStr = solidCoords.map(p => `${p.x.toFixed(1)},${p.yReal.toFixed(1)}`).join(' ')
+                const solidAreaStr = solidCoords.length > 0
+                  ? `${padL},${padT + pH} ${solidPointsStr} ${solidCoords[solidCoords.length - 1].x.toFixed(1)},${padT + pH}`
                   : ''
 
-                const xToday = todayGanttPositionPct != null ? padL + (todayGanttPositionPct / 100) * pW : null
+                const projCoords = coords.filter((p, i) => p.isProjected || (!p.isProjected && i === solidCoords.length - 1))
+                const projPointsStr = projCoords.map(p => `${p.x.toFixed(1)},${p.yReal.toFixed(1)}`).join(' ')
+                const projAreaStr = projCoords.length > 0
+                  ? `${projCoords[0].x.toFixed(1)},${padT + pH} ${projPointsStr} ${projCoords[projCoords.length - 1].x.toFixed(1)},${padT + pH}`
+                  : ''
+
+                const currentPoint = coords.find(p => p.isCurrent) || solidCoords[solidCoords.length - 1] || coords[0]
+                const xToday = currentPoint ? currentPoint.x : (todayGanttPositionPct != null ? padL + (todayGanttPositionPct / 100) * pW : null)
 
                 return (
                   <svg viewBox={`0 0 ${svgW} ${svgH}`} className="curva-s-svg">
                     <defs>
                       <linearGradient id="planGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25" />
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.22" />
                         <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.02" />
                       </linearGradient>
                       <linearGradient id="realGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={globalDelta >= 0 ? '#10b981' : '#ea580c'} stopOpacity="0.30" />
-                        <stop offset="100%" stopColor={globalDelta >= 0 ? '#10b981' : '#ea580c'} stopOpacity="0.03" />
+                        <stop offset="0%" stopColor={globalDelta >= 0 ? '#10b981' : '#ea580c'} stopOpacity="0.32" />
+                        <stop offset="100%" stopColor={globalDelta >= 0 ? '#10b981' : '#ea580c'} stopOpacity="0.04" />
+                      </linearGradient>
+                      <linearGradient id="projGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={globalDelta >= 0 ? '#10b981' : '#ea580c'} stopOpacity="0.14" />
+                        <stop offset="100%" stopColor={globalDelta >= 0 ? '#10b981' : '#ea580c'} stopOpacity="0.01" />
                       </linearGradient>
                     </defs>
 
@@ -5311,8 +5354,11 @@ ${validation.message}
                     {/* Area Under Plan */}
                     <polygon points={planAreaStr} fill="url(#planGrad)" />
 
-                    {/* Area Under Real */}
-                    {realAreaStr && <polygon points={realAreaStr} fill="url(#realGrad)" />}
+                    {/* Area Under Real Certificado */}
+                    {solidAreaStr && <polygon points={solidAreaStr} fill="url(#realGrad)" />}
+
+                    {/* Area Under Proyección */}
+                    {projAreaStr && <polygon points={projAreaStr} fill="url(#projGrad)" />}
 
                     {/* Vertical guidelines at each week */}
                     {coords.map((p, idx) => (
@@ -5341,7 +5387,7 @@ ${validation.message}
                         />
                         <rect
                           x={xToday - 22}
-                          y={padT - 20}
+                          y={padT - 22}
                           width={44}
                           height={18}
                           rx={4}
@@ -5349,7 +5395,7 @@ ${validation.message}
                         />
                         <text
                           x={xToday}
-                          y={padT - 7}
+                          y={padT - 9}
                           textAnchor="middle"
                           fill="#ffffff"
                           fontSize="10"
@@ -5369,10 +5415,23 @@ ${validation.message}
                       strokeDasharray="5 3"
                     />
 
-                    {/* Real Line (up to current certified date) */}
-                    {realPointsStr && (
+                    {/* Proyección Line (Forecast EAC) */}
+                    {projPointsStr && (
                       <polyline
-                        points={realPointsStr}
+                        points={projPointsStr}
+                        fill="none"
+                        stroke={globalDelta >= 0 ? '#10b981' : '#ea580c'}
+                        strokeWidth="2.5"
+                        strokeDasharray="5 4"
+                        strokeLinecap="round"
+                        opacity="0.85"
+                      />
+                    )}
+
+                    {/* Real Line (Solid up to current certified date) */}
+                    {solidPointsStr && (
+                      <polyline
+                        points={solidPointsStr}
                         fill="none"
                         stroke={globalDelta >= 0 ? '#10b981' : '#ea580c'}
                         strokeWidth="3.5"
@@ -5382,17 +5441,15 @@ ${validation.message}
 
                     {/* X-Axis Labels */}
                     {coords.map((p, idx) => {
-                      const showLabel = nPts <= 12 || idx % 2 === 0 || idx === nPts - 1
-                      if (!showLabel) return null
                       return (
                         <text
                           key={`xlabel-${idx}`}
                           x={p.x}
                           y={padT + pH + 20}
                           textAnchor="middle"
-                          fill="#64748b"
+                          fill={p.isCurrent ? '#ef4444' : '#64748b'}
                           fontSize="10"
-                          fontWeight="600"
+                          fontWeight={p.isCurrent ? '700' : '600'}
                         >
                           {p.week.replace('Semana ', 'S')}
                         </text>
@@ -5415,44 +5472,78 @@ ${validation.message}
                       </circle>
                     ))}
 
-                    {/* Real Dots */}
-                    {realCoords.map((p, idx) => {
+                    {/* Real & Projected Dots */}
+                    {coords.map((p, idx) => {
                       const isAhead = p.delta >= 0
-                      const isLastReal = idx === realCoords.length - 1
-                      return (
-                        <g key={`realdot-${idx}`}>
-                          {isLastReal && (
+                      const isCurrent = p.isCurrent
+                      const isLast = idx === coords.length - 1
+                      const dotColor = isAhead ? '#10b981' : '#ea580c'
+
+                      if (p.isProjected) {
+                        return (
+                          <g key={`realdot-${idx}`}>
                             <circle
                               cx={p.x}
                               cy={p.yReal}
-                              r="9"
-                              fill="none"
-                              stroke={isAhead ? '#10b981' : '#ea580c'}
+                              r="4"
+                              fill="#ffffff"
+                              stroke={dotColor}
                               strokeWidth="2"
-                              opacity="0.4"
+                              strokeDasharray="2 2"
+                              className="curva-s-dot"
+                            >
+                              <title>{`${p.week} (${p.dateRange})\n• Proyección Estimada (EAC): ${p.realPercent}%\n• Plan Base: ${p.budgetZeroPercent}%\n• Desvío proyectado: ${p.delta > 0 ? '+' : ''}${p.delta}%`}</title>
+                            </circle>
+                            {isLast && (
+                              <text
+                                x={p.x - 4}
+                                y={p.yReal - 10}
+                                textAnchor="end"
+                                fill="#047857"
+                                fontSize="10"
+                                fontWeight="700"
+                              >
+                                100% Meta
+                              </text>
+                            )}
+                          </g>
+                        )
+                      }
+
+                      return (
+                        <g key={`realdot-${idx}`}>
+                          {isCurrent && (
+                            <circle
+                              cx={p.x}
+                              cy={p.yReal}
+                              r="10"
+                              fill="none"
+                              stroke={dotColor}
+                              strokeWidth="2"
+                              opacity="0.5"
                             />
                           )}
                           <circle
                             cx={p.x}
                             cy={p.yReal}
-                            r={isLastReal ? "5.5" : "4.5"}
-                            fill={isAhead ? '#10b981' : '#ea580c'}
+                            r={isCurrent ? "5.5" : "4"}
+                            fill={dotColor}
                             stroke="#ffffff"
                             strokeWidth="2"
                             className="curva-s-dot"
                           >
                             <title>{`${p.week} (${p.dateRange})\n• Real Certificado: ${p.realPercent}%\n• Plan Base: ${p.budgetZeroPercent}%\n• Desvío: ${p.delta > 0 ? '+' : ''}${p.delta}%\n• Estado: ${isAhead ? 'En plazo' : 'Atrasada'}`}</title>
                           </circle>
-                          {isLastReal && (
+                          {isCurrent && (
                             <text
                               x={p.x}
-                              y={p.yReal - 12}
+                              y={p.yReal - 13}
                               textAnchor="middle"
                               fill={isAhead ? '#047857' : '#c2410c'}
                               fontSize="11"
                               fontWeight="bold"
                             >
-                              {p.realPercent}% Real
+                              {p.realPercent}% Real (Hoy)
                             </text>
                           )}
                         </g>
@@ -5470,19 +5561,33 @@ ${validation.message}
               <div>
                 <span className="box-eyebrow">CURVA S SEMANAL DE CONTROL FÍSICO</span>
                 <h3>Avance Real vs Presupuesto Cero Semanal (en %)</h3>
-                <p>Compara el avance programado base ("Presupuesto Cero") con la ejecución real en sitio.</p>
+                <p>Compara el avance programado base ("Presupuesto Cero") con la ejecución real en sitio y la proyección a fin de obra.</p>
               </div>
             </div>
 
             <div className="weekly-grid">
               {dynamicWeeklyProgress.map((w, idx) => {
-                const hasReal = w.realPercent != null
-                const delta = hasReal ? (w.realPercent - w.budgetZeroPercent).toFixed(1) : null
-                const isAhead = hasReal ? Number(delta) >= 0 : true
+                const isAhead = w.isAhead
+                const delta = w.delta
                 return (
-                  <div key={idx} className="weekly-card" style={{ opacity: w.isFuture ? 0.88 : 1 }}>
+                  <div
+                    key={idx}
+                    className="weekly-card"
+                    style={{
+                      opacity: w.isProjected ? 0.92 : 1,
+                      border: w.isCurrent ? '2px solid #ef4444' : undefined,
+                      boxShadow: w.isCurrent ? '0 0 0 2px rgba(239, 68, 68, 0.15)' : undefined
+                    }}
+                  >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                      <span className="weekly-title">{w.week}</span>
+                      <span className="weekly-title">
+                        {w.week}
+                        {w.isCurrent && (
+                          <span style={{ marginLeft: '6px', fontSize: '0.68rem', padding: '1px 5px', borderRadius: '4px', background: '#fee2e2', color: '#b91c1c', fontWeight: 'bold' }}>
+                            Hoy
+                          </span>
+                        )}
+                      </span>
                       {w.dateRange && (
                         <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{w.dateRange}</span>
                       )}
@@ -5497,30 +5602,29 @@ ${validation.message}
                         <span className="bar-val font-semibold">{w.budgetZeroPercent}%</span>
                       </div>
                       <div className="bar-row">
-                        <span className="bar-tag">Real:</span>
+                        <span className="bar-tag">{w.isProjected ? 'Proy:' : 'Real:'}</span>
                         <div className="bar-bg">
-                          {hasReal ? (
-                            <div className={`bar-fill real ${isAhead ? 'ahead' : 'delayed'}`} style={{ width: `${Math.min(100, w.realPercent)}%` }} />
-                          ) : (
-                            <div style={{ height: '100%', background: '#f1f5f9', borderRadius: '4px' }} />
-                          )}
+                          <div
+                            className={`bar-fill real ${isAhead ? 'ahead' : 'delayed'}`}
+                            style={{
+                              width: `${Math.min(100, w.realPercent)}%`,
+                              opacity: w.isProjected ? 0.8 : 1,
+                              borderStyle: w.isProjected ? 'dashed' : 'solid'
+                            }}
+                          />
                         </div>
                         <span className="bar-val font-bold">
-                          {hasReal ? `${w.realPercent}%` : '—'}
+                          {w.realPercent}%
                         </span>
                       </div>
                     </div>
 
                     <div className="weekly-delta">
-                      {hasReal ? (
-                        <span className={`delta-badge ${isAhead ? 'ahead' : 'delayed'}`}>
-                          {isAhead ? `+${delta}% en plazo` : `${delta}% atraso`}
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic' }}>
-                          A ejecutar según cronograma
-                        </span>
-                      )}
+                      <span className={`delta-badge ${isAhead ? 'ahead' : 'delayed'}`}>
+                        {w.isProjected
+                          ? `${isAhead ? '+' : ''}${delta}% proyectado`
+                          : (isAhead ? `+${delta}% en plazo` : `${delta}% atraso`)}
+                      </span>
                     </div>
                   </div>
                 )
