@@ -121,3 +121,24 @@ test('recalculateScheduleDependencies preserva corrimientos por lluvia y no retr
   assert.equal(t2.startDate, '2026-10-28')
   assert.equal(t2.workDays, 10)
 })
+
+test('recalculateScheduleDependencies solo empuja sucesoras vinculadas y deja intactas las tareas independientes no postergadas', () => {
+  const schedule = [
+    // Tarea exterior postergada por lluvia
+    { id: 't1', name: 'Hormigón Exterior', startDate: '2026-10-01', endDate: '2026-10-14', workDays: 10 },
+    // Tarea que depende de t1
+    { id: 't2', name: 'Desencofrado', dependsOnTaskId: 't1', dependencyType: 'FS', lagDays: 0, workDays: 3, startDate: '2026-10-08', endDate: '2026-10-10' },
+    // Tarea interior independiente que NO se postergó
+    { id: 't3', name: 'Yeso Interior', startDate: '2026-10-05', endDate: '2026-10-12', workDays: 6 }
+  ]
+
+  const updated = recalculateScheduleDependencies(schedule)
+  const t2 = updated.find(t => t.id === 't2')
+  const t3 = updated.find(t => t.id === 't3')
+
+  // t2 debe empujarse tras t1 (termina 14 oct, siguiente día hábil 15 oct)
+  assert.equal(t2.startDate, '2026-10-15')
+  // t3 no depende de nadie y no fue postergada, debe mantener intactas sus fechas
+  assert.equal(t3.startDate, '2026-10-05')
+  assert.equal(t3.endDate, '2026-10-12')
+})

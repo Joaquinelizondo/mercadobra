@@ -625,14 +625,15 @@ function exportCurvaSCsv(weeklyProgress, monthlyComp, projectName) {
     'Semana / Periodo', 'Rango Fechas', '% Programado (P0)', '% Real Certificado', 'Desvio (%)', 'Estado'
   ]
   const weeklyRows = (weeklyProgress || []).map(w => {
-    const delta = (w.realPercent - w.budgetZeroPercent).toFixed(1)
-    const status = Number(delta) > 0 ? 'Adelantada' : Number(delta) < 0 ? 'Atrasada' : 'En plazo'
+    const hasReal = w.realPercent != null
+    const delta = hasReal ? (w.realPercent - w.budgetZeroPercent).toFixed(1) : null
+    const status = !hasReal ? 'Pendiente' : Number(delta) > 0 ? 'Adelantada' : Number(delta) < 0 ? 'Atrasada' : 'En plazo'
     return [
       `"${w.week}"`,
       `"${w.dateRange || ''}"`,
       `${w.budgetZeroPercent}%`,
-      `${w.realPercent}%`,
-      `${delta}%`,
+      hasReal ? `${w.realPercent}%` : '"—"',
+      hasReal ? `${delta}%` : '"—"',
       `"${status}"`
     ]
   })
@@ -1302,6 +1303,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     days: 2,
     reason: 'Lluvias y precipitaciones copiosas',
     recordDocument: true,
+    affectAll: true,
+    selectedTaskIds: [],
+    cascadeDependencies: true,
     notes: 'Suspensión de hormigonado y tareas exteriores por temporal con anegamiento.'
   })
 
@@ -1533,28 +1537,67 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     const eventDate = rainForm.date
     if (!eventDate) return []
 
-    return schedule
-      .filter(t => (t.progressPercent || 0) < 100 && t.endDate >= eventDate)
-      .map(t => {
-        let newStart = t.startDate
-        let newEnd = t.endDate
+    const candidateTasks = schedule.filter(t => (Number(t.progressPercent) || 0) < 100 && t.endDate >= eventDate)
+
+    const isDirectlySelected = (id) => {
+      if (rainForm.affectAll) return true
+      return Array.isArray(rainForm.selectedTaskIds) && rainForm.selectedTaskIds.includes(id)
+    }
+
+    // Paso 1: corrimiento directo a las tareas seleccionadas
+    const directlyShifted = candidateTasks.map(t => {
+      const selected = isDirectlySelected(t.id)
+      let newStart = t.startDate
+      let newEnd = t.endDate
+
+      if (selected) {
         if (t.startDate <= eventDate && t.endDate >= eventDate) {
           newEnd = addWorkingDays(t.endDate, delayDays)
         } else if (t.startDate > eventDate) {
           newStart = addWorkingDays(t.startDate, delayDays)
           newEnd = addWorkingDays(t.endDate, delayDays)
         }
+      }
+
+      return {
+        id: t.id,
+        name: t.name,
+        dependsOnTaskId: t.dependsOnTaskId || t.predecessorId,
+        selected,
+        isOngoing: t.startDate <= eventDate && t.endDate >= eventDate,
+        oldStart: t.startDate,
+        oldEnd: t.endDate,
+        newStart,
+        newEnd
+      }
+    })
+
+    // Paso 2: si la cascada CPM está activa, recalcular dependencias para previsualizar sucesoras empujadas
+    if (rainForm.cascadeDependencies !== false) {
+      const simSchedule = schedule.map(t => {
+        const found = directlyShifted.find(ds => ds.id === t.id)
+        if (found) {
+          return { ...t, startDate: found.newStart, endDate: found.newEnd }
+        }
+        return t
+      })
+      const recalced = recalculateScheduleDependencies(simSchedule)
+      return directlyShifted.map(item => {
+        const updated = recalced.find(t => t.id === item.id)
+        const finalStart = updated ? updated.startDate : item.newStart
+        const finalEnd = updated ? updated.endDate : item.newEnd
+        const isCascaded = !item.selected && (finalStart !== item.oldStart || finalEnd !== item.oldEnd)
         return {
-          id: t.id,
-          name: t.name,
-          oldStart: t.startDate,
-          oldEnd: t.endDate,
-          newStart,
-          newEnd,
-          isOngoing: t.startDate <= eventDate && t.endDate >= eventDate
+          ...item,
+          newStart: finalStart,
+          newEnd: finalEnd,
+          isCascaded
         }
       })
-  }, [showRainModal, rainForm.date, rainForm.days, schedule])
+    }
+
+    return directlyShifted
+  }, [showRainModal, rainForm.date, rainForm.days, rainForm.affectAll, rainForm.selectedTaskIds, rainForm.cascadeDependencies, schedule])
 
   // Gantt State & Calculations
   const [scheduleViewMode, setScheduleViewMode] = useState('combined')
@@ -1893,7 +1936,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
           const realPct = Math.min(100, Math.max(0, Number(t.progressPercent) || 0))
 
           monthBudgeted += tBudget * ratio
-          monthPlanned += tBudget * (plannedPct / 100) * ratio
+          monthPlanned += tBudget * ratio
           monthExecuted += tBudget * (realPct / 100) * ratio
         }
       })
@@ -1949,10 +1992,15 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     const totalBudget = schedule.reduce((sum, t) => sum + getTaskBudget(t), 0)
     if (totalBudget <= 0) return DEFAULT_WEEKLY_PROGRESS
 
-    const weekCount = Math.min(20, Math.max(4, Math.ceil(totalDays / 7)))
+    const weekCount = Math.min(20, Math.max(6, Math.ceil(totalDays / 7)))
     const stepMs = (maxMs - minMs) / weekCount
 
+    const refDateMs = new Date(2026, 9, 18).getTime()
+    const todayMs = (refDateMs >= minMs && refDateMs <= maxMs) ? refDateMs : Date.now()
+
     const weeks = []
+    let prevRealPercent = 0
+
     for (let w = 1; w <= weekCount; w++) {
       const wCutMs = minMs + w * stepMs
       const wStartMs = minMs + (w - 1) * stepMs
@@ -1961,39 +2009,61 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
       let cumPlanVal = 0
       let cumRealVal = 0
+      const isPastOrCurrent = wStartMs <= todayMs
 
       schedule.forEach(t => {
         const tStart = parseDateLocal(t.startDate).getTime()
         const tEnd = parseDateLocal(t.endDate).getTime()
         const tBudget = getTaskBudget(t)
-        const plannedPct = getTaskPlannedPercent(t)
         const realPct = Math.min(100, Math.max(0, Number(t.progressPercent) || 0))
 
+        // Plan Contractual P0 (Línea Base S-curve completa 0% a 100%)
         let planRatio = 0
         if (wCutMs >= tEnd) {
-          planRatio = plannedPct / 100
+          planRatio = 1.0
         } else if (wCutMs <= tStart) {
           planRatio = 0
         } else {
-          planRatio = (plannedPct / 100) * ((wCutMs - tStart) / Math.max(1, tEnd - tStart))
+          planRatio = (wCutMs - tStart) / Math.max(1, tEnd - tStart)
         }
-
-        let realRatio = 0
-        if (wCutMs >= tEnd) {
-          realRatio = realPct / 100
-        } else if (wCutMs <= tStart) {
-          realRatio = 0
-        } else {
-          realRatio = (realPct / 100) * ((wCutMs - tStart) / Math.max(1, tEnd - tStart))
-        }
-
         cumPlanVal += tBudget * planRatio
-        cumRealVal += tBudget * realRatio
+
+        // Avance Real Certificado hasta la fecha de corte
+        if (isPastOrCurrent) {
+          let realRatio = 0
+          if (wCutMs >= todayMs) {
+            realRatio = realPct / 100
+          } else if (wCutMs <= tStart) {
+            realRatio = 0
+          } else {
+            if (tEnd <= wCutMs) {
+              realRatio = realPct / 100
+            } else {
+              const timeProgress = (wCutMs - tStart) / Math.max(1, Math.min(todayMs, tEnd) - tStart)
+              realRatio = (realPct / 100) * Math.min(1, Math.max(0, timeProgress))
+            }
+          }
+          cumRealVal += tBudget * realRatio
+        }
       })
 
-      const budgetZeroPercent = Number(((cumPlanVal / totalBudget) * 100).toFixed(1))
-      const realPercent = Number(((cumRealVal / totalBudget) * 100).toFixed(1))
-      const delta = Number((realPercent - budgetZeroPercent).toFixed(1))
+      const budgetZeroPercent = w === weekCount
+        ? 100.0
+        : Number(Math.min(100, Math.max(0, (cumPlanVal / totalBudget) * 100)).toFixed(1))
+
+      let realPercent = null
+      let delta = null
+      let isAhead = true
+
+      if (isPastOrCurrent) {
+        let rawReal = Number(Math.min(100, Math.max(0, (cumRealVal / totalBudget) * 100)).toFixed(1))
+        if (rawReal < prevRealPercent) rawReal = prevRealPercent
+        else prevRealPercent = rawReal
+
+        realPercent = rawReal
+        delta = Number((realPercent - budgetZeroPercent).toFixed(1))
+        isAhead = delta >= 0
+      }
 
       weeks.push({
         week: `Semana ${w}`,
@@ -2001,7 +2071,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         budgetZeroPercent,
         realPercent,
         delta,
-        isAhead: delta >= 0
+        isAhead,
+        isFuture: !isPastOrCurrent,
+        isCurrent: wStartMs <= todayMs && wCutMs >= todayMs
       })
     }
 
@@ -2513,12 +2585,22 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     const eventDate = rainForm.date
     if (!eventDate) return
 
+    const isDirectlySelected = (id) => {
+      if (rainForm.affectAll) return true
+      return Array.isArray(rainForm.selectedTaskIds) && rainForm.selectedTaskIds.includes(id)
+    }
+
     let affectedTasksCount = 0
     const updatedSchedule = schedule.map(t => {
       // Don't shift completed tasks
       if (Number(t.progressPercent) === 100) return t
       // Don't shift tasks that ended strictly before the rain event
       if (t.endDate < eventDate) return t
+
+      const selected = isDirectlySelected(t.id)
+      if (!selected) {
+        return t
+      }
 
       affectedTasksCount++
       let newStart = t.startDate
@@ -2547,7 +2629,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     })
 
     if (affectedTasksCount === 0) {
-      alert('No se encontraron tareas activas o futuras a partir de la fecha seleccionada.')
+      alert('Por favor selecciona al menos una tarea activa o futura para postergar.')
       return
     }
 
@@ -2572,13 +2654,13 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         uploadedAt: new Date().toISOString().split('T')[0],
         uploadedBy: 'Dirección de Obra',
         status: 'aprobado',
-        notes: `Suspensión por ${rainForm.reason} (+${delayDays}d hábiles). Se corrieron ${affectedTasksCount} tareas en cascada. ${rainForm.notes || ''}`,
+        notes: `Suspensión por ${rainForm.reason} (+${delayDays}d hábiles). Se postergaron ${affectedTasksCount} tareas seleccionadas${rainForm.cascadeDependencies !== false ? ' con ajuste en cascada' : ''}. ${rainForm.notes || ''}`,
         history: [
           {
             version: 'v1.0',
             date: eventDate,
             status: 'aprobado',
-            notes: `Homologación técnica de suspensión climática (+${delayDays}d hábiles)`
+            notes: `Homologación técnica de suspensión climática (+${delayDays}d hábiles) para ${affectedTasksCount} tareas.`
           }
         ]
       }
@@ -2600,7 +2682,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       }
     }
 
-    const finalSchedule = recalculateScheduleDependencies(updatedSchedule)
+    const finalSchedule = rainForm.cascadeDependencies !== false
+      ? recalculateScheduleDependencies(updatedSchedule)
+      : updatedSchedule
     const newRainLogs = [logEntry, ...rainLogs]
     setRainLogs(newRainLogs)
     setSchedule(finalSchedule)
@@ -3807,11 +3891,18 @@ ${validation.message}
                 type="button"
                 className="oxi-btn-rain"
                 onClick={() => {
+                  const eventDate = '2026-10-18'
+                  const candidateIds = schedule
+                    .filter(t => (Number(t.progressPercent) || 0) < 100 && t.endDate >= eventDate)
+                    .map(t => t.id)
                   setRainForm({
-                    date: '2026-10-18',
+                    date: eventDate,
                     days: 2,
                     reason: 'Lluvias y precipitaciones copiosas',
                     recordDocument: true,
+                    affectAll: true,
+                    selectedTaskIds: candidateIds,
+                    cascadeDependencies: true,
                     notes: 'Suspensión preventiva de hormigonado y trabajos en altura por temporal.'
                   })
                   setShowRainModal(true)
@@ -5069,14 +5160,20 @@ ${validation.message}
                 const coords = pts.map((w, i) => {
                   const x = padL + (i / Math.max(1, nPts - 1)) * pW
                   const yPlan = padT + pH - (Math.min(100, Math.max(0, w.budgetZeroPercent)) / 100) * pH
-                  const yReal = padT + pH - (Math.min(100, Math.max(0, w.realPercent)) / 100) * pH
+                  const yReal = w.realPercent != null
+                    ? padT + pH - (Math.min(100, Math.max(0, w.realPercent)) / 100) * pH
+                    : null
                   return { ...w, x, yPlan, yReal }
                 })
 
                 const planPointsStr = coords.map(p => `${p.x.toFixed(1)},${p.yPlan.toFixed(1)}`).join(' ')
-                const realPointsStr = coords.map(p => `${p.x.toFixed(1)},${p.yReal.toFixed(1)}`).join(' ')
                 const planAreaStr = `${padL},${padT + pH} ${planPointsStr} ${padL + pW},${padT + pH}`
-                const realAreaStr = `${padL},${padT + pH} ${realPointsStr} ${padL + pW},${padT + pH}`
+
+                const realCoords = coords.filter(p => p.yReal != null)
+                const realPointsStr = realCoords.map(p => `${p.x.toFixed(1)},${p.yReal.toFixed(1)}`).join(' ')
+                const realAreaStr = realCoords.length > 0
+                  ? `${padL},${padT + pH} ${realPointsStr} ${realCoords[realCoords.length - 1].x.toFixed(1)},${padT + pH}`
+                  : ''
 
                 const xToday = todayGanttPositionPct != null ? padL + (todayGanttPositionPct / 100) * pW : null
 
@@ -5125,7 +5222,7 @@ ${validation.message}
                     <polygon points={planAreaStr} fill="url(#planGrad)" />
 
                     {/* Area Under Real */}
-                    <polygon points={realAreaStr} fill="url(#realGrad)" />
+                    {realAreaStr && <polygon points={realAreaStr} fill="url(#realGrad)" />}
 
                     {/* Vertical guidelines at each week */}
                     {coords.map((p, idx) => (
@@ -5182,14 +5279,16 @@ ${validation.message}
                       strokeDasharray="5 3"
                     />
 
-                    {/* Real Line */}
-                    <polyline
-                      points={realPointsStr}
-                      fill="none"
-                      stroke={globalDelta >= 0 ? '#10b981' : '#ea580c'}
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                    />
+                    {/* Real Line (up to current certified date) */}
+                    {realPointsStr && (
+                      <polyline
+                        points={realPointsStr}
+                        fill="none"
+                        stroke={globalDelta >= 0 ? '#10b981' : '#ea580c'}
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                      />
+                    )}
 
                     {/* X-Axis Labels */}
                     {coords.map((p, idx) => {
@@ -5227,21 +5326,46 @@ ${validation.message}
                     ))}
 
                     {/* Real Dots */}
-                    {coords.map((p, idx) => {
+                    {realCoords.map((p, idx) => {
                       const isAhead = p.delta >= 0
+                      const isLastReal = idx === realCoords.length - 1
                       return (
-                        <circle
-                          key={`realdot-${idx}`}
-                          cx={p.x}
-                          cy={p.yReal}
-                          r="4.5"
-                          fill={isAhead ? '#10b981' : '#ea580c'}
-                          stroke="#ffffff"
-                          strokeWidth="2"
-                          className="curva-s-dot"
-                        >
-                          <title>{`${p.week} (${p.dateRange})\n• Real Certificado: ${p.realPercent}%\n• Desvío: ${p.delta > 0 ? '+' : ''}${p.delta}%\n• Estado: ${isAhead ? 'En plazo' : 'Atrasada'}`}</title>
-                        </circle>
+                        <g key={`realdot-${idx}`}>
+                          {isLastReal && (
+                            <circle
+                              cx={p.x}
+                              cy={p.yReal}
+                              r="9"
+                              fill="none"
+                              stroke={isAhead ? '#10b981' : '#ea580c'}
+                              strokeWidth="2"
+                              opacity="0.4"
+                            />
+                          )}
+                          <circle
+                            cx={p.x}
+                            cy={p.yReal}
+                            r={isLastReal ? "5.5" : "4.5"}
+                            fill={isAhead ? '#10b981' : '#ea580c'}
+                            stroke="#ffffff"
+                            strokeWidth="2"
+                            className="curva-s-dot"
+                          >
+                            <title>{`${p.week} (${p.dateRange})\n• Real Certificado: ${p.realPercent}%\n• Plan Base: ${p.budgetZeroPercent}%\n• Desvío: ${p.delta > 0 ? '+' : ''}${p.delta}%\n• Estado: ${isAhead ? 'En plazo' : 'Atrasada'}`}</title>
+                          </circle>
+                          {isLastReal && (
+                            <text
+                              x={p.x}
+                              y={p.yReal - 12}
+                              textAnchor="middle"
+                              fill={isAhead ? '#047857' : '#c2410c'}
+                              fontSize="11"
+                              fontWeight="bold"
+                            >
+                              {p.realPercent}% Real
+                            </text>
+                          )}
+                        </g>
                       )
                     })}
                   </svg>
@@ -5262,10 +5386,11 @@ ${validation.message}
 
             <div className="weekly-grid">
               {dynamicWeeklyProgress.map((w, idx) => {
-                const delta = (w.realPercent - w.budgetZeroPercent).toFixed(1)
-                const isAhead = Number(delta) >= 0
+                const hasReal = w.realPercent != null
+                const delta = hasReal ? (w.realPercent - w.budgetZeroPercent).toFixed(1) : null
+                const isAhead = hasReal ? Number(delta) >= 0 : true
                 return (
-                  <div key={idx} className="weekly-card">
+                  <div key={idx} className="weekly-card" style={{ opacity: w.isFuture ? 0.88 : 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                       <span className="weekly-title">{w.week}</span>
                       {w.dateRange && (
@@ -5279,21 +5404,33 @@ ${validation.message}
                         <div className="bar-bg">
                           <div className="bar-fill plan" style={{ width: `${Math.min(100, w.budgetZeroPercent)}%` }} />
                         </div>
-                        <span className="bar-val">{w.budgetZeroPercent}%</span>
+                        <span className="bar-val font-semibold">{w.budgetZeroPercent}%</span>
                       </div>
                       <div className="bar-row">
                         <span className="bar-tag">Real:</span>
                         <div className="bar-bg">
-                          <div className={`bar-fill real ${isAhead ? 'ahead' : 'delayed'}`} style={{ width: `${Math.min(100, w.realPercent)}%` }} />
+                          {hasReal ? (
+                            <div className={`bar-fill real ${isAhead ? 'ahead' : 'delayed'}`} style={{ width: `${Math.min(100, w.realPercent)}%` }} />
+                          ) : (
+                            <div style={{ height: '100%', background: '#f1f5f9', borderRadius: '4px' }} />
+                          )}
                         </div>
-                        <span className="bar-val font-bold">{w.realPercent}%</span>
+                        <span className="bar-val font-bold">
+                          {hasReal ? `${w.realPercent}%` : '—'}
+                        </span>
                       </div>
                     </div>
 
                     <div className="weekly-delta">
-                      <span className={`delta-badge ${isAhead ? 'ahead' : 'delayed'}`}>
-                        {isAhead ? `+${delta}% en plazo` : `${delta}% atraso`}
-                      </span>
+                      {hasReal ? (
+                        <span className={`delta-badge ${isAhead ? 'ahead' : 'delayed'}`}>
+                          {isAhead ? `+${delta}% en plazo` : `${delta}% atraso`}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                          A ejecutar según cronograma
+                        </span>
+                      )}
                     </div>
                   </div>
                 )
@@ -7940,38 +8077,169 @@ ${validation.message}
                 </span>
               </label>
 
-              {/* Live Preview of Affected Tasks */}
+              {/* Selector de Alcance de la Postergación */}
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px', margin: '8px 0' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>
+                  ¿Qué tareas deseas postergar por este evento?
+                </div>
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0 }}>
+                    <input
+                      type="radio"
+                      name="rainScope"
+                      checked={rainForm.affectAll === true}
+                      onChange={() => {
+                        const allIds = previewShiftedTasks.map(t => t.id)
+                        setRainForm(prev => ({ ...prev, affectAll: true, selectedTaskIds: allIds }))
+                      }}
+                    />
+                    <span style={{ fontSize: '0.83rem', fontWeight: 600, color: '#0f172a' }}>
+                      Todas las tareas activas y futuras
+                    </span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0 }}>
+                    <input
+                      type="radio"
+                      name="rainScope"
+                      checked={rainForm.affectAll === false}
+                      onChange={() => {
+                        setRainForm(prev => ({ ...prev, affectAll: false }))
+                      }}
+                    />
+                    <span style={{ fontSize: '0.83rem', fontWeight: 600, color: '#0f172a' }}>
+                      Seleccionar tareas específicas (ej. intemperie)
+                    </span>
+                  </label>
+                </div>
+
+                <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={rainForm.cascadeDependencies !== false}
+                      onChange={e => setRainForm(prev => ({ ...prev, cascadeDependencies: e.target.checked }))}
+                    />
+                    <span style={{ fontSize: '0.78rem', color: '#475569' }}>
+                      🔗 <strong>Empujar sucesoras dependientes en cascada (CPM)</strong>: si una tarea postergada tiene sucesoras vinculadas, empujarlas para preservar la secuencia lógica de obra.
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Live Preview & Selective Checklist */}
               <div style={{ marginTop: '4px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <span style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#0369a1' }}>
-                    Vista Previa del Corrimiento en Cascada ({previewShiftedTasks.length} tareas afectadas):
+                    Tareas del Cronograma ({previewShiftedTasks.filter(t => t.selected).length} seleccionadas de {previewShiftedTasks.length}):
                   </span>
-                  <small style={{ color: '#737373' }}>+{rainForm.days} día(s)</small>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      type="button"
+                      style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                      onClick={() => {
+                        const allIds = previewShiftedTasks.map(t => t.id)
+                        setRainForm(prev => ({ ...prev, affectAll: true, selectedTaskIds: allIds }))
+                      }}
+                    >
+                      Marcar todas
+                    </button>
+                    <span style={{ color: '#cbd5e1' }}>|</span>
+                    <button
+                      type="button"
+                      style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                      onClick={() => {
+                        setRainForm(prev => ({ ...prev, affectAll: false, selectedTaskIds: [] }))
+                      }}
+                    >
+                      Desmarcar todas
+                    </button>
+                    <span style={{ fontSize: '0.75rem', color: '#737373', marginLeft: '4px' }}>+{rainForm.days}d hábiles</span>
+                  </div>
                 </div>
+
                 {previewShiftedTasks.length === 0 ? (
                   <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', color: '#737373', fontSize: '0.82rem', textAlign: 'center' }}>
                     No se encontraron tareas activas o posteriores a la fecha {rainForm.date}.
                   </div>
                 ) : (
-                  <div className="rain-preview-box">
-                    {previewShiftedTasks.map(t => (
-                      <div key={t.id} className="rain-preview-item">
-                        <div>
-                          <strong>{t.name}</strong>
-                          <span style={{ marginLeft: '6px', fontSize: '0.75rem', color: t.isOngoing ? '#d97706' : '#2563eb' }}>
-                            {t.isOngoing ? '(En curso: extiende fin)' : '(Futura: desplaza inicio y fin)'}
-                          </span>
+                  <div className="rain-preview-box" style={{ maxHeight: '230px', overflowY: 'auto' }}>
+                    {previewShiftedTasks.map(t => {
+                      const isChecked = Boolean(t.selected)
+                      return (
+                        <div
+                          key={t.id}
+                          className="rain-preview-item"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            background: isChecked ? '#f0f9ff' : '#f8fafc',
+                            borderLeft: isChecked ? '3px solid #0284c7' : '3px solid #cbd5e1',
+                            padding: '6px 10px',
+                            marginBottom: '4px',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0, cursor: 'pointer', flex: 1, minWidth: 0 }}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={e => {
+                                const checked = e.target.checked
+                                setRainForm(prev => {
+                                  const curSelected = Array.isArray(prev.selectedTaskIds) && !prev.affectAll
+                                    ? [...prev.selectedTaskIds]
+                                    : previewShiftedTasks.map(x => x.id)
+                                  let nextSelected
+                                  if (checked) {
+                                    nextSelected = Array.from(new Set([...curSelected, t.id]))
+                                  } else {
+                                    nextSelected = curSelected.filter(id => id !== t.id)
+                                  }
+                                  const allSelected = nextSelected.length === previewShiftedTasks.length
+                                  return {
+                                    ...prev,
+                                    affectAll: allSelected,
+                                    selectedTaskIds: nextSelected
+                                  }
+                                })
+                              }}
+                            />
+                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <strong style={{ color: isChecked ? '#0f172a' : '#64748b', fontSize: '0.84rem' }}>{t.name}</strong>
+                              {t.isOngoing && (
+                                <span style={{ marginLeft: '6px', fontSize: '0.7rem', background: '#fef3c7', color: '#92400e', padding: '1px 5px', borderRadius: '4px' }}>
+                                  En curso
+                                </span>
+                              )}
+                              {t.isCascaded && (
+                                <span style={{ marginLeft: '6px', fontSize: '0.7rem', background: '#ecfdf5', color: '#047857', padding: '1px 5px', borderRadius: '4px' }}>
+                                  🔗 Cascada
+                                </span>
+                              )}
+                            </div>
+                          </label>
+
+                          <div style={{ textAlign: 'right', whiteSpace: 'nowrap', fontSize: '0.78rem' }}>
+                            {isChecked || t.isCascaded ? (
+                              <>
+                                <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginRight: '6px' }}>
+                                  {t.oldStart ? t.oldStart.slice(5) : ''} al {t.oldEnd ? t.oldEnd.slice(5) : ''}
+                                </span>
+                                <strong style={{ color: '#0284c7' }}>
+                                  {t.newStart ? t.newStart.slice(5) : ''} al {t.newEnd ? t.newEnd.slice(5) : ''}
+                                </strong>
+                              </>
+                            ) : (
+                              <span style={{ color: '#94a3b8' }}>
+                                {t.oldStart ? t.oldStart.slice(5) : ''} al {t.oldEnd ? t.oldEnd.slice(5) : ''} (Sin cambio)
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          <span style={{ textDecoration: 'line-through', color: '#a3a3a3', fontSize: '0.75rem', marginRight: '6px' }}>
-                            {t.oldStart} al {t.oldEnd}
-                          </span>
-                          <strong style={{ color: '#15803d' }}>
-                            {t.newStart} al {t.newEnd}
-                          </strong>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
