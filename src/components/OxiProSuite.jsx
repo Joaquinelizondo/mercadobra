@@ -3199,6 +3199,23 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     alert('✓ La obra ha sido restablecida al estado inicial de demostración con datos limpios.')
   }
 
+  function handleClearAllSchedule() {
+    const ok = window.confirm(
+      '¿Deseas vaciar todas las tareas del cronograma actual?\n\n' +
+      'Esta acción eliminará las tareas para que puedas comenzar una obra en blanco desde cero, importar tu propio presupuesto desde Excel o auto-crear un nuevo plan con IA.\n\n' +
+      '(Siempre podrás volver al modelo demo con el botón "Restablecer Demo")'
+    )
+    if (!ok) return
+
+    setSchedule([])
+    setRainLogs([])
+    try {
+      localStorage.setItem(`${storageKey}_sched`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_rainLogs`, JSON.stringify([]))
+    } catch {}
+    alert('✓ El cronograma ha sido vaciado. Puedes comenzar a cargar tus tareas o importar un Excel.')
+  }
+
   function handleAddContract(e) {
     e.preventDefault()
     const baseAmount = Number(contractForm.baseAmount) || 0
@@ -3946,6 +3963,24 @@ ${validation.message}
               >
                 📦 Partidas Presupuesto ({budgetItems.length})
               </button>
+              <button
+                type="button"
+                className="oxi-btn-back-classic"
+                onClick={handleResetDemoData}
+                title="Restablecer el cronograma Gantt y rubros al estado inicial de demostración limpio (Torre Libertador)"
+                style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+              >
+                🔄 Restablecer Demo
+              </button>
+              <button
+                type="button"
+                className="oxi-btn-back-classic"
+                onClick={handleClearAllSchedule}
+                title="Vaciar todas las tareas del cronograma para comenzar una obra propia en blanco desde cero"
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#b91c1c', borderColor: '#fca5a5' }}
+              >
+                🗑️ Vaciar Cronograma
+              </button>
               <button className="oxi-btn-primary" onClick={() => { setEditingTaskId(null); setShowAddTaskModal(true) }}>
                 ＋ Agregar Tarea al Cronograma
               </button>
@@ -4038,8 +4073,53 @@ ${validation.message}
             </div>
           </div>
 
+          {/* Estado vacío si no hay tareas en el cronograma */}
+          {schedule.length === 0 && (
+            <div style={{ background: '#f8fafc', border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '40px 20px', textAlign: 'center', margin: '20px 0' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📋</div>
+              <h3 style={{ margin: '0 0 6px', color: '#0f172a' }}>El cronograma de obra está vacío</h3>
+              <p style={{ color: '#64748b', fontSize: '0.9rem', maxWidth: '540px', margin: '0 auto 20px' }}>
+                Has vaciado las tareas de la obra. Puedes recargar el cronograma modelo de demostración ("Torre Libertador"), importar tu propio presupuesto desde Excel o auto-crearlo con IA.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="oxi-btn-primary"
+                  onClick={handleResetDemoData}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  🔄 Recargar Cronograma Demo
+                </button>
+                <button
+                  type="button"
+                  className="oxi-btn-primary"
+                  onClick={() => { setImportPasteText(''); setImportPreviewResult(null); setShowBudgetModal(true) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#0284c7', borderColor: '#0369a1' }}
+                >
+                  📥 Importar desde Excel / CSV
+                </button>
+                <button
+                  type="button"
+                  className="oxi-btn-ai"
+                  onClick={() => { setShowAiModal(true); setAiError('') }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  ⚡ Auto-Crear con Copilot IA
+                </button>
+                <button
+                  type="button"
+                  className="oxi-btn-back-classic"
+                  onClick={() => { setEditingTaskId(null); setShowAddTaskModal(true) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  ＋ Agregar Tarea Manual
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* ── VISTA 1: DIAGRAMA DE GANTT INTERACTIVO ── */}
-          {(scheduleViewMode === 'gantt' || scheduleViewMode === 'combined') && (
+          {schedule.length > 0 && (scheduleViewMode === 'gantt' || scheduleViewMode === 'combined') && (
             <div className="gantt-card">
               {/* Top bar with legend and summary */}
               <div className="gantt-top-bar">
@@ -4416,7 +4496,7 @@ ${validation.message}
           )}
 
           {/* ── VISTA 2: PLANILLA ANALÍTICA & COSTOS ── */}
-          {(scheduleViewMode === 'tabla' || scheduleViewMode === 'combined') && (
+          {schedule.length > 0 && (scheduleViewMode === 'tabla' || scheduleViewMode === 'combined') && (
             <div style={{ marginTop: scheduleViewMode === 'combined' ? '28px' : '0' }}>
               {scheduleViewMode === 'combined' && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 16px' }}>
