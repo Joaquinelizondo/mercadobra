@@ -106,3 +106,18 @@ test('recalculateScheduleDependencies actualiza tareas dependientes en cascada s
   assert.equal(pilarUpdated.startDate, '2026-10-13')
   assert.equal(pilarUpdated.workDays, 3)
 })
+
+test('recalculateScheduleDependencies preserva corrimientos por lluvia y no retrocede tareas sucesoras', () => {
+  const schedule = [
+    { id: 't1', name: 'Fundaciones', startDate: '2026-10-01', endDate: '2026-10-24', workDays: 16, progressPercent: 100 },
+    // T2 fue postergada por 2 días de lluvia al 2026-10-28 (en vez del 26)
+    { id: 't2', name: 'Estructura', dependsOnTaskId: 't1', dependencyType: 'FS', lagDays: 0, workDays: 10, startDate: '2026-10-28', endDate: '2026-11-10' }
+  ]
+
+  const updated = recalculateScheduleDependencies(schedule)
+  const t2 = updated.find(t => t.id === 't2')
+
+  // No debe retroceder al 2026-10-26 (fin de T1), debe mantener el corrimiento de lluvia del 2026-10-28
+  assert.equal(t2.startDate, '2026-10-28')
+  assert.equal(t2.workDays, 10)
+})

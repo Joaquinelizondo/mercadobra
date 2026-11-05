@@ -374,11 +374,12 @@ export function recalculateScheduleDependencies(schedule = [], includeSaturdays 
     iterations++
 
     for (const [id, task] of taskMap.entries()) {
-      if (task.dependsOnTaskId) {
-        const pred = taskMap.get(String(task.dependsOnTaskId))
+      const predId = task.dependsOnTaskId || task.predecessorId
+      if (predId) {
+        const pred = taskMap.get(String(predId))
         if (pred && pred.startDate && pred.endDate) {
           const depType = task.dependencyType || 'FS'
-          const lag = Number(task.lagDays) || 0
+          const lag = Number(task.lagDays != null ? task.lagDays : task.predecessorLagDays) || 0
           const duration = Math.max(1, Number(task.workDays) || calculateWorkingDays(task.startDate, task.endDate, includeSaturdays))
 
           const dates = calculateDependentTaskDates(pred, {
@@ -388,11 +389,21 @@ export function recalculateScheduleDependencies(schedule = [], includeSaturdays 
             includeSaturdays
           })
 
-          if (dates && (dates.startDate !== task.startDate || dates.endDate !== task.endDate)) {
-            task.startDate = dates.startDate
-            task.endDate = dates.endDate
-            task.workDays = dates.workDays
-            changed = true
+          if (dates) {
+            // Forward pass: si la tarea fue desplazada por lluvia o reprogramación a una fecha posterior,
+            // no la retrocedemos arbitrariamente; solo la empujamos hacia adelante si la predecesora termina después.
+            const targetStart = (task.startDate && task.startDate > dates.startDate) ? task.startDate : dates.startDate
+            let targetEnd = dates.endDate
+            if (targetStart !== dates.startDate) {
+              targetEnd = calculateTaskEndDateFromDuration(targetStart, duration, includeSaturdays)
+            }
+
+            if (task.startDate !== targetStart || task.endDate !== targetEnd) {
+              task.startDate = targetStart
+              task.endDate = targetEnd
+              task.workDays = calculateWorkingDays(targetStart, targetEnd, includeSaturdays)
+              changed = true
+            }
           }
         }
       }

@@ -1539,10 +1539,10 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         let newStart = t.startDate
         let newEnd = t.endDate
         if (t.startDate <= eventDate && t.endDate >= eventDate) {
-          newEnd = addDays(t.endDate, delayDays)
+          newEnd = addWorkingDays(t.endDate, delayDays)
         } else if (t.startDate > eventDate) {
-          newStart = addDays(t.startDate, delayDays)
-          newEnd = addDays(t.endDate, delayDays)
+          newStart = addWorkingDays(t.startDate, delayDays)
+          newEnd = addWorkingDays(t.endDate, delayDays)
         }
         return {
           id: t.id,
@@ -1675,6 +1675,32 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     }
     return null
   }, [ganttBounds])
+
+  const ganttRainZones = useMemo(() => {
+    const { startMs, endMs } = ganttBounds
+    const totalSpan = endMs - startMs
+    if (totalSpan <= 0 || !Array.isArray(rainLogs) || !rainLogs.length) return []
+
+    return rainLogs.map(log => {
+      const parts = String(log.date || '').split('-').map(Number)
+      if (parts.length !== 3) return null
+      const logStartMs = new Date(parts[0], parts[1] - 1, parts[2]).getTime()
+      const delayDays = Math.max(1, Number(log.days) || 1)
+      const logEndMs = logStartMs + (delayDays * 86400000)
+
+      const leftPct = Math.max(0, Math.min(100, ((logStartMs - startMs) / totalSpan) * 100))
+      const widthPct = Math.max(1.8, Math.min(100 - leftPct, ((logEndMs - logStartMs) / totalSpan) * 100))
+
+      return {
+        id: log.id,
+        date: log.date,
+        days: delayDays,
+        reason: log.reason,
+        leftPct,
+        widthPct
+      }
+    }).filter(Boolean)
+  }, [rainLogs, ganttBounds])
 
   // Estado de interactividad y vínculos del Gantt
   const [hoveredGanttTaskId, setHoveredGanttTaskId] = useState(null)
@@ -2482,7 +2508,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   }
 
   function handleApplyRainDelay(e) {
-    e.preventDefault()
+    if (e && typeof e.preventDefault === 'function') e.preventDefault()
     const delayDays = Math.max(1, Number(rainForm.days) || 1)
     const eventDate = rainForm.date
     if (!eventDate) return
@@ -2499,18 +2525,24 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       let newEnd = t.endDate
 
       if (t.startDate <= eventDate && t.endDate >= eventDate) {
-        // Ongoing task during rain: extend endDate by delayDays
-        newEnd = addDays(t.endDate, delayDays)
+        // Ongoing task during rain: extend endDate by delayDays working days
+        newEnd = addWorkingDays(t.endDate, delayDays)
       } else if (t.startDate > eventDate) {
-        // Future task: push both start and end forward by delayDays
-        newStart = addDays(t.startDate, delayDays)
-        newEnd = addDays(t.endDate, delayDays)
+        // Future task: push both start and end forward by delayDays working days
+        newStart = addWorkingDays(t.startDate, delayDays)
+        newEnd = addWorkingDays(t.endDate, delayDays)
       }
+
+      const calculatedWorkDays = calculateWorkingDays(newStart, newEnd)
 
       return {
         ...t,
         startDate: newStart,
-        endDate: newEnd
+        endDate: newEnd,
+        workDays: calculatedWorkDays,
+        rainDelayedDays: (Number(t.rainDelayedDays) || 0) + delayDays,
+        originalEndDate: t.originalEndDate || t.endDate,
+        originalStartDate: t.originalStartDate || t.startDate
       }
     })
 
@@ -2540,13 +2572,13 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         uploadedAt: new Date().toISOString().split('T')[0],
         uploadedBy: 'Dirección de Obra',
         status: 'aprobado',
-        notes: `Suspensión por ${rainForm.reason} (+${delayDays}d). Se corrieron ${affectedTasksCount} tareas en cascada. ${rainForm.notes || ''}`,
+        notes: `Suspensión por ${rainForm.reason} (+${delayDays}d hábiles). Se corrieron ${affectedTasksCount} tareas en cascada. ${rainForm.notes || ''}`,
         history: [
           {
             version: 'v1.0',
             date: eventDate,
             status: 'aprobado',
-            notes: `Homologación técnica de suspensión climática (+${delayDays}d)`
+            notes: `Homologación técnica de suspensión climática (+${delayDays}d hábiles)`
           }
         ]
       }
@@ -2568,8 +2600,14 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       }
     }
 
-    setRainLogs(prev => [logEntry, ...prev])
-    setSchedule(recalculateScheduleDependencies(updatedSchedule))
+    const finalSchedule = recalculateScheduleDependencies(updatedSchedule)
+    const newRainLogs = [logEntry, ...rainLogs]
+    setRainLogs(newRainLogs)
+    setSchedule(finalSchedule)
+    try {
+      localStorage.setItem(`${storageKey}_sched`, JSON.stringify(finalSchedule))
+      localStorage.setItem(`${storageKey}_rainLogs`, JSON.stringify(newRainLogs))
+    } catch {}
     setShowRainModal(false)
   }
 
@@ -2588,8 +2626,15 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
     if (targetLog.previousSchedule) {
       setSchedule(targetLog.previousSchedule)
+      try {
+        localStorage.setItem(`${storageKey}_sched`, JSON.stringify(targetLog.previousSchedule))
+      } catch {}
     }
-    setRainLogs(prev => prev.filter(l => l.id !== logId))
+    const updatedRainLogs = rainLogs.filter(l => l.id !== logId)
+    setRainLogs(updatedRainLogs)
+    try {
+      localStorage.setItem(`${storageKey}_rainLogs`, JSON.stringify(updatedRainLogs))
+    } catch {}
   }
 
   // Handlers for Certifications with Photos (Paso 4)
@@ -3930,6 +3975,19 @@ ${validation.message}
                       <span>🔗➔ Predecesoras</span>
                     </span>
                   </div>
+                  {totalRainDays > 0 && (
+                    <div className="gantt-legend-item">
+                      <span style={{
+                        width: '14px',
+                        height: '10px',
+                        background: 'repeating-linear-gradient(45deg, rgba(186, 230, 253, 0.7), rgba(186, 230, 253, 0.7) 3px, rgba(125, 211, 252, 0.9) 3px, rgba(125, 211, 252, 0.9) 6px)',
+                        border: '1px solid #0284c7',
+                        borderRadius: '2px',
+                        display: 'inline-block'
+                      }} />
+                      <span style={{ color: '#0284c7', fontWeight: 700 }}>🌧️ Lluvia (+{totalRainDays}d)</span>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#737373' }}>
@@ -3975,7 +4033,25 @@ ${validation.message}
                           </span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#737373', fontSize: '0.74rem', marginTop: '2px' }}>
-                          <span>📅 {task.startDate} al {task.endDate} ({task.workDays || 1}d)</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                            <span>📅 {task.startDate} al {task.endDate} ({task.workDays || 1}d)</span>
+                            {Number(task.rainDelayedDays) > 0 && (
+                              <span
+                                style={{
+                                  background: '#e0f2fe',
+                                  color: '#0369a1',
+                                  border: '1px solid #7dd3fc',
+                                  borderRadius: '4px',
+                                  padding: '0 4px',
+                                  fontSize: '0.64rem',
+                                  fontWeight: 800
+                                }}
+                                title={`Postergada +${task.rainDelayedDays}d hábiles por suspensión climática`}
+                              >
+                                🌧️ +{task.rainDelayedDays}d
+                              </span>
+                            )}
+                          </span>
                           <div>
                             <strong style={{ color: isDone ? '#10b981' : '#ea580c' }}>{real}%</strong>
                             <span style={{ color: '#0284c7', marginLeft: '3px' }}>({planned}%)</span>
@@ -4033,6 +4109,32 @@ ${validation.message}
                         Hoy
                       </div>
                     )}
+
+                    {/* Rain Delay Zone Markers on Header */}
+                    {ganttRainZones.map(rz => (
+                      <div
+                        key={`rain-hdr-${rz.id}`}
+                        style={{
+                          position: 'absolute',
+                          left: `${rz.leftPct}%`,
+                          top: '2px',
+                          background: '#0284c7',
+                          color: '#ffffff',
+                          padding: '1px 6px',
+                          borderRadius: '8px',
+                          fontSize: '0.66rem',
+                          fontWeight: 800,
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                          zIndex: 6,
+                          pointerEvents: 'auto',
+                          cursor: 'pointer'
+                        }}
+                        title={`🌧️ Suspensión por ${rz.reason || 'Lluvia'} (+${rz.days}d) iniciada el ${rz.date}`}
+                      >
+                        🌧️ +{rz.days}d
+                      </div>
+                    ))}
                   </div>
 
                   {/* Tasks Timeline Rows */}
@@ -4053,6 +4155,26 @@ ${validation.message}
                         style={{ left: `${todayGanttPositionPct}%` }}
                       />
                     )}
+
+                    {/* Rain Delay Shaded Vertical Columns across all rows */}
+                    {ganttRainZones.map(rz => (
+                      <div
+                        key={`rain-col-${rz.id}`}
+                        style={{
+                          position: 'absolute',
+                          left: `${rz.leftPct}%`,
+                          width: `${rz.widthPct}%`,
+                          top: 0,
+                          bottom: 0,
+                          background: 'repeating-linear-gradient(45deg, rgba(186, 230, 253, 0.35), rgba(186, 230, 253, 0.35) 6px, rgba(125, 211, 252, 0.5) 6px, rgba(125, 211, 252, 0.5) 12px)',
+                          borderLeft: '1.5px dashed #0284c7',
+                          borderRight: '1.5px dashed #0284c7',
+                          pointerEvents: 'none',
+                          zIndex: 2
+                        }}
+                        title={`🌧️ Suspensión por Lluvia (+${rz.days}d) - ${rz.date}: ${rz.reason || ''}`}
+                      />
+                    ))}
 
                     {/* SVG Dependency Connectors between tasks */}
                     {ganttConnectors.length > 0 && (
@@ -4121,7 +4243,7 @@ ${validation.message}
                       const isPred = hoveredGanttTaskId && task.id && schedule.some(t => String(t.id) === String(hoveredGanttTaskId) && String(t.dependsOnTaskId) === String(task.id))
                       const isSucc = hoveredGanttTaskId && task.dependsOnTaskId && String(task.dependsOnTaskId) === String(hoveredGanttTaskId)
 
-                      const tooltipText = `${task.name}\n• Plazo: ${task.startDate} al ${task.endDate} (${task.workDays || 1} días hábiles)\n• Avance Real Físico: ${real}%\n• Avance Programado: ${planned}%\n• Presupuesto: ${formatMoney(totalTask)}\n• Costo Real Devengado: ${formatMoney(taskExecuted)}${predTask ? `\n• Predecesora: 🔗 ${predTask.name} (${task.dependencyType || 'FS'} ${Number(task.lagDays) > 0 ? `+${task.lagDays}d hábiles de espera` : 'inmediata'})` : ''}${successorTasks.length > 0 ? `\n• Sucesoras vinculadas: ➔ ${successorTasks.map(s => s.name).join(', ')}` : ''}`
+                      const tooltipText = `${task.name}\n• Plazo: ${task.startDate} al ${task.endDate} (${task.workDays || 1} días hábiles)${Number(task.rainDelayedDays) > 0 ? ` [🌧️ Postergada +${task.rainDelayedDays}d por suspensión climática]` : ''}\n• Avance Real Físico: ${real}%\n• Avance Programado: ${planned}%\n• Presupuesto: ${formatMoney(totalTask)}\n• Costo Real Devengado: ${formatMoney(taskExecuted)}${predTask ? `\n• Predecesora: 🔗 ${predTask.name} (${task.dependencyType || 'FS'} ${Number(task.lagDays) > 0 ? `+${task.lagDays}d hábiles de espera` : 'inmediata'})` : ''}${successorTasks.length > 0 ? `\n• Sucesoras vinculadas: ➔ ${successorTasks.map(s => s.name).join(', ')}` : ''}`
 
                       return (
                         <div key={task.id} className="gantt-row">
@@ -4147,9 +4269,30 @@ ${validation.message}
                             {/* Content with Badges */}
                             <div className="gantt-bar-content">
                               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0, overflow: 'hidden' }}>
-                                <span style={{ color: real > 40 ? '#fff' : '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <span style={{ color: real > 40 ? '#fff' : '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {task.name}
                                 </span>
+                                <span style={{ fontSize: '0.66rem', color: real > 40 ? 'rgba(255,255,255,0.9)' : '#64748b', whiteSpace: 'nowrap' }}>
+                                  ({task.startDate ? task.startDate.slice(5) : ''} al {task.endDate ? task.endDate.slice(5) : ''})
+                                </span>
+                                {Number(task.rainDelayedDays) > 0 && (
+                                  <span
+                                    className="gantt-dep-badge rain"
+                                    style={{
+                                      background: real > 40 ? '#0284c7' : '#e0f2fe',
+                                      color: real > 40 ? '#ffffff' : '#0369a1',
+                                      border: '1px solid #7dd3fc',
+                                      fontWeight: 800,
+                                      padding: '1px 5px',
+                                      borderRadius: '4px',
+                                      fontSize: '0.65rem',
+                                      whiteSpace: 'nowrap'
+                                    }}
+                                    title={`Postergada +${task.rainDelayedDays}d hábiles por lluvia`}
+                                  >
+                                    🌧️ +{task.rainDelayedDays}d
+                                  </span>
+                                )}
                                 {predTask && (
                                   <span
                                     className="gantt-dep-badge pred"
@@ -11175,23 +11318,42 @@ ${validation.message}
             let newStart = t.startDate
             let newEnd = t.endDate
             if (t.startDate <= eventDate && t.endDate >= eventDate) {
-              newEnd = addDays(t.endDate, delayDays)
+              newEnd = addWorkingDays(t.endDate, delayDays)
             } else if (t.startDate > eventDate) {
-              newStart = addDays(t.startDate, delayDays)
-              newEnd = addDays(t.endDate, delayDays)
+              newStart = addWorkingDays(t.startDate, delayDays)
+              newEnd = addWorkingDays(t.endDate, delayDays)
             }
-            return { ...t, startDate: newStart, endDate: newEnd }
+            const calculatedWorkDays = calculateWorkingDays(newStart, newEnd)
+            return {
+              ...t,
+              startDate: newStart,
+              endDate: newEnd,
+              workDays: calculatedWorkDays,
+              rainDelayedDays: (Number(t.rainDelayedDays) || 0) + delayDays,
+              originalEndDate: t.originalEndDate || t.endDate,
+              originalStartDate: t.originalStartDate || t.startDate
+            }
           })
-          setSchedule(updatedSchedule)
+          const finalSchedule = recalculateScheduleDependencies(updatedSchedule)
+          setSchedule(finalSchedule)
+
           const newRainLog = {
             id: Date.now(),
             date: eventDate,
             days: delayDays,
             reason: reason || 'Lluvias vía Copilot',
             affectedCount: affectedTasksCount,
+            previousSchedule: schedule,
             createdAt: new Date().toISOString()
           }
-          setRainLogs(prev => [newRainLog, ...prev])
+          const nextRainLogs = [newRainLog, ...rainLogs]
+          setRainLogs(nextRainLogs)
+
+          try {
+            localStorage.setItem(`${storageKey}_sched`, JSON.stringify(finalSchedule))
+            localStorage.setItem(`${storageKey}_rainLogs`, JSON.stringify(nextRainLogs))
+          } catch {}
+
           const newDocEntry = {
             id: Date.now(),
             name: `Acta Técnica - Suspensión por Lluvia (${eventDate}).pdf`,
@@ -11204,7 +11366,7 @@ ${validation.message}
               version: 'v1.0',
               date: new Date().toISOString().split('T')[0],
               responsible: 'OxI Copilot',
-              notes: `Emisión de acta técnica por ${delayDays} días de lluvia. ${affectedTasksCount} tareas desplazadas en cascada.`
+              notes: `Emisión de acta técnica por ${delayDays} días hábiles de lluvia. ${affectedTasksCount} tareas desplazadas en cascada.`
             }]
           }
           setDocuments(prev => [newDocEntry, ...prev])
