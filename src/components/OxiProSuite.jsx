@@ -1960,7 +1960,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   }, [schedule, costCutoffDate, projectSocialLawsRate, laborCategories, totalProjectBudget, laborReports, materialInvoices])
 
   const dynamicMonthlyComp = useMemo(() => {
-    if (!schedule.length) return DEFAULT_MONTHLY_COMPARISON
+    if (!schedule.length) return []
 
     let minMs = Infinity
     let maxMs = -Infinity
@@ -1971,7 +1971,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       if (!Number.isNaN(e) && e > maxMs) maxMs = e
     })
 
-    if (minMs === Infinity || maxMs === -Infinity) return DEFAULT_MONTHLY_COMPARISON
+    if (minMs === Infinity || maxMs === -Infinity) return []
 
     const months = []
     const cur = new Date(minMs)
@@ -2046,11 +2046,11 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       cur.setMonth(cur.getMonth() + 1)
     }
 
-    return months.length > 0 ? months : DEFAULT_MONTHLY_COMPARISON
+    return months
   }, [schedule])
 
   const dynamicWeeklyProgress = useMemo(() => {
-    if (!schedule.length) return DEFAULT_WEEKLY_PROGRESS
+    if (!schedule.length) return []
 
     let minMs = Infinity
     let maxMs = -Infinity
@@ -2061,11 +2061,11 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       if (!Number.isNaN(e) && e > maxMs) maxMs = e
     })
 
-    if (minMs === Infinity || maxMs === -Infinity) return DEFAULT_WEEKLY_PROGRESS
+    if (minMs === Infinity || maxMs === -Infinity) return []
 
     const totalDays = Math.max(7, Math.round((maxMs - minMs) / 86400000))
     const totalBudget = schedule.reduce((sum, t) => sum + getTaskBudget(t, projectSocialLawsRate / 100, laborCategories), 0)
-    if (totalBudget <= 0) return DEFAULT_WEEKLY_PROGRESS
+    if (totalBudget <= 0) return []
 
     // Semanas calendario reales del proyecto (7 días por semana: S1, S2, ..., S_n)
     const weekCount = Math.max(1, Math.ceil(totalDays / 7))
@@ -3332,11 +3332,15 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
     setSchedule([])
     setRainLogs([])
+    setWeeklyProgress([])
+    setMonthlyComp([])
     try {
       localStorage.setItem(`${storageKey}_sched`, JSON.stringify([]))
       localStorage.setItem(`${storageKey}_rainLogs`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_weekly`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_monthly`, JSON.stringify([]))
     } catch {}
-    alert('✓ El cronograma ha sido vaciado. Puedes comenzar a cargar tus tareas o importar un Excel.')
+    alert('✓ La obra y el cronograma han sido vaciados. La Curva S y valorizaciones quedan en cero.')
   }
 
   function handleAddContract(e) {
@@ -5272,29 +5276,29 @@ ${validation.message}
           <div className="curva-s-kpis-grid">
             <div className="curva-s-kpi-card">
               <span className="curva-s-kpi-label">Avance Programado (Plan P0 a Hoy)</span>
-              <span className="curva-s-kpi-val plan">{plannedGlobalProgress}%</span>
+              <span className="curva-s-kpi-val plan">{schedule.length > 0 ? plannedGlobalProgress : 0}%</span>
               <span className="curva-s-kpi-sub">
-                {formatMoney(Math.round(((plannedGlobalProgress || 0) / 100) * totalProjectBudget))} previstos a la fecha
+                {formatMoney(Math.round(((schedule.length > 0 ? plannedGlobalProgress || 0 : 0) / 100) * totalProjectBudget))} previstos a la fecha
               </span>
             </div>
 
             <div className="curva-s-kpi-card">
               <span className="curva-s-kpi-label">Avance Real Certificado</span>
               <span className={`curva-s-kpi-val ${globalDelta >= 0 ? 'real' : 'delayed'}`}>
-                {globalProgress}%
+                {schedule.length > 0 ? globalProgress : 0}%
               </span>
               <span className="curva-s-kpi-sub">
-                {formatMoney(Math.round(((globalProgress || 0) / 100) * totalProjectBudget))} ejecutados efectivamente
+                {formatMoney(Math.round(((schedule.length > 0 ? globalProgress || 0 : 0) / 100) * totalProjectBudget))} ejecutados efectivamente
               </span>
             </div>
 
             <div className="curva-s-kpi-card">
               <span className="curva-s-kpi-label">Desvío Físico-Financiero</span>
               <span className={`curva-s-kpi-val ${globalDelta >= 0 ? 'real' : 'delayed'}`}>
-                {globalDelta > 0 ? `+${globalDelta}%` : `${globalDelta}%`}
+                {schedule.length > 0 ? (globalDelta > 0 ? `+${globalDelta}%` : `${globalDelta}%`) : '0%'}
               </span>
               <span className="curva-s-kpi-sub">
-                {globalDelta >= 0 ? '✓ Obra en plazo o adelantada' : '⚠️ Obra con atraso respecto al plan'}
+                {schedule.length === 0 ? 'Obra en blanco (0 tareas)' : globalDelta >= 0 ? '✓ Obra en plazo o adelantada' : '⚠️ Obra con atraso respecto al plan'}
               </span>
             </div>
 
@@ -5305,8 +5309,43 @@ ${validation.message}
             </div>
           </div>
 
-          {/* Recharts Curva S Box */}
-          <div className="curva-s-chart-box">
+          {dynamicWeeklyProgress.length === 0 ? (
+            <div className="curva-s-chart-box" style={{ textAlign: 'center', padding: '48px 24px', margin: '20px 0' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>📊</div>
+              <h3 style={{ margin: '0 0 8px', color: '#0f172a', fontSize: '1.2rem' }}>
+                Cronograma y Curva S en Blanco (0%)
+              </h3>
+              <p style={{ margin: '0 auto 20px', maxWidth: '520px', color: '#64748b', fontSize: '0.88rem', lineHeight: '1.5' }}>
+                La obra no tiene tareas cargadas actualmente (Cronograma en 0%). Para visualizar la Curva S física-financiera y el cronograma valorizado semanal, agregá tus tareas, importá un presupuesto desde Excel o auto-creá el plan con Inteligencia Artificial.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="oxi-btn-primary"
+                  onClick={() => { setActiveTab('cronograma'); setShowAddTaskModal(true) }}
+                >
+                  ＋ Agregar Primera Tarea
+                </button>
+                <button
+                  type="button"
+                  className="oxi-btn-ai"
+                  onClick={() => { setShowAiModal(true); setAiError('') }}
+                >
+                  ⚡ Auto-Crear con IA
+                </button>
+                <button
+                  type="button"
+                  className="oxi-btn-back-classic"
+                  onClick={handleResetDemoData}
+                >
+                  🔄 Cargar Modelo Demo
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Recharts Curva S Box */}
+              <div className="curva-s-chart-box">
             <div className="curva-s-chart-header">
               <div>
                 <span className="box-eyebrow">DIAGRAMA DE AVANCE ACUMULADO (S-CURVE)</span>
@@ -5521,8 +5560,10 @@ ${validation.message}
               </table>
             </div>
           </div>
-        </section>
+        </>
       )}
+    </section>
+  )}
 
       {/* ── TAB 4: PRESUPUESTOS VS EJECUTADOS POR RUBRO & ALERTAS ── */}
       {activeTab === 'rubros' && (
