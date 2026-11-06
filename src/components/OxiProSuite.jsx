@@ -67,6 +67,18 @@ import {
   getRegionalProfile,
   formatRegionalMoney
 } from '../utils/constructionRegionalProfiles'
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Line,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ReferenceLine
+} from 'recharts'
 import OxiProCopilot from './OxiProCopilot'
 import './OxiProSuite.css'
 
@@ -758,11 +770,72 @@ function exportSubcontractsCsv(contracts, certificates, projectName) {
   URL.revokeObjectURL(url)
 }
 
+function CurvaSTooltip({ active, payload, totalBudget }) {
+  if (!active || !payload || !payload.length) return null
+  const item = payload[0]?.payload
+  if (!item) return null
+
+  const planVal = item.budgetZeroPercent != null ? Number(item.budgetZeroPercent) : null
+  const realVal = item.realPercent != null ? Number(item.realPercent) : null
+  const delta = item.delta != null ? Number(item.delta) : (realVal != null && planVal != null ? Number((realVal - planVal).toFixed(1)) : null)
+  const isAhead = delta != null && delta >= 0
+
+  const planMoney = totalBudget && planVal != null ? Math.round((planVal / 100) * totalBudget) : null
+  const realMoney = totalBudget && realVal != null ? Math.round((realVal / 100) * totalBudget) : null
+
+  return (
+    <div style={{
+      background: '#ffffff',
+      border: '1px solid #cbd5e1',
+      borderRadius: '8px',
+      padding: '10px 14px',
+      boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
+      fontSize: '0.8rem',
+      minWidth: '220px',
+      color: '#0f172a'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+        <strong style={{ color: '#0f172a' }}>{item.week || item.weekShort}</strong>
+        {item.isCurrent && (
+          <span style={{ background: '#fef2f2', color: '#b91c1c', fontSize: '0.7rem', fontWeight: 700, padding: '1px 6px', borderRadius: '4px' }}>
+            🔴 Semana Actual
+          </span>
+        )}
+      </div>
+      {item.dateRange && (
+        <div style={{ color: '#64748b', fontSize: '0.72rem', marginBottom: '6px' }}>{item.dateRange}</div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', margin: '3px 0' }}>
+        <span style={{ color: '#2563eb', fontWeight: 600 }}>Plan (P0):</span>
+        <span style={{ fontWeight: 700 }}>
+          {planVal != null ? `${planVal}%` : '—'}
+          {planMoney != null && <span style={{ color: '#64748b', fontWeight: 400, marginLeft: '4px' }}>(${planMoney.toLocaleString('es-UY')})</span>}
+        </span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', margin: '3px 0' }}>
+        <span style={{ color: '#10b981', fontWeight: 600 }}>Real Certificado:</span>
+        <span style={{ fontWeight: 700, color: realVal != null ? '#0f172a' : '#94a3b8' }}>
+          {realVal != null ? `${realVal}%` : '—'}
+          {realMoney != null && <span style={{ color: '#64748b', fontWeight: 400, marginLeft: '4px' }}>(${realMoney.toLocaleString('es-UY')})</span>}
+        </span>
+      </div>
+      {delta != null && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '6px', paddingTop: '4px', borderTop: '1px solid #f1f5f9' }}>
+          <span style={{ color: '#64748b' }}>Desvío Acumulado:</span>
+          <span style={{ fontWeight: 700, color: isAhead ? '#059669' : '#dc2626' }}>
+            {delta > 0 ? `+${delta}%` : `${delta}%`} ({isAhead ? 'Adelantada' : 'Atrasada'})
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function OxiProSuite({ project, projects = [], onSelectProject, onBackToClassic }) {
   const projectId = project?.id || 'demo'
   const storageKey = `oxi_pro_state_${projectId}`
 
-  const [activeTab, setActiveTab] = useState('docs') // 'docs' | 'cronograma' | 'rubros'
+  const [activeTab, setActiveTab] = useState('docs') // 'docs' | 'cronograma' | 'control' | 'rubros'
   const [docFilter, setDocFilter] = useState('todos')
   
   // Stored state
@@ -2111,6 +2184,24 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
     return weeks
   }, [schedule, projectSocialLawsRate, laborCategories])
+
+  const curvaChartData = useMemo(() => {
+    if (!dynamicWeeklyProgress || !dynamicWeeklyProgress.length) return []
+    const origin = {
+      week: 'Inicio de Obra',
+      weekShort: 'Día 0',
+      dateRange: 'Arranque del proyecto',
+      budgetZeroPercent: 0,
+      realPercent: 0,
+      delta: 0,
+      isOrigin: true
+    }
+    return [origin, ...dynamicWeeklyProgress]
+  }, [dynamicWeeklyProgress])
+
+  const currentWeekShort = useMemo(() => {
+    return dynamicWeeklyProgress.find(w => w.isCurrent)?.weekShort || null
+  }, [dynamicWeeklyProgress])
 
   // Alerts by rubro with detailed breakdown (MO + Leyes Sociales + Materiales)
   const rubroAlerts = useMemo(() => {
@@ -3771,6 +3862,12 @@ ${validation.message}
           <span className="subnav-count">{schedule.length}</span>
         </button>
         <button
+          className={`subnav-btn ${activeTab === 'control' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('control')}
+        >
+          📊 Curva S & Control Físico-Financiero
+        </button>
+        <button
           className={`subnav-btn ${activeTab === 'rubros' ? 'is-active' : ''}`}
           onClick={() => setActiveTab('rubros')}
         >
@@ -5138,6 +5235,294 @@ ${validation.message}
         </section>
       )}
 
+      {/* ── TAB 3: CONTROL SEMANAL & CURVA S DINÁMICA RECONSTRUIDA ── */}
+      {activeTab === 'control' && (
+        <section className="oxi-pro-section">
+          {/* Toolbar */}
+          <div className="section-toolbar">
+            <div>
+              <h3>Control Físico-Financiero & Curva S (Avance Real vs. Plan P0)</h3>
+              <p>Seguimiento continuo de la Curva S conectada en tiempo real al Cronograma Gantt y partidas presupuestarias.</p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="live-sync-badge" title="Cálculo reactivo en tiempo real desde el Cronograma de obra">
+                <span className="live-dot" /> Conectado en vivo al Gantt ({schedule.length} tareas)
+              </span>
+              <button
+                type="button"
+                className="oxi-btn-primary"
+                onClick={handleOpenWeeklyClose}
+                title="Abrir asistente de cierre de producción semanal para certificar avances"
+                style={{ background: '#10b981', borderColor: '#059669', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', fontSize: '0.85rem' }}
+              >
+                <span>📋</span> Registrar Cierre Semanal (1 min)
+              </button>
+              <button
+                type="button"
+                className="oxi-btn-back-classic"
+                onClick={() => exportCurvaSCsv(dynamicWeeklyProgress, dynamicMonthlyComp, project?.name || 'Obra')}
+                title="Descargar datos de Curva S en CSV para Excel"
+              >
+                📥 Exportar Curva S (CSV)
+              </button>
+            </div>
+          </div>
+
+          {/* KPI Summary Cards */}
+          <div className="curva-s-kpis-grid">
+            <div className="curva-s-kpi-card">
+              <span className="curva-s-kpi-label">Avance Programado (Plan P0 a Hoy)</span>
+              <span className="curva-s-kpi-val plan">{plannedGlobalProgress}%</span>
+              <span className="curva-s-kpi-sub">
+                {formatMoney(Math.round(((plannedGlobalProgress || 0) / 100) * totalProjectBudget))} previstos a la fecha
+              </span>
+            </div>
+
+            <div className="curva-s-kpi-card">
+              <span className="curva-s-kpi-label">Avance Real Certificado</span>
+              <span className={`curva-s-kpi-val ${globalDelta >= 0 ? 'real' : 'delayed'}`}>
+                {globalProgress}%
+              </span>
+              <span className="curva-s-kpi-sub">
+                {formatMoney(Math.round(((globalProgress || 0) / 100) * totalProjectBudget))} ejecutados efectivamente
+              </span>
+            </div>
+
+            <div className="curva-s-kpi-card">
+              <span className="curva-s-kpi-label">Desvío Físico-Financiero</span>
+              <span className={`curva-s-kpi-val ${globalDelta >= 0 ? 'real' : 'delayed'}`}>
+                {globalDelta > 0 ? `+${globalDelta}%` : `${globalDelta}%`}
+              </span>
+              <span className="curva-s-kpi-sub">
+                {globalDelta >= 0 ? '✓ Obra en plazo o adelantada' : '⚠️ Obra con atraso respecto al plan'}
+              </span>
+            </div>
+
+            <div className="curva-s-kpi-card">
+              <span className="curva-s-kpi-label">Presupuesto Total de Obra</span>
+              <span className="curva-s-kpi-val neutral">{formatMoney(totalProjectBudget)}</span>
+              <span className="curva-s-kpi-sub">{dynamicWeeklyProgress.length} semanas de cronograma</span>
+            </div>
+          </div>
+
+          {/* Recharts Curva S Box */}
+          <div className="curva-s-chart-box">
+            <div className="curva-s-chart-header">
+              <div>
+                <span className="box-eyebrow">DIAGRAMA DE AVANCE ACUMULADO (S-CURVE)</span>
+                <h3 style={{ margin: '4px 0', fontSize: '1.25rem', color: '#0f172a' }}>
+                  Curva S Físico-Financiera (Plan P0 vs Real Certificado)
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
+                  Evolución acumulada semanal de las {dynamicWeeklyProgress.length} semanas reales del proyecto, vinculada a los avances y ponderación de costos del Gantt.
+                </p>
+              </div>
+
+              <div className="curva-s-legend">
+                <div className="curva-s-legend-item">
+                  <span className="curva-s-legend-line" style={{ background: '#2563eb', borderTop: '2px dashed #1d4ed8' }} />
+                  <span><strong>Plan Contractual (P0)</strong></span>
+                </div>
+                <div className="curva-s-legend-item">
+                  <span className="curva-s-legend-line" style={{ background: globalDelta >= 0 ? '#10b981' : '#ea580c' }} />
+                  <span><strong>Real Certificado</strong></span>
+                </div>
+                {currentWeekShort && (
+                  <div className="curva-s-legend-item">
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+                    <span><strong>Semana Actual (Hoy)</strong></span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recharts Responsive Container */}
+            <div style={{ width: '100%', height: 350, marginTop: '16px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={curvaChartData} margin={{ top: 20, right: 25, left: 0, bottom: 20 }}>
+                  <defs>
+                    <linearGradient id="planGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0.0} />
+                    </linearGradient>
+                    <linearGradient id="realGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={globalDelta >= 0 ? '#10b981' : '#ea580c'} stopOpacity={0.28} />
+                      <stop offset="95%" stopColor={globalDelta >= 0 ? '#10b981' : '#ea580c'} stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis
+                    dataKey="weekShort"
+                    stroke="#94a3b8"
+                    fontSize={11}
+                    tickLine={false}
+                    dy={6}
+                    interval={dynamicWeeklyProgress.length > 15 ? 1 : 0}
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    ticks={[0, 25, 50, 75, 100]}
+                    stroke="#94a3b8"
+                    fontSize={11}
+                    tickLine={false}
+                    tickFormatter={v => `${v}%`}
+                  />
+                  <Tooltip content={<CurvaSTooltip totalBudget={totalProjectBudget} />} />
+                  <Area
+                    type="monotone"
+                    dataKey="budgetZeroPercent"
+                    fill="url(#planGradient)"
+                    stroke="none"
+                    isAnimationActive={false}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="realPercent"
+                    fill="url(#realGradient)"
+                    stroke="none"
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="budgetZeroPercent"
+                    name="Plan Contractual (P0)"
+                    stroke="#2563eb"
+                    strokeWidth={2.5}
+                    strokeDasharray="5 4"
+                    dot={{ r: 3, fill: '#ffffff', stroke: '#2563eb', strokeWidth: 1.5 }}
+                    activeDot={{ r: 5 }}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="realPercent"
+                    name="Real Certificado"
+                    stroke={globalDelta >= 0 ? '#10b981' : '#ea580c'}
+                    strokeWidth={3.5}
+                    strokeLinecap="round"
+                    dot={{ r: 4, fill: globalDelta >= 0 ? '#10b981' : '#ea580c', stroke: '#ffffff', strokeWidth: 2 }}
+                    activeDot={{ r: 6 }}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                  {currentWeekShort && (
+                    <ReferenceLine
+                      x={currentWeekShort}
+                      stroke="#ef4444"
+                      strokeDasharray="4 3"
+                      strokeWidth={2}
+                      label={{
+                        value: '🔴 Hoy',
+                        position: 'top',
+                        fill: '#ef4444',
+                        fontSize: 11,
+                        fontWeight: 'bold'
+                      }}
+                    />
+                  )}
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Tabla de Cronograma Valorizado Semanal */}
+          <div className="card-box" style={{ marginTop: '1.5rem' }}>
+            <div className="section-toolbar" style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '10px', marginBottom: '14px' }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '1rem', color: '#0f172a' }}>
+                  📊 Cronograma Valorizado Semanal ({dynamicWeeklyProgress.length} semanas)
+                </h4>
+                <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                  Detalle cuantitativo de avances programados y ejecutados para seguimiento de auditoría y certificaciones.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table className="oxi-table" style={{ width: '100%', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr>
+                    <th>Semana</th>
+                    <th>Rango Fechas</th>
+                    <th>Plan Acumulado (%)</th>
+                    <th>Plan Valorizado ($)</th>
+                    <th>Real Certificado (%)</th>
+                    <th>Real Devengado ($)</th>
+                    <th>Desvío</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dynamicWeeklyProgress.map((w, idx) => {
+                    const planVal = w.budgetZeroPercent
+                    const realVal = w.realPercent
+                    const delta = w.delta
+                    const isAhead = w.isAhead
+                    const isCurrent = w.isCurrent
+                    const isFuture = w.isFuture
+
+                    const planMoney = Math.round((planVal / 100) * totalProjectBudget)
+                    const realMoney = realVal != null ? Math.round((realVal / 100) * totalProjectBudget) : null
+
+                    return (
+                      <tr key={`week-row-${idx}`} style={isCurrent ? { background: '#fef2f2', fontWeight: 600 } : {}}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>{w.week}</span>
+                            {isCurrent && (
+                              <span style={{ background: '#ef4444', color: '#ffffff', fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>
+                                HOY
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td style={{ color: '#64748b' }}>{w.dateRange}</td>
+                        <td style={{ color: '#2563eb', fontWeight: 600 }}>{planVal}%</td>
+                        <td style={{ color: '#475569' }}>{formatMoney(planMoney)}</td>
+                        <td style={{ fontWeight: 600, color: realVal != null ? (isAhead ? '#059669' : '#dc2626') : '#94a3b8' }}>
+                          {realVal != null ? `${realVal}%` : '—'}
+                        </td>
+                        <td style={{ color: realMoney != null ? '#0f172a' : '#94a3b8' }}>
+                          {realMoney != null ? formatMoney(realMoney) : '—'}
+                        </td>
+                        <td>
+                          {delta != null ? (
+                            <span style={{ color: isAhead ? '#059669' : '#dc2626', fontWeight: 700 }}>
+                              {delta > 0 ? `+${delta}%` : `${delta}%`}
+                            </span>
+                          ) : (
+                            <span style={{ color: '#94a3b8' }}>—</span>
+                          )}
+                        </td>
+                        <td>
+                          {isCurrent ? (
+                            <span className="status-pill inprogress" style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca' }}>
+                              🔴 En Ejecución
+                            </span>
+                          ) : isFuture ? (
+                            <span className="status-pill pending">
+                              ⏳ A Ejecutar
+                            </span>
+                          ) : isAhead ? (
+                            <span className="status-pill onbudget">
+                              ✓ En Plazo (+{delta}%)
+                            </span>
+                          ) : (
+                            <span className="status-pill delayed">
+                              ⚠️ Con Atraso ({delta}%)
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── TAB 4: PRESUPUESTOS VS EJECUTADOS POR RUBRO & ALERTAS ── */}
       {activeTab === 'rubros' && (
