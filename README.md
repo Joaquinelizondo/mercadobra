@@ -52,6 +52,9 @@ La plataforma se encuentra operativa con:
   - Modelador paramétrico 2D/3D con Three.js, estimación de costos en tiempo real, catálogo de aberturas/muebles y asistente con IA.
 - **E-commerce B2C & B2B:** Catálogo, carrito persistente, checkout con Mercado Pago, órdenes con snapshot inmutable y cuentas de taller para proveedores.
 - **Cuentas Demo & Resiliencia:** Inicialización idempotente en arranque con usuarios demo (`admin`, `proveedor`, `cliente`, `pro`) y botones de quick-fill en pantallas de acceso.
+- **App Móvil (PWA Instalable & Hoja de Ruta Capacitor):**
+  - **Paso 1 (Implementado y Activo - PWA):** Soporte de aplicación web progresiva con manifiesto (`manifest.webmanifest`), Service Worker con caché inteligente (Network-first para navegación y Stale-while-revalidate para estáticos), iconos maskable (192px, 512px, apple-touch-icon 180px) y modo *standalone* a pantalla completa para iOS y Android. Permite a jefes de obra, arquitectos y clientes instalar la app en su teléfono desde el navegador sin costos de tiendas.
+  - **Paso 2 (Planificado - Capacitor Native):** Transición directa a las tiendas oficiales (Google Play Store y Apple App Store) empaquetando el bundle Vite existente con `@capacitor/core`, habilitando acceso a cámara nativa para fotos de obra, geolocalización y notificaciones push.
 
 ## Accesos de la plataforma
 

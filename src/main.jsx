@@ -27,3 +27,13 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>,
 )
 
+// Registrar Service Worker para PWA (Instalable en iOS y Android)
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => {
+      console.warn('PWA ServiceWorker error:', err)
+    })
+  })
+}
+
+
