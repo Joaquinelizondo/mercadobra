@@ -221,7 +221,7 @@ export default function CustomerPortal() {
   if (loading && !profile) return <div className="oxi-os-dashboard"><p style={{padding:'2rem'}}>Cargando OXI OS…</p></div>
 
   return (
-    <div className="oxi-os-dashboard">
+    <div className={`oxi-os-dashboard ${platformMode === 'pro' && !isEditingProfile && !isCreatingProject ? 'is-pro-mode' : ''}`}>
       <aside className="oxi-os-sidebar">
         <div className="oxi-os-brand">
           <OxidaWordmark />

@@ -1993,6 +1993,319 @@
   z-index: 5;
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN (MOBILE & APP EXPERIENCE)
+   Optimizaciones para smartphones, tablets y modo PWA standalone
+   ══════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  .oxi-pro-container {
+    padding: 0.25rem 0.5rem max(3.5rem, env(safe-area-inset-bottom, 3.5rem));
+    box-sizing: border-box;
+  }
+
+  .oxi-pro-header {
+    gap: 12px;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+  }
+
+  .oxi-pro-context-bar {
+    padding: 8px 10px;
+    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .oxi-pro-context-left,
+  .oxi-pro-context-right {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .oxi-pro-context-left select {
+    flex: 1;
+    min-height: 42px;
+    font-size: 16px; /* Previene auto-zoom de iOS */
+  }
+
+  .oxi-btn-back-classic {
+    font-size: 0.85rem;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .oxi-pro-header-main {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .oxi-pro-header-title h2 {
+    font-size: 1.35rem;
+    line-height: 1.25;
+    margin-bottom: 3px;
+  }
+
+  .oxi-pro-header-title p {
+    font-size: 0.82rem;
+  }
+
+  /* Barra de acciones de cabecera en grid 2x2 para app móvil */
+  .oxi-pro-actions-toolbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .oxi-pro-actions-toolbar button {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    padding: 10px 8px !important;
+    font-size: 0.8rem !important;
+    min-height: 42px;
+    box-sizing: border-box;
+  }
+
+  .oxi-pro-actions-toolbar .oxi-btn-primary {
+    grid-column: 1 / -1;
+  }
+
+  /* Grid de métricas / KPIs */
+  .oxi-pro-kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .oxi-pro-kpi-card {
+    padding: 12px;
+    gap: 4px;
+  }
+
+  .oxi-pro-kpi-card.highlight {
+    grid-column: 1 / -1;
+  }
+
+  .oxi-pro-kpi-card strong {
+    font-size: 1.35rem;
+  }
+
+  .kpi-label {
+    font-size: 0.68rem;
+  }
+
+  .kpi-sub {
+    font-size: 0.72rem;
+  }
+
+  /* Subnavegación estilo App bar deslizable horizontalmente */
+  .oxi-pro-subnav {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    margin-bottom: 1.25rem;
+    padding-bottom: 2px;
+  }
+
+  .oxi-pro-subnav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .subnav-btn {
+    flex-shrink: 0;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+
+  /* Toolbar de secciones */
+  .section-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .section-toolbar > div {
+    width: 100%;
+  }
+
+  .section-toolbar h3 {
+    font-size: 1.15rem;
+  }
+
+  .section-toolbar p {
+    font-size: 0.82rem;
+  }
+
+  /* KPIs de Curva S */
+  .curva-s-kpis-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .curva-s-kpi-card {
+    padding: 10px 12px;
+  }
+
+  .curva-s-kpi-val {
+    font-size: 1.15rem;
+  }
+
+  /* Gráfico Curva S */
+  .curva-s-chart-box {
+    padding: 12px 10px;
+    border-radius: 8px;
+  }
+
+  .curva-s-chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .curva-s-legend {
+    gap: 10px;
+    font-size: 0.75rem;
+  }
+
+  /* Gantt Móvil: columna fija de tareas compacta sticky para ver el timeline */
+  .gantt-top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .gantt-legend {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .gantt-view-switch {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .gantt-view-btn {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .gantt-tasks-col {
+    width: 140px;
+    min-width: 130px;
+    position: sticky;
+    left: 0;
+    z-index: 8;
+    background: #fafafa;
+    box-shadow: 2px 0 6px rgba(0,0,0,0.06);
+  }
+
+  .gantt-tasks-col-header {
+    padding: 8px 10px;
+    font-size: 0.7rem;
+  }
+
+  .gantt-task-meta-cell {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+
+  .gantt-task-title {
+    max-width: 115px;
+    font-size: 0.78rem;
+  }
+
+  /* Modales responsivos estilo Bottom-Sheet en celular */
+  .oxi-modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .oxi-modal-content {
+    max-width: 100%;
+    width: 100%;
+    max-height: 88vh;
+    border-radius: 16px 16px 0 0;
+    padding: 1.25rem 1rem max(1.5rem, env(safe-area-inset-bottom, 1.5rem));
+    box-sizing: border-box;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .oxi-modal-content input,
+  .oxi-modal-content select,
+  .oxi-modal-content textarea {
+    font-size: 16px !important; /* Previene zoom automático no deseado en iOS Safari */
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+    margin-top: 1.25rem;
+  }
+
+  .modal-actions button {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  /* Tablas con scroll horizontal suave */
+  .table-responsive,
+  .oxi-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .oxi-table th,
+  .oxi-table td {
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .oxi-pro-header-title h2 {
+    font-size: 1.2rem;
+  }
+
+  .oxi-pro-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .curva-s-kpis-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gantt-tasks-col {
+    width: 125px;
+    min-width: 115px;
+  }
+
+  .gantt-task-title {
+    max-width: 100px;
+  }
+}
+
+
 
 
 

@@ -463,16 +463,22 @@
 /* Mobile responsiveness */
 @media (max-width: 640px) {
   .copilot-window {
-    right: 12px;
-    bottom: 78px;
-    width: calc(100vw - 24px);
-    height: 75vh;
+    right: 10px;
+    bottom: max(72px, calc(env(safe-area-inset-bottom, 16px) + 56px));
+    width: calc(100vw - 20px);
+    height: 72vh;
+    border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
   }
   .copilot-floating-trigger {
-    right: 16px;
-    bottom: 18px;
+    right: 14px;
+    bottom: max(16px, env(safe-area-inset-bottom, 16px));
     padding: 8px 14px;
     font-size: 0.82rem;
+    box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45);
+  }
+  .copilot-input {
+    font-size: 16px; /* Previene auto-zoom en iOS Safari */
   }
 }
 
