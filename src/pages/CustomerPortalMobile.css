@@ -14,9 +14,6 @@
   .oxi-sidebar-mobile-bar {
     display: none !important;
   }
-  .oxi-mobile-drawer-trigger {
-    display: none !important;
-  }
 }
 
 /* 2. SMARTPHONE & PWA APP (< 769px): Bottom Navigation Bar + Off-Canvas Drawer + Header Móvil */
@@ -219,27 +216,6 @@
 
   .copilot-window {
     bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  /* Botón hamburguesa dentro de la barra de contexto de OxI Pro */
-  .oxi-mobile-drawer-trigger {
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    width: 32px;
-    height: 32px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    margin-right: 6px;
-    color: #0f172a;
-    transition: background 0.12s ease;
-  }
-
-  .oxi-mobile-drawer-trigger:active {
-    background: #f1f5f9;
   }
 
   /* Barra de Navegación Inferior Fija (Bottom Tab Bar táctil nativa) */

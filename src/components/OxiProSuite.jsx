@@ -3758,17 +3758,6 @@ ${validation.message}
         {/* NIVEL 1: BARRA DE CONTEXTO TÉCNICO Y ACCESOS */}
         <div className="oxi-pro-context-bar">
           <div className="oxi-pro-context-left">
-            {onOpenMobileDrawer && (
-              <button
-                type="button"
-                className="oxi-mobile-drawer-trigger"
-                onClick={onOpenMobileDrawer}
-                aria-label="Abrir Menú de Obra"
-                title="Menú de Navegación y Obras"
-              >
-                ☰
-              </button>
-            )}
             <span className="oxi-pro-badge">PLATAFORMA OXI PRO</span>
             <span className="oxi-pro-obra-tag">
               Obra: {project?.name || 'Torre Libertador (Edificio Residencial)'}
