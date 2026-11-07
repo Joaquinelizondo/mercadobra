@@ -63,6 +63,7 @@ export default function CustomerPortal() {
   const [proNotes, setProNotes] = useState('')
   const [proRequestSuccess, setProRequestSuccess] = useState(false)
   const [savingProRequest, setSavingProRequest] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [isCreatingQuote, setIsCreatingQuote] = useState(false)
@@ -222,8 +223,62 @@ export default function CustomerPortal() {
 
   return (
     <div className={`oxi-os-dashboard ${platformMode === 'pro' && !isEditingProfile && !isCreatingProject ? 'is-pro-mode' : ''}`}>
-      <aside className="oxi-os-sidebar">
-        <div className="oxi-os-brand">
+      {/* ── TELÓN DE FONDO (BACKDROP) DEL DRAWER MÓVIL ── */}
+      {mobileMenuOpen && (
+        <div 
+          className="oxi-drawer-backdrop" 
+          onClick={() => setMobileMenuOpen(false)} 
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ── TOP APP HEADER MÓVIL (PWA & SMARTPHONE) ── */}
+      <header className="oxi-mobile-app-header">
+        <button 
+          type="button" 
+          className="oxi-mobile-menu-trigger" 
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label="Abrir Menú de Obra"
+        >
+          ☰
+        </button>
+        <div className="oxi-mobile-header-center" onClick={() => setMobileMenuOpen(true)}>
+          <span className="oxi-mobile-header-label">{activeProject?.name || 'Mercadobra'}</span>
+          <span className="oxi-mobile-header-arrow">▾</span>
+        </div>
+        <button
+          type="button"
+          className={`oxi-mobile-mode-pill ${platformMode === 'pro' ? 'is-pro' : 'is-classic'}`}
+          onClick={() => {
+            if (platformMode === 'classic') {
+              if (isProUser) setPlatformMode('pro')
+              else setShowUpgradeModal(true)
+            } else {
+              setPlatformMode('classic')
+            }
+          }}
+          title="Cambiar entre OxI Pro y OxI Clásico"
+        >
+          {platformMode === 'pro' ? '⚡ PRO' : '🛠️ CLÁSICO'}
+        </button>
+      </header>
+
+      <aside className={`oxi-os-sidebar ${mobileMenuOpen ? 'is-mobile-open' : ''}`}>
+        <div className="oxi-sidebar-mobile-bar">
+          <div className="oxi-sidebar-brand-mobile">
+            <OxidaWordmark />
+          </div>
+          <button 
+            type="button" 
+            className="oxi-sidebar-close-btn" 
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Cerrar Menú"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="oxi-os-brand desktop-only-brand">
           <OxidaWordmark />
         </div>
         
@@ -249,7 +304,7 @@ export default function CustomerPortal() {
             <button
               type="button"
               className={`platform-toggle-btn ${platformMode === 'classic' ? 'is-active' : ''}`}
-              onClick={() => { setPlatformMode('classic'); setSelected(null); }}
+              onClick={() => { setPlatformMode('classic'); setSelected(null); setMobileMenuOpen(false); }}
             >
               🛠️ OxI Clásico
             </button>
@@ -258,7 +313,7 @@ export default function CustomerPortal() {
               className={`platform-toggle-btn ${platformMode === 'pro' ? 'is-active' : ''}`}
               onClick={() => {
                 if (isProUser) {
-                  setPlatformMode('pro'); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); setIsCreatingProject(false);
+                  setPlatformMode('pro'); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); setIsCreatingProject(false); setMobileMenuOpen(false);
                 } else {
                   setShowUpgradeModal(true)
                 }
@@ -280,6 +335,7 @@ export default function CustomerPortal() {
                 setIsCreatingProject(false);
                 setIsCreatingQuote(false);
                 setIsEditingProfile(false);
+                setMobileMenuOpen(false);
               }}
             >
               <option value="">Todas las obras</option>
@@ -292,7 +348,7 @@ export default function CustomerPortal() {
           <button 
             type="button"
             className="oxi-os-btn secondary"
-            onClick={() => { setIsCreatingProject(true); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); setPlatformMode('classic'); }}
+            onClick={() => { setIsCreatingProject(true); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); setPlatformMode('classic'); setMobileMenuOpen(false); }}
           >
             <span className="oxi-btn-icon">＋</span> Nueva Obra
           </button>
@@ -307,12 +363,13 @@ export default function CustomerPortal() {
               setIsEditingProfile(false); 
               setPlatformMode('classic');
               setRequest(EMPTY_REQUEST);
+              setMobileMenuOpen(false);
             }}
           >
             <span className="oxi-btn-icon">＋</span> Nueva Cotización
           </button>
 
-          <Link to="/cliente/modelador" className="oxi-os-btn simulator">
+          <Link to="/cliente/modelador" className="oxi-os-btn simulator" onClick={() => setMobileMenuOpen(false)}>
             <span className="oxi-btn-icon">📐</span> Simulador 3D Óxida
           </Link>
         </div>
@@ -321,7 +378,7 @@ export default function CustomerPortal() {
           <button 
             type="button"
             className="oxi-os-btn dark" 
-            onClick={() => { setIsEditingProfile(true); setIsCreatingProject(false); setIsCreatingQuote(false); setSelected(null); }}
+            onClick={() => { setIsEditingProfile(true); setIsCreatingProject(false); setIsCreatingQuote(false); setSelected(null); setMobileMenuOpen(false); }}
           >
             ⚙️ Perfil de Constructora
           </button>
@@ -342,8 +399,9 @@ export default function CustomerPortal() {
           <OxiProSuite 
             project={activeProject} 
             projects={b2bProjects}
-            onSelectProject={(id) => setActiveProjectId(id)}
-            onBackToClassic={() => setPlatformMode('classic')} 
+            onSelectProject={(id) => { setActiveProjectId(id); setMobileMenuOpen(false); }}
+            onBackToClassic={() => { setPlatformMode('classic'); setMobileMenuOpen(false); }} 
+            onOpenMobileDrawer={() => setMobileMenuOpen(true)}
           />
         ) : (
           /* PLATAFORMA OXI CLÁSICO */
@@ -799,6 +857,49 @@ export default function CustomerPortal() {
                 </div>
               </div>
             )}
+
+            {/* ── BARRA INFERIOR MÓVIL PARA OXÍ CLÁSICO ── */}
+            <nav className="oxi-mobile-bottom-bar classic-bar" aria-label="Navegación Móvil Clásico">
+              <button
+                type="button"
+                className={`oxi-bottom-item ${!isCreatingQuote && !isCreatingProject && !isEditingProfile && !selected ? 'is-active' : ''}`}
+                onClick={() => { setSelected(null); setIsCreatingQuote(false); setIsCreatingProject(false); setIsEditingProfile(false); }}
+              >
+                <span className="oxi-bottom-icon">📋</span>
+                <span className="oxi-bottom-label">Cotizaciones</span>
+              </button>
+              <button
+                type="button"
+                className={`oxi-bottom-item ${isCreatingQuote ? 'is-active' : ''}`}
+                onClick={() => { setIsCreatingQuote(true); setIsCreatingProject(false); setSelected(null); setIsEditingProfile(false); setRequest(EMPTY_REQUEST); }}
+              >
+                <span className="oxi-bottom-icon">＋</span>
+                <span className="oxi-bottom-label">Nueva</span>
+              </button>
+              <Link to="/cliente/modelador" className="oxi-bottom-item">
+                <span className="oxi-bottom-icon">📐</span>
+                <span className="oxi-bottom-label">3D Óxida</span>
+              </Link>
+              <button
+                type="button"
+                className="oxi-bottom-item pro-highlight"
+                onClick={() => {
+                  if (isProUser) setPlatformMode('pro')
+                  else setShowUpgradeModal(true)
+                }}
+              >
+                <span className="oxi-bottom-icon">⚡</span>
+                <span className="oxi-bottom-label">OxI Pro</span>
+              </button>
+              <button
+                type="button"
+                className="oxi-bottom-item"
+                onClick={() => setMobileMenuOpen(true)}
+              >
+                <span className="oxi-bottom-icon">☰</span>
+                <span className="oxi-bottom-label">Menú</span>
+              </button>
+            </nav>
           </>
         )}
       </main>

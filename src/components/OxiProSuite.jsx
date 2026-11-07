@@ -831,7 +831,7 @@ function CurvaSTooltip({ active, payload, totalBudget }) {
   )
 }
 
-export default function OxiProSuite({ project, projects = [], onSelectProject, onBackToClassic }) {
+export default function OxiProSuite({ project, projects = [], onSelectProject, onBackToClassic, onOpenMobileDrawer }) {
   const projectId = project?.id || 'demo'
   const storageKey = `oxi_pro_state_${projectId}`
 
@@ -3758,6 +3758,17 @@ ${validation.message}
         {/* NIVEL 1: BARRA DE CONTEXTO TÉCNICO Y ACCESOS */}
         <div className="oxi-pro-context-bar">
           <div className="oxi-pro-context-left">
+            {onOpenMobileDrawer && (
+              <button
+                type="button"
+                className="oxi-mobile-drawer-trigger"
+                onClick={onOpenMobileDrawer}
+                aria-label="Abrir Menú de Obra"
+                title="Menú de Navegación y Obras"
+              >
+                ☰
+              </button>
+            )}
             <span className="oxi-pro-badge">PLATAFORMA OXI PRO</span>
             <span className="oxi-pro-obra-tag">
               Obra: {project?.name || 'Torre Libertador (Edificio Residencial)'}
@@ -11726,6 +11737,57 @@ ${validation.message}
           setDocuments(prev => [newDocEntry, ...prev])
         }}
       />
+
+      {/* ── BARRA INFERIOR MÓVIL (BOTTOM TAB BAR TÁCTIL PARA PULGAR) ── */}
+      <nav className="oxi-mobile-bottom-bar" aria-label="Navegación Móvil OxI Pro">
+        <button
+          type="button"
+          className={`oxi-bottom-item ${activeTab === 'docs' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('docs')}
+        >
+          <span className="oxi-bottom-icon">📐</span>
+          <span className="oxi-bottom-label">Planos</span>
+          {documents.length > 0 && <span className="oxi-bottom-pill">{documents.length}</span>}
+        </button>
+
+        <button
+          type="button"
+          className={`oxi-bottom-item ${activeTab === 'cronograma' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('cronograma')}
+        >
+          <span className="oxi-bottom-icon">📅</span>
+          <span className="oxi-bottom-label">Gantt</span>
+          {schedule.length > 0 && <span className="oxi-bottom-pill">{schedule.length}</span>}
+        </button>
+
+        <button
+          type="button"
+          className={`oxi-bottom-item ${activeTab === 'control' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('control')}
+        >
+          <span className="oxi-bottom-icon">📊</span>
+          <span className="oxi-bottom-label">Curva S</span>
+        </button>
+
+        <button
+          type="button"
+          className={`oxi-bottom-item ${activeTab === 'rubros' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('rubros')}
+        >
+          <span className="oxi-bottom-icon">🚨</span>
+          <span className="oxi-bottom-label">Costos</span>
+          {criticalAlertsCount > 0 && <span className="oxi-bottom-alert">!</span>}
+        </button>
+
+        <button
+          type="button"
+          className="oxi-bottom-item"
+          onClick={() => onOpenMobileDrawer && onOpenMobileDrawer()}
+        >
+          <span className="oxi-bottom-icon">☰</span>
+          <span className="oxi-bottom-label">Menú</span>
+        </button>
+      </nav>
     </div>
   )
 }

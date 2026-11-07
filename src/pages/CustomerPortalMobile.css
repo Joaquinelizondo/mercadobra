@@ -1,39 +1,377 @@
-@media (max-width: 900px) {
-  /* Override default 900px rule in CustomerPortal.css to be cleaner */
-  .oxi-os-dashboard { flex-direction: column; min-height: 100svh; }
-  .oxi-os-sidebar { width: 100%; padding: 1.5rem 1rem; border-right: none; border-bottom: 1px solid #262626; gap: 1rem; }
-  .oxi-os-brand { margin-bottom: 0.5rem !important; }
-  .oxi-os-user { padding-bottom: 1rem; flex-direction: row !important; }
-  .oxi-os-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 1rem !important; }
-  .oxi-os-main { padding: 1.5rem 1rem; }
-  .oxi-os-main-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-  .oxi-os-main-header h1 { font-size: 2.2rem; margin-top: 0; }
+/* ── ADAPTIVE RESPONSIVE NAVIGATION: DESKTOP & TABLET VS. SMARTPHONE APP ── */
 
-  /* Inmersión completa en OxI Pro en dispositivos móviles (App mode) */
-  .oxi-os-dashboard.is-pro-mode .oxi-os-sidebar {
-    display: none;
+/* 1. DESKTOP & TABLET WIDE (≥ 769px): Sidebar Clásica de Escritorio & Pestañas de Ingeniería */
+@media (min-width: 769px) {
+  .oxi-mobile-app-header {
+    display: none !important;
   }
-  .oxi-os-dashboard.is-pro-mode .oxi-os-main {
-    padding: 0.5rem 0.5rem 4rem;
-    width: 100%;
-    box-sizing: border-box;
+  .oxi-mobile-bottom-bar {
+    display: none !important;
   }
-  
-  /* Kanban Board scroll snapping for mobile */
-  .kanban-board { padding-bottom: 15px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-  .kanban-column { min-width: 85vw; scroll-snap-align: center; }
-
-  /* Forms and Request */
-  .customer-request { grid-template-columns: 1fr; gap: 24px; }
-  .customer-request h2 { font-size: 2rem; line-height: 1.1; }
-  .customer-request form > div { grid-template-columns: 1fr; gap: 14px; }
-  .customer-request input, .customer-request textarea, .customer-request select { font-size: 16px; min-height: 48px; }
-  .oxi-os-profile-form { padding: 1.5rem !important; }
-  .oxi-os-profile-form > div > div { grid-template-columns: 1fr !important; gap: 16px !important; }
+  .oxi-drawer-backdrop {
+    display: none !important;
+  }
+  .oxi-sidebar-mobile-bar {
+    display: none !important;
+  }
+  .oxi-mobile-drawer-trigger {
+    display: none !important;
+  }
 }
 
-@media (max-width: 500px) {
-  .oxi-os-menu { grid-template-columns: 1fr; }
-  .oxi-os-btn { min-height: 48px; display: flex; align-items: center; justify-content: center; }
-  .oxi-os-project-select select { min-height: 48px; font-size: 16px; }
+/* 2. SMARTPHONE & PWA APP (< 769px): Bottom Navigation Bar + Off-Canvas Drawer + Header Móvil */
+@media (max-width: 768px) {
+  /* Layout global de app móvil */
+  .oxi-os-dashboard {
+    flex-direction: column;
+    min-height: 100svh;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Telón de fondo translúcido (Backdrop) para Drawer lateral */
+  .oxi-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 9998;
+    animation: fadeInBackdrop 0.25s ease-out;
+  }
+
+  @keyframes fadeInBackdrop {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Top App Header para Teléfonos */
+  .oxi-mobile-app-header {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    padding: 0 14px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 800;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .oxi-mobile-menu-trigger {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: #0f172a;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .oxi-mobile-menu-trigger:active {
+    background: #f1f5f9;
+    transform: scale(0.94);
+  }
+
+  .oxi-mobile-header-center {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    max-width: 60%;
+  }
+
+  .oxi-mobile-header-label {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .oxi-mobile-header-arrow {
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+
+  .oxi-mobile-mode-pill {
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: transform 0.12s ease;
+  }
+
+  .oxi-mobile-mode-pill:active {
+    transform: scale(0.94);
+  }
+
+  .oxi-mobile-mode-pill.is-pro {
+    background: #ea580c;
+    color: #ffffff;
+  }
+
+  .oxi-mobile-mode-pill.is-classic {
+    background: #e2e8f0;
+    color: #334155;
+  }
+
+  /* Sidebar convertida en Drawer lateral deslizante (Off-Canvas Drawer) */
+  .desktop-only-brand {
+    display: none !important;
+  }
+
+  .oxi-sidebar-mobile-bar {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #1f2937;
+  }
+
+  .oxi-sidebar-close-btn {
+    background: #1f2937;
+    border: 1px solid #374151;
+    color: #f8fafc;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  .oxi-sidebar-close-btn:active {
+    background: #374151;
+    transform: scale(0.92);
+  }
+
+  .oxi-os-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 290px !important;
+    max-width: 86vw !important;
+    z-index: 9999 !important;
+    background: #0f172a !important;
+    color: #f8fafc !important;
+    box-shadow: 10px 0 32px rgba(0, 0, 0, 0.5) !important;
+    transform: translateX(-105%) !important;
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 1.25rem 1rem calc(2.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    border-right: 1px solid #1f2937 !important;
+  }
+
+  .oxi-os-sidebar.is-mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  /* Espacio de contenido principal con margen para que la barra inferior no tape nada */
+  .oxi-os-main {
+    padding: 1rem 0.75rem calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .oxi-pro-container {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* En smartphones (< 769px), la subnavegación horizontal superior se reemplaza por la Bottom Tab Bar */
+  .oxi-pro-subnav {
+    display: none !important;
+  }
+
+  /* Ajuste de posición del Copilot Flotante para no colisionar con la Bottom Tab Bar */
+  .copilot-floating-trigger {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+    right: 14px !important;
+  }
+
+  .copilot-window {
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Botón hamburguesa dentro de la barra de contexto de OxI Pro */
+  .oxi-mobile-drawer-trigger {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-right: 6px;
+    color: #0f172a;
+    transition: background 0.12s ease;
+  }
+
+  .oxi-mobile-drawer-trigger:active {
+    background: #f1f5f9;
+  }
+
+  /* Barra de Navegación Inferior Fija (Bottom Tab Bar táctil nativa) */
+  .oxi-mobile-bottom-bar {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 60px !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-sizing: content-box;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-top: 1px solid #e2e8f0 !important;
+    z-index: 900 !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+  }
+
+  .oxi-bottom-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    padding: 6px 0;
+    cursor: pointer;
+    position: relative;
+    text-decoration: none;
+    color: #64748b;
+    transition: transform 0.12s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .oxi-bottom-item:active {
+    transform: scale(0.92);
+  }
+
+  .oxi-bottom-icon {
+    font-size: 1.25rem;
+    line-height: 1.2;
+  }
+
+  .oxi-bottom-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-top: 2px;
+    letter-spacing: -0.2px;
+  }
+
+  .oxi-bottom-item.is-active .oxi-bottom-label {
+    color: #ea580c;
+    font-weight: 800;
+  }
+
+  .oxi-bottom-item.pro-highlight .oxi-bottom-label {
+    color: #ea580c;
+    font-weight: 700;
+  }
+
+  .oxi-bottom-pill {
+    position: absolute;
+    top: 3px;
+    right: calc(50% - 18px);
+    background: #0284c7;
+    color: #ffffff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    min-width: 15px;
+    height: 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+  }
+
+  .oxi-bottom-alert {
+    position: absolute;
+    top: 3px;
+    right: calc(50% - 16px);
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 0.65rem;
+    font-weight: 900;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Kanban y tablas adaptadas a pantalla estrecha */
+  .kanban-board {
+    padding-bottom: 15px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .kanban-column {
+    min-width: 85vw;
+    scroll-snap-align: center;
+  }
+
+  /* Formularios y modales en mobile bottom sheet */
+  .customer-request {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .customer-request h2 {
+    font-size: 2rem;
+    line-height: 1.1;
+  }
+
+  .customer-request form > div {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .customer-request input,
+  .customer-request textarea,
+  .customer-request select {
+    font-size: 16px;
+    min-height: 48px;
+  }
+
+  .oxi-os-profile-form {
+    padding: 1.25rem !important;
+  }
+
+  .oxi-os-profile-form > div > div {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
 }

@@ -2437,6 +2437,17 @@ A continuación se detallan los módulos clave para posicionar a OxI Pro como la
   - Control de certificaciones y estados de cuotas o aportes de fideicomiso al costo.
   - Resguardo total de confidencialidad comercial: omisión automática de márgenes de ganancia, costos internos de subcontratistas y compras mayoristas.
 
+#### 18. 🧭 Arquitectura de Navegación Dual Adaptativa (Web & Tablet vs. App Smartphone) [EN DESARROLLO]
+- **Objetivo:** Diferenciar de forma nativa la experiencia de usuario entre pantallas amplias de escritorio/tablet y el formato aplicación en teléfonos inteligentes, garantizando máxima usabilidad táctil y estética visual moderna.
+- **Alcance funcional y estético:**
+  - **Entorno Desktop & iPad/Tablet (≥ 768px):**
+    - Sidebar persistente a la izquierda con perfil de constructora, selector de obras, accesos directos al Simulador 3D, Cotizaciones y configuración de cuenta.
+    - Flujo horizontal amplio con subnavegación superior para maximizar el área de trabajo del Gantt interactivo, la Curva S y las planillas de costos.
+  - **Entorno Smartphone & PWA Móvil (< 768px):**
+    - **Barra de Navegación Inferior Fija (Bottom Tab Bar):** Diseñada al alcance del pulgar para alternar instantáneamente entre `📐 Planos`, `📅 Gantt`, `📊 Curva S`, `🚨 Costos` y `☰ Menú`, con micro-interacciones táctiles y padding de seguridad para iOS (`env(safe-area-inset-bottom)`).
+    - **Header Superior Móvil:** Barra minimalista con botón `☰ Hamburguesa`, selector rápido de obra activa y avatar.
+    - **Cajón Deslizable Lateral (Off-canvas Drawer):** Cortina lateral fluida con fondo translúcido (backdrop-filter blur) que expone el cambio de modo OxI Clásico ⇄ OxI Pro, selector de obras, Simulador 3D, Nueva Cotización y Perfil, sin tapar la operatividad de campo.
+
 ---
 
 ---
