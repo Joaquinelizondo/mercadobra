@@ -26,9 +26,9 @@ export default function Layout() {
     >
       {!isOxiPlatform && <Topbar />}
       <Outlet />
-      <PwaInstallBanner />
       {!isOxiPlatform && (
         <>
+          <PwaInstallBanner />
           <Footer />
           {FEATURES.SHOW_ECOMMERCE_PRODUCTS && <Cart />}
           {AI_CHAT_ENABLED && <ChatWidget />}

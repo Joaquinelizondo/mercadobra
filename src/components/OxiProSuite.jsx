@@ -11755,7 +11755,10 @@ ${validation.message}
         <button
           type="button"
           className={`oxi-bottom-item ${activeTab === 'docs' ? 'is-active' : ''}`}
-          onClick={() => setActiveTab('docs')}
+          onClick={() => {
+            setActiveTab('docs')
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
         >
           <span className="oxi-bottom-icon">📐</span>
           <span className="oxi-bottom-label">Planos</span>
@@ -11765,7 +11768,10 @@ ${validation.message}
         <button
           type="button"
           className={`oxi-bottom-item ${activeTab === 'cronograma' ? 'is-active' : ''}`}
-          onClick={() => setActiveTab('cronograma')}
+          onClick={() => {
+            setActiveTab('cronograma')
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
         >
           <span className="oxi-bottom-icon">📅</span>
           <span className="oxi-bottom-label">Gantt</span>
@@ -11775,7 +11781,10 @@ ${validation.message}
         <button
           type="button"
           className={`oxi-bottom-item ${activeTab === 'control' ? 'is-active' : ''}`}
-          onClick={() => setActiveTab('control')}
+          onClick={() => {
+            setActiveTab('control')
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
         >
           <span className="oxi-bottom-icon">📊</span>
           <span className="oxi-bottom-label">Curva S</span>
@@ -11784,7 +11793,10 @@ ${validation.message}
         <button
           type="button"
           className={`oxi-bottom-item ${activeTab === 'rubros' ? 'is-active' : ''}`}
-          onClick={() => setActiveTab('rubros')}
+          onClick={() => {
+            setActiveTab('rubros')
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
         >
           <span className="oxi-bottom-icon">🚨</span>
           <span className="oxi-bottom-label">Costos</span>

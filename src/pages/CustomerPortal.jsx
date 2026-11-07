@@ -250,12 +250,7 @@ export default function CustomerPortal() {
           type="button"
           className={`oxi-mobile-mode-pill ${platformMode === 'pro' ? 'is-pro' : 'is-classic'}`}
           onClick={() => {
-            if (platformMode === 'classic') {
-              if (isProUser) setPlatformMode('pro')
-              else setShowUpgradeModal(true)
-            } else {
-              setPlatformMode('classic')
-            }
+            setPlatformMode(prev => prev === 'pro' ? 'classic' : 'pro')
           }}
           title="Cambiar entre OxI Pro y OxI Clásico"
         >
@@ -312,14 +307,15 @@ export default function CustomerPortal() {
               type="button"
               className={`platform-toggle-btn ${platformMode === 'pro' ? 'is-active' : ''}`}
               onClick={() => {
-                if (isProUser) {
-                  setPlatformMode('pro'); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); setIsCreatingProject(false); setMobileMenuOpen(false);
-                } else {
-                  setShowUpgradeModal(true)
-                }
+                setPlatformMode('pro'); 
+                setSelected(null); 
+                setIsCreatingQuote(false); 
+                setIsEditingProfile(false); 
+                setIsCreatingProject(false); 
+                setMobileMenuOpen(false);
               }}
             >
-              ⚡ OxI Pro {!isProUser && '🔒'}
+              ⚡ OxI Pro
             </button>
           </div>
         </div>
@@ -884,8 +880,8 @@ export default function CustomerPortal() {
                 type="button"
                 className="oxi-bottom-item pro-highlight"
                 onClick={() => {
-                  if (isProUser) setPlatformMode('pro')
-                  else setShowUpgradeModal(true)
+                  setPlatformMode('pro')
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
                 }}
               >
                 <span className="oxi-bottom-icon">⚡</span>

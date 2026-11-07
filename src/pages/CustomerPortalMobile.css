@@ -56,8 +56,9 @@
     border-bottom: 1px solid #e2e8f0;
     position: sticky;
     top: 0;
-    z-index: 800;
+    z-index: 9995 !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    pointer-events: auto !important;
   }
 
   .oxi-mobile-menu-trigger {
@@ -74,6 +75,8 @@
     cursor: pointer;
     transition: background 0.15s ease, transform 0.1s ease;
     -webkit-tap-highlight-color: transparent;
+    pointer-events: auto !important;
+    touch-action: manipulation;
   }
 
   .oxi-mobile-menu-trigger:active {
@@ -87,6 +90,8 @@
     gap: 6px;
     cursor: pointer;
     max-width: 60%;
+    pointer-events: auto !important;
+    touch-action: manipulation;
   }
 
   .oxi-mobile-header-label {
@@ -106,12 +111,15 @@
   .oxi-mobile-mode-pill {
     font-size: 0.72rem;
     font-weight: 800;
-    padding: 4px 10px;
+    padding: 6px 12px;
     border-radius: 14px;
     border: none;
     cursor: pointer;
     letter-spacing: 0.04em;
     transition: transform 0.12s ease;
+    pointer-events: auto !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .oxi-mobile-mode-pill:active {
@@ -241,17 +249,19 @@
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    height: 60px !important;
+    height: 62px !important;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     box-sizing: content-box;
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
     border-top: 1px solid #e2e8f0 !important;
-    z-index: 900 !important;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+    z-index: 9995 !important;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1) !important;
     justify-content: space-around !important;
     align-items: center !important;
+    pointer-events: auto !important;
+    touch-action: manipulation;
   }
 
   .oxi-bottom-item {
@@ -263,12 +273,16 @@
     background: transparent;
     border: none;
     padding: 6px 0;
+    min-height: 48px;
     cursor: pointer;
     position: relative;
     text-decoration: none;
     color: #64748b;
     transition: transform 0.12s ease;
     -webkit-tap-highlight-color: transparent;
+    pointer-events: auto !important;
+    touch-action: manipulation;
+    user-select: none;
   }
 
   .oxi-bottom-item:active {

@@ -11,6 +11,15 @@ export default function PwaInstallBanner() {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
     if (isStandalone) return
 
+    // Si estamos en cualquier ruta interna de la plataforma, no mostrar
+    if (
+      window.location.pathname.startsWith('/cliente') || 
+      window.location.pathname.startsWith('/proveedor') || 
+      window.location.pathname.startsWith('/admin')
+    ) {
+      return
+    }
+
     // Si el usuario lo descartó en las últimas 48 horas
     const dismissedAt = localStorage.getItem('mb_pwa_dismissed_at')
     if (dismissedAt && Date.now() - Number(dismissedAt) < 48 * 3600 * 1000) return
