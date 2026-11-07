@@ -2409,6 +2409,34 @@ A continuación se detallan los módulos clave para posicionar a OxI Pro como la
   - Extracción asistida con IA y visión por computadora sobre planos PDF de arquitectura: cómputo automático de $m^2$ de solados, $m^2$ de cielorrasos, metros lineales de tabiques y aberturas.
   - Volcado directo a la Planilla de Partidas Presupuestarias y generación automática de la primera versión del Cronograma Gantt.
 
+#### 14. 📱 Superpoderes Móviles de Campo & Libro de Obra Digital [PENDIENTE]
+- **Objetivo:** Empoderar a jefes de obra, capataces y arquitectos directores directamente a pie de obra desde el teléfono, sin necesidad de cargar planillas en la computadora al final del día.
+- **Alcance planificado:**
+  - **Fotos con marca de agua legal inmutable**: Captura directa con cámara que incrusta fecha, hora, coordenadas GPS, nombre de obra, partida/tarea del Gantt y responsable técnico, bloqueando manipulaciones de auditoría.
+  - **Bitácora / Libro de Obra digital en 1 minuto**: Carga de parte diario con clima y actas de lluvia automáticas por geolocalización, cuadrilla presente, tareas ejecutadas e incidencias, con firma digital táctil del capataz y director.
+  - **Arquitectura Offline-First con sincronización en segundo plano**: Registro ágil sin conexión (sótanos, subsuelos o zonas rurales) que sincroniza datos y fotos automáticamente al recuperar cobertura celular o WiFi.
+
+#### 15. 🧾 Escaneo Inteligente de Remitos y Facturas con OCR [PENDIENTE]
+- **Objetivo:** Eliminar la carga manual de comprobantes y recibos de materiales en obra, garantizando imputación inmediata al costo real del rubro.
+- **Alcance planificado:**
+  - Captura con la cámara del smartphone de remitos en papel, tickets de corralón o ferretería industrial.
+  - Extracción asistida con IA / OCR de proveedor, CUIT/RUT, ítems, cantidades físicas y montos en menos de 3 segundos.
+  - Imputación automática a la partida presupuestaria correspondiente del rubro, recalculando en vivo el devengado y saldo disponible.
+
+#### 16. 🔔 Sistema de Notificaciones Push Nativas y Alertas Críticas [PENDIENTE]
+- **Objetivo:** Mantener a todo el equipo técnico sincronizado en tiempo real ante eventos imprevistos que impacten en el plazo o presupuesto de la obra.
+- **Alcance planificado:**
+  - Alertas meteorológicas automáticas con propuesta de postergación de tareas exteriores en el Gantt sin romper la ruta crítica.
+  - Avisos tempranos de desvío presupuestario cuando una partida consuma más del 85% de su asignación o cuando la Curva S física-financiera detecte atraso.
+  - Notificaciones inmediatas ante la publicación de revisiones nuevas de planos o especificaciones técnicas de ingeniería.
+
+#### 17. 🏛️ Portal Móvil del Inversor / Comitente al Paso [PENDIENTE]
+- **Objetivo:** Brindar a clientes finales e inversores un acceso directo y transparente desde el icono de su pantalla de inicio en formato aplicación.
+- **Alcance planificado:**
+  - Vista ejecutiva resumida: galería semanal de fotos de avance, línea de tiempo de hitos cumplidos y Curva S simplificada.
+  - Control de certificaciones y estados de cuotas o aportes de fideicomiso al costo.
+  - Resguardo total de confidencialidad comercial: omisión automática de márgenes de ganancia, costos internos de subcontratistas y compras mayoristas.
+
 ---
 
 ---
