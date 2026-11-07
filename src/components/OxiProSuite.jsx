@@ -8559,16 +8559,28 @@ ${validation.message}
                 <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600 }}>
                   Fotos de Evidencia de Inspección ({certForm.photos.length})
                 </label>
-                <label className="cert-photo-upload-zone" style={{ display: 'block' }}>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    style={{ display: 'none' }}
-                    onChange={handleAddCertPhotos}
-                  />
-                  <span>📷 Hacé clic para subir o arrastrar fotos de obra (JPG, PNG, WebP)</span>
-                </label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                  <label className="cert-photo-upload-zone" style={{ flex: '1 1 180px', cursor: 'pointer' }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      style={{ display: 'none' }}
+                      onChange={handleAddCertPhotos}
+                    />
+                    <span>📁 Elegir de la galería</span>
+                  </label>
+                  <label className="cert-photo-upload-zone" style={{ flex: '1 1 180px', cursor: 'pointer', background: 'rgba(234, 88, 12, 0.08)', borderColor: '#ea580c' }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      style={{ display: 'none' }}
+                      onChange={handleAddCertPhotos}
+                    />
+                    <span style={{ color: '#ea580c', fontWeight: 600 }}>📸 Tomar foto en obra (Cámara)</span>
+                  </label>
+                </div>
 
                 {certForm.photos.length > 0 && (
                   <div className="cert-photo-grid">

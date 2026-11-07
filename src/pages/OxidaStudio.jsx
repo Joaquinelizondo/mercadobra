@@ -73,8 +73,6 @@ export default function OxidaStudio() {
 
   return (
     <main className="oxida-site">
-      <MercadoQuoteFinder />
-
       <section className="oxida-hero">
         <div className="oxida-hero-media">
           <img src={escaleraImg} alt="Escalera contemporánea de hierro y madera" />
@@ -98,6 +96,8 @@ export default function OxidaStudio() {
         </div>
         <div className="oxida-scroll-note">DESLIZÁ PARA EXPLORAR</div>
       </section>
+
+      <MercadoQuoteFinder />
 
       <section className="oxida-manifesto">
         <p className="oxida-section-number">[ 01 — ENFOQUE ]</p>

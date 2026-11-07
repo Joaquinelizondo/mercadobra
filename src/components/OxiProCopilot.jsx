@@ -19,7 +19,48 @@ export default function OxiProCopilot({
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState('')
   const [isThinking, setIsThinking] = useState(false)
+  const [isListening, setIsListening] = useState(false)
   const messagesEndRef = useRef(null)
+  const recognitionRef = useRef(null)
+
+  useEffect(() => {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (SpeechRec) {
+      const rec = new SpeechRec()
+      rec.continuous = false
+      rec.interimResults = false
+      rec.lang = 'es-UY'
+      rec.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(r => r[0].transcript)
+          .join('')
+        if (transcript) {
+          setInput(prev => (prev.trim() ? `${prev.trim()} ${transcript}` : transcript))
+        }
+      }
+      rec.onend = () => setIsListening(false)
+      rec.onerror = () => setIsListening(false)
+      recognitionRef.current = rec
+    }
+  }, [])
+
+  function toggleVoiceDictation() {
+    if (!recognitionRef.current) {
+      alert('El dictado por voz no está disponible en este navegador. Podés escribir tu comando en el campo de texto.')
+      return
+    }
+    if (isListening) {
+      recognitionRef.current.stop()
+      setIsListening(false)
+    } else {
+      try {
+        recognitionRef.current.start()
+        setIsListening(true)
+      } catch (e) {
+        setIsListening(false)
+      }
+    }
+  }
 
   const [messages, setMessages] = useState(() => [
     {
@@ -368,10 +409,31 @@ Puedo ayudarte a cargar tareas en el Gantt, certificar avances reales, registrar
               handleSend()
             }}
           >
+            <button
+              type="button"
+              className={`copilot-voice-btn ${isListening ? 'is-listening' : ''}`}
+              onClick={toggleVoiceDictation}
+              title={isListening ? 'Escuchando... hacé clic para detener' : 'Dictar por voz con el micrófono'}
+              style={{
+                background: isListening ? '#ef4444' : 'rgba(255,255,255,0.08)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '0 10px',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                display: 'grid',
+                placeItems: 'center',
+                transition: 'all 0.2s',
+                animation: isListening ? 'pulseVoice 1s infinite' : 'none'
+              }}
+            >
+              🎙️
+            </button>
             <input
               type="text"
               className="copilot-input"
-              placeholder="Ej: Agregá pintura para diciembre con 2 oficiales..."
+              placeholder={isListening ? 'Escuchando... hablá ahora' : 'Ej: Agregá pintura para diciembre con 2 oficiales...'}
               value={input}
               onChange={e => setInput(e.target.value)}
               disabled={isThinking}

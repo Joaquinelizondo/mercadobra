@@ -81,6 +81,211 @@
 .store-custom h2 { margin: 18px 0 32px; color: #eee8dd; font: 400 clamp(2.5rem, 5vw, 5rem)/1 Georgia, serif; }
 .store-custom a { color: #eee8dd; padding-bottom: 8px; border-bottom: 1px solid #c5764e; text-decoration: none; font-weight: 700; }
 .store-custom a span { color: #c5764e; margin-left: 12px; }
+
+/* Showcase de Proyectos Ejecutados */
+.store-showcase {
+  padding: clamp(38px, 5vw, 70px);
+  border-radius: 28px;
+  background: #fbf8f3;
+  border: 1px solid #eee5d7;
+}
+
+.store-showcase-subtitle {
+  max-width: 600px;
+  margin-top: 12px;
+  color: #77736a;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.store-showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+  margin-top: 36px;
+}
+
+.store-project-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid #e7dfd1;
+  box-shadow: 0 10px 30px rgba(50, 35, 20, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.store-project-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 18px 45px rgba(50, 35, 20, 0.12);
+}
+
+.store-project-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #1d1d1a;
+}
+
+.store-project-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.store-project-card:hover .store-project-image img {
+  transform: scale(1.05);
+}
+
+.store-project-tag {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  padding: 5px 11px;
+  background: rgba(29, 29, 26, 0.85);
+  backdrop-filter: blur(8px);
+  color: #fbf8f3;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.store-project-body {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  flex: 1;
+}
+
+.store-project-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.store-project-category {
+  color: #9a4c2d;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.store-project-location {
+  color: #888175;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.store-project-body h3 {
+  margin: 0 0 10px;
+  font-size: 1.25rem;
+  color: #22221f;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.store-project-body p {
+  margin: 0 0 20px;
+  color: #626058;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  flex: 1;
+}
+
+.store-project-quote-btn {
+  align-self: flex-start;
+  color: #9a4c2d;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: gap 0.2s, color 0.2s;
+}
+
+.store-project-quote-btn:hover {
+  color: #c15d32;
+  gap: 9px;
+}
+
+/* Teaser del Simulador 3D & OxI Pro */
+.store-modeler-teaser {
+  padding: clamp(48px, 6vw, 80px);
+  border-radius: 28px;
+  background: linear-gradient(135deg, #1b1916 0%, #2b221b 100%);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 25px 65px rgba(27, 25, 22, 0.35);
+  border: 1px solid rgba(216, 117, 73, 0.25);
+}
+
+.store-modeler-teaser::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 450px;
+  height: 450px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(234, 88, 12, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.store-modeler-teaser-content {
+  position: relative;
+  z-index: 1;
+  max-width: 680px;
+}
+
+.store-modeler-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  background: rgba(234, 88, 12, 0.2);
+  border: 1px solid rgba(234, 88, 12, 0.5);
+  color: #f97316;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  margin-bottom: 18px;
+}
+
+.store-modeler-teaser h2 {
+  margin: 0 0 16px;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: #fffaf0;
+}
+
+.store-modeler-teaser p {
+  margin: 0 0 28px;
+  color: rgba(255, 250, 240, 0.8);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.store-modeler-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
 @media (max-width: 900px) {
   .store-quote-first { grid-template-columns:1fr; }
   .store-quote-intro { position:static; }
@@ -90,6 +295,7 @@
   .store-categories { grid-template-columns: repeat(2, 1fr); }
   .store-products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .store-mercadobra-note { grid-template-columns: 1fr; align-items: start; }
+  .store-showcase-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
   .storefront { gap: 16px; }

@@ -2437,7 +2437,7 @@ A continuación se detallan los módulos clave para posicionar a OxI Pro como la
   - Control de certificaciones y estados de cuotas o aportes de fideicomiso al costo.
   - Resguardo total de confidencialidad comercial: omisión automática de márgenes de ganancia, costos internos de subcontratistas y compras mayoristas.
 
-#### 18. 🧭 Arquitectura de Navegación Dual Adaptativa (Web & Tablet vs. App Smartphone) [EN DESARROLLO]
+#### 18. 🧭 Arquitectura de Navegación Dual Adaptativa (Web & Tablet vs. App Smartphone) [IMPLEMENTADO]
 - **Objetivo:** Diferenciar de forma nativa la experiencia de usuario entre pantallas amplias de escritorio/tablet y el formato aplicación en teléfonos inteligentes, garantizando máxima usabilidad táctil y estética visual moderna.
 - **Alcance funcional y estético:**
   - **Entorno Desktop & iPad/Tablet (≥ 768px):**
@@ -2447,6 +2447,23 @@ A continuación se detallan los módulos clave para posicionar a OxI Pro como la
     - **Barra de Navegación Inferior Fija (Bottom Tab Bar):** Diseñada al alcance del pulgar para alternar instantáneamente entre `📐 Planos`, `📅 Gantt`, `📊 Curva S`, `🚨 Costos` y `☰ Menú`, con micro-interacciones táctiles y padding de seguridad para iOS (`env(safe-area-inset-bottom)`).
     - **Header Superior Móvil:** Barra minimalista con botón `☰ Hamburguesa`, selector rápido de obra activa y avatar.
     - **Cajón Deslizable Lateral (Off-canvas Drawer):** Cortina lateral fluida con fondo translúcido (backdrop-filter blur) que expone el cambio de modo OxI Clásico ⇄ OxI Pro, selector de obras, Simulador 3D, Nueva Cotización y Perfil, sin tapar la operatividad de campo.
+
+#### 19. 🎨🚀 Plan Integral de Mejoras Visuales y Funcionales (Web & App) [EN CURSO]
+- **Objetivo:** Maximizar la conversión comercial y la experiencia de usuario tanto en la web pública como en la aplicación móvil/PWA tras la invisibilización del ecommerce retail, consolidando a Mercadobra y Óxida como la plataforma líder en ConstructionTech y Soluciones de Obra a Medida.
+- **Estructura de fases:**
+  - **Fase 1: Quick Wins Inmediatos (Web Pública & Captación de Obras)**
+    1. **Reordenamiento Visual de la Portada (`Storefront.jsx`):** Ubicar el Hero principal arriba del todo con impacto visual de marca (*"Lo que imaginás, en hierro y madera"*), trasladando el cotizador rápido debajo como siguiente paso natural de conversión.
+    2. **Cotizador Abierto a Medida (`MercadoQuoteFinder.jsx`):** Eliminar la restricción que bloqueaba el botón *"Cotizar ahora"* ante consultas sin match de producto retail. Permitir que cualquier idea en lenguaje natural (ej. *"Pérgola 6x3 con policarbonato"*, *"Reforma integral"*) se envíe de inmediato como solicitud comercial.
+    3. **Showcase / Galería Visual de Obras Ejecutadas en la Home:** Incorporar una grilla fotográfica editorial con proyectos destacados en hierro, madera y arquitectura para aportar credibilidad y volumen visual tras la salida de la tienda retail.
+    4. **Smart Banner de Instalación PWA (Móvil):** Detección inteligente para invitar al cliente o jefe de obra a instalar la app en su pantalla de inicio (1 toque en Android / guía animada en iOS Safari).
+  - **Fase 2: Experiencia Móvil de Campo & Superpoderes de Obra (App Smartphone)**
+    1. **Cámara Directa para Fotos de Obra:** Atributo `capture="environment"` en modales de certificación para abrir la cámara trasera en tiempo real.
+    2. **Dictado por Voz para OxI Copilot:** Integración de la Web Speech API nativa para dictar órdenes y avances al asistente de obra con las manos libres en el terreno.
+    3. **Modo Kanban Semanal en Celular:** Vista simplificada por tarjetas para el cronograma de tareas en pantallas pequeñas.
+    4. **Compartir Reporte por WhatsApp en 1 Clic:** Envío inmediato de estado de obra a comitentes e inversores con mensaje formateado.
+  - **Fase 3: Ecosistema Avanzado & Modelado**
+    1. **Libro / Parte Diario de Obra Digital:** Bitácora en 45 segundos con clima, cuadrillas, tareas y firmas técnicas.
+    2. **Visor 3D Interactivo para Clientes:** Acceso para comitentes a previsualizar proyectos en el simulador.
 
 ---
 
