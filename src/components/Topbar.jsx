@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { companyInitials } from '../utils/format'
+import { FEATURES } from '../config/features'
 import logoImg from '../assets/mercadobra.png'
 
 export default function Topbar() {
@@ -31,32 +32,36 @@ export default function Topbar() {
       </nav>
 
       <div className="topbar-actions">
-        <Link to="/favoritos" className="topbar-wishlist-btn" title="Ver favoritos">
-          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          {wishlist.length > 0 && <span className="wishlist-badge">{wishlist.length}</span>}
-        </Link>
+        {FEATURES.SHOW_ECOMMERCE_PRODUCTS && (
+          <>
+            <Link to="/favoritos" className="topbar-wishlist-btn" title="Ver favoritos">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              {wishlist.length > 0 && <span className="wishlist-badge">{wishlist.length}</span>}
+            </Link>
 
-        <button
-          type="button"
-          className="topbar-cart-btn"
-          onClick={() => setCartOpen(true)}
-          title="Ver carrito"
-          aria-label={`Ver carrito (${cartCount} productos)`}
-        >
-          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-            <path
-              d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4ZM3 6h18M16 10a4 4 0 0 1-8 0"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          </svg>
-          {cartCount > 0 && <span className="wishlist-badge">{cartCount}</span>}
-        </button>
+            <button
+              type="button"
+              className="topbar-cart-btn"
+              onClick={() => setCartOpen(true)}
+              title="Ver carrito"
+              aria-label={`Ver carrito (${cartCount} productos)`}
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <path
+                  d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4ZM3 6h18M16 10a4 4 0 0 1-8 0"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+              </svg>
+              {cartCount > 0 && <span className="wishlist-badge">{cartCount}</span>}
+            </button>
+          </>
+        )}
 
         {!isOxida && (supplierUser ? (
           <div className="supplier-session">
@@ -97,8 +102,10 @@ export default function Topbar() {
           <a href={`${isOxida ? '' : '/oxida'}#oxida-projects`}><small>01</small>Óxida <strong>Projects</strong></a>
           <a href={`${isOxida ? '' : '/oxida'}#oxida-pro`}><small>02</small>Óxida <strong>Pro</strong></a>
           <a href={`${isOxida ? '' : '/oxida'}#oxida-custom-works`}><small>03</small>Óxida <strong>Custom Works</strong></a>
-          <a href={`${isOxida ? '' : '/oxida'}#oxida-collection`}><small>04</small>Óxida <strong>Collection</strong></a>
-          <a href={`${isOxida ? '' : '/oxida'}#oxida-care`}><small>05</small>Óxida <strong>Care</strong></a>
+          {FEATURES.SHOW_ECOMMERCE_PRODUCTS && (
+            <a href={`${isOxida ? '' : '/oxida'}#oxida-collection`}><small>04</small>Óxida <strong>Collection</strong></a>
+          )}
+          <a href={`${isOxida ? '' : '/oxida'}#oxida-care`}><small>{FEATURES.SHOW_ECOMMERCE_PRODUCTS ? '05' : '04'}</small>Óxida <strong>Care</strong></a>
         </nav>
       )}
     </header>

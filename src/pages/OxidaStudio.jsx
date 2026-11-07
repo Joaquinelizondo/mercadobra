@@ -4,6 +4,7 @@ import OxidaWordmark from '../components/OxidaWordmark'
 import MercadoQuoteFinder from '../components/MercadoQuoteFinder'
 import ProductCard from '../components/ProductCard'
 import { useProducts } from '../context/ProductContext'
+import { FEATURES } from '../config/features'
 import camaImg from '../assets/oxida/cama-hierro.jpeg'
 import casaImg from '../assets/oxida/casa.jpeg'
 import entradaImg from '../assets/oxida/entrada.jpeg'
@@ -63,6 +64,13 @@ export default function OxidaStudio() {
     return (oxidaProducts.length ? oxidaProducts : productList).slice(0, 6)
   }, [productList])
 
+  const visibleCapabilities = useMemo(() => {
+    if (FEATURES.SHOW_ECOMMERCE_PRODUCTS) return capabilities
+    return capabilities
+      .filter(c => c.id !== 'oxida-collection')
+      .map((c, idx) => ({ ...c, number: `0${idx + 1}` }))
+  }, [])
+
   return (
     <main className="oxida-site">
       <MercadoQuoteFinder />
@@ -81,7 +89,11 @@ export default function OxidaStudio() {
           </p>
           <div className="oxida-hero-actions">
             <a href="#cotizar" className="oxida-hero-custom-link">Empezar proyecto ↘</a>
-            <a href="#tienda" className="oxida-arrow-link">Ver catálogo <span>↓</span></a>
+            {FEATURES.SHOW_ECOMMERCE_PRODUCTS ? (
+              <a href="#tienda" className="oxida-arrow-link">Ver catálogo <span>↓</span></a>
+            ) : (
+              <a href="#proyectos" className="oxida-arrow-link">Ver proyectos <span>↓</span></a>
+            )}
           </div>
         </div>
         <div className="oxida-scroll-note">DESLIZÁ PARA EXPLORAR</div>
@@ -99,11 +111,11 @@ export default function OxidaStudio() {
       <section className="oxida-capabilities" aria-labelledby="oxida-capabilities-title">
         <div className="oxida-capabilities-heading">
           <p className="oxida-section-number">[ 02 — CAPACIDADES ]</p>
-          <h2 id="oxida-capabilities-title">Una empresa.<br /><span>Cinco formas de hacer.</span></h2>
+          <h2 id="oxida-capabilities-title">Una empresa.<br /><span>{FEATURES.SHOW_ECOMMERCE_PRODUCTS ? 'Cinco formas de hacer.' : 'Cuatro formas de hacer.'}</span></h2>
           <p>Distintas escalas y necesidades, bajo una misma dirección de diseño, fabricación y ejecución.</p>
         </div>
         <div className="oxida-capabilities-list">
-          {capabilities.map((capability) => (
+          {visibleCapabilities.map((capability) => (
             <article id={capability.id} key={capability.number}>
               <span>{capability.number}</span>
               <h3>{capability.name}</h3>
@@ -119,34 +131,36 @@ export default function OxidaStudio() {
         </div>
       </section>
 
-      <section className="oxida-shop" id="tienda">
-        <div className="oxida-shop-heading">
-          <div>
-            <p className="oxida-section-number">[ 03 — ÓXIDA COLLECTION ]</p>
-            <h2>Diseños para<br /><span>hacerlos tuyos.</span></h2>
+      {FEATURES.SHOW_ECOMMERCE_PRODUCTS && (
+        <section className="oxida-shop" id="tienda">
+          <div className="oxida-shop-heading">
+            <div>
+              <p className="oxida-section-number">[ 03 — ÓXIDA COLLECTION ]</p>
+              <h2>Diseños para<br /><span>hacerlos tuyos.</span></h2>
+            </div>
+            <div>
+              <p>
+                Modelos base listos para comprar. Elegí una pieza y después definimos
+                contigo medida, color y terminación.
+              </p>
+              <Link to="/explorar">Ver toda la colección ↗</Link>
+            </div>
           </div>
-          <div>
-            <p>
-              Modelos base listos para comprar. Elegí una pieza y después definimos
-              contigo medida, color y terminación.
-            </p>
-            <Link to="/explorar">Ver toda la colección ↗</Link>
-          </div>
-        </div>
 
-        {loadingProducts ? (
-          <p className="oxida-shop-loading">Cargando colección…</p>
-        ) : (
-          <div className="products-grid oxida-shop-grid">
-            {shopProducts.map((product) => <ProductCard key={product.id} product={product} />)}
-          </div>
-        )}
-      </section>
+          {loadingProducts ? (
+            <p className="oxida-shop-loading">Cargando colección…</p>
+          ) : (
+            <div className="products-grid oxida-shop-grid">
+              {shopProducts.map((product) => <ProductCard key={product.id} product={product} />)}
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="oxida-projects" id="proyectos">
         <div className="oxida-section-heading">
           <div>
-            <p className="oxida-section-number">[ 04 — PROYECTOS ]</p>
+            <p className="oxida-section-number">[ {FEATURES.SHOW_ECOMMERCE_PRODUCTS ? '04' : '03'} — PROYECTOS ]</p>
             <h2>Hecho para<br /><span>quedarse.</span></h2>
           </div>
           <p>Una selección de posibilidades para imaginar qué podemos construir juntos.</p>
@@ -170,7 +184,7 @@ export default function OxidaStudio() {
       <section className="oxida-process" id="proceso">
         <div className="oxida-section-heading oxida-process-heading">
           <div>
-            <p className="oxida-section-number">[ 05 — PROCESO ]</p>
+            <p className="oxida-section-number">[ {FEATURES.SHOW_ECOMMERCE_PRODUCTS ? '05' : '04'} — PROCESO ]</p>
             <h2>De tu idea<br />a la <span>realidad.</span></h2>
           </div>
           <p>Un método simple para que diseñar a medida deje de ser complicado.</p>

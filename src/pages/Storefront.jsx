@@ -5,6 +5,7 @@ import ProductCard from '../components/ProductCard'
 import OxidaWordmark from '../components/OxidaWordmark'
 import MercadoQuoteFinder from '../components/MercadoQuoteFinder'
 import EditorialProductSlider from '../components/EditorialProductSlider'
+import { FEATURES } from '../config/features'
 import heroImage from '../assets/oxida/escalera.jpeg'
 import mercadoBraLogo from '../assets/mercadobra.png'
 import './Storefront.css'
@@ -39,7 +40,7 @@ export default function Storefront() {
   return (
     <div className="storefront">
       <MercadoQuoteFinder />
-      <EditorialProductSlider products={productList} />
+      {FEATURES.SHOW_ECOMMERCE_PRODUCTS && <EditorialProductSlider products={productList} />}
 
       <section className="store-hero" id="inicio">
         <div className="store-hero-copy">
@@ -55,7 +56,11 @@ export default function Storefront() {
           </p>
           <div className="store-hero-actions">
             <a href="#cotizar" className="store-button store-button--primary">Empezar proyecto a medida</a>
-            <Link to="/explorar#catalog-results" className="store-button store-button--secondary">Ver catálogo</Link>
+            {FEATURES.SHOW_ECOMMERCE_PRODUCTS ? (
+              <Link to="/explorar#catalog-results" className="store-button store-button--secondary">Ver catálogo</Link>
+            ) : (
+              <Link to="/oxida#proyectos" className="store-button store-button--secondary">Ver proyectos ejecutados</Link>
+            )}
           </div>
           <div className="store-trust">
             <span>Compra segura</span><span>Fabricación local</span><span>Atención directa</span>
@@ -68,45 +73,47 @@ export default function Storefront() {
         </div>
       </section>
 
-      <section className="store-section" id="coleccion">
-        <div className="store-heading">
-          <div>
-            <span>Productos destacados</span>
-            <h2>Una selección de nuestro catálogo.</h2>
-            {!loadingProducts && publishedProducts.length > 0 && (
-              <p className="store-product-count">
-                {publishedProducts.length} producto{publishedProducts.length === 1 ? '' : 's'} disponible{publishedProducts.length === 1 ? '' : 's'}
-              </p>
-            )}
-          </div>
-          <div className="store-heading-action">
-            <p>Mostramos una selección variada para que el inicio siga siendo claro y rápido.</p>
-            <Link to="/explorar#catalog-results">
-              Ver catálogo completo <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-        </div>
-        {loadingProducts ? (
-          <p className="store-loading">Cargando colección…</p>
-        ) : featured.length === 0 ? (
-          <div className="store-products-empty">
-            <p>Todavía no hay productos publicados.</p>
-            <Link to="/explorar">Ir al catálogo</Link>
-          </div>
-        ) : (
-          <>
-            <div className="products-grid store-products">
-              {featured.map((product) => <ProductCard key={product.id} product={product} />)}
+      {FEATURES.SHOW_ECOMMERCE_PRODUCTS && (
+        <section className="store-section" id="coleccion">
+          <div className="store-heading">
+            <div>
+              <span>Productos destacados</span>
+              <h2>Una selección de nuestro catálogo.</h2>
+              {!loadingProducts && publishedProducts.length > 0 && (
+                <p className="store-product-count">
+                  {publishedProducts.length} producto{publishedProducts.length === 1 ? '' : 's'} disponible{publishedProducts.length === 1 ? '' : 's'}
+                </p>
+              )}
             </div>
-            {publishedProducts.length > featured.length && (
-              <div className="store-catalog-footer">
-                <p>Estás viendo {featured.length} de {publishedProducts.length} productos.</p>
-                <Link to="/explorar#catalog-results">Ver los {publishedProducts.length} productos</Link>
+            <div className="store-heading-action">
+              <p>Mostramos una selección variada para que el inicio siga siendo claro y rápido.</p>
+              <Link to="/explorar#catalog-results">
+                Ver catálogo completo <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+          </div>
+          {loadingProducts ? (
+            <p className="store-loading">Cargando colección…</p>
+          ) : featured.length === 0 ? (
+            <div className="store-products-empty">
+              <p>Todavía no hay productos publicados.</p>
+              <Link to="/explorar">Ir al catálogo</Link>
+            </div>
+          ) : (
+            <>
+              <div className="products-grid store-products">
+                {featured.map((product) => <ProductCard key={product.id} product={product} />)}
               </div>
-            )}
-          </>
-        )}
-      </section>
+              {publishedProducts.length > featured.length && (
+                <div className="store-catalog-footer">
+                  <p>Estás viendo {featured.length} de {publishedProducts.length} productos.</p>
+                  <Link to="/explorar#catalog-results">Ver los {publishedProducts.length} productos</Link>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      )}
 
       <section className="store-custom" id="como-funciona">
         <p>¿No encontraste exactamente lo que buscabas?</p>

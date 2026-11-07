@@ -5,6 +5,7 @@ import Footer from './Footer'
 import Cart from './Cart'
 import ChatWidget from './ChatWidget'
 import WhatsAppButton from './WhatsAppButton'
+import { FEATURES } from '../config/features'
 
 const AI_CHAT_ENABLED = import.meta.env.VITE_AI_CHAT_ENABLED === 'true'
 
@@ -27,7 +28,7 @@ export default function Layout() {
       {!isOxiPlatform && (
         <>
           <Footer />
-          <Cart />
+          {FEATURES.SHOW_ECOMMERCE_PRODUCTS && <Cart />}
           {AI_CHAT_ENABLED && <ChatWidget />}
           <WhatsAppButton />
         </>

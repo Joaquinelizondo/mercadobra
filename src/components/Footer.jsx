@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import OxidaWordmark from './OxidaWordmark'
 import { siMercadopago, siVisa } from 'simple-icons'
 import { createWhatsAppLink } from '../utils/whatsapp'
+import { FEATURES } from '../config/features'
 
 function PaymentBrandLogo({ icon, label }) {
   return (
@@ -76,7 +77,11 @@ export default function Footer() {
           <ul>
             <li><a href={homeHash('inicio')}>Inicio</a></li>
             <li><Link to="/quienes-somos">Quiénes somos</Link></li>
-            <li><Link to="/explorar">Productos</Link></li>
+            {FEATURES.SHOW_ECOMMERCE_PRODUCTS ? (
+              <li><Link to="/explorar">Productos</Link></li>
+            ) : (
+              <li><Link to="/partner">Para Profesionales</Link></li>
+            )}
             <li><Link to="/oxida">Óxida Studio</Link></li>
             <li><a href={homeHash('como-funciona')}>Cómo funciona</a></li>
             <li><Link to="/contacto">Contáctenos</Link></li>

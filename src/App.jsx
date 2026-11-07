@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { FEATURES } from './config/features'
 import Layout from './components/Layout'
 import Storefront from './pages/Storefront'
 import About from './pages/About'
@@ -42,9 +43,9 @@ export default function App() {
         <Route path="/quienes-somos" element={<About />} />
         <Route path="/contacto" element={<Contact />} />
         <Route path="/oxida" element={<OxidaStudio />} />
-        <Route path="/explorar" element={<Catalog />} />
-        <Route path="/producto/:id" element={<ProductDetail />} />
-        <Route path="/favoritos" element={<Wishlist />} />
+        <Route path="/explorar" element={FEATURES.SHOW_ECOMMERCE_PRODUCTS ? <Catalog /> : <Navigate to="/" replace />} />
+        <Route path="/producto/:id" element={FEATURES.SHOW_ECOMMERCE_PRODUCTS ? <ProductDetail /> : <Navigate to="/" replace />} />
+        <Route path="/favoritos" element={FEATURES.SHOW_ECOMMERCE_PRODUCTS ? <Wishlist /> : <Navigate to="/" replace />} />
         <Route path="/proveedor/:company" element={<SupplierProfile />} />
         <Route path="/cliente/login" element={<CustomerLogin />} />
         <Route path="/cliente/registro" element={<CustomerRegister />} />
