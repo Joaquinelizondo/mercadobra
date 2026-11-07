@@ -4337,7 +4337,7 @@ ${validation.message}
                 <button
                   type="button"
                   className="oxi-btn-primary"
-                  onClick={() => { setImportPasteText(''); setImportPreviewResult(null); setShowBudgetModal(true) }}
+                  onClick={() => { setImportPasteText(''); setImportPreviewResult(null); setBudgetModalTab('import'); setShowBudgetModal(true) }}
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#0284c7', borderColor: '#0369a1' }}
                 >
                   📥 Importar desde Excel / CSV

@@ -209,12 +209,24 @@ export function parseBudgetSpreadsheet(rawText) {
     return { success: false, items: [], error: 'No se encontraron líneas válidas.' }
   }
 
-  // Detectar delimitador principal de la primera línea
-  const firstLine = lines[0]
+  // Detectar delimitador predominante en el texto (tabs, punto y coma o coma)
+  let tabCount = 0
+  let semiCount = 0
+  let commaCount = 0
+  for (const line of lines.slice(0, 10)) {
+    tabCount += (line.match(/\t/g) || []).length
+    semiCount += (line.match(/;/g) || []).length
+    commaCount += (line.match(/,/g) || []).length
+  }
+
   let delimiter = '\t'
-  if (firstLine.includes('\t')) delimiter = '\t'
-  else if (firstLine.includes(';')) delimiter = ';'
-  else if (firstLine.includes(',')) delimiter = ','
+  if (tabCount >= semiCount && tabCount >= commaCount && tabCount > 0) {
+    delimiter = '\t'
+  } else if (semiCount >= commaCount && semiCount > 0) {
+    delimiter = ';'
+  } else if (commaCount > 0) {
+    delimiter = ','
+  }
 
   // Separar líneas en celdas
   const parsedRows = lines.map(line => {
@@ -256,7 +268,7 @@ export function parseBudgetSpreadsheet(rawText) {
     totalBudget: -1
   }
 
-  for (let i = 0; i < Math.min(5, parsedRows.length); i++) {
+  for (let i = 0; i < Math.min(10, parsedRows.length); i++) {
     const row = parsedRows[i].map(c => c.toLowerCase())
     const hasRubro = row.some(c => c.includes('rubro') || c.includes('capítulo') || c.includes('especialidad'))
     const hasPartida = row.some(c => c.includes('partida') || c.includes('descripción') || c.includes('item') || c.includes('concepto') || c.includes('tarea'))
