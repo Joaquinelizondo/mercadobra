@@ -3299,6 +3299,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       localStorage.removeItem(`${storageKey}_subcontract_contracts`)
       localStorage.removeItem(`${storageKey}_country_code`)
       localStorage.removeItem(`${storageKey}_indirect_expenses`)
+      localStorage.removeItem(`${storageKey}_bps_employees`)
+      localStorage.removeItem(`${storageKey}_bps_meta`)
+      localStorage.removeItem(`${storageKey}_latest_weekly_closure`)
     } catch (e) {
       console.warn('Error clearing localStorage for demo reset', e)
     }
@@ -3318,15 +3321,93 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     setSubcontractContracts(DEFAULT_SUBCONTRACT_CONTRACTS)
     setSelectedCountryCode('UY')
     setIndirectExpenses(DEFAULT_INDIRECT_EXPENSES)
+    setBpsEmployees(DEFAULT_BPS_EMPLOYEES)
+    setBpsMeta({
+      bpsWorkRegistry: project?.bpsWorkRegistry || 'BPS-OBRA-489104',
+      companyRut: project?.companyRut || '21.849.201.0019',
+      companyName: project?.companyName || 'Estudio & Constructora Óxida',
+      clientName: project?.clientName || 'Comitente Principal'
+    })
 
     alert('✓ La obra ha sido restablecida al estado inicial de demostración con datos limpios.')
+  }
+
+  function handleClearEntireProject() {
+    const ok = window.confirm(
+      '¿Deseas vaciar por completo esta obra y dejarla en cero (0%)?\n\n' +
+      'Esta acción eliminará absolutamente todos los datos cargados:\n' +
+      '• Planos y Documentación Técnica (0 archivos)\n' +
+      '• Cronograma Gantt y Tareas (0 tareas)\n' +
+      '• Curva S y Cronograma Valorizado (0%)\n' +
+      '• Partidas Presupuestarias y Rubros (en $0)\n' +
+      '• Partes Diarios, Facturas y Remitos (0 comprobantes)\n' +
+      '• Contratos Marco, Subcontratos y Gastos Indirectos ($0)\n' +
+      '• Nómina de Personal BPS\n\n' +
+      'La obra quedará 100% en blanco para que puedas cargar tus propios planos, tu presupuesto desde Excel o auto-crear un nuevo plan con IA.\n\n' +
+      '(Siempre podrás volver al modelo demo con el botón "Restablecer Demo")'
+    )
+    if (!ok) return
+
+    const EMPTY_RUBROS = DEFAULT_RUBROS.map(r => ({
+      id: r.id,
+      name: r.name,
+      laborCost: 0,
+      socialLawsCost: 0,
+      materialCost: 0,
+      budgeted: 0,
+      executed: 0
+    }))
+
+    const EMPTY_BPS_META = {
+      bpsWorkRegistry: '',
+      companyRut: '',
+      companyName: '',
+      clientName: ''
+    }
+
+    setDocuments([])
+    setSchedule([])
+    setMonthlyComp([])
+    setWeeklyProgress([])
+    setRubros(EMPTY_RUBROS)
+    setRainLogs([])
+    setBudgetItems([])
+    setLaborReports([])
+    setMaterialInvoices([])
+    setSubcontractCertificates([])
+    setSubcontractContracts([])
+    setIndirectExpenses([])
+    setBpsEmployees([])
+    setBpsMeta(EMPTY_BPS_META)
+
+    try {
+      localStorage.setItem(`${storageKey}_docs`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_sched`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_monthly`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_weekly`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_rubros`, JSON.stringify(EMPTY_RUBROS))
+      localStorage.setItem(`${storageKey}_rainLogs`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_budget_items`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_labor_reports`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_material_invoices`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_subcontracts`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_subcontract_contracts`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_indirect_expenses`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_bps_employees`, JSON.stringify([]))
+      localStorage.setItem(`${storageKey}_bps_meta`, JSON.stringify(EMPTY_BPS_META))
+      localStorage.removeItem(`${storageKey}_latest_weekly_closure`)
+    } catch (e) {
+      console.warn('Error saving cleared project to localStorage', e)
+    }
+
+    alert('✓ La obra ha sido vaciada por completo. Planos, tareas, presupuestos, gastos y Curva S quedaron en cero (0%).')
   }
 
   function handleClearAllSchedule() {
     const ok = window.confirm(
       '¿Deseas vaciar todas las tareas del cronograma actual?\n\n' +
-      'Esta acción eliminará las tareas para que puedas comenzar una obra en blanco desde cero, importar tu propio presupuesto desde Excel o auto-crear un nuevo plan con IA.\n\n' +
-      '(Siempre podrás volver al modelo demo con el botón "Restablecer Demo")'
+      'Esta acción eliminará las tareas del cronograma y reiniciará la Curva S y valorizaciones a cero.\n\n' +
+      '(Para vaciar también los planos, facturas y partidas presupuestarias, utiliza el botón "Vaciar Obra" en la barra superior)'
     )
     if (!ok) return
 
@@ -3340,7 +3421,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       localStorage.setItem(`${storageKey}_weekly`, JSON.stringify([]))
       localStorage.setItem(`${storageKey}_monthly`, JSON.stringify([]))
     } catch {}
-    alert('✓ La obra y el cronograma han sido vaciados. La Curva S y valorizaciones quedan en cero.')
+    alert('✓ Las tareas del cronograma han sido vaciadas. La Curva S y valorizaciones quedan en cero.')
   }
 
   function handleAddContract(e) {
@@ -3764,9 +3845,9 @@ ${validation.message}
             <button
               type="button"
               className="oxi-btn-back-classic"
-              onClick={handleClearAllSchedule}
-              title="Vaciar todas las tareas del cronograma para comenzar una obra propia en blanco desde cero"
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', borderColor: '#fca5a5', color: '#b91c1c', background: '#fef2f2', padding: '9px 14px', fontSize: '0.85rem' }}
+              onClick={handleClearEntireProject}
+              title="Vaciar por completo toda la obra: planos, cronograma, partidas presupuestarias, gastos y Curva S a cero (0%)"
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', borderColor: '#fca5a5', color: '#b91c1c', background: '#fef2f2', padding: '9px 14px', fontSize: '0.85rem', fontWeight: 600 }}
             >
               🗑️ Vaciar Obra
             </button>
@@ -3902,7 +3983,34 @@ ${validation.message}
             </div>
           </div>
 
-          <div className="table-responsive">
+          {documents.length === 0 ? (
+            <div style={{ background: '#f8fafc', border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '40px 20px', textAlign: 'center', margin: '20px 0' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📐</div>
+              <h3 style={{ margin: '0 0 6px', color: '#0f172a' }}>El gestor documental y planos están vacíos (0 archivos)</h3>
+              <p style={{ color: '#64748b', fontSize: '0.9rem', maxWidth: '540px', margin: '0 auto 20px' }}>
+                Has vaciado la obra. No hay planos, memorias descriptivas ni especificaciones técnicas cargadas actualmente. Puedes subir tus propios planos (DWG, PDF, IFC) o recargar los planos modelo de demostración.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="oxi-btn-primary"
+                  onClick={() => setShowAddDocModal(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  ＋ Subir Primer Archivo / Plano
+                </button>
+                <button
+                  type="button"
+                  className="oxi-btn-back-classic"
+                  onClick={handleResetDemoData}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  🔄 Recargar Planos Demo
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="table-responsive">
             <table className="oxi-pro-table">
               <thead>
                 <tr>
@@ -4000,6 +4108,7 @@ ${validation.message}
               </tbody>
             </table>
           </div>
+          )}
         </section>
       )}
 
@@ -5826,7 +5935,14 @@ ${validation.message}
                   </tr>
                 </thead>
                 <tbody>
-                  {rubroAlerts.map(rubro => {
+                  {rubroAlerts.length === 0 ? (
+                    <tr>
+                      <td colSpan="10" style={{ textAlign: 'center', padding: '2.5rem', color: '#64748b' }}>
+                        No hay rubros de obra definidos. Hacé clic en "＋ Agregar Rubro" o "⚡ Auto-Crear Obra con IA" para comenzar.
+                      </td>
+                    </tr>
+                  ) : (
+                    rubroAlerts.map(rubro => {
                     const saldo = rubro.budgeted - rubro.executed
                     return (
                       <tr key={rubro.id} className={`rubro-row-${rubro.status}`}>
@@ -5933,7 +6049,7 @@ ${validation.message}
                         </td>
                       </tr>
                     )
-                  })}
+                  }))}
                 </tbody>
                 <tfoot>
                   <tr style={{ background: '#f5f5f4', fontWeight: 'bold', borderTop: '2px solid #d4d4d4' }}>
