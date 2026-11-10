@@ -18,7 +18,7 @@ La plataforma se encuentra operativa con:
 - Backend Express desplegado como Web Service en Render (<https://mercadobra.onrender.com>).
 - PostgreSQL en Render como base de datos de producción relacional y transaccional.
 - **Plataforma OxI (Portal B2B para Constructoras & Estudios):**
-  - **OxI Clásico:** Solicitud y seguimiento de cotizaciones de herrería y obra, carga clasificada de documentación técnica (planos CAD/PDF, memorias, fotos de obra), tablero Kanban en vivo de 5 etapas y mensajería directa con ingeniería.
+  - **OxI Clásico:** Espacio comercial y de anteproyecto con **Centro de Presupuestos & Historial Documental**, control y comparación de versiones (v1.0, v2.0, v2.1), cómputo métrico analítico de partidas cotizadas, bandeja de carga documental técnica clasificada (planos CAD/PDF, planillas Excel de cómputos, pliegos técnicos y presupuestos firmados), tablero Kanban de seguimiento de 5 etapas y mensajería en tiempo real con ingeniería.
   - **OxI Pro Suite (ConstructionTech de Control y Planificación de Obra):**
     - *Pilar 1 (Proyectos):* Conmutador directo de obras en cabecera con persistencia reactiva, visualización de dirección y vinculación estricta en base de datos (`b2b_project_id`).
     - *Pilar 2 (Schedule Gantt & Recursos):* Cronograma interactivo con doble vista (`[📊 Diagrama de Gantt]` y `[📋 Planilla & Costos]`), cálculo dinámico de días hábiles reales (descontando sábados, domingos y feriados SUNCA Grupo 9 de Uruguay), distribución proporcional automática de costos por meses calendarios, control dual de avance (% Plan contractual vs. % Real físico), badges de desvío de plazo, asignación de cuadrillas SUNCA (simples y mixtas), desplazamiento selectivo por lluvias (con selección manual de tareas afectadas o afectación total, preservando tareas no postergadas y empujando dependencias en cascada) con actas técnicas y reversión en 1 clic, botón `🗑️ Vaciar Obra` con reinicio limpio de métricas a cero, certificaciones de obra con fotos de evidencia y visor lightbox, y descarga a Excel con `📥 Exportar Cronograma (CSV)`.
@@ -193,8 +193,13 @@ Esta es la lista ordenada de tareas accionables para completar la transición a 
 - [x] Crear modelo de datos `b2b_projects` (Obras/Edificios vinculados a un cliente corporativo y cotizaciones con `b2b_project_id`).
 - [x] Crear rol y portal unificado para clientes corporativos (Constructoras / Estudios).
 - [x] **Plataforma OxI Clásico:**
+  - [x] **Centro de Presupuestos & Historial Documental:** Vista dedicada para comitentes y estudios de arquitectura con KPIs de presupuesto vigente, versión activa, vigencia comercial y cantidad de pliegos adjuntos.
+  - [x] **Historial de Versiones & Negociación:** Timeline interactivo de revisiones (v1.0, v2.0, v2.1) con fechas, autor, notas explicativas de cambios y cálculo de variación porcentual (`delta`).
+  - [x] **Cómputo Métrico & Desglose de Partidas:** Tabla detallada de partidas cotizadas (código, descripción, unidad, cantidad, precio unitario y total), con alta de partidas y recalculo en tiempo real.
+  - [x] **Bandeja de Documentación & Carga Clasificada:** Carga rápida de planos de cotización (PDF/CAD), cómputos en Excel (.xlsx/.csv), pliegos técnicos y presupuestos firmados, con previsualización y descarga.
+  - [x] **Acciones Comerciales Directas:** Botones de `✓ Aprobar Presupuesto`, `💬 Solicitar Ajuste Técnico` y exportación.
   - [x] Pantalla "Mis Obras": listado de edificios en curso, selectores y creación de obras.
-  - [x] Solicitud de cotización enriquecida con categorización de archivos (planos CAD/PDF, memorias, fotos de obra).
+  - [x] Solicitud de cotización enriquecida con categorización de archivos y validación con IA.
   - [x] Tablero Kanban interactivo con 3 columnas de avance (Solicitadas, En Proceso, Finalizadas).
   - [x] Barra de trazabilidad de 5 etapas (Solicitud -> Cotizada -> Aceptada -> En ejecución -> Finalizada).
   - [x] Mensajería técnica en tiempo real por cotización con el equipo de ingeniería.
@@ -2151,15 +2156,21 @@ El desarrollo se realizará en este orden. No se iniciará una etapa posterior h
 **Objetivo:** Brindar a Constructoras y Estudios de Arquitectura una experiencia de seguimiento operativo (OxI Clásico) y una suite avanzada de ingeniería y costos de obra (OxI Pro).
 
 - [x] **Plataforma OxI Clásico:**
+  - [x] **Centro de Presupuestos & Historial Documental (`/cliente`):** Subnavegación interactiva dedicada que complementa el tablero Kanban con una vista analítica y formal de cotizaciones comerciales para comitentes.
+  - [x] **Historial de Versiones (Version Timeline):** Registro cronológico inmutable de revisiones (v1.0, v2.0, v2.1) con fechas, autor responsable, detalle de modificaciones y cálculo automático de variación porcentual (`delta` de ahorro o incremento).
+  - [x] **Cómputo Métrico & Desglose de Partidas Cotizadas:** Tabla desglosada por código, descripción técnica, unidad de medida (`ml`, `m²`, `un`, `kg`, `gl`), metrado, precio unitario y subtotal, con capacidad de agregar nuevas partidas y recalcular el presupuesto en vivo.
+  - [x] **Bandeja de Documentación & Carga Clasificada:** Zona de carga para planos de cotización (PDF/CAD), cómputos métricos en Excel (.xlsx/.csv), pliegos de condiciones técnicas y presupuestos firmados, con previsualización, tamaño y descarga directa.
+  - [x] **Acciones Comerciales Directas:** Botón `✓ Aprobar Presupuesto Oficial` (confirma y habilita el pase a producción/obra), `💬 Solicitar Ajuste Técnico o Comercial` y exportación.
   - [x] Dashboard corporativo en `/cliente` con selector de obra y tablero Kanban de 3 estados (Solicitadas, En Proceso, Finalizadas).
-  - [x] Formulario de cotización de herrería y piezas con carga clasificada de documentación (planos CAD/PDF, memorias descriptivas y fotos de obra).
+  - [x] Formulario de cotización de herrería y piezas con validación de memoria técnica asistida por IA y carga clasificada de documentación.
   - [x] Trazabilidad visual de 5 etapas (Solicitud -> Cotizada -> Aceptada -> En ejecución -> Finalizada).
   - [x] Hilo de mensajería técnica en tiempo real por cotización con el equipo de ingeniería de Óxida.
 - [x] **Suite OxI Pro (Los 4 Pilares de Control de Obra):**
-  - [x] **Pilar 1 — Carga y Gestión de Proyectos:**
+  - [x] **Pilar 1 — Carga y Gestión de Proyectos & Bitácora de Obra:**
     - Conmutador directo de obras en el encabezado de OxI Pro y selector lateral.
     - Persistencia reactiva aislada por obra (`localStorage` key dinámico por `projectId`).
     - Vinculación relacional estricta en PostgreSQL (`b2b_project_id` en `customer_quotes` y `fabrication_orders`).
+    - **Bitácora, Fotos & Eventos de Obra con Cámara Rápida:** Subpestaña integrada en Pestaña 1 para registrar fotos de avance, hitos, incidentes de seguridad, controles de calidad, actas de lluvia y notas de libro de obra con captura directa desde la cámara del celular (`capture="environment"`), selector de severidad y visor lightbox en pantalla completa.
   - [x] **Pilar 2 — Schedule / Cronograma Gantt & Recursos:**
     - Asignación de cuadrillas y operarios por categoría salarial (Capataz, Oficial Especializado, Oficial, Medio Oficial, Peón Práctico).
     - Calculador dinámico de días hábiles entre fechas de inicio y fin con cómputo de mano de obra en vivo.
@@ -2444,8 +2455,10 @@ A continuación se detallan los módulos clave para posicionar a OxI Pro como la
     - Sidebar persistente a la izquierda con perfil de constructora, selector de obras, accesos directos al Simulador 3D, Cotizaciones y configuración de cuenta.
     - Flujo horizontal amplio con subnavegación superior para maximizar el área de trabajo del Gantt interactivo, la Curva S y las planillas de costos.
   - **Entorno Smartphone & PWA Móvil (< 768px):**
-    - **Barra de Navegación Inferior Fija (Bottom Tab Bar):** Diseñada al alcance del pulgar para alternar instantáneamente entre `📐 Planos`, `📅 Gantt`, `📊 Curva S`, `🚨 Costos` y `☰ Menú`, con micro-interacciones táctiles y padding de seguridad para iOS (`env(safe-area-inset-bottom)`).
-    - **Header Superior Móvil:** Barra minimalista con botón `☰ Hamburguesa`, selector rápido de obra activa y avatar.
+    - **Barra de Navegación Inferior Fija (Bottom Tab Bar):** Diseñada al alcance del pulgar con micro-interacciones táctiles y padding de seguridad para iOS (`env(safe-area-inset-bottom)`):
+      * En **OxI Pro:** alterna instantáneamente entre `📐 Planos`, `📸 Bitácora`, `📅 Gantt`, `📊 Curva S`, `🚨 Costos` y `☰ Menú`.
+      * En **OxI Clásico:** alterna entre `📑 Presupuesto`, `📊 Tablero`, `＋ Nueva`, `📐 3D Óxida`, `⚡ OxI Pro` y `☰ Menú`.
+    - **Header Superior Móvil:** Barra minimalista con botón `☰ Hamburguesa`, selector rápido de obra activa, botón directo de cámara de obra (`📷`) y switch de modo `⚡ PRO` / `🛠️ CLÁSICO`.
     - **Cajón Deslizable Lateral (Off-canvas Drawer):** Cortina lateral fluida con fondo translúcido (backdrop-filter blur) que expone el cambio de modo OxI Clásico ⇄ OxI Pro, selector de obras, Simulador 3D, Nueva Cotización y Perfil, sin tapar la operatividad de campo.
 
 #### 19. 🎨🚀 Plan Integral de Mejoras Visuales y Funcionales (Web & App) [EN CURSO]
