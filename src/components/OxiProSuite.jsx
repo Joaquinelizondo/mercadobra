@@ -183,6 +183,97 @@ const DEFAULT_DOCUMENTS = [
   }
 ]
 
+const DEFAULT_SITE_EVENTS = [
+  {
+    id: 'evt_1',
+    type: 'milestone',
+    title: 'Hormigonado de losa y pilares del nivel 1',
+    description: 'Se completó la colada de hormigón elaborado H25 con bomba pluma. Ensayo de probetas tomado por laboratorio.',
+    categoryLabel: 'Avance / Hito',
+    icon: '🏗️',
+    date: '2026-11-04',
+    time: '14:30',
+    author: 'Director de Obra',
+    taskName: 'Estructura de Hormigón Armado',
+    severity: 'info',
+    photos: []
+  },
+  {
+    id: 'evt_2',
+    type: 'quality',
+    title: 'Verificación de armaduras y anclajes químicos de herrería',
+    description: 'Inspección técnica previa a la colada. Se verificó separación de recubrimiento y colocación de placas de anclaje para barandas Óxida.',
+    categoryLabel: 'Control de Calidad',
+    icon: '🔍',
+    date: '2026-11-02',
+    time: '10:15',
+    author: 'Ing. Inspector',
+    taskName: 'Herrería de Fachada y Barandas',
+    severity: 'medium',
+    photos: []
+  },
+  {
+    id: 'evt_3',
+    type: 'weather',
+    title: 'Suspensión temporal por tormenta eléctrica y lluvias intensas',
+    description: 'Se paralizaron las tareas en altura y exteriores por alerta meteorológica oficial. Se emitió Acta Técnica de Lluvia.',
+    categoryLabel: 'Clima / Lluvia',
+    icon: '🌧️',
+    date: '2026-10-28',
+    time: '08:00',
+    author: 'Capataz General',
+    taskName: 'Todas las tareas exteriores',
+    severity: 'high',
+    photos: []
+  }
+]
+
+const SITE_EVENT_CATEGORIES = [
+  { id: 'milestone', label: 'Avance / Hito', icon: '🏗️', color: '#10b981' },
+  { id: 'incident', label: 'Incidente / Seguridad', icon: '⚠️', color: '#ef4444' },
+  { id: 'quality', label: 'Control de Calidad', icon: '🔍', color: '#0284c7' },
+  { id: 'weather', label: 'Clima / Lluvia', icon: '🌧️', color: '#06b6d4' },
+  { id: 'delivery', label: 'Recepción de Materiales', icon: '🚚', color: '#8b5cf6' },
+  { id: 'general', label: 'Nota de Bitácora', icon: '📝', color: '#f59e0b' }
+]
+
+function compressImageFile(file, maxDimension = 1280, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = reject
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onerror = reject
+      img.onload = () => {
+        let { width, height } = img
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width)
+            width = maxDimension
+          } else {
+            width = Math.round((width * maxDimension) / height)
+            height = maxDimension
+          }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+        const dataUrl = canvas.toDataURL('image/jpeg', quality)
+        resolve({
+          dataUrl,
+          width,
+          height,
+          originalName: file.name
+        })
+      }
+      img.src = e.target.result
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 const DEFAULT_SCHEDULE = [
   {
     id: 1,
@@ -837,6 +928,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
   const [activeTab, setActiveTab] = useState('docs') // 'docs' | 'cronograma' | 'control' | 'rubros'
   const [docFilter, setDocFilter] = useState('todos')
+  const [docsSubtab, setDocsSubtab] = useState('files') // 'files' | 'events'
+  const [siteEventFilter, setSiteEventFilter] = useState('todos')
+  const [showSiteEventModal, setShowSiteEventModal] = useState(false)
   
   // Stored state
   const [documents, setDocuments] = useState(() => {
@@ -846,6 +940,27 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     } catch {
       return DEFAULT_DOCUMENTS
     }
+  })
+
+  const [siteEvents, setSiteEvents] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`${storageKey}_site_events`)
+      return saved ? JSON.parse(saved) : DEFAULT_SITE_EVENTS
+    } catch {
+      return DEFAULT_SITE_EVENTS
+    }
+  })
+
+  const [siteEventForm, setSiteEventForm] = useState({
+    type: 'milestone',
+    title: '',
+    description: '',
+    author: 'Capataz de Obra',
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toLocaleTimeString('es-UY', { hour: '2-digit', minute: '2-digit', hour12: false }),
+    taskName: '',
+    severity: 'info',
+    photos: []
   })
 
   const [schedule, setSchedule] = useState(() => {
@@ -1074,10 +1189,20 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         setShowAddRubroModal(false)
         setShowBpsReportModal(false)
         setShowCostControlReportModal(false)
+        setShowSiteEventModal(false)
       }
     }
+    const handleOpenSiteEventModal = () => {
+      setActiveTab('docs')
+      setDocsSubtab('events')
+      setShowSiteEventModal(true)
+    }
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    window.addEventListener('oxi-open-site-event-modal', handleOpenSiteEventModal)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('oxi-open-site-event-modal', handleOpenSiteEventModal)
+    }
   }, [])
 
   // Reload state if project changes from localStorage
@@ -1085,6 +1210,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     try {
       const savedDocs = localStorage.getItem(`${storageKey}_docs`)
       setDocuments(savedDocs ? JSON.parse(savedDocs) : DEFAULT_DOCUMENTS)
+
+      const savedEvents = localStorage.getItem(`${storageKey}_site_events`)
+      setSiteEvents(savedEvents ? JSON.parse(savedEvents) : DEFAULT_SITE_EVENTS)
 
       const savedSched = localStorage.getItem(`${storageKey}_sched`)
       setSchedule(savedSched ? JSON.parse(savedSched) : DEFAULT_SCHEDULE)
@@ -1596,10 +1724,11 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       localStorage.setItem(`${storageKey}_indirect_expenses`, JSON.stringify(indirectExpenses))
       localStorage.setItem(`${storageKey}_bps_employees`, JSON.stringify(bpsEmployees))
       localStorage.setItem(`${storageKey}_bps_meta`, JSON.stringify(bpsMeta))
+      localStorage.setItem(`${storageKey}_site_events`, JSON.stringify(siteEvents))
     } catch (e) {
       console.warn('Error saving Oxi Pro state', e)
     }
-  }, [documents, schedule, monthlyComp, weeklyProgress, rubros, rainLogs, laborCategories, projectSocialLawsRate, budgetItems, laborReports, materialInvoices, subcontractCertificates, subcontractContracts, selectedCountryCode, indirectExpenses, bpsEmployees, bpsMeta, storageKey])
+  }, [documents, schedule, monthlyComp, weeklyProgress, rubros, rainLogs, laborCategories, projectSocialLawsRate, budgetItems, laborReports, materialInvoices, subcontractCertificates, subcontractContracts, selectedCountryCode, indirectExpenses, bpsEmployees, bpsMeta, siteEvents, storageKey])
 
   // Rain calculations
   const totalRainDays = useMemo(() => {
@@ -2918,6 +3047,88 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     setCertTask(null)
   }
 
+  async function handleEventPhotoUpload(e) {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+
+    for (const file of files) {
+      try {
+        const compressed = await compressImageFile(file)
+        setSiteEventForm(prev => ({
+          ...prev,
+          photos: [
+            ...prev.photos,
+            {
+              id: `ph_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+              name: file.name,
+              size: `${Math.round(compressed.dataUrl.length * 0.75 / 1024)} KB`,
+              dataUrl: compressed.dataUrl,
+              timestamp: new Date().toISOString()
+            }
+          ]
+        }))
+      } catch (err) {
+        console.warn('Error reading site photo', err)
+      }
+    }
+    e.target.value = ''
+  }
+
+  function handleRemoveEventPhoto(photoId) {
+    setSiteEventForm(prev => ({
+      ...prev,
+      photos: prev.photos.filter(p => p.id !== photoId)
+    }))
+  }
+
+  function handleSaveSiteEvent(e) {
+    if (e && e.preventDefault) e.preventDefault()
+    if (!siteEventForm.title.trim()) {
+      alert('Por favor indicá un título o asunto para el registro de obra.')
+      return
+    }
+
+    const categoryDef = SITE_EVENT_CATEGORIES.find(c => c.id === siteEventForm.type) || {
+      id: siteEventForm.type,
+      label: 'Nota de Bitácora',
+      icon: '📝'
+    }
+
+    const newEvent = {
+      id: `evt_${Date.now()}`,
+      type: siteEventForm.type,
+      title: siteEventForm.title.trim(),
+      description: siteEventForm.description.trim(),
+      categoryLabel: categoryDef.label,
+      icon: categoryDef.icon,
+      date: siteEventForm.date || new Date().toISOString().split('T')[0],
+      time: siteEventForm.time || new Date().toLocaleTimeString('es-UY', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      author: siteEventForm.author.trim() || 'Capataz de Obra',
+      taskName: siteEventForm.taskName || 'General de Obra',
+      severity: siteEventForm.severity || 'info',
+      photos: siteEventForm.photos || []
+    }
+
+    setSiteEvents(prev => [newEvent, ...prev])
+    setShowSiteEventModal(false)
+    setSiteEventForm({
+      type: 'milestone',
+      title: '',
+      description: '',
+      author: 'Capataz de Obra',
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString('es-UY', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      taskName: '',
+      severity: 'info',
+      photos: []
+    })
+  }
+
+  function handleDeleteSiteEvent(id) {
+    if (!window.confirm('¿Deseas eliminar este registro de la bitácora de obra?')) return
+    setSiteEvents(prev => prev.filter(evt => evt.id !== id))
+  }
+
   // Handlers for AI Onboarding (Paso 5)
   async function handleGenerateAiPlan() {
     if (!aiPrompt.trim()) {
@@ -3302,11 +3513,13 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       localStorage.removeItem(`${storageKey}_bps_employees`)
       localStorage.removeItem(`${storageKey}_bps_meta`)
       localStorage.removeItem(`${storageKey}_latest_weekly_closure`)
+      localStorage.removeItem(`${storageKey}_site_events`)
     } catch (e) {
       console.warn('Error clearing localStorage for demo reset', e)
     }
 
     setDocuments(DEFAULT_DOCUMENTS)
+    setSiteEvents(DEFAULT_SITE_EVENTS)
     setSchedule(DEFAULT_SCHEDULE)
     setMonthlyComp(DEFAULT_MONTHLY_COMPARISON)
     setWeeklyProgress(DEFAULT_WEEKLY_PROGRESS)
@@ -3366,6 +3579,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     }
 
     setDocuments([])
+    setSiteEvents([])
     setSchedule([])
     setMonthlyComp([])
     setWeeklyProgress([])
@@ -3395,6 +3609,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       localStorage.setItem(`${storageKey}_indirect_expenses`, JSON.stringify([]))
       localStorage.setItem(`${storageKey}_bps_employees`, JSON.stringify([]))
       localStorage.setItem(`${storageKey}_bps_meta`, JSON.stringify(EMPTY_BPS_META))
+      localStorage.setItem(`${storageKey}_site_events`, JSON.stringify([]))
       localStorage.removeItem(`${storageKey}_latest_weekly_closure`)
     } catch (e) {
       console.warn('Error saving cleared project to localStorage', e)
@@ -3750,6 +3965,10 @@ ${validation.message}
   }
 
   const filteredDocs = docFilter === 'todos' ? documents : documents.filter(d => d.type === docFilter)
+  const filteredSiteEvents = useMemo(() => {
+    if (siteEventFilter === 'todos') return siteEvents
+    return siteEvents.filter(evt => evt.type === siteEventFilter)
+  }, [siteEvents, siteEventFilter])
 
   return (
     <div className="oxi-pro-container">
@@ -3868,6 +4087,20 @@ ${validation.message}
             <button
               type="button"
               className="oxi-btn-primary"
+              onClick={() => {
+                setActiveTab('docs')
+                setDocsSubtab('events')
+                setShowSiteEventModal(true)
+              }}
+              title="Registrar foto de avance, hito, incidente, inspección de calidad o clima en la bitácora de obra"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 15px', fontSize: '0.88rem', background: '#0284c7', borderColor: '#0284c7' }}
+            >
+              📸 Foto / Bitácora
+            </button>
+
+            <button
+              type="button"
+              className="oxi-btn-primary"
               onClick={handleDownloadExecutiveReportPdf}
               disabled={isExportingPdf}
               title="Descargar informe ejecutivo oficial de obra de 4 páginas en PDF para comitentes e inversores"
@@ -3936,8 +4169,8 @@ ${validation.message}
           className={`subnav-btn ${activeTab === 'docs' ? 'is-active' : ''}`}
           onClick={() => setActiveTab('docs')}
         >
-          📁 Carga de Planos & Iteraciones
-          <span className="subnav-count">{documents.length}</span>
+          📁 Planos & Bitácora de Obra
+          <span className="subnav-count">{documents.length + siteEvents.length}</span>
         </button>
         <button
           className={`subnav-btn ${activeTab === 'cronograma' ? 'is-active' : ''}`}
@@ -3961,27 +4194,73 @@ ${validation.message}
         </button>
       </nav>
 
-      {/* ── TAB 1: GESTOR DOCUMENTAL & ITERACIONES ── */}
+      {/* ── TAB 1: GESTOR DOCUMENTAL, PLANOS & BITÁCORA DE OBRA ── */}
       {activeTab === 'docs' && (
         <section className="oxi-pro-section">
-          <div className="section-toolbar">
-            <div className="doc-filter-pills">
-              {FILE_TYPES.map(ft => (
-                <button
-                  key={ft.id}
-                  className={`pill-btn ${docFilter === ft.id ? 'is-active' : ''}`}
-                  onClick={() => setDocFilter(ft.id)}
-                >
-                  <span>{ft.icon}</span> {ft.label}
-                </button>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="oxi-btn-primary" onClick={() => setShowAddDocModal(true)}>
-                ＋ Subir Archivo / Plano
-              </button>
-            </div>
+          {/* Sub-navegación: Planos vs Bitácora de Eventos */}
+          <div className="oxi-docs-subnav-bar" style={{ display: 'flex', gap: '8px', marginBottom: '18px', borderBottom: '2px solid #f1f5f9', paddingBottom: '12px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className={`oxi-subtab-pill ${docsSubtab === 'files' ? 'is-active' : ''}`}
+              onClick={() => setDocsSubtab('files')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                fontWeight: docsSubtab === 'files' ? 700 : 500,
+                background: docsSubtab === 'files' ? '#0f172a' : '#f8fafc',
+                color: docsSubtab === 'files' ? '#ffffff' : '#475569',
+                border: docsSubtab === 'files' ? '1px solid #0f172a' : '1px solid #cbd5e1',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>📐</span> Planos & Especificaciones ({documents.length})
+            </button>
+            <button
+              type="button"
+              className={`oxi-subtab-pill ${docsSubtab === 'events' ? 'is-active' : ''}`}
+              onClick={() => setDocsSubtab('events')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                fontWeight: docsSubtab === 'events' ? 700 : 500,
+                background: docsSubtab === 'events' ? '#0f172a' : '#f8fafc',
+                color: docsSubtab === 'events' ? '#ffffff' : '#475569',
+                border: docsSubtab === 'events' ? '1px solid #0f172a' : '1px solid #cbd5e1',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>📸</span> Bitácora, Fotos & Eventos de Obra ({siteEvents.length})
+            </button>
           </div>
+
+          {docsSubtab === 'files' ? (
+            <>
+              <div className="section-toolbar">
+                <div className="doc-filter-pills">
+                  {FILE_TYPES.map(ft => (
+                    <button
+                      key={ft.id}
+                      className={`pill-btn ${docFilter === ft.id ? 'is-active' : ''}`}
+                      onClick={() => setDocFilter(ft.id)}
+                    >
+                      <span>{ft.icon}</span> {ft.label}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="oxi-btn-primary" onClick={() => setShowAddDocModal(true)}>
+                    ＋ Subir Archivo / Plano
+                  </button>
+                </div>
+              </div>
 
           {documents.length === 0 ? (
             <div style={{ background: '#f8fafc', border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '40px 20px', textAlign: 'center', margin: '20px 0' }}>
@@ -4108,6 +4387,183 @@ ${validation.message}
               </tbody>
             </table>
           </div>
+          )}
+          </>
+          ) : (
+            <div>
+              <div className="section-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div className="doc-filter-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  <button
+                    type="button"
+                    className={`pill-btn ${siteEventFilter === 'todos' ? 'is-active' : ''}`}
+                    onClick={() => setSiteEventFilter('todos')}
+                  >
+                    <span>📋</span> Todos ({siteEvents.length})
+                  </button>
+                  {SITE_EVENT_CATEGORIES.map(cat => {
+                    const count = siteEvents.filter(e => e.type === cat.id).length
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        className={`pill-btn ${siteEventFilter === cat.id ? 'is-active' : ''}`}
+                        onClick={() => setSiteEventFilter(cat.id)}
+                      >
+                        <span>{cat.icon}</span> {cat.label} ({count})
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="oxi-btn-primary"
+                    onClick={() => setShowSiteEventModal(true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#0284c7', borderColor: '#0284c7' }}
+                  >
+                    📸 Tomar Foto / Registrar Evento
+                  </button>
+                </div>
+              </div>
+
+              {filteredSiteEvents.length === 0 ? (
+                <div style={{ background: '#f8fafc', border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '40px 20px', textAlign: 'center', margin: '20px 0' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📸</div>
+                  <h3 style={{ margin: '0 0 6px', color: '#0f172a' }}>No hay registros en esta categoría de la bitácora</h3>
+                  <p style={{ color: '#64748b', fontSize: '0.9rem', maxWidth: '540px', margin: '0 auto 20px' }}>
+                    Registrá fotos de avances de obra, incidentes de seguridad, controles de calidad, actas climáticas o notas técnicas para el libro diario.
+                  </p>
+                  <button
+                    type="button"
+                    className="oxi-btn-primary"
+                    onClick={() => setShowSiteEventModal(true)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#0284c7', borderColor: '#0284c7' }}
+                  >
+                    📸 Tomar Primera Foto / Evento
+                  </button>
+                </div>
+              ) : (
+                <div className="site-events-stream" style={{ marginTop: '16px' }}>
+                  {filteredSiteEvents.map(evt => (
+                    <div
+                      key={evt.id}
+                      style={{
+                        background: '#ffffff',
+                        border: evt.severity === 'high' ? '1px solid #fca5a5' : evt.severity === 'medium' ? '1px solid #fde68a' : '1px solid #e2e8f0',
+                        borderLeft: `5px solid ${evt.severity === 'high' ? '#ef4444' : evt.severity === 'medium' ? '#f59e0b' : '#10b981'}`,
+                        borderRadius: '10px',
+                        padding: '18px 20px',
+                        marginBottom: '16px',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '1.3rem' }}>{evt.icon || '📝'}</span>
+                          <span style={{
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            padding: '3px 10px',
+                            borderRadius: '12px',
+                            background: '#f1f5f9',
+                            color: '#334155'
+                          }}>
+                            {evt.categoryLabel || evt.type}
+                          </span>
+                          <span style={{
+                            fontSize: '0.74rem',
+                            fontWeight: 700,
+                            padding: '3px 8px',
+                            borderRadius: '10px',
+                            background: evt.severity === 'high' ? '#fee2e2' : evt.severity === 'medium' ? '#fef3c7' : '#ecfdf5',
+                            color: evt.severity === 'high' ? '#b91c1c' : evt.severity === 'medium' ? '#b45309' : '#047857'
+                          }}>
+                            {evt.severity === 'high' ? '🚨 Crítico / Riesgo' : evt.severity === 'medium' ? '⚠️ Atención' : '✓ Normal'}
+                          </span>
+                          {evt.taskName && (
+                            <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                              • Tarea: <strong>{evt.taskName}</strong>
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.82rem', color: '#64748b' }}>
+                          <span>📅 {evt.date} {evt.time && `• ${evt.time}`}</span>
+                          {evt.author && <span>👤 {evt.author}</span>}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSiteEvent(evt.id)}
+                            title="Eliminar registro"
+                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '1rem', padding: '2px 6px' }}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+
+                      <h4 style={{ margin: '0 0 8px', fontSize: '1.05rem', color: '#0f172a', fontWeight: 700 }}>
+                        {evt.title}
+                      </h4>
+                      {evt.description && (
+                        <p style={{ margin: '0 0 12px', fontSize: '0.92rem', color: '#334155', lineHeight: 1.55 }}>
+                          {evt.description}
+                        </p>
+                      )}
+
+                      {Array.isArray(evt.photos) && evt.photos.length > 0 && (
+                        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>📸 Evidencias Fotográficas ({evt.photos.length}):</span>
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>(Clic para pantalla completa)</span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+                            {evt.photos.map(p => (
+                              <div
+                                key={p.id}
+                                onClick={() => setSelectedPhotoPreview(p.dataUrl)}
+                                style={{
+                                  cursor: 'pointer',
+                                  borderRadius: '8px',
+                                  overflow: 'hidden',
+                                  border: '1px solid #cbd5e1',
+                                  aspectRatio: '4/3',
+                                  position: 'relative',
+                                  background: '#0f172a'
+                                }}
+                              >
+                                <img
+                                  src={p.dataUrl}
+                                  alt={p.name || 'Foto de obra'}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  padding: '2px 6px',
+                                  background: 'rgba(0,0,0,0.65)',
+                                  color: '#fff',
+                                  fontSize: '0.68rem',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}>
+                                  🔍 {p.name || 'Ver foto'}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </section>
       )}
@@ -11624,6 +12080,318 @@ ${validation.message}
           </div>
         </div>
       )}
+
+      {/* ── MODAL: REGISTRAR FOTO / EVENTO / INCIDENTE DE OBRA (BITÁCORA) ── */}
+      {showSiteEventModal && (
+        <div className="oxi-modal-backdrop" onClick={() => setShowSiteEventModal(false)}>
+          <div
+            className="oxi-modal-card"
+            style={{ maxWidth: '640px', width: '95vw', maxHeight: '92vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="oxi-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>📸</span> Bitácora & Eventos de Obra
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+                  Registrá fotos directas con la cámara del celular o subí de galería para avances, incidentes de seguridad, controles de calidad o clima.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="oxi-modal-close"
+                onClick={() => setShowSiteEventModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSiteEvent} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+              {/* BOTONES DE CÁMARA RÁPIDA */}
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '14px' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#166534', marginBottom: '8px' }}>
+                  📷 CAPTURA FOTOGRÁFICA DE OBRA
+                </label>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <label
+                    style={{
+                      flex: '1 1 180px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      background: '#15803d',
+                      color: '#ffffff',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 4px rgba(21, 128, 61, 0.25)',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <span>📸</span> Sacar Foto con Cámara
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleEventPhotoUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+
+                  <label
+                    style={{
+                      flex: '1 1 180px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      background: '#ffffff',
+                      color: '#15803d',
+                      border: '1px solid #86efac',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <span>📁</span> Subir de la Galería
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleEventPhotoUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                </div>
+
+                {/* Vista previa de fotos adjuntas */}
+                {siteEventForm.photos.length > 0 && (
+                  <div style={{ marginTop: '12px' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#166534', marginBottom: '6px' }}>
+                      Fotos listas para adjuntar ({siteEventForm.photos.length}):
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {siteEventForm.photos.map(p => (
+                        <div
+                          key={p.id}
+                          style={{
+                            position: 'relative',
+                            width: '80px',
+                            height: '80px',
+                            borderRadius: '6px',
+                            overflow: 'hidden',
+                            border: '1px solid #cbd5e1'
+                          }}
+                        >
+                          <img src={p.dataUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveEventPhoto(p.id)}
+                            style={{
+                              position: 'absolute',
+                              top: '2px',
+                              right: '2px',
+                              background: '#ef4444',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '20px',
+                              height: '20px',
+                              fontSize: '11px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* TIPO / CATEGORÍA */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Tipo de Evento / Motivo
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '8px' }}>
+                  {SITE_EVENT_CATEGORIES.map(cat => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setSiteEventForm(prev => ({ ...prev, type: cat.id }))}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        border: siteEventForm.type === cat.id ? `2px solid ${cat.color}` : '1px solid #cbd5e1',
+                        background: siteEventForm.type === cat.id ? '#f8fafc' : '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        fontWeight: siteEventForm.type === cat.id ? 700 : 500,
+                        fontSize: '0.84rem',
+                        color: siteEventForm.type === cat.id ? '#0f172a' : '#475569'
+                      }}
+                    >
+                      <span style={{ fontSize: '1.2rem' }}>{cat.icon}</span>
+                      <span>{cat.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* TÍTULO / ASUNTO */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Título / Asunto *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={siteEventForm.title}
+                  onChange={e => setSiteEventForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Ej: Llenado de losa nivel 2 / Llegada de perfiles / Charla de seguridad"
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                />
+              </div>
+
+              {/* DESCRIPCIÓN */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Descripción / Acta / Observaciones
+                </label>
+                <textarea
+                  rows="3"
+                  value={siteEventForm.description}
+                  onChange={e => setSiteEventForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Detalla lo acontecido, acuerdos técnicos, medidas tomadas o verificación de planos..."
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', resize: 'vertical' }}
+                />
+              </div>
+
+              {/* TAREA VINCULADA & SEVERIDAD */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                    Tarea / Rubro Vinculado
+                  </label>
+                  <select
+                    value={siteEventForm.taskName}
+                    onChange={e => setSiteEventForm(prev => ({ ...prev, taskName: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  >
+                    <option value="">(Sin vincular / General de Obra)</option>
+                    {schedule.map(t => (
+                      <option key={t.id} value={t.name}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                    Nivel de Severidad / Prioridad
+                  </label>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {[
+                      { id: 'info', label: '✓ Normal', bg: '#f1f5f9', border: '#cbd5e1' },
+                      { id: 'medium', label: '⚠️ Atención', bg: '#fef3c7', border: '#fcd34d' },
+                      { id: 'high', label: '🚨 Crítico', bg: '#fee2e2', border: '#fca5a5' }
+                    ].map(sev => (
+                      <button
+                        key={sev.id}
+                        type="button"
+                        onClick={() => setSiteEventForm(prev => ({ ...prev, severity: sev.id }))}
+                        style={{
+                          flex: 1,
+                          padding: '8px 4px',
+                          borderRadius: '6px',
+                          border: siteEventForm.severity === sev.id ? '2px solid #0f172a' : `1px solid ${sev.border}`,
+                          background: siteEventForm.severity === sev.id ? sev.bg : '#ffffff',
+                          fontWeight: siteEventForm.severity === sev.id ? 700 : 500,
+                          fontSize: '0.78rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {sev.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* AUTOR & FECHA/HORA */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                    Autor / Inspector
+                  </label>
+                  <input
+                    type="text"
+                    value={siteEventForm.author}
+                    onChange={e => setSiteEventForm(prev => ({ ...prev, author: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                    Fecha
+                  </label>
+                  <input
+                    type="date"
+                    value={siteEventForm.date}
+                    onChange={e => setSiteEventForm(prev => ({ ...prev, date: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                    Hora
+                  </label>
+                  <input
+                    type="time"
+                    value={siteEventForm.time}
+                    onChange={e => setSiteEventForm(prev => ({ ...prev, time: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '12px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+                <button
+                  type="button"
+                  className="oxi-btn-back-classic"
+                  onClick={() => setShowSiteEventModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="oxi-btn-primary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#0284c7', borderColor: '#0284c7' }}
+                >
+                  💾 Guardar en Bitácora de Obra
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {selectedPhotoPreview && (
         <div
           className="oxi-modal-backdrop"
@@ -11743,15 +12511,30 @@ ${validation.message}
       <nav className="oxi-mobile-bottom-bar" aria-label="Navegación Móvil OxI Pro">
         <button
           type="button"
-          className={`oxi-bottom-item ${activeTab === 'docs' ? 'is-active' : ''}`}
+          className={`oxi-bottom-item ${activeTab === 'docs' && docsSubtab === 'files' ? 'is-active' : ''}`}
           onClick={() => {
             setActiveTab('docs')
+            setDocsSubtab('files')
             window.scrollTo({ top: 0, behavior: 'smooth' })
           }}
         >
           <span className="oxi-bottom-icon">📐</span>
           <span className="oxi-bottom-label">Planos</span>
           {documents.length > 0 && <span className="oxi-bottom-pill">{documents.length}</span>}
+        </button>
+
+        <button
+          type="button"
+          className={`oxi-bottom-item ${activeTab === 'docs' && docsSubtab === 'events' ? 'is-active' : ''}`}
+          onClick={() => {
+            setActiveTab('docs')
+            setDocsSubtab('events')
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
+        >
+          <span className="oxi-bottom-icon">📸</span>
+          <span className="oxi-bottom-label">Bitácora</span>
+          {siteEvents.length > 0 && <span className="oxi-bottom-pill">{siteEvents.length}</span>}
         </button>
 
         <button

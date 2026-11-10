@@ -5,6 +5,9 @@
   .oxi-mobile-app-header {
     display: none !important;
   }
+  .oxi-mobile-camera-btn {
+    display: none !important;
+  }
   .oxi-mobile-bottom-bar {
     display: none !important;
   }
@@ -103,6 +106,29 @@
   .oxi-mobile-header-arrow {
     font-size: 0.75rem;
     color: #64748b;
+  }
+
+  .oxi-mobile-camera-btn {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #15803d;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
+    pointer-events: auto !important;
+    touch-action: manipulation;
+  }
+
+  .oxi-mobile-camera-btn:active {
+    background: #dcfce7;
+    transform: scale(0.92);
   }
 
   .oxi-mobile-mode-pill {

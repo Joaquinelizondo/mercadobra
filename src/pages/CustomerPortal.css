@@ -492,3 +492,47 @@
   border-color: #ea580c;
   color: #ea580c;
 }
+
+/* ── MÓDULO DE PRESUPUESTOS, HISTORIAL & DOCUMENTACIÓN (OXI CLÁSICO) ── */
+.oxi-classic-subnav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.oxi-classic-subnav::-webkit-scrollbar {
+  height: 4px;
+}
+
+.oxi-classic-subnav::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.oxi-subnav-pill {
+  transition: transform 0.12s ease, background 0.15s ease, color 0.15s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.oxi-subnav-pill:active {
+  transform: scale(0.97);
+}
+
+.classic-budget-hub {
+  animation: fadeInHub 0.2s ease-out;
+}
+
+@keyframes fadeInHub {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
