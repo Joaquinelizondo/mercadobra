@@ -390,4 +390,14 @@
     grid-template-columns: 1fr !important;
     gap: 16px !important;
   }
+
+  /* Módulo de Presupuestos, Historial & Documentos en Móvil */
+  .classic-budget-hub {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .classic-budget-hub table {
+    min-width: 540px;
+  }
 }
