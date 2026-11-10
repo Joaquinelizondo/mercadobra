@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import OxidaWordmark from '../components/OxidaWordmark'
-import MercadoQuoteFinder from '../components/MercadoQuoteFinder'
+import OxidaBrochureSlider from '../components/OxidaBrochureSlider'
 import ProductCard from '../components/ProductCard'
 import { useProducts } from '../context/ProductContext'
 import { FEATURES } from '../config/features'
@@ -86,7 +86,7 @@ export default function OxidaStudio() {
             Tu idea. Una cotización a medida. Proyectos de construcción integrales de todo tipo: planos, anteproyectos, asesoramiento y ejecución.
           </p>
           <div className="oxida-hero-actions">
-            <a href="#cotizar" className="oxida-hero-custom-link">Empezar proyecto ↘</a>
+            <a href="#experiencia" className="oxida-hero-custom-link">Conocé la experiencia ↘</a>
             {FEATURES.SHOW_ECOMMERCE_PRODUCTS ? (
               <a href="#tienda" className="oxida-arrow-link">Ver catálogo <span>↓</span></a>
             ) : (
@@ -97,7 +97,8 @@ export default function OxidaStudio() {
         <div className="oxida-scroll-note">DESLIZÁ PARA EXPLORAR</div>
       </section>
 
-      <MercadoQuoteFinder />
+      {/* Brochure Animado Interactivo */}
+      <OxidaBrochureSlider id="experiencia" />
 
       <section className="oxida-manifesto">
         <p className="oxida-section-number">[ 01 — ENFOQUE ]</p>

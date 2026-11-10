@@ -1,0 +1,488 @@
+/* Oxida Studio — Brochure Animado Interactivo */
+
+.ox-brochure-stage {
+  position: relative;
+  width: 100%;
+  height: clamp(620px, 88vh, 860px);
+  min-height: 580px;
+  background: #0b0c0d;
+  color: #fff;
+  overflow: hidden;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* Individual Slide */
+.ox-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.85s ease, visibility 0.85s ease;
+  display: flex;
+  align-items: center;
+  padding: clamp(28px, 6.5vw, 100px);
+  box-sizing: border-box;
+}
+
+.ox-slide.is-active {
+  opacity: 1;
+  visibility: visible;
+  z-index: 2;
+}
+
+/* Ambient gradient overlay */
+.ox-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(8, 9, 10, 0.96) 0%,
+    rgba(8, 9, 10, 0.78) 46%,
+    rgba(8, 9, 10, 0.28) 100%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Photo Background with Ken Burns zoom */
+.ox-photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.12);
+  transition: transform 7.5s ease-out;
+  z-index: 0;
+  filter: brightness(0.92) contrast(1.05);
+}
+
+.ox-slide.is-active .ox-photo {
+  transform: scale(1);
+}
+
+/* Content block with staggered entrance */
+.ox-content {
+  position: relative;
+  z-index: 3;
+  max-width: 860px;
+  width: 100%;
+}
+
+.ox-slide.is-active .ox-content > * {
+  animation: oxRise 0.75s both cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ox-slide.is-active .ox-content > *:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.ox-slide.is-active .ox-content > *:nth-child(3) {
+  animation-delay: 0.22s;
+}
+
+.ox-slide.is-active .ox-content > *:nth-child(4) {
+  animation-delay: 0.32s;
+}
+
+@keyframes oxRise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Brand header */
+.ox-logo-wrap {
+  margin-bottom: 24px;
+}
+
+.ox-hero-brand {
+  filter: invert(1) brightness(1.2);
+  max-width: 220px;
+}
+
+/* Typography */
+.ox-eyebrow {
+  letter-spacing: 0.28em;
+  color: #e98a42;
+  font-size: clamp(11px, 1.1vw, 15px);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+.ox-title {
+  font-size: clamp(34px, 5.2vw, 76px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  margin: 0 0 20px;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.ox-desc {
+  font-size: clamp(16px, 1.5vw, 22px);
+  line-height: 1.5;
+  max-width: 680px;
+  color: #dfdbd5;
+  margin: 0 0 24px;
+}
+
+.ox-accent {
+  color: #dc6b19;
+}
+
+/* Materials Cards Grid */
+.ox-materials {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 26px;
+  max-width: 740px;
+}
+
+.ox-mat-card {
+  height: clamp(140px, 18vw, 190px);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  border-bottom: 4px solid #dc6b19;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.ox-mat-card:hover {
+  transform: translateY(-4px);
+  border-bottom-color: #ff893b;
+}
+
+.ox-mat-card-body {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 32px 14px 14px;
+  background: linear-gradient(to top, rgba(11, 12, 13, 0.95), transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ox-mat-name {
+  font-size: clamp(14px, 1.3vw, 18px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+}
+
+.ox-mat-desc {
+  font-size: 11px;
+  color: #dc6b19;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Solutions Grid */
+.ox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 32px;
+  margin-top: 24px;
+  max-width: 680px;
+}
+
+.ox-grid-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: clamp(15px, 1.4vw, 20px);
+  color: #f0ece6;
+}
+
+.ox-grid-item b {
+  color: #dc6b19;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+/* Process Section */
+.ox-line {
+  width: 80px;
+  height: 4px;
+  background: #dc6b19;
+  margin: 22px 0 24px;
+  border-radius: 2px;
+}
+
+.ox-stepper {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-top: 10px;
+}
+
+.ox-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ox-step strong {
+  background: rgba(220, 107, 25, 0.14);
+  border: 1px solid rgba(220, 107, 25, 0.4);
+  color: #f7b483;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: clamp(12px, 1.1vw, 14px);
+  letter-spacing: 0.12em;
+}
+
+.ox-step em {
+  color: #dc6b19;
+  font-style: normal;
+  font-weight: bold;
+}
+
+/* CTA Block */
+.ox-cta-block {
+  margin-top: 24px;
+}
+
+.ox-cta-buttons {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.ox-cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 26px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  border-radius: 4px;
+  transition: all 0.22s ease;
+}
+
+.ox-cta-button--primary {
+  background: #dc6b19;
+  color: #ffffff;
+  border: 1px solid #dc6b19;
+}
+
+.ox-cta-button--primary:hover {
+  background: #ea7a28;
+  border-color: #ea7a28;
+  transform: translateY(-2px);
+}
+
+.ox-cta-button--secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.ox-cta-button--secondary:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.ox-contact-line {
+  font-size: 14px;
+  color: #ccc6bf;
+  margin: 0 0 8px;
+}
+
+.ox-note {
+  font-size: 11px;
+  color: #8c8680;
+  margin: 0;
+}
+
+/* Top Indicator Pills */
+.ox-top-nav {
+  position: absolute;
+  top: 24px;
+  right: clamp(28px, 6.5vw, 100px);
+  z-index: 6;
+  display: flex;
+  gap: 8px;
+}
+
+.ox-pill-nav {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #a69f97;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ox-pill-nav:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.ox-pill-nav.is-active {
+  background: #dc6b19;
+  border-color: #dc6b19;
+  color: #ffffff;
+}
+
+/* Bottom Footer Controls */
+.ox-footer {
+  position: absolute;
+  bottom: 24px;
+  left: clamp(28px, 6.5vw, 100px);
+  right: clamp(28px, 6.5vw, 100px);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ox-count {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: #ccc6bf;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  min-width: 58px;
+}
+
+.ox-track {
+  height: 3px;
+  flex: 1;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.ox-fill {
+  height: 100%;
+  background: #dc6b19;
+  border-radius: 3px;
+  transition: width 0.08s linear;
+}
+
+.ox-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.ox-btn {
+  background: rgba(30, 32, 35, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  padding: 8px 14px;
+  font-size: 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.ox-btn:hover {
+  background: #dc6b19;
+  border-color: #dc6b19;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ox-brochure-stage {
+    height: auto;
+    min-height: 640px;
+  }
+
+  .ox-slide {
+    padding: 70px 20px 80px;
+    align-items: flex-start;
+  }
+
+  .ox-overlay {
+    background: linear-gradient(
+      180deg,
+      rgba(8, 9, 10, 0.94) 0%,
+      rgba(8, 9, 10, 0.82) 50%,
+      rgba(8, 9, 10, 0.6) 100%
+    );
+  }
+
+  .ox-materials {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .ox-mat-card {
+    height: 90px;
+  }
+
+  .ox-mat-card-body {
+    padding: 10px 14px;
+  }
+
+  .ox-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .ox-grid-item {
+    padding: 8px 0;
+    font-size: 15px;
+  }
+
+  .ox-stepper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .ox-step em {
+    display: none;
+  }
+
+  .ox-top-nav {
+    top: 14px;
+    right: 18px;
+    gap: 4px;
+  }
+
+  .ox-pill-nav {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .ox-footer {
+    bottom: 16px;
+    left: 18px;
+    right: 18px;
+    gap: 10px;
+  }
+
+  .ox-btn {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+}
