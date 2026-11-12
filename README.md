@@ -2463,20 +2463,49 @@ A continuación se detallan los módulos clave para posicionar a OxI Pro como la
 
 #### 19. 🎨🚀 Plan Integral de Mejoras Visuales y Funcionales (Web & App) [EN CURSO]
 - **Objetivo:** Maximizar la conversión comercial y la experiencia de usuario tanto en la web pública como en la aplicación móvil/PWA tras la invisibilización del ecommerce retail, consolidando a Mercadobra y Óxida como la plataforma líder en ConstructionTech y Soluciones de Obra a Medida.
-- **Estructura de fases:**
+- **Estructura de fases y estado:**
   - **Fase 1: Quick Wins Inmediatos (Web Pública & Captación de Obras)**
-    1. **Reordenamiento Visual de la Portada (`Storefront.jsx`):** Ubicar el Hero principal arriba del todo con impacto visual de marca (*"Lo que imaginás, en hierro y madera"*), trasladando el cotizador rápido debajo como siguiente paso natural de conversión.
-    2. **Cotizador Abierto a Medida (`MercadoQuoteFinder.jsx`):** Eliminar la restricción que bloqueaba el botón *"Cotizar ahora"* ante consultas sin match de producto retail. Permitir que cualquier idea en lenguaje natural (ej. *"Pérgola 6x3 con policarbonato"*, *"Reforma integral"*) se envíe de inmediato como solicitud comercial.
-    3. **Showcase / Galería Visual de Obras Ejecutadas en la Home:** Incorporar una grilla fotográfica editorial con proyectos destacados en hierro, madera y arquitectura para aportar credibilidad y volumen visual tras la salida de la tienda retail.
-    4. **Smart Banner de Instalación PWA (Móvil):** Detección inteligente para invitar al cliente o jefe de obra a instalar la app en su pantalla de inicio (1 toque en Android / guía animada en iOS Safari).
+    1. [x] **Reordenamiento Visual de la Portada (`Storefront.jsx`):** Ubicar el Hero principal arriba del todo con impacto visual de marca (*"Lo que imaginás, en hierro y madera"*).
+    2. [x] **Brochure Animado Interactivo en Óxida Studio (`/oxida`):** Integración del slider de 5 diapositivas cinematográficas (Hero, Materiales con texturas reales, Soluciones de obra, Proceso y CTA) y retiro de la barra cotizadora de e-commerce en Óxida Studio.
+    3. [x] **Showcase / Galería Visual de Obras Ejecutadas en la Home:** Incorporación de grilla fotográfica editorial con proyectos destacados en hierro, madera y arquitectura.
+    4. [x] **Smart Banner de Instalación PWA (Móvil):** Detección inteligente para invitar al cliente o jefe de obra a instalar la app en su pantalla de inicio (Android / iOS Safari).
   - **Fase 2: Experiencia Móvil de Campo & Superpoderes de Obra (App Smartphone)**
-    1. **Cámara Directa para Fotos de Obra:** Atributo `capture="environment"` en modales de certificación para abrir la cámara trasera en tiempo real.
-    2. **Dictado por Voz para OxI Copilot:** Integración de la Web Speech API nativa para dictar órdenes y avances al asistente de obra con las manos libres en el terreno.
-    3. **Modo Kanban Semanal en Celular:** Vista simplificada por tarjetas para el cronograma de tareas en pantallas pequeñas.
-    4. **Compartir Reporte por WhatsApp en 1 Clic:** Envío inmediato de estado de obra a comitentes e inversores con mensaje formateado.
+    1. [x] **Cámara Directa para Fotos de Obra:** Atributo `capture="environment"` en modales de certificación y bitácora para captura fotográfica instantánea en terreno con compresión en cliente y visor lightbox.
+    2. [ ] **Dictado por Voz para OxI Copilot:** Integración de la Web Speech API nativa para dictar órdenes, novedades y avances al asistente de obra con las manos libres en el terreno.
+    3. [ ] **Compartir Reporte de Obra por WhatsApp en 1 Clic:** Envío inmediato de estado de obra a comitentes e inversores con mensaje formateado, KPIs y fotos.
+    4. [ ] **Modo Kanban Semanal en Celular:** Vista simplificada por tarjetas táctiles para el cronograma de tareas en pantallas pequeñas.
   - **Fase 3: Ecosistema Avanzado & Modelado**
-    1. **Libro / Parte Diario de Obra Digital:** Bitácora en 45 segundos con clima, cuadrillas, tareas y firmas técnicas.
-    2. **Visor 3D Interactivo para Clientes:** Acceso para comitentes a previsualizar proyectos en el simulador.
+    1. [x] **Libro / Parte Diario de Obra Digital:** Bitácora integrada con severidades, registro de eventos, lluvia y nómina BPS al 60%.
+    2. [ ] **Visor 3D Interactivo para Clientes:** Acceso para comitentes a previsualizar proyectos en el simulador.
+
+---
+
+### 📋 Matriz de Tareas Pendientes Priorizadas (Ejecución 1 a 1)
+
+A continuación se consolidan los pendientes detectados en la auditoría general de la plataforma, ordenados para su ejecución paso a paso:
+
+#### Bloque 1: Web Pública & Identidad de Marca (Front)
+- [ ] **P1.1 — Retirar / Reemplazar Barra Cotizadora en la Home (`Storefront.jsx`):** Unificar la portada principal con la estética de alta gama de Óxida Studio, retirando el buscador `<MercadoQuoteFinder />` y conectando el botón del hero a una acción de contacto directo o al nuevo brochure interactivo.
+- [ ] **P1.2 — Configurador 3D Paramétrico Público:** Abrir selector visual de medidas y materiales para pérgolas y barandas estándar con presupuesto estimado en vivo.
+- [ ] **P1.3 — Textos Legales y Comerciales:** Redacción y publicación de Términos y Condiciones, Políticas de Privacidad y Garantías de Fabricación y Montaje.
+
+#### Bloque 2: App Móvil de Campo & Superpoderes OxI Pro (Terreno)
+- [ ] **P2.1 — Dictado por Voz en OxI Copilot:** Implementación del botón de micrófono en el chat de obra con reconocimiento continuo mediante Web Speech API.
+- [ ] **P2.2 — Compartir Reporte por WhatsApp en 1 Clic:** Generador de resumen semanal (avance físico %, tareas concluidas, incidentes y fotos) con formato WhatsApp listo para enviar a comitentes.
+- [ ] **P2.3 — Modo Kanban Semanal Móvil (< 768px):** Alternativa al Gantt horizontal para teléfonos inteligentes con columnas *Esta Semana / En Curso / Finalizadas*.
+
+#### Bloque 3: Portal del Inversor / Comitente al Paso (Cliente)
+- [ ] **P3.1 — Vista Ejecutiva de Fideicomiso / Comitente:** Línea de tiempo de hitos, galería de fotos semanales y estado de cuotas/certificaciones, con filtro de confidencialidad comercial para ocultar costos internos de subcontratos.
+
+#### Bloque 4: Modelador 3D Paramétrico
+- [ ] **P4.1 — Detección de Colisiones en Recorrido:** Restricción física para que la cámara no atraviese muros ni mobiliario.
+- [ ] **P4.2 — Controles Táctiles para Móvil en 3D:** Joystick virtual o controles de paneo/avance optimizados para smartphones y tablets.
+- [ ] **P4.3 — Exportación 3D (GLB / OBJ) y Lámina PDF:** Descarga de geometría para software externo y generación de plano acotado en PDF.
+
+#### Bloque 5: Estabilidad Operativa & Backend
+- [x] **P5.1 — Corrección de Endpoints Backend:** Importación de `uploadAttachment` en `server.js` y corrección de `ValidationError` en importación masiva de clientes.
+- [ ] **P5.2 — Servicio de Emails Transaccionales:** Conexión de proveedor SMTP/API (Resend / SendGrid) para notificaciones de cotizaciones, invitaciones y aprobaciones.
+- [ ] **P5.3 — Migración de Adjuntos Históricos a Cloudinary:** Script de saneamiento para migrar archivos Base64 existentes en base de datos.
 
 ---
 

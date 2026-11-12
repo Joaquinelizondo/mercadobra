@@ -49,7 +49,7 @@ import {
   hashSessionToken,
   verifyPassword,
 } from './authService.js'
-import { isCloudinaryConfigured, uploadProductImage } from './cloudinaryService.js'
+import { isCloudinaryConfigured, uploadProductImage, uploadAttachment } from './cloudinaryService.js'
 import { createQuotePdf } from './quotePdfService.js'
 import { createOxiProReportPdf, createMonthlyCertificatePdf } from './oxiProReportPdfService.js'
 import { interpretModelerPrompt } from './modelerChatService.js'
@@ -1001,7 +1001,7 @@ app.delete('/admin/customers/:id', authMiddleware, adminOnly, asyncHandler(async
 
 app.post('/admin/customers/import', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const { customers } = req.body
-  if (!Array.isArray(customers)) throw new BadRequestError('El cuerpo debe tener un array "customers".')
+  if (!Array.isArray(customers)) throw new ValidationError('El cuerpo debe tener un array "customers".')
   
   const repo = await getRepository()
   let imported = 0
