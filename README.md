@@ -2485,7 +2485,7 @@ A continuación se detallan los módulos clave para posicionar a OxI Pro como la
 A continuación se consolidan los pendientes detectados en la auditoría general de la plataforma, ordenados para su ejecución paso a paso:
 
 #### Bloque 1: Web Pública & Identidad de Marca (Front)
-- [ ] **P1.1 — Retirar / Reemplazar Barra Cotizadora en la Home (`Storefront.jsx`):** Unificar la portada principal con la estética de alta gama de Óxida Studio, retirando el buscador `<MercadoQuoteFinder />` y conectando el botón del hero a una acción de contacto directo o al nuevo brochure interactivo.
+- [x] **P1.1 — Retirar / Reemplazar Barra Cotizadora en la Home (`Storefront.jsx`):** Unificar la portada principal con la estética de alta gama de Óxida Studio, retirando el buscador `<MercadoQuoteFinder />` y conectando el botón del hero al nuevo brochure interactivo animado y cotización directa.
 - [ ] **P1.2 — Configurador 3D Paramétrico Público:** Abrir selector visual de medidas y materiales para pérgolas y barandas estándar con presupuesto estimado en vivo.
 - [ ] **P1.3 — Textos Legales y Comerciales:** Redacción y publicación de Términos y Condiciones, Políticas de Privacidad y Garantías de Fabricación y Montaje.
 

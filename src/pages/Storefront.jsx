@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { useProducts } from '../context/ProductContext'
 import ProductCard from '../components/ProductCard'
 import OxidaWordmark from '../components/OxidaWordmark'
-import MercadoQuoteFinder from '../components/MercadoQuoteFinder'
+import OxidaBrochureSlider from '../components/OxidaBrochureSlider'
 import EditorialProductSlider from '../components/EditorialProductSlider'
 import { FEATURES } from '../config/features'
 import heroImage from '../assets/oxida/escalera.jpeg'
@@ -95,7 +95,7 @@ export default function Storefront() {
             <strong>Tu idea. Una cotización a medida.</strong> Proyectos de construcción integrales de todo tipo: planos, anteproyectos, asesoramiento y ejecución.
           </p>
           <div className="store-hero-actions">
-            <a href="#cotizar" className="store-button store-button--primary">Empezar proyecto a medida</a>
+            <a href="#experiencia" className="store-button store-button--primary">Empezar proyecto a medida</a>
             {FEATURES.SHOW_ECOMMERCE_PRODUCTS ? (
               <Link to="/explorar#catalog-results" className="store-button store-button--secondary">Ver catálogo</Link>
             ) : (
@@ -113,8 +113,8 @@ export default function Storefront() {
         </div>
       </section>
 
-      {/* 2. Cotizador Rápido Inteligente */}
-      <MercadoQuoteFinder />
+      {/* 2. Brochure Interactivo y Soluciones de Obra */}
+      <OxidaBrochureSlider id="experiencia" />
       {FEATURES.SHOW_ECOMMERCE_PRODUCTS && <EditorialProductSlider products={productList} />}
 
       {/* 3. Showcase Visual de Proyectos Ejecutados */}
@@ -149,9 +149,9 @@ export default function Storefront() {
                 </div>
                 <h3>{project.title}</h3>
                 <p>{project.description}</p>
-                <a href="#cotizar" className="store-project-quote-btn">
+                <Link to="/contacto#formulario-contacto" className="store-project-quote-btn">
                   Cotizar proyecto similar <span>↘</span>
-                </a>
+                </Link>
               </div>
             </article>
           ))}
