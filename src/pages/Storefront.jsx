@@ -10,7 +10,6 @@ import heroImage from '../assets/oxida/escalera.jpeg'
 import casaImg from '../assets/oxida/casa.jpeg'
 import entradaImg from '../assets/oxida/entrada.jpeg'
 import estanteriaImg from '../assets/oxida/estanteria.jpeg'
-import mercadoBraLogo from '../assets/mercadobra.png'
 import './Storefront.css'
 
 const EXECUTED_PROJECTS = [
@@ -81,43 +80,11 @@ export default function Storefront() {
   )
   return (
     <div className="storefront">
-      {/* 1. Hero Principal de Alto Impacto */}
-      <section className="store-hero" id="inicio">
-        <div className="store-hero-copy">
-          <div className="store-brand-context">
-            <img src={mercadoBraLogo} alt="Mercadobra" />
-            <span>presenta</span>
-            <strong>Óxida Studio</strong>
-          </div>
-          <p className="store-kicker">Construcción · Diseño en Hierro y Madera · Fabricación</p>
-          <h1 style={{fontSize: 'clamp(2.5rem, 5vw, 4.5rem)'}}>Lo que imaginás,<br /><em>en hierro y madera.</em></h1>
-          <p className="store-hero-text">
-            <strong>Tu idea. Una cotización a medida.</strong> Proyectos de construcción integrales de todo tipo: planos, anteproyectos, asesoramiento y ejecución.
-          </p>
-          <div className="store-hero-actions">
-            <a href="#experiencia" className="store-button store-button--primary">Empezar proyecto a medida</a>
-            {FEATURES.SHOW_ECOMMERCE_PRODUCTS ? (
-              <Link to="/explorar#catalog-results" className="store-button store-button--secondary">Ver catálogo</Link>
-            ) : (
-              <a href="#proyectos-destacados" className="store-button store-button--secondary">Ver proyectos ejecutados</a>
-            )}
-          </div>
-          <div className="store-trust">
-            <span>Presupuesto exacto</span><span>Fabricación local</span><span>Atención técnica directa</span>
-          </div>
-        </div>
-        <div className="store-hero-media">
-          <img src={heroImage} alt="Escalera de hierro y madera diseñada por Óxida Studio" />
-          <div className="store-hero-mark"><OxidaWordmark showByline /></div>
-          <span className="store-hero-note">Proyectos & Obras — 2026</span>
-        </div>
-      </section>
-
-      {/* 2. Brochure Interactivo y Soluciones de Obra */}
-      <OxidaBrochureSlider id="experiencia" />
+      {/* 1. Portada Dinámica: Brochure Animado e Interactivo */}
+      <OxidaBrochureSlider id="inicio" />
       {FEATURES.SHOW_ECOMMERCE_PRODUCTS && <EditorialProductSlider products={productList} />}
 
-      {/* 3. Showcase Visual de Proyectos Ejecutados */}
+      {/* 2. Showcase Visual de Proyectos Ejecutados */}
       <section className="store-showcase" id="proyectos-destacados">
         <div className="store-heading">
           <div>

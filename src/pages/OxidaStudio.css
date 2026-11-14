@@ -145,6 +145,7 @@
 .oxida-signoff-by img { width:180px; filter:brightness(0) invert(1); }
 
 @media (max-width: 800px) {
+  .oxida-site { border-radius: 0; box-shadow: none; }
   .oxida-nav { height:76px; grid-template-columns:1fr auto; padding:0 18px; }
   .oxida-nav-brand { width:150px; height:64px; }
   .oxida-nav-brand img { width:250px; margin-left:-50px; }

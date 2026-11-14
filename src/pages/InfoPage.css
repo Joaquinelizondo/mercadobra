@@ -1,6 +1,8 @@
 .info-page {
   display: grid;
   gap: 24px;
+  width: min(1280px, calc(100% - 32px));
+  margin: 16px auto 32px;
 }
 
 .info-page-card {
@@ -82,6 +84,7 @@
 .contact-form-feedback.is-error { background:#fff0ed; color:#9a3425; }
 
 @media (max-width: 700px) {
+  .info-page { width: calc(100% - 20px); margin: 12px auto 24px; }
   .info-page-card { border-radius: 18px; }
   .info-page-actions { flex-direction: column; }
   .info-page-actions a { text-align: center; }

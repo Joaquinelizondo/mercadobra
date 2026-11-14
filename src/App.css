@@ -1,10 +1,11 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  padding: 32px;
-  width: min(1200px, 100%);
-  margin: 0 auto;
+  gap: 28px;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   position: relative;
   isolation: isolate;
 }
@@ -35,9 +36,8 @@
   backdrop-filter: blur(14px);
   border-radius: 18px;
   padding: 10px clamp(12px, 3vw, 24px);
-  width: 100%;
-  margin-left: 0;
-  margin-right: 0;
+  width: min(1280px, calc(100% - 32px));
+  margin: 12px auto 0;
   position: sticky;
   top: 8px;
   z-index: 40;
@@ -1088,12 +1088,14 @@
 }
 
 .footer {
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 26px;
   padding: 28px;
   padding-bottom: 78px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(8px);
+  background: #141518;
+  color: #f1ede3;
+  width: min(1280px, calc(100% - 32px));
+  margin: 20px auto 32px;
 }
 
 .footer-brand-system {
@@ -4268,10 +4270,12 @@
 
 @media (max-width: 960px) {
   .page {
-    padding: 20px;
+    padding: 0;
   }
 
   .footer {
+    width: calc(100% - 24px);
+    margin: 16px auto 28px;
     padding: 22px 18px 70px;
   }
 
@@ -4303,6 +4307,8 @@
   }
 
   .topbar {
+    width: calc(100% - 24px);
+    margin: 8px auto 0;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -4377,8 +4383,8 @@
 
 @media (max-width: 640px) {
   .page {
-    gap: 24px;
-    padding: 16px;
+    gap: 16px;
+    padding: 0;
   }
 
   .footer-subbrand-card {
@@ -4392,6 +4398,8 @@
   }
 
   .topbar {
+    width: calc(100% - 16px);
+    margin: 6px auto 0;
     padding: 8px 10px;
     gap: 10px;
   }
@@ -4477,6 +4485,8 @@
   }
 
   .footer {
+    width: calc(100% - 16px);
+    margin: 12px auto 24px;
     padding: 20px;
     padding-bottom: 92px;
   }

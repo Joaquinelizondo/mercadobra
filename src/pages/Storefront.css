@@ -1,4 +1,21 @@
-.storefront { display: flex; flex-direction: column; gap: 28px; color: #262621; }
+.storefront {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  color: #262621;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.store-showcase,
+.store-modeler-teaser,
+.store-section,
+.store-custom {
+  width: min(1280px, calc(100% - 32px));
+  margin-left: auto;
+  margin-right: auto;
+}
 .editorial-slider { position:relative; width:100%; overflow:hidden; border-radius:28px; background:#1d1c19; box-shadow:0 30px 75px rgba(34,24,17,.24); }
 .editorial-slider-stage { position:relative; min-height:clamp(540px,68vw,820px); }
 .editorial-slide { position:absolute; inset:0; overflow:hidden; opacity:0; visibility:hidden; color:#fff; text-decoration:none; transition:opacity 1s ease,visibility 1s; }
@@ -287,6 +304,15 @@
 }
 
 @media (max-width: 900px) {
+  .storefront { gap: 20px; }
+  .store-showcase,
+  .store-modeler-teaser,
+  .store-section,
+  .store-custom {
+    width: calc(100% - 24px);
+    margin-left: auto;
+    margin-right: auto;
+  }
   .store-quote-first { grid-template-columns:1fr; }
   .store-quote-intro { position:static; }
   .store-quote-first .oxida-builder { order:-1; }
@@ -299,6 +325,15 @@
 }
 @media (max-width: 560px) {
   .storefront { gap: 16px; }
+  .store-showcase,
+  .store-modeler-teaser,
+  .store-section,
+  .store-custom {
+    width: calc(100% - 16px);
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 18px;
+  }
   .store-quote-first { padding:42px 16px 16px; border-radius:18px; }
   .store-quote-intro { padding:0 8px; }
   .store-quote-promise { margin:30px 0 10px; }
