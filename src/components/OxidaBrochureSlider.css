@@ -99,12 +99,53 @@
 
 /* Brand header */
 .ox-logo-wrap {
-  margin-bottom: 24px;
+  margin-bottom: 26px;
+  display: inline-block;
 }
 
 .ox-hero-brand {
-  filter: invert(1) brightness(1.2);
-  max-width: 220px;
+  width: min(260px, 80vw);
+  margin: 0 0 10px;
+  color: #f1ede4;
+}
+
+.ox-hero-brand .oxida-wordmark-name {
+  font-size: clamp(2.4rem, 4.4vw, 3.4rem);
+  color: #ffffff;
+  letter-spacing: -0.08em;
+  line-height: 0.95;
+}
+
+.ox-hero-brand .oxida-wordmark-rust {
+  color: #e98a42;
+  background: linear-gradient(145deg, #e98a42 0%, #ff9e54 30%, #c4642c 60%, #ffaa6b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ox-hero-brand .oxida-wordmark-line {
+  background: #ffffff;
+  opacity: 0.85;
+  height: 2px;
+  margin: 0.18em 0 0.26em;
+}
+
+.ox-hero-brand .oxida-wordmark-studio {
+  color: #e2ded7;
+  font-size: clamp(0.72rem, 1.1vw, 0.92rem);
+  letter-spacing: 0.36em;
+  padding-left: 0.36em;
+}
+
+.ox-hero-brand .oxida-wordmark-byline {
+  display: block;
+  margin-top: 8px;
+  color: #e98a42;
+  font: italic 0.78rem Georgia, serif;
+  letter-spacing: 0.08em;
+  text-align: center;
+  opacity: 0.95;
 }
 
 /* Typography */

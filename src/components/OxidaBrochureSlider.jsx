@@ -223,7 +223,7 @@ export default function OxidaBrochureSlider({ id = 'experiencia' }) {
             <div className="ox-content">
               {slide.type === 'hero' && idx === 0 && (
                 <div className="ox-logo-wrap">
-                  <OxidaWordmark showByline={false} className="ox-hero-brand" />
+                  <OxidaWordmark showByline className="ox-hero-brand" />
                 </div>
               )}
 
