@@ -97,6 +97,7 @@ export default function OxidaBrochureSlider({ id = 'experiencia' }) {
   const startTimeRef = useRef(performance.now())
   const pausedTimeRef = useRef(0)
   const touchStartXRef = useRef(null)
+  const touchStartYRef = useRef(null)
   const containerRef = useRef(null)
 
   const goToSlide = useCallback((nextIndex) => {
@@ -167,16 +168,23 @@ export default function OxidaBrochureSlider({ id = 'experiencia' }) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [nextSlide, prevSlide, togglePause])
 
-  // Touch Swipe Handlers
+  // Touch Swipe Handlers (Optimized for Mobile & PWA gestures)
   const handleTouchStart = (e) => {
-    touchStartXRef.current = e.touches[0].clientX
+    if (e.touches && e.touches.length > 0) {
+      touchStartXRef.current = e.touches[0].clientX
+      touchStartYRef.current = e.touches[0].clientY
+    }
   }
 
   const handleTouchEnd = (e) => {
-    if (touchStartXRef.current === null) return
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return
     const touchEndX = e.changedTouches[0].clientX
+    const touchEndY = e.changedTouches[0].clientY
     const deltaX = touchStartXRef.current - touchEndX
-    if (Math.abs(deltaX) > 40) {
+    const deltaY = touchStartYRef.current - touchEndY
+
+    // Only swipe if horizontal movement is dominant and exceeds 45px threshold
+    if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.25) {
       if (deltaX > 0) {
         nextSlide()
       } else {
@@ -184,6 +192,7 @@ export default function OxidaBrochureSlider({ id = 'experiencia' }) {
       }
     }
     touchStartXRef.current = null
+    touchStartYRef.current = null
   }
 
   return (

@@ -413,11 +413,12 @@
 @media (max-width: 768px) {
   .ox-brochure-stage {
     height: auto;
-    min-height: 640px;
+    min-height: clamp(580px, 90vh, 720px);
+    touch-action: pan-y;
   }
 
   .ox-slide {
-    padding: 70px 20px 80px;
+    padding: 68px 20px max(76px, calc(env(safe-area-inset-bottom, 16px) + 60px));
     align-items: flex-start;
   }
 
@@ -470,19 +471,24 @@
   }
 
   .ox-pill-nav {
-    padding: 4px 8px;
-    font-size: 10px;
+    min-height: 28px;
+    padding: 5px 9px;
+    font-size: 11px;
+    touch-action: manipulation;
   }
 
   .ox-footer {
-    bottom: 16px;
-    left: 18px;
-    right: 18px;
+    bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    left: max(18px, env(safe-area-inset-left, 18px));
+    right: max(18px, env(safe-area-inset-right, 18px));
     gap: 10px;
   }
 
   .ox-btn {
-    padding: 6px 10px;
-    font-size: 14px;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 6px 11px;
+    font-size: 15px;
+    touch-action: manipulation;
   }
 }
