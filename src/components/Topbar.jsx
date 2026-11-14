@@ -10,7 +10,7 @@ export default function Topbar() {
   const location = useLocation()
   const isOxida = location.pathname === '/oxida'
   const showOxidaUnits = isOxida || location.pathname === '/'
-  const { supplierUser, logout, customerUser, logoutCustomer } = useAuth()
+  const { supplierUser, logout, customerUser, logoutCustomer, adminUser, logoutAdmin } = useAuth()
   const { cartCount, setCartOpen } = useCart()
   const { wishlist } = useWishlist()
   const showQuoteFinder = () => window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -63,7 +63,30 @@ export default function Topbar() {
           </>
         )}
 
-        {!isOxida && (supplierUser ? (
+        {!isOxida && (adminUser ? (
+          <div className="supplier-session admin-session" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="supplier-session-avatar" style={{ background: '#ea580c', color: '#fff', fontWeight: 'bold' }}>
+              AD
+            </span>
+            <Link
+              to="/admin/cotizaciones-clientes"
+              className="supplier-session-name"
+              title="Gestión de Obras & Cotizaciones"
+              style={{ fontWeight: 600, color: '#ea580c', textDecoration: 'none' }}
+            >
+              ⚙️ Obras & Cotizaciones
+            </Link>
+            <Link
+              to="/admin/productos"
+              style={{ fontSize: '0.8rem', color: '#525252', textDecoration: 'none', marginLeft: '2px' }}
+            >
+              Tienda
+            </Link>
+            <button className="supplier-logout" onClick={logoutAdmin} aria-label="Cerrar sesión de admin">
+              Salir
+            </button>
+          </div>
+        ) : supplierUser ? (
           <div className="supplier-session">
             <span className="supplier-session-avatar">
               {companyInitials(supplierUser.company)}

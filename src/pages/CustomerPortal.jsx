@@ -114,7 +114,7 @@ function shortDate(value) {
 }
 
 export default function CustomerPortal() {
-  const { customerUser, customerToken, logoutCustomer } = useAuth()
+  const { customerUser, customerToken, logoutCustomer, adminUser } = useAuth()
   const [profile, setProfile] = useState(null)
   const [quotes, setQuotes] = useState([])
   const [selected, setSelected] = useState(null)
@@ -702,6 +702,38 @@ export default function CustomerPortal() {
         ) : (
           /* PLATAFORMA OXI CLÁSICO */
           <>
+            {adminUser && (
+              <div style={{
+                background: '#18181b',
+                color: '#fed7aa',
+                padding: '10px 16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '0.85rem',
+                borderRadius: '8px',
+                marginBottom: '1rem',
+                border: '1px solid #ea580c',
+                flexWrap: 'wrap',
+                gap: '8px'
+              }}>
+                <span>⚙️ <strong>Sesión Administrador Óxida activa</strong>: Estás explorando el portal como cliente.</span>
+                <Link
+                  to="/admin/cotizaciones-clientes"
+                  style={{
+                    color: '#fff',
+                    background: '#ea580c',
+                    padding: '6px 12px',
+                    borderRadius: '4px',
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                    fontSize: '0.82rem'
+                  }}
+                >
+                  Ir a Gestión de Proyectos Admin →
+                </Link>
+              </div>
+            )}
             <header className="oxi-os-main-header">
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>

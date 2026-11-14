@@ -77,11 +77,14 @@ export default function AdminProducts() {
         </div>
         <div className="admin-store-actions">
           <Link to="/" className="admin-store-link">Ver tienda ↗</Link>
-          <Link to="/admin/cotizaciones" className="admin-store-link">Consultas</Link>
+          <Link to="/admin/cotizaciones-clientes" className="admin-store-link" style={{ fontWeight: '700', color: '#ea580c' }}>
+            ⚡ Cotizaciones & Proyectos
+          </Link>
           <Link to="/admin/pedidos" className="admin-store-link">Pedidos</Link>
           <Link to="/admin/clientes" className="admin-store-link">Clientes</Link>
           <Link to="/admin/modelador" className="admin-store-link">Simulador 3D <small>Beta</small></Link>
           <Link to="/admin/cotiza" className="admin-store-link">OXI Cotiza <small>Beta</small></Link>
+          <Link to="/admin/cotizaciones" className="admin-store-link">Consultas web</Link>
           <Link to="/admin/personalizaciones" className="admin-store-link">Personalizaciones</Link>
           <button type="button" className="admin-store-link" onClick={logoutAdmin}>Cerrar sesión</button>
         </div>

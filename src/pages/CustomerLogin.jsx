@@ -123,6 +123,9 @@ export default function CustomerLogin() {
           <p className="login-signup-hint">
             ¿Sos proveedor? <Link to="/proveedor/login">Ingresá acá</Link>
           </p>
+          <p className="login-signup-hint" style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px dashed #cbd5e1' }}>
+            ¿Administración Óxida? <Link to="/admin/login?redirect=/admin/cotizaciones-clientes" style={{ color: '#ea580c', fontWeight: 600 }}>Panel de Proyectos & Cotizaciones →</Link>
+          </p>
         </form>
       </div>
     </div>
