@@ -227,6 +227,85 @@
   font: italic .7rem Georgia, serif;
 }
 
+/* Mobile topbar menu toggle button */
+.topbar-mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  padding: 8px 7px;
+  cursor: pointer;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  touch-action: manipulation;
+}
+
+.topbar-mobile-menu-btn:hover,
+.topbar-mobile-menu-btn:active {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.topbar-hamburger-line {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: #20201d;
+  border-radius: 2px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.topbar--oxida .topbar-hamburger-line {
+  background: #e8e5dc;
+}
+
+.topbar--oxida .topbar-mobile-menu-btn {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.topbar--oxida .topbar-mobile-menu-btn:hover,
+.topbar--oxida .topbar-mobile-menu-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    width: 100%;
+    margin: 0;
+    top: 0;
+    border-radius: 0 0 16px 16px;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    padding: 8px 14px;
+    gap: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .topbar-menu {
+    display: none !important;
+  }
+
+  .oxida-segment-nav {
+    display: none !important;
+  }
+
+  .topbar-mobile-menu-btn {
+    display: flex;
+  }
+
+  .store-nav-brand {
+    width: min(170px, 45vw);
+  }
+
+  body {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .oxida-wordmark {
   display: flex;
   flex-direction: column;
@@ -1077,12 +1156,12 @@
   white-space: nowrap;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .whatsapp-float {
-    right: 16px;
-    bottom: 16px;
+    right: 14px;
+    bottom: calc(74px + env(safe-area-inset-bottom, 12px));
     padding: 0 14px 0 12px;
-    min-height: 50px;
+    min-height: 46px;
     font-size: 0.82rem;
   }
 }

@@ -6,7 +6,7 @@ import { companyInitials } from '../utils/format'
 import { FEATURES } from '../config/features'
 import logoImg from '../assets/mercadobra.png'
 
-export default function Topbar() {
+export default function Topbar({ onOpenDrawer }) {
   const location = useLocation()
   const isOxida = location.pathname === '/oxida'
   const showOxidaUnits = isOxida || location.pathname === '/'
@@ -117,6 +117,17 @@ export default function Topbar() {
             </Link>
           </div>
         ))}
+
+        <button
+          type="button"
+          className="topbar-mobile-menu-btn"
+          onClick={onOpenDrawer}
+          aria-label="Abrir menú de navegación"
+        >
+          <span className="topbar-hamburger-line"></span>
+          <span className="topbar-hamburger-line"></span>
+          <span className="topbar-hamburger-line"></span>
+        </button>
       </div>
 
       {showOxidaUnits && (

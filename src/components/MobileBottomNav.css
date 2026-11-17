@@ -1,0 +1,111 @@
+/* ========================================================
+   MOBILE BOTTOM NAVIGATION BAR (DOCK NATIVO TIPO APP)
+   ======================================================== */
+
+@media (min-width: 769px) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9990;
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(14, 15, 14, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .mb-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 100%;
+    color: #9c9890;
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    padding: 4px 0 2px 0;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.15s ease, transform 0.1s ease;
+    touch-action: manipulation;
+  }
+
+  .mb-nav-item:active {
+    transform: scale(0.92);
+  }
+
+  .mb-nav-item.is-active {
+    color: #ea580c;
+  }
+
+  .mb-nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    transition: transform 0.15s ease;
+  }
+
+  .mb-nav-item.is-active .mb-nav-icon {
+    transform: translateY(-1px);
+  }
+
+  .mb-nav-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  .mb-nav-label--bold {
+    font-weight: 700;
+    color: #ea580c;
+  }
+
+  /* Center Cotizar Elevated Button */
+  .mb-nav-item--cotizar {
+    position: relative;
+    top: -8px;
+  }
+
+  .mb-cotizar-bubble {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(234, 88, 12, 0.45);
+    border: 2.5px solid rgba(14, 15, 14, 0.94);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .mb-nav-item--cotizar:active .mb-cotizar-bubble {
+    transform: scale(0.9);
+  }
+
+  .mb-nav-item--cotizar .mb-nav-label {
+    margin-top: 1px;
+  }
+}
