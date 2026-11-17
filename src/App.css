@@ -29,11 +29,12 @@
   justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
-  border: 1px solid rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(234, 88, 12, 0.35);
   background:
-    radial-gradient(circle at 8% 0%, rgba(255, 255, 255, 0.88), transparent 40%),
-    linear-gradient(130deg, rgba(255, 255, 255, 0.92), rgba(255, 244, 232, 0.9));
-  backdrop-filter: blur(14px);
+    radial-gradient(circle at 10% 0%, rgba(234, 88, 12, 0.16), transparent 45%),
+    linear-gradient(135deg, rgba(16, 17, 22, 0.94), rgba(9, 10, 13, 0.96));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 18px;
   padding: 10px clamp(12px, 3vw, 24px);
   width: min(1280px, calc(100% - 32px));
@@ -42,8 +43,8 @@
   top: 8px;
   z-index: 40;
   box-shadow:
-    0 18px 34px rgba(15, 23, 42, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 20px 45px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   pointer-events: none;
 }
 
@@ -107,22 +108,24 @@
 }
 
 .topbar-menu a {
-  color: var(--text-h);
+  color: #e2e8f0;
   text-decoration: none;
   font-weight: 600;
   font-size: 0.86rem;
   letter-spacing: 0.01em;
-  opacity: 0.92;
-  padding: 7px 10px;
+  opacity: 0.94;
+  padding: 7px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.04);
+  transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 }
 
 .topbar-menu a:hover {
   opacity: 1;
-  border-color: rgba(15, 23, 42, 0.22);
-  background: rgba(15, 23, 42, 0.08);
+  color: #ea580c;
+  border-color: rgba(234, 88, 12, 0.5);
+  background: rgba(234, 88, 12, 0.12);
   transform: translateY(-1px);
 }
 
@@ -280,9 +283,11 @@
     border-top: none;
     border-left: none;
     border-right: none;
+    border-bottom: 1px solid rgba(234, 88, 12, 0.35);
+    background: rgba(10, 11, 14, 0.96);
     padding: 8px 14px;
     gap: 10px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
   }
 
   .topbar-menu {
@@ -295,6 +300,12 @@
 
   .topbar-mobile-menu-btn {
     display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(234, 88, 12, 0.35);
+  }
+
+  .topbar-hamburger-line {
+    background: #ea580c;
   }
 
   .store-nav-brand {
