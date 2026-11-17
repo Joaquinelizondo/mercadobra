@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import { getRepository } from './repository.js'
 import { isPostgresEnabled } from './db.js'
+import { runMigrations } from './migrate.js'
 import { generateChatReply } from './chatService.js'
 import { generateOxiProPlanFromSpec } from './oxiProAiService.js'
 import { notifyAdminCustomerRegistered, notifyAdminCustomerReply, notifyAdminNewQuoteRequest, notifyAdminQuoteStale, notifyAdminTransferReported, notifyCustomerQuoteActivity, notifyCustomerQuoteReminder, notifyLeadCreated, notifyOrderCreated, notifyOrderStatusChanged, notifyQuoteDepositApproved, notifySearchRecommendations, sendCustomerInvitationEmail, sendCustomerInvitationWhatsapp } from './notificationService.js'
@@ -1039,6 +1040,30 @@ app.get('/admin/customers/:customerId/quotes', authMiddleware, adminOnly, asyncH
 }))
 
 app.get('/admin/customer-quotes', authMiddleware, adminOnly, asyncHandler(async (_req,res)=>{const repo=await getRepository();const rows=await repo.getAllCustomerQuotes();return res.json({rows,total:rows.length})}))
+
+app.get('/admin/quotes/:quoteId', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1)
+  const repo = await getRepository()
+  const quote = await repo.getCustomerQuoteById(quoteId)
+  if (!quote) throw new NotFoundError('Cotización')
+  let customer = null
+  if (quote.customerId) {
+    customer = await repo.getAdminCustomerById(quote.customerId).catch(() => null)
+    if (!customer) {
+      const user = await repo.findUserById(quote.customerId).catch(() => null)
+      if (user) {
+        customer = {
+          id: user.id,
+          name: user.company || user.email,
+          email: user.email,
+          status: 'active',
+          tier: 'classic',
+        }
+      }
+    }
+  }
+  return res.json({ quote, customer })
+}))
 
 app.post('/admin/customers/:customerId/quotes', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const customerId = validateNumber(req.params.customerId, 'Cliente ID', 1)
@@ -2243,6 +2268,11 @@ app.use(globalErrorHandler)
 
 const server = app.listen(PORT, () => {
   console.log(`✅ Mercadobra backend listening on http://localhost:${PORT}`)
+  if (isPostgresEnabled()) {
+    runMigrations()
+      .then(() => console.log('✅ PostgreSQL: migraciones al día'))
+      .catch((error) => console.error('⚠️ [migrations:error]', error.message))
+  }
   migrateEmbeddedProductImages()
     .then(({ migratedImages, migratedProducts, failedImages }) => {
       if (migratedImages > 0) console.log(`✅ Cloudinary: ${migratedImages} imágenes de ${migratedProducts} productos migradas`)

@@ -38,6 +38,19 @@ function formatRequestedDate(value) {
   return parsed.toLocaleDateString('es-UY')
 }
 
+function getSafeAttachments(attachments) {
+  if (Array.isArray(attachments)) return attachments.filter(Boolean)
+  if (typeof attachments === 'string') {
+    try {
+      const parsed = JSON.parse(attachments)
+      if (Array.isArray(parsed)) return parsed.filter(Boolean)
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
 const EMPTY_FORM = {
   source: 'whatsapp', buyerName: '', buyerPhone: '', buyerEmail: '', deliveryMethod: 'pickup',
   deliveryAddress: '', deliveryCity: '', buyerNotes: '', paymentMethod: 'transferencia',
@@ -64,15 +77,27 @@ export default function AdminOrders() {
   useEffect(() => {
     if (!adminToken) return
     setLoading(true)
-    Promise.all([
-      getOrders(adminToken).catch(() => []),
-      getAllCustomerQuotes(adminToken).catch(() => ({ rows: [] }))
+    setError('')
+    Promise.allSettled([
+      getOrders(adminToken),
+      getAllCustomerQuotes(adminToken)
     ])
-      .then(([ordersData, quotesData]) => {
-        setOrders(Array.isArray(ordersData) ? ordersData : [])
-        setQuotes(Array.isArray(quotesData?.rows) ? quotesData.rows : [])
+      .then(([ordersResult, quotesResult]) => {
+        if (ordersResult.status === 'fulfilled' && Array.isArray(ordersResult.value)) {
+          setOrders(ordersResult.value)
+        } else {
+          setOrders([])
+        }
+        if (quotesResult.status === 'fulfilled' && Array.isArray(quotesResult.value?.rows)) {
+          setQuotes(quotesResult.value.rows)
+        } else {
+          setQuotes([])
+        }
+        if (ordersResult.status === 'rejected' && quotesResult.status === 'rejected') {
+          setError('No se pudieron cargar los pedidos ni las cotizaciones.')
+        }
       })
-      .catch((requestError) => setError(requestError.message || 'No se pudieron cargar los pedidos ni cotizaciones.'))
+      .catch((requestError) => setError(requestError.message || 'No se pudieron cargar los datos.'))
       .finally(() => setLoading(false))
   }, [adminToken])
 
@@ -338,28 +363,32 @@ export default function AdminOrders() {
                           📅 <strong>Fecha deseada en obra:</strong> {formatRequestedDate(q.desiredDate)}
                         </p>
                       )}
-                      {q.attachments?.length > 0 && (
+                      {getSafeAttachments(q.attachments).length > 0 && (
                         <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          {q.attachments.map((f, i) => (
-                            <a
-                              key={i}
-                              href={f.url || f.data}
-                              target="_blank"
-                              rel="noreferrer"
-                              download={!f.url ? f.name : undefined}
-                              style={{
-                                fontSize: '0.8rem',
-                                color: '#a8522e',
-                                background: '#e9e3d8',
-                                padding: '4px 10px',
-                                borderRadius: '4px',
-                                textDecoration: 'none',
-                                fontWeight: 600
-                              }}
-                            >
-                              📎 {f.name}
-                            </a>
-                          ))}
+                          {getSafeAttachments(q.attachments).map((f, i) => {
+                            const fileUrl = typeof f === 'string' ? f : (f?.url || f?.data || '#')
+                            const fileName = (typeof f === 'string' ? f.split('/').pop() : f?.name) || `Archivo ${i + 1}`
+                            return (
+                              <a
+                                key={i}
+                                href={fileUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                download={typeof f === 'object' && !f?.url ? fileName : undefined}
+                                style={{
+                                  fontSize: '0.8rem',
+                                  color: '#a8522e',
+                                  background: '#e9e3d8',
+                                  padding: '4px 10px',
+                                  borderRadius: '4px',
+                                  textDecoration: 'none',
+                                  fontWeight: 600
+                                }}
+                              >
+                                📎 {fileName}
+                              </a>
+                            )
+                          })}
                         </div>
                       )}
                     </div>
@@ -371,7 +400,7 @@ export default function AdminOrders() {
                         : 'Sin cotización emitida'}
                     </span>
                     <Link
-                      to={`/admin/clientes/${q.customerId}/cotizaciones/${q.id}`}
+                      to={`/admin/clientes/${q.customerId || 0}/cotizaciones/${q.id}`}
                       style={{
                         marginLeft: 'auto',
                         color: '#ffffff',

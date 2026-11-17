@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { downloadQuotePdf, getAdminCustomer, getAdminQuoteMessages, getCustomerQuotes, reviewQuoteDeposit, sendAdminQuoteMessage, updateAdminQuote, parseRequirementsWithAI, generateProposalWithAI, getFabricationSuppliers, getAdminFabricationOrders, createFabricationOrder } from '../lib/api'
+import { downloadQuotePdf, getAdminCustomer, getAdminQuoteMessages, getCustomerQuotes, getAdminQuote, reviewQuoteDeposit, sendAdminQuoteMessage, updateAdminQuote, parseRequirementsWithAI, generateProposalWithAI, getFabricationSuppliers, getAdminFabricationOrders, createFabricationOrder } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import { Badge } from '../components/Badge'
 import './CustomerPortal.css'
@@ -30,33 +30,70 @@ export default function AdminQuoteWorkspace(){
   const [assigning, setAssigning] = useState(false)
   const [assignError, setAssignError] = useState('')
   
-  useEffect(()=>{
-    if(!adminToken)return;
-    Promise.all([
-      getAdminCustomer(id,adminToken),
-      getCustomerQuotes(id,adminToken),
-      getAdminQuoteMessages(quoteId,adminToken),
-      getFabricationSuppliers(adminToken),
-      getAdminFabricationOrders(adminToken, { quoteId })
-    ]).then(([c,q,m,supps,fabs])=>{
-      setCustomer(c);
-      const currentQuote = (q.rows||[]).find(x=>x.id===Number(quoteId));
-      setQuote(currentQuote);
-      setMessages(m.rows||[]);
-      setSuppliers(supps?.rows || []);
-      setFabOrders(fabs?.rows || []);
-      if (currentQuote) {
-        setAssignForm({
-          supplierId: supps?.rows?.[0]?.id || '',
-          targetPrice: currentQuote.totalAmount ? Math.round(Number(currentQuote.totalAmount) * 0.6) : '',
-          currency: currentQuote.currency || 'USD',
-          deadline: currentQuote.estimatedEndAt ? String(currentQuote.estimatedEndAt).slice(0, 10) : '',
-          title: currentQuote.title || '',
-          description: currentQuote.proposalDescription || currentQuote.description || ''
-        })
+  useEffect(() => {
+    if (!adminToken || !quoteId) return
+    let isCancelled = false
+
+    async function fetchData() {
+      setError('')
+      let resolvedQuote = null
+      let resolvedCustomer = null
+
+      try {
+        const quoteRes = await getAdminQuote(quoteId, adminToken)
+        if (quoteRes?.quote) {
+          resolvedQuote = quoteRes.quote
+          resolvedCustomer = quoteRes.customer
+        }
+      } catch {
+        if (id && Number(id) > 0) {
+          try {
+            const [c, q] = await Promise.all([
+              getAdminCustomer(id, adminToken).catch(() => null),
+              getCustomerQuotes(id, adminToken).catch(() => ({ rows: [] }))
+            ])
+            resolvedCustomer = c
+            resolvedQuote = (q?.rows || []).find((x) => Number(x.id) === Number(quoteId))
+          } catch {
+            // ignore fallback error
+          }
+        }
       }
-    }).catch(e=>setError(e.message))
-  },[id,quoteId,adminToken])
+
+      if (isCancelled) return
+
+      if (!resolvedQuote) {
+        setError('No se pudo encontrar la cotización solicitada.')
+        return
+      }
+
+      setQuote(resolvedQuote)
+      if (resolvedCustomer) setCustomer(resolvedCustomer)
+
+      const [messagesRes, suppsRes, fabsRes] = await Promise.all([
+        getAdminQuoteMessages(quoteId, adminToken).catch(() => ({ rows: [] })),
+        getFabricationSuppliers(adminToken).catch(() => ({ rows: [] })),
+        getAdminFabricationOrders(adminToken, { quoteId }).catch(() => ({ rows: [] })),
+      ])
+
+      if (isCancelled) return
+      setMessages(messagesRes?.rows || [])
+      setSuppliers(suppsRes?.rows || [])
+      setFabOrders(fabsRes?.rows || [])
+
+      setAssignForm({
+        supplierId: suppsRes?.rows?.[0]?.id || '',
+        targetPrice: resolvedQuote.totalAmount ? Math.round(Number(resolvedQuote.totalAmount) * 0.6) : '',
+        currency: resolvedQuote.currency || 'USD',
+        deadline: resolvedQuote.estimatedEndAt ? String(resolvedQuote.estimatedEndAt).slice(0, 10) : '',
+        title: resolvedQuote.title || '',
+        description: resolvedQuote.proposalDescription || resolvedQuote.description || ''
+      })
+    }
+
+    fetchData()
+    return () => { isCancelled = true }
+  }, [id, quoteId, adminToken])
   if(!adminUser||!adminToken)return <Navigate to={`/admin/login?redirect=/admin/clientes/${id}/cotizaciones/${quoteId}`} replace/>
   
   async function saveProposal(e){e.preventDefault();setSaving(true);try{setQuote(await updateAdminQuote(quote.id,{...quote,status:quote.status==='in_progress'?'sent':quote.status},adminToken))}catch(e){setError(e.message)}finally{setSaving(false)}}
@@ -130,14 +167,15 @@ export default function AdminQuoteWorkspace(){
   }
 
   if(!quote)return <section className="customer-portal"><p>{error||'Cargando cotización…'}</p></section>
-  return <section className="customer-portal"><header><div><Link to={`/admin/clientes/${id}`}>← Volver al cliente</Link><span>Respuesta comercial</span><h1>{quote.title}</h1><p>{customer?.name} · {quote.referenceNumber}</p></div>{quote.totalAmount>0&&<strong>{formatPrice(quote.totalAmount,quote.currency)}</strong>}</header>{error&&<p className="customer-portal-error">{error}</p>}
+  const customerRouteId = customer?.id || (id && Number(id) > 0 ? id : '')
+  return <section className="customer-portal"><header><div>{customerRouteId ? <Link to={`/admin/clientes/${customerRouteId}`}>← Volver al cliente</Link> : <Link to="/admin/cotizaciones-clientes">← Volver a cotizaciones</Link>}<span>Respuesta comercial</span><h1>{quote.title}</h1><p>{customer?.name || 'Cliente corporativo'} · {quote.referenceNumber}</p></div>{quote.totalAmount>0&&<strong>{formatPrice(quote.totalAmount,quote.currency)}</strong>}</header>{error&&<p className="customer-portal-error">{error}</p>}
     <div className="admin-quote-workspace"><div className="quote-workspace"><div className="quote-workspace-head"><div><span>Solicitud del cliente</span><p>{quote.description}</p>
       <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <button type="button" onClick={parseWithAI} disabled={isParsingAI} style={{ background: '#f8f5ef', color: '#ea580c', border: '1px solid #ea580c', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>
           {isParsingAI ? '⏳ Analizando requerimientos...' : '✨ Extraer datos técnicos con IA'}
         </button>
         <Link
-          to={`/admin/cotiza?quoteId=${quote.id}&customerId=${id}&title=${encodeURIComponent(quote.title)}`}
+          to={`/admin/cotiza?quoteId=${quote.id}&customerId=${customerRouteId}&title=${encodeURIComponent(quote.title)}`}
           style={{ background: '#131313', color: 'white', textDecoration: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
         >
           ⚡ Abrir en OXI Quote

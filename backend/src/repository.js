@@ -1097,8 +1097,8 @@ async function ensureFabricationOrdersTable(pool) {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS fabrication_orders (
         id SERIAL PRIMARY KEY,
-        quote_id INTEGER REFERENCES customer_quotes(id) ON DELETE SET NULL,
-        b2b_project_id INTEGER REFERENCES b2b_projects(id) ON DELETE SET NULL,
+        quote_id BIGINT REFERENCES customer_quotes(id) ON DELETE SET NULL,
+        b2b_project_id BIGINT REFERENCES b2b_projects(id) ON DELETE SET NULL,
         supplier_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         supplier_company TEXT NOT NULL,
         project_name TEXT NOT NULL,
@@ -1417,7 +1417,7 @@ async function getPgRepo() {
            SELECT status, expires_at FROM customer_invitations
            WHERE user_id = users.id ORDER BY created_at DESC LIMIT 1
          ) AS latest_invitation ON TRUE
-         WHERE users.id = $1 AND users.role = 'customer' LIMIT 1`,
+         WHERE users.id = $1 LIMIT 1`,
         [id]
       )
       return rows[0] ? mapAdminCustomerRow(rows[0]) : null
@@ -1430,8 +1430,8 @@ async function getPgRepo() {
       return rows.map(mapCustomerQuoteRow)
     },
     async getAllCustomerQuotes() {
-      const {rows}=await pool.query(`SELECT customer_quotes.*,users.company AS customer_name,users.email AS customer_email FROM customer_quotes JOIN users ON users.id=customer_quotes.customer_user_id ORDER BY customer_quotes.updated_at DESC,customer_quotes.id DESC`)
-      return rows.map((row)=>({...mapCustomerQuoteRow(row),customerName:row.customer_name||'',customerEmail:row.customer_email||''}))
+      const {rows}=await pool.query(`SELECT customer_quotes.*,users.company AS customer_name,users.email AS customer_email FROM customer_quotes LEFT JOIN users ON users.id=customer_quotes.customer_user_id ORDER BY customer_quotes.updated_at DESC,customer_quotes.id DESC`)
+      return rows.map((row)=>({...mapCustomerQuoteRow(row),customerName:row.customer_name||row.customer_email||'Cliente B2B',customerEmail:row.customer_email||''}))
     },
     async getCustomerQuoteById(id) {
       const {rows}=await pool.query('SELECT * FROM customer_quotes WHERE id=$1 LIMIT 1',[id]); return rows[0]?mapCustomerQuoteRow(rows[0]):null

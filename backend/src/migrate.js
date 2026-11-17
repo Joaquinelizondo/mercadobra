@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const migrationsDir = path.join(__dirname, 'migrations')
 
-async function run() {
+export async function runMigrations(closePool = false) {
   if (!isPostgresEnabled()) {
     console.log('DATABASE_URL no configurada. Se omiten migraciones PostgreSQL.')
     return
@@ -36,10 +36,14 @@ async function run() {
     }
   }
 
-  await pool.end()
+  if (closePool) {
+    await pool.end()
+  }
 }
 
-run().catch((error) => {
-  console.error(error)
-  process.exit(1)
-})
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  runMigrations(true).catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
+}

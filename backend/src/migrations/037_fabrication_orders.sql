@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS fabrication_orders (
   id SERIAL PRIMARY KEY,
-  quote_id INTEGER REFERENCES customer_quotes(id) ON DELETE SET NULL,
-  b2b_project_id INTEGER REFERENCES b2b_projects(id) ON DELETE SET NULL,
+  quote_id BIGINT REFERENCES customer_quotes(id) ON DELETE SET NULL,
+  b2b_project_id BIGINT REFERENCES b2b_projects(id) ON DELETE SET NULL,
   supplier_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   supplier_company TEXT NOT NULL,
   project_name TEXT NOT NULL,
