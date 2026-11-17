@@ -248,6 +248,14 @@ export function assignQuoteToB2bProject(quoteId, b2bProjectId, token) { return r
 export function createMyQuote(payload, token) { return request('/customer/quotes', { method: 'POST', token, body: JSON.stringify(payload) }) }
 export function getMyQuoteMessages(quoteId, token) { return request(`/customer/quotes/${quoteId}/messages`, { token }) }
 export function sendMyQuoteMessage(quoteId, payload, token) { return request(`/customer/quotes/${quoteId}/messages`, { method: 'POST', token, body: JSON.stringify(payload) }) }
+export function uploadQuoteAttachments(quoteId, payload, token, isAdmin = false) {
+  const endpoint = isAdmin ? `/admin/quotes/${quoteId}/attachments` : `/customer/quotes/${quoteId}/attachments`
+  return request(endpoint, {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
 export function respondToMyQuote(quoteId, status, token) { return request(`/customer/quotes/${quoteId}/status`, { method: 'PATCH', token, body: JSON.stringify({ status }) }) }
 export function updateAdminQuote(quoteId, payload, token) { return request(`/admin/quotes/${quoteId}`, { method: 'PATCH', token, body: JSON.stringify(payload) }) }
 export function getAdminQuoteMessages(quoteId, token) { return request(`/admin/quotes/${quoteId}/messages`, { token }) }

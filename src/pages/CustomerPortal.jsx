@@ -7,9 +7,11 @@ import {
   createMyQuote, getCustomerProfile, getMyQuoteMessages, getMyQuotes, 
   reportQuoteDepositTransfer, respondToMyQuote, sendMyQuoteMessage, 
   startQuoteDepositCheckout, updateCustomerProfile, getB2bProjects, 
-  createB2bProject, assignQuoteToB2bProject, parseRequirementsWithAI
+  createB2bProject, assignQuoteToB2bProject, parseRequirementsWithAI,
+  uploadQuoteAttachments
 } from '../lib/api'
 import { formatPrice } from '../utils/format'
+import QuoteDocumentsAndTimeline from '../components/QuoteDocumentsAndTimeline'
 import './CustomerPortal.css'
 import './CustomerPortalMobile.css'
 
@@ -475,6 +477,33 @@ export default function CustomerPortal() {
       setMessages([...messages, res]); setMessage('')
     } catch(err) { setError(err.message) }
     finally { setSaving(false) }
+  }
+
+  async function handleCustomerSendMessage({ message: msgText, attachments, category, stage, status }) {
+    if (!customerToken || !selected?.id) return
+    const res = await sendMyQuoteMessage(selected.id, { message: msgText, attachments, category, stage, status }, customerToken)
+    setMessages((prev) => [...prev, res])
+    if (attachments && attachments.length > 0) {
+      const updatedAtts = [...(Array.isArray(selected.attachments) ? selected.attachments : []), ...attachments]
+      setSelected((prev) => ({ ...prev, attachments: updatedAtts }))
+      setQuotes((prev) => prev.map((q) => (q.id === selected.id ? { ...q, attachments: updatedAtts } : q)))
+    }
+  }
+
+  async function handleCustomerUploadDocument({ attachments, category, stage, note }) {
+    if (!customerToken || !selected?.id) return
+    const res = await uploadQuoteAttachments(selected.id, { attachments, category, stage, note }, customerToken, false)
+    if (res?.quote) {
+      setSelected(res.quote)
+      setQuotes((prev) => prev.map((q) => (q.id === selected.id ? res.quote : q)))
+    } else {
+      const updatedAtts = [...(Array.isArray(selected.attachments) ? selected.attachments : []), ...attachments]
+      setSelected((prev) => ({ ...prev, attachments: updatedAtts }))
+      setQuotes((prev) => prev.map((q) => (q.id === selected.id ? { ...q, attachments: updatedAtts } : q)))
+    }
+    if (res?.message) {
+      setMessages((prev) => [...prev, res.message])
+    }
   }
 
   async function respond(decision) {
@@ -1017,25 +1046,13 @@ export default function CustomerPortal() {
                   </section>
                 )}
 
-                <div className="quote-thread">
-                  <h4>Mensajes y consultas con el equipo técnico</h4>
-                  {messages.length === 0 ? (
-                    <p className="quote-thread-empty">Todavía no hay mensajes. Podés escribir tu primera consulta sobre esta cotización.</p>
-                  ) : (
-                    messages.map(m => (
-                      <article key={m.id} className={m.authorRole === 'customer' ? 'is-customer' : 'is-admin'}>
-                        <small>{m.authorRole === 'customer' ? 'Tu Estudio / Constructora' : 'Ingeniería Óxida'}</small>
-                        <p>{m.message}</p>
-                        <time>{new Date(m.createdAt).toLocaleString('es-UY')}</time>
-                      </article>
-                    ))
-                  )}
-                </div>
-
-                <form className="quote-message-form" onSubmit={sendMessage}>
-                  <textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="Escribí una consulta sobre esta cotización o modificaciones al diseño…" />
-                  <button>Enviar mensaje</button>
-                </form>
+                <QuoteDocumentsAndTimeline
+                  quote={selected}
+                  messages={messages}
+                  onSendMessage={handleCustomerSendMessage}
+                  onUploadDocument={handleCustomerUploadDocument}
+                  isAdmin={false}
+                />
               </div>
             ) : isCreatingQuote ? (
               /* ENRICHED QUOTE REQUEST: PLANOS, MEMORIAS, FOTOS, ARCHIVOS */

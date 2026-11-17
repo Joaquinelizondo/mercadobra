@@ -622,10 +622,45 @@ app.post('/customer/quotes/:quoteId/messages', authMiddleware, customerOnly, asy
   const quote = (await repo.getCustomerQuotes(req.authUser.id)).find((item) => item.id === quoteId)
   if (!quote) throw new NotFoundError('Cotización')
   const processedAttachments = await processAttachments(req.body?.attachments)
+  if (processedAttachments.length > 0) {
+    const existing = Array.isArray(quote.attachments) ? quote.attachments : []
+    await repo.updateCustomerQuote(quoteId, { attachments: [...existing, ...processedAttachments] }).catch(() => null)
+  }
   const created = await repo.createQuoteMessage({ quoteId, authorUserId: req.authUser.id, authorRole: 'customer',
     message: validateStringLength(requireField(req.body?.message, 'Mensaje'), 'Mensaje', 1, 3000), attachments: processedAttachments })
   await notifyAdminCustomerReply({ customerName:req.authUser.company, quote }).catch((error)=>console.error('[quote-notification:error]',error.message))
   return res.status(201).json(created)
+}))
+
+app.post('/customer/quotes/:quoteId/attachments', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
+  const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
+  const quote = (await repo.getCustomerQuotes(req.authUser.id)).find((item) => item.id === quoteId)
+  if (!quote) throw new NotFoundError('Cotización')
+
+  const rawAttachments = req.body?.attachments || (req.body?.attachment ? [req.body.attachment] : [])
+  const processedAttachments = await processAttachments(rawAttachments)
+  if (!processedAttachments.length) throw new ValidationError('No se enviaron archivos válidos')
+
+  const existing = Array.isArray(quote.attachments) ? quote.attachments : []
+  const newAttachments = [...existing, ...processedAttachments]
+  const updatedQuote = await repo.updateCustomerQuote(quoteId, { attachments: newAttachments })
+
+  const categoryLabel = processedAttachments[0]?.category || 'archivo'
+  const fileNames = processedAttachments.map(f => f.name).join(', ')
+  const note = req.body?.note ? ` · Nota: ${req.body.note}` : ''
+  const messageText = `📎 [Documento adjunto por comitente - ${String(categoryLabel).toUpperCase()}]: ${fileNames}${note}`
+
+  const message = await repo.createQuoteMessage({
+    quoteId,
+    authorUserId: req.authUser.id,
+    authorRole: 'customer',
+    message: messageText,
+    attachments: processedAttachments,
+  })
+
+  await notifyAdminCustomerReply({ customerName: req.authUser.company, quote: updatedQuote }).catch(err => console.error('[quote-doc-notification:error]', err.message))
+
+  return res.status(201).json({ quote: updatedQuote, attachments: processedAttachments, message })
 }))
 
 app.patch('/customer/quotes/:quoteId/status', authMiddleware, customerOnly, asyncHandler(async (req, res) => {
@@ -633,7 +668,19 @@ app.patch('/customer/quotes/:quoteId/status', authMiddleware, customerOnly, asyn
   const quote = (await repo.getCustomerQuotes(req.authUser.id)).find((item) => item.id === quoteId)
   if (!quote) throw new NotFoundError('Cotización')
   const status = validateEnum(req.body?.status, ['accepted', 'rejected'], 'Estado')
-  return res.json(await repo.updateCustomerQuoteStatus(quoteId, status))
+  const updated = await repo.updateCustomerQuoteStatus(quoteId, status)
+  const statusLabel = status === 'accepted' ? 'Presupuesto formal aprobado por el cliente' : 'Presupuesto no aceptado por el cliente'
+
+  await repo.createQuoteMessage({
+    quoteId,
+    authorUserId: req.authUser.id,
+    authorRole: 'customer',
+    message: `✅ [Respuesta del Cliente]: ${statusLabel}.`,
+    attachments: []
+  }).catch(err => console.error('[status-log:error]', err.message))
+
+  await notifyAdminCustomerReply({ customerName: req.authUser.company, quote: updated }).catch((error)=>console.error('[quote-notification:error]',error.message))
+  return res.json(updated)
 }))
 
 app.post('/auth/admin/login', asyncHandler(async (req, res) => {
@@ -1090,10 +1137,72 @@ app.patch('/admin/quotes/:quoteId/status', authMiddleware, adminOnly, asyncHandl
   const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1)
   const status = validateEnum(req.body?.status, CUSTOMER_QUOTE_STATUSES, 'Estado')
   const repo = await getRepository()
+  const previous = await repo.getCustomerQuoteById(quoteId)
   const updated = await repo.updateCustomerQuoteStatus(quoteId, status)
   if (!updated) throw new NotFoundError('Cotización')
+
+  const STATUS_SPANISH = {
+    in_progress: 'En revisión / Requerimientos',
+    sent: 'Cotizada / Presupuesto emitido',
+    accepted: 'Presupuesto aprobado por cliente',
+    project_in_progress: 'Obra en ejecución / Fabricación',
+    completed: 'Proyecto finalizado / Entregado',
+    rejected: 'Cotización rechazada',
+    cancelled: 'Cotización cancelada'
+  }
+  const oldLabel = STATUS_SPANISH[previous?.status] || previous?.status || 'Borrador'
+  const newLabel = STATUS_SPANISH[status] || status
+
+  await repo.createQuoteMessage({
+    quoteId,
+    authorUserId: req.authUser.id,
+    authorRole: 'admin',
+    message: `📌 [Actualización de Estado]: El proyecto avanzó de "${oldLabel}" a "${newLabel}".`,
+    attachments: []
+  }).catch(err => console.error('[status-log:error]', err.message))
+
   if(status==='sent'){const customer=await repo.findUserById(updated.customerId);if(customer?.email)await notifyCustomerQuoteActivity({email:customer.email,customerName:customer.company,quote:updated,kind:'quote'}).catch((error)=>console.error('[quote-notification:error]',error.message))}
   return res.json(updated)
+}))
+
+app.post('/admin/quotes/:quoteId/attachments', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1)
+  const repo = await getRepository()
+  const quote = await repo.getCustomerQuoteById(quoteId)
+  if (!quote) throw new NotFoundError('Cotización')
+
+  const rawAttachments = req.body?.attachments || (req.body?.attachment ? [req.body.attachment] : [])
+  const processedAttachments = await processAttachments(rawAttachments)
+  if (!processedAttachments.length) throw new ValidationError('No se enviaron archivos válidos')
+
+  const existing = Array.isArray(quote.attachments) ? quote.attachments : []
+  const newAttachments = [...existing, ...processedAttachments]
+  const updatedQuote = await repo.updateCustomerQuote(quoteId, { attachments: newAttachments })
+
+  const categoryLabel = processedAttachments[0]?.category || 'archivo'
+  const fileNames = processedAttachments.map(f => f.name).join(', ')
+  const note = req.body?.note ? ` · Nota: ${req.body.note}` : ''
+  const messageText = `📎 [Documento adjunto - ${String(categoryLabel).toUpperCase()}]: ${fileNames}${note}`
+
+  const message = await repo.createQuoteMessage({
+    quoteId,
+    authorUserId: req.authUser.id,
+    authorRole: 'admin',
+    message: messageText,
+    attachments: processedAttachments,
+  })
+
+  const customer = await repo.findUserById(quote.customerId)
+  if (customer?.email) {
+    void notifyCustomerQuoteActivity({
+      email: customer.email,
+      customerName: customer.company,
+      quote: updatedQuote,
+      kind: 'message'
+    }).catch(err => console.error('[quote-doc-notification:error]', err.message))
+  }
+
+  return res.status(201).json({ quote: updatedQuote, attachments: processedAttachments, message })
 }))
 
 app.patch('/admin/quotes/:quoteId', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
@@ -1164,6 +1273,10 @@ app.post('/admin/quotes/:quoteId/messages', authMiddleware, adminOnly, asyncHand
   const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
   const quote=await repo.getCustomerQuoteById(quoteId); if(!quote)throw new NotFoundError('Cotización')
   const processedAttachments = await processAttachments(req.body?.attachments)
+  if (processedAttachments.length > 0) {
+    const existing = Array.isArray(quote.attachments) ? quote.attachments : []
+    await repo.updateCustomerQuote(quoteId, { attachments: [...existing, ...processedAttachments] }).catch(() => null)
+  }
   const created = await repo.createQuoteMessage({ quoteId, authorUserId: req.authUser.id, authorRole: 'admin',
     message: validateStringLength(requireField(req.body?.message, 'Mensaje'), 'Mensaje', 1, 3000), attachments: processedAttachments })
   const customer=await repo.findUserById(quote.customerId)

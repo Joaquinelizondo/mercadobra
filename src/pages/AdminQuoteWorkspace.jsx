@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { downloadQuotePdf, getAdminCustomer, getAdminQuoteMessages, getCustomerQuotes, getAdminQuote, reviewQuoteDeposit, sendAdminQuoteMessage, updateAdminQuote, parseRequirementsWithAI, generateProposalWithAI, getFabricationSuppliers, getAdminFabricationOrders, createFabricationOrder } from '../lib/api'
+import { downloadQuotePdf, getAdminCustomer, getAdminQuoteMessages, getCustomerQuotes, getAdminQuote, reviewQuoteDeposit, sendAdminQuoteMessage, updateAdminQuote, parseRequirementsWithAI, generateProposalWithAI, getFabricationSuppliers, getAdminFabricationOrders, createFabricationOrder, uploadQuoteAttachments } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import { Badge } from '../components/Badge'
+import QuoteDocumentsAndTimeline from '../components/QuoteDocumentsAndTimeline'
 import './CustomerPortal.css'
 import './CustomerPortalMobile.css'
 import './AdminQuoteWorkspace.css'
@@ -98,6 +99,34 @@ export default function AdminQuoteWorkspace(){
   
   async function saveProposal(e){e.preventDefault();setSaving(true);try{setQuote(await updateAdminQuote(quote.id,{...quote,status:quote.status==='in_progress'?'sent':quote.status},adminToken))}catch(e){setError(e.message)}finally{setSaving(false)}}
   async function send(e){e.preventDefault();if(!message.trim())return;try{const m=await sendAdminQuoteMessage(quote.id,{message},adminToken);setMessages(p=>[...p,m]);setMessage('')}catch(e){setError(e.message)}}
+
+  async function handleSendMessage({ message: msgText, attachments, category, stage, status }) {
+    if (!adminToken || !quote?.id) return
+    const res = await sendAdminQuoteMessage(quote.id, { message: msgText, attachments, category, stage, status }, adminToken)
+    setMessages((prev) => [...prev, res])
+    if (attachments && attachments.length > 0) {
+      setQuote((prev) => ({
+        ...prev,
+        attachments: [...(Array.isArray(prev.attachments) ? prev.attachments : []), ...attachments]
+      }))
+    }
+  }
+
+  async function handleUploadDocument({ attachments, category, stage, note }) {
+    if (!adminToken || !quote?.id) return
+    const res = await uploadQuoteAttachments(quote.id, { attachments, category, stage, note }, adminToken, true)
+    if (res?.quote) {
+      setQuote(res.quote)
+    } else {
+      setQuote((prev) => ({
+        ...prev,
+        attachments: [...(Array.isArray(prev.attachments) ? prev.attachments : []), ...attachments]
+      }))
+    }
+    if (res?.message) {
+      setMessages((prev) => [...prev, res.message])
+    }
+  }
   function addMilestone(){setQuote({...quote,milestones:[...(quote.milestones||[]),{id:`milestone-${Date.now()}`,title:'',description:'',status:'pending',plannedStartAt:'',plannedEndAt:'',completedAt:null}]})}
   function updateMilestone(index,updates){setQuote({...quote,milestones:(quote.milestones||[]).map((item,itemIndex)=>itemIndex===index?{...item,...updates}:item)})}
   function removeMilestone(index){setQuote({...quote,milestones:(quote.milestones||[]).filter((_,itemIndex)=>itemIndex!==index)})}
@@ -256,8 +285,15 @@ export default function AdminQuoteWorkspace(){
           )}
         </div>
       )}
-      {formatRequestedDate(quote.desiredDate)&&<p style={{marginTop: '0.75rem'}}>Fecha deseada: {formatRequestedDate(quote.desiredDate)}</p>}</div></div>{quote.attachments?.length>0&&<div className="quote-files">{quote.attachments.map((f,i)=><a key={i} href={f.url || f.data} target="_blank" rel="noreferrer" download={!f.url ? f.name : undefined}>📎 {f.name}</a>)}</div>}
-      <div className="quote-thread">{messages.length===0?<p className="quote-thread-empty">Todavía no hay mensajes.</p>:messages.map(m=><article key={m.id} className={m.authorRole==='admin'?'is-customer':'is-admin'}><small>{m.authorRole==='admin'?'Mercadobra':customer?.name||'Cliente'}</small><p>{m.message}</p><time>{new Date(m.createdAt).toLocaleString('es-UY')}</time></article>)}</div><form className="quote-message-form" onSubmit={send}><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Responder al cliente…"/><button>Enviar mensaje</button></form></div>
+      {formatRequestedDate(quote.desiredDate)&&<p style={{marginTop: '0.75rem'}}>Fecha deseada: {formatRequestedDate(quote.desiredDate)}</p>}</div></div>
+      <QuoteDocumentsAndTimeline
+        quote={quote}
+        messages={messages}
+        onSendMessage={handleSendMessage}
+        onUploadDocument={handleUploadDocument}
+        isAdmin={true}
+      />
+    </div>
       <form className="admin-proposal-form" onSubmit={saveProposal}><span>Propuesta económica</span><h2>Preparar cotización</h2><label>Título<input value={quote.title} onChange={e=>setQuote({...quote,title:e.target.value})}/></label>
       <label>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
