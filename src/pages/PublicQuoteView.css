@@ -1,0 +1,510 @@
+/* ========================================================
+   PUBLIC QUOTE VIEW (MAGIC LINK / NO LOGIN REQUIRED)
+   Óxida Studio by Mercadobra
+   ======================================================== */
+
+.public-quote-page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+  font-family: inherit;
+  color: #171816;
+}
+
+/* Loading & Error States */
+.public-quote-loading,
+.public-quote-error {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.pq-spinner {
+  font-size: 2.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.pq-error-card {
+  background: #ffffff;
+  border: 1px solid #e2dad0;
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.pq-error-card span {
+  font-size: 0.85rem;
+  color: #ea580c;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pq-error-card h2 {
+  margin: 0.5rem 0;
+  font-size: 1.35rem;
+}
+
+.pq-error-card p {
+  color: #68645e;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.pq-btn-primary {
+  display: inline-block;
+  background: #171816;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  border-radius: 6px;
+}
+
+/* Top Bar */
+.pq-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  background: #fdfcfb;
+  border: 1px solid #ebe5dc;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.pq-brand-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pq-brand-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+.pq-top-divider {
+  color: #d1c8bc;
+}
+
+.pq-expediente-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #ea580c;
+}
+
+.pq-top-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pq-ref-tag {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #615e58;
+}
+
+.pq-status-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Alerts */
+.pq-alert-success,
+.pq-alert-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  font-size: 0.88rem;
+}
+
+.pq-alert-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.pq-alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.pq-alert-success button,
+.pq-alert-error button {
+  background: transparent;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: inherit;
+  line-height: 1;
+}
+
+/* Hero Card */
+.pq-hero-card {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 2rem;
+  background: #ffffff;
+  border: 1px solid #e5ded5;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  margin-bottom: 1.5rem;
+}
+
+.pq-client-greeting {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #8c8880;
+  letter-spacing: 0.05em;
+}
+
+.pq-quote-title {
+  margin: 0.35rem 0 0.75rem 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #171816;
+}
+
+.pq-quote-desc {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #55524c;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.pq-hero-commercial {
+  background: #fbfaf8;
+  border: 1px solid #eee7de;
+  border-radius: 10px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.pq-price-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ea580c;
+}
+
+.pq-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.pq-price-val {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #171816;
+  line-height: 1;
+}
+
+.pq-price-meta {
+  font-size: 0.75rem;
+  color: #7b7871;
+  margin-bottom: 0.85rem;
+}
+
+.pq-btn-pdf {
+  width: 100%;
+  background: #171816;
+  color: #ffffff;
+  border: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-align: center;
+}
+
+.pq-btn-pdf:hover {
+  background: #ea580c;
+}
+
+/* Decision Box */
+.pq-decision-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  background: #fffdfa;
+  border: 2px solid #ea580c;
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.pq-decision-text h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.2rem;
+  color: #171816;
+}
+
+.pq-decision-text p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #66635c;
+}
+
+.pq-decision-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.pq-btn-approve {
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.75rem 1.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(22, 163, 74, 0.25);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.pq-btn-approve:hover:not(:disabled) {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+.pq-btn-modify {
+  background: #ffffff;
+  border: 1px solid #dcd4c8;
+  color: #383531;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.75rem 1.25rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pq-btn-modify:hover:not(:disabled) {
+  border-color: #171816;
+  color: #171816;
+}
+
+/* Deposit Card */
+.pq-deposit-card {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 1.5rem;
+  background: #fdfaf6;
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.pq-deposit-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ea580c;
+  letter-spacing: 0.08em;
+}
+
+.pq-deposit-info h3 {
+  margin: 0.25rem 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: #171816;
+}
+
+.pq-deposit-info p {
+  margin: 0 0 0.85rem 0;
+  font-size: 0.85rem;
+  color: #66635c;
+  line-height: 1.4;
+}
+
+.pq-bank-details {
+  background: #ffffff;
+  border: 1px solid #f0eae1;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  color: #33312c;
+}
+
+.pq-deposit-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pq-transfer-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.pq-file-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2b2926;
+}
+
+.pq-file-label input {
+  padding: 0.55rem;
+  font-size: 0.8rem;
+  border: 1px dashed #dcd4c8;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.pq-selected-file {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #ea580c;
+  font-weight: 600;
+}
+
+.pq-btn-submit-deposit {
+  background: #ea580c;
+  color: #ffffff;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.65rem 1.25rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pq-btn-submit-deposit:hover:not(:disabled) {
+  background: #c2410c;
+}
+
+.pq-deposit-reported,
+.pq-deposit-approved {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+  padding: 1rem;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #eee7de;
+}
+
+.pq-check-icon {
+  font-size: 1.8rem;
+}
+
+/* Footer WhatsApp */
+.pq-footer-contact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  background: #171816;
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.pq-footer-contact strong {
+  display: block;
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
+}
+
+.pq-footer-contact p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #aaa49c;
+}
+
+.pq-btn-wa {
+  background: #25d366;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.pq-btn-wa:hover {
+  background: #1eb956;
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 850px) {
+  .pq-hero-card {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  .pq-decision-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pq-decision-actions {
+    flex-direction: column;
+  }
+  .pq-btn-approve,
+  .pq-btn-modify {
+    width: 100%;
+    text-align: center;
+  }
+  .pq-deposit-card {
+    grid-template-columns: 1fr;
+  }
+  .pq-footer-contact {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pq-btn-wa {
+    justify-content: center;
+  }
+}

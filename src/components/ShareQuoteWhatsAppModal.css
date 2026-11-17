@@ -1,0 +1,242 @@
+/* WhatsApp Share Modal */
+.wa-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1.25rem;
+}
+
+.wa-modal-box {
+  background: #ffffff;
+  border-radius: 14px;
+  max-width: 580px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.wa-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  background: #fbfaf8;
+  border-bottom: 1px solid #ebe5dc;
+  border-radius: 14px 14px 0 0;
+}
+
+.wa-modal-title-group h3 {
+  margin: 3px 0 0 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #171816;
+}
+
+.wa-modal-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #16a34a;
+}
+
+.wa-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: #8c8880;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.wa-modal-close:hover {
+  color: #171816;
+}
+
+.wa-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.wa-field label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.wa-field label span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #2b2926;
+}
+
+.wa-phone-input-wrap {
+  display: flex;
+  align-items: center;
+  background: #faf8f5;
+  border: 1px solid #d5cec2;
+  border-radius: 6px;
+  padding: 0 0.75rem;
+}
+
+.wa-phone-flag {
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
+}
+
+.wa-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.65rem 0;
+  font-size: 0.9rem;
+  color: #1f1e1c;
+  outline: none;
+}
+
+.wa-hint {
+  font-size: 0.75rem;
+  color: #7b7871;
+  margin-top: 0.3rem;
+  display: block;
+}
+
+.wa-textarea-preview {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 0.82rem;
+  font-family: inherit;
+  border: 1px solid #dcd5ca;
+  border-radius: 6px;
+  background: #fbfaf8;
+  color: #33312e;
+  line-height: 1.45;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.wa-link-preview-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+}
+
+.wa-link-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  overflow: hidden;
+}
+
+.wa-link-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #166534;
+}
+
+.wa-link-url {
+  font-size: 0.78rem;
+  color: #15803d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wa-btn-copy-link {
+  background: #ffffff;
+  border: 1px solid #86efac;
+  color: #166534;
+  padding: 0.45rem 0.85rem;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.wa-btn-copy-link:hover {
+  background: #166534;
+  color: #ffffff;
+}
+
+.wa-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid #ebe5dc;
+  background: #fdfcfb;
+  border-radius: 0 0 14px 14px;
+}
+
+.wa-btn-copy-msg {
+  background: #ffffff;
+  border: 1px solid #d4cdc2;
+  color: #2b2926;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.65rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wa-btn-copy-msg:hover {
+  border-color: #171816;
+}
+
+.wa-btn-send {
+  background: #25d366;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.65rem 1.35rem;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.wa-btn-send:hover {
+  background: #1eb956;
+  transform: translateY(-1px);
+}
+
+.wa-icon {
+  font-size: 1.1rem;
+}
+
+@media (max-width: 600px) {
+  .wa-modal-footer {
+    flex-direction: column-reverse;
+  }
+  .wa-btn-send,
+  .wa-btn-copy-msg {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+}

@@ -5,6 +5,7 @@ import { downloadQuotePdf, getAdminCustomer, getAdminQuoteMessages, getCustomerQ
 import { formatPrice } from '../utils/format'
 import { Badge } from '../components/Badge'
 import QuoteDocumentsAndTimeline from '../components/QuoteDocumentsAndTimeline'
+import ShareQuoteWhatsAppModal from '../components/ShareQuoteWhatsAppModal'
 import './CustomerPortal.css'
 import './CustomerPortalMobile.css'
 import './AdminQuoteWorkspace.css'
@@ -27,6 +28,7 @@ export default function AdminQuoteWorkspace(){
   const [suppliers, setSuppliers] = useState([])
   const [fabOrders, setFabOrders] = useState([])
   const [showAssignModal, setShowAssignModal] = useState(false)
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
   const [assignForm, setAssignForm] = useState({ supplierId: '', targetPrice: '', currency: 'USD', deadline: '', title: '', description: '' })
   const [assigning, setAssigning] = useState(false)
   const [assignError, setAssignError] = useState('')
@@ -208,6 +210,21 @@ export default function AdminQuoteWorkspace(){
           style={{ background: '#131313', color: 'white', textDecoration: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
         >
           ⚡ Abrir en OXI Quote
+        </Link>
+        <button
+          type="button"
+          onClick={() => setShowWhatsAppModal(true)}
+          style={{ background: '#25d366', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+        >
+          💬 Compartir por WhatsApp
+        </button>
+        <Link
+          to={`/cotizacion/${quote.accessToken || (quote.referenceNumber ? `mb_${btoa(quote.referenceNumber).replace(/=/g, '')}` : quote.id)}`}
+          target="_blank"
+          rel="noreferrer"
+          style={{ background: '#f5f0e8', color: '#171816', border: '1px solid #dcd4c8', textDecoration: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+        >
+          🔗 Vista del Comitente ↗
         </Link>
       </div>
 
@@ -520,5 +537,13 @@ export default function AdminQuoteWorkspace(){
 
       <form className="admin-deposit-config" onSubmit={saveProposal}><span>Cobro de seña</span><h2>Reserva del proyecto</h2><div><label>Modalidad<select value={quote.depositMode||'none'} onChange={e=>setQuote({...quote,depositMode:e.target.value,depositValue:e.target.value==='none'?0:quote.depositValue})}><option value="none">Sin seña</option><option value="percentage">Porcentaje</option><option value="fixed">Monto fijo</option></select></label>{quote.depositMode!=='none'&&<label>{quote.depositMode==='percentage'?'Porcentaje (%)':'Monto fijo'}<input type="number" min="0" max={quote.depositMode==='percentage'?100:undefined} value={quote.depositValue||''} onChange={e=>setQuote({...quote,depositValue:e.target.value})}/></label>}</div>{quote.depositAmount>0&&<p>Seña calculada: <strong>{formatPrice(quote.depositAmount,quote.currency)}</strong> · Estado: {quote.depositStatus}</p>}{quote.depositStatus==='reported'&&<div className="admin-deposit-review"><a href={quote.depositReceipt?.url || quote.depositReceipt?.data} target="_blank" rel="noreferrer" download={!quote.depositReceipt?.url ? (quote.depositReceipt?.name||'comprobante') : undefined}>Ver comprobante</a><button type="button" onClick={()=>reviewDeposit('approved')} disabled={saving}>Confirmar transferencia</button><button type="button" onClick={()=>reviewDeposit('rejected')} disabled={saving}>Rechazar</button></div>}<button disabled={saving}>{saving?'Guardando…':'Guardar configuración de seña'}</button></form>
     <form className="admin-document-builder" onSubmit={saveAndDownloadPdf}><span>Documento comercial</span><header><div><h2>Cotización PDF</h2><p>Documento corto con detalle económico y condiciones esenciales.</p></div><button type="button" onClick={addDocumentItem}>＋ Agregar ítem</button></header><div className="admin-document-items">{(quote.documentItems||[]).map((item,index)=><article key={`${item.code}-${index}`}><input value={item.code||''} onChange={e=>updateDocumentItem(index,{code:e.target.value})} placeholder="Código"/><input value={item.description||''} onChange={e=>updateDocumentItem(index,{description:e.target.value})} placeholder="Descripción del ítem" required/><input type="number" min="0" value={item.subtotal??''} onChange={e=>updateDocumentItem(index,{subtotal:e.target.value})} placeholder="Subtotal sin IVA" required/><button type="button" onClick={()=>removeDocumentItem(index)} aria-label="Eliminar ítem">×</button></article>)}</div><div className="admin-document-grid"><label>IVA (%)<input type="number" min="0" max="100" value={quote.taxRate??22} onChange={e=>updateTaxRate(e.target.value)}/></label><label>Validez (días)<input type="number" min="1" value={quote.documentTerms?.validityDays||30} onChange={e=>setQuote({...quote,documentTerms:{...(quote.documentTerms||{}),validityDays:e.target.value}})}/></label><label className="is-wide">Forma de pago<textarea rows="3" value={quote.documentTerms?.paymentTerms||''} onChange={e=>setQuote({...quote,documentTerms:{...(quote.documentTerms||{}),paymentTerms:e.target.value}})}/></label><label className="is-wide">Plazo de ejecución<textarea rows="2" value={quote.documentTerms?.executionTime||''} onChange={e=>setQuote({...quote,documentTerms:{...(quote.documentTerms||{}),executionTime:e.target.value}})}/></label><label className="is-wide">Garantía<textarea rows="3" value={quote.documentTerms?.warranty||''} onChange={e=>setQuote({...quote,documentTerms:{...(quote.documentTerms||{}),warranty:e.target.value}})}/></label><label className="is-wide">Exclusiones<textarea rows="4" value={quote.documentTerms?.exclusions||''} onChange={e=>setQuote({...quote,documentTerms:{...(quote.documentTerms||{}),exclusions:e.target.value}})}/></label><label className="is-wide">Notas adicionales<textarea rows="3" value={quote.documentTerms?.notes||''} onChange={e=>setQuote({...quote,documentTerms:{...(quote.documentTerms||{}),notes:e.target.value}})}/></label></div><button disabled={saving||!(quote.documentItems||[]).length}>{saving?'Generando…':'Guardar y descargar PDF'}</button></form>
+
+    {showWhatsAppModal && (
+      <ShareQuoteWhatsAppModal
+        quote={quote}
+        customer={customer}
+        onClose={() => setShowWhatsAppModal(false)}
+      />
+    )}
   </section>
 }

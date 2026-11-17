@@ -269,6 +269,47 @@ export async function downloadQuotePdf(quoteId, token) {
   const blob=await response.blob();const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`Cotizacion-${quoteId}.pdf`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url)
 }
 
+export function getPublicQuote(token) {
+  return request(`/public/quotes/${token}`)
+}
+export function sendPublicQuoteMessage(token, payload) {
+  return request(`/public/quotes/${token}/messages`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+export function uploadPublicQuoteAttachments(token, payload) {
+  return request(`/public/quotes/${token}/attachments`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+export function respondToPublicQuote(token, status) {
+  return request(`/public/quotes/${token}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status })
+  })
+}
+export function reportPublicQuoteDepositTransfer(token, receipt) {
+  return request(`/public/quotes/${token}/deposit/transfer`, {
+    method: 'POST',
+    body: JSON.stringify({ receipt })
+  })
+}
+export async function downloadPublicQuotePdf(token) {
+  const response = await fetch(`${getApiBaseCandidates()[0]}/public/quotes/${token}/pdf`)
+  if (!response.ok) throw new Error('No se pudo generar el PDF de la cotización.')
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `Cotizacion-${token}.pdf`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
 export function loginSupplier(email, password) {
   return request('/auth/login', {
     method: 'POST',

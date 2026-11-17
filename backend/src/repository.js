@@ -150,6 +150,7 @@ function mapCustomerQuoteRow(row) {
     documentItems: Array.isArray(row.document_items ?? row.documentItems) ? (row.document_items ?? row.documentItems) : [],
     documentTerms: row.document_terms ?? row.documentTerms ?? {},
     taxRate: Number(row.tax_rate ?? row.taxRate ?? 22),
+    accessToken: row.access_token ?? row.accessToken ?? (row.reference_number || row.referenceNumber ? `mb_${Buffer.from(String(row.reference_number || row.referenceNumber)).toString('hex')}` : null),
     createdAt: row.created_at ?? row.createdAt ?? null,
     updatedAt: row.updated_at ?? row.updatedAt ?? null,
   }
@@ -395,6 +396,26 @@ async function getJsonRepo() {
     async getCustomerQuoteById(id) {
       const quote=(readDb().customerQuotes||[]).find((item)=>Number(item.id)===Number(id)); return quote?mapCustomerQuoteRow(quote):null
     },
+    async getCustomerQuoteByToken(token) {
+      if (!token) return null
+      const db = readDb()
+      const quote = (db.customerQuotes || []).find((item) => {
+        const derived = (item.referenceNumber || item.reference_number) ? `mb_${Buffer.from(String(item.referenceNumber || item.reference_number)).toString('hex')}` : ''
+        return item.accessToken === token || item.access_token === token || derived === token || String(item.id) === token
+      })
+      if (!quote) return null
+      const user = (db.users || []).find((item) => Number(item.id) === Number(quote.customerId || quote.customer_user_id))
+      return {
+        quote: mapCustomerQuoteRow(quote),
+        customer: {
+          id: user?.id,
+          name: user?.name || user?.company || 'Cliente',
+          company: user?.company || '',
+          email: user?.email || '',
+          phone: user?.phone || '',
+        }
+      }
+    },
     async createB2bProject(payload) {
       const db = readDb()
       if (!Array.isArray(db.b2bProjects)) db.b2bProjects = []
@@ -545,9 +566,11 @@ async function getJsonRepo() {
     async createCustomerQuote(payload) {
       const db = readDb()
       if (!Array.isArray(db.customerQuotes)) db.customerQuotes = []
+      const token = payload.accessToken || randomBytes(16).toString('hex')
       const created = {
         ...payload,
         id: nextId(db.customerQuotes),
+        accessToken: token,
         sentAt: payload.status === 'sent' ? new Date().toISOString() : null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -1436,6 +1459,29 @@ async function getPgRepo() {
     async getCustomerQuoteById(id) {
       const {rows}=await pool.query('SELECT * FROM customer_quotes WHERE id=$1 LIMIT 1',[id]); return rows[0]?mapCustomerQuoteRow(rows[0]):null
     },
+    async getCustomerQuoteByToken(token) {
+      if (!token) return null
+      const { rows } = await pool.query(
+        `SELECT customer_quotes.*, users.company AS customer_company, users.name AS customer_name, users.email AS customer_email, users.phone AS customer_phone
+         FROM customer_quotes
+         LEFT JOIN users ON users.id = customer_quotes.customer_user_id
+         WHERE customer_quotes.access_token = $1
+            OR ('mb_' || encode(customer_quotes.reference_number::bytea, 'hex')) = $1
+         LIMIT 1`,
+        [token]
+      )
+      if (!rows[0]) return null
+      return {
+        quote: mapCustomerQuoteRow(rows[0]),
+        customer: {
+          id: rows[0].customer_user_id,
+          name: rows[0].customer_name || rows[0].customer_company || 'Cliente',
+          company: rows[0].customer_company || '',
+          email: rows[0].customer_email || '',
+          phone: rows[0].customer_phone || '',
+        }
+      }
+    },
     async createB2bProject(payload) {
       const { rows } = await pool.query(
         `INSERT INTO b2b_projects (customer_user_id, name, location) VALUES ($1, $2, $3) RETURNING *`,
@@ -1696,11 +1742,12 @@ async function getPgRepo() {
       return rows[0]?.oxipro_state || oxiproState || {}
     },
     async createCustomerQuote(payload) {
+      const token = payload.accessToken || randomBytes(16).toString('hex')
       const { rows } = await pool.query(
         `INSERT INTO customer_quotes
            (customer_user_id, reference_number, title, description, status, total_amount, currency,
-            sent_at, estimated_start_at, estimated_end_at, internal_notes, created_by, attachments, desired_date, budget, b2b_project_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+            sent_at, estimated_start_at, estimated_end_at, internal_notes, created_by, attachments, desired_date, budget, b2b_project_id, access_token)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
          RETURNING *`,
         [
           payload.customerId, payload.referenceNumber, payload.title, payload.description,
@@ -1709,6 +1756,7 @@ async function getPgRepo() {
           payload.estimatedStartAt || null, payload.estimatedEndAt || null,
           payload.internalNotes, payload.createdBy, JSON.stringify(payload.attachments || []),
           payload.desiredDate || null, payload.budget ?? null, payload.b2bProjectId ?? null,
+          token,
         ]
       )
       return mapCustomerQuoteRow(rows[0])

@@ -30,6 +30,7 @@ import AdminTemplates from './pages/AdminTemplates'
 import OrderTracking from './pages/OrderTracking'
 import AdminQuoteConsultations from './pages/AdminQuoteConsultations'
 import OxiPartner from './pages/OxiPartner'
+import PublicQuoteView from './pages/PublicQuoteView'
 import NotFound from './pages/NotFound'
 import './pages/AdminCustomRequests.css'
 import './App.css'
@@ -47,6 +48,8 @@ export default function App() {
         <Route path="/producto/:id" element={FEATURES.SHOW_ECOMMERCE_PRODUCTS ? <ProductDetail /> : <Navigate to="/" replace />} />
         <Route path="/favoritos" element={FEATURES.SHOW_ECOMMERCE_PRODUCTS ? <Wishlist /> : <Navigate to="/" replace />} />
         <Route path="/proveedor/:company" element={<SupplierProfile />} />
+        <Route path="/cotizacion/:token" element={<PublicQuoteView />} />
+        <Route path="/expediente/:token" element={<PublicQuoteView />} />
         <Route path="/cliente/login" element={<CustomerLogin />} />
         <Route path="/cliente/registro" element={<CustomerRegister />} />
         <Route path="/cliente" element={<CustomerPortal />} />

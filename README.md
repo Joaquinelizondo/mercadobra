@@ -139,6 +139,32 @@ Para trascender el modelo de un simple ERP administrativo y convertir a Mercadob
   - **Volcado Automático a la Cotización Comercial:** Botón `⚡ Aplicar a Cotización #${quoteId}` (`POST /admin/costing/apply-to-quote`) que traslada el precio total calculado en USD, el desglose de partidas técnicas y la descripción ejecutiva directamente a la ficha del cliente.
   - **Generación de Propuesta y PDF:** Redacción asistida con IA (`✨ Redactar con IA`), auditoría financiera de rentabilidad (`🤖 OXI AI Auditor`) y emisión del presupuesto oficial en PDF de 2 páginas listo para firmar y aprobar.
 
+### 📊 Plan Estratégico de Optimización & Innovación (Roadmap ConstructionTech)
+
+A partir de la revisión técnica y operativa integral del ecosistema, se establecen los siguientes tres ejes de optimización estratégica:
+
+#### Eje 1: Experiencia del Cliente (CX & UX)
+* **Punto A · Configurador 3D Paramétrico Público en la Home ("OXI 3D Visualizer"):**
+  Simulador WebGL interactivo en portada para que comitentes y arquitectos ajusten medidas de pérgolas, barandas, escaleras y cerramientos loft en tiempo real, visualizando el modelo y estimación orientativa antes de solicitar cotización.
+* **Punto B · Envío de Cotización & PDF por WhatsApp en 1 Clic [EN PROCESO / IMPLEMENTADO]:**
+  Generación automática de mensaje comercial pre-formateado con saludo personalizado, referencia, importe, moneda y enlace directo seguro, abriendo WhatsApp Web o App con un solo clic.
+* **Punto C · Acceso Directo por Enlace Seguro ("Magic Link" de Cotización) [EN PROCESO / IMPLEMENTADO]:**
+  Enlace tokenizado único (`/cotizacion/:token`) que permite al comitente acceder desde su celular sin contraseñas ni registros previos, para revisar el legajo, descargar el PDF oficial, consultar planos por categoría/etapa, interactuar en la bitácora con hora y fecha automática y aprobar el presupuesto.
+
+#### Eje 2: Tiempos y Operativa Comercial & Fabricación (Efficiency & Operations)
+* **Punto A · Despiece y Lista de Corte Automática para Taller (BOM - Bill of Materials):**
+  Generación instantánea de la planilla de corte para taller (perfilería, longitudes exactas, ángulos, planchuelas de anclaje y consumibles) al aprobarse una cotización paramétrica, despachándola directamente al panel de proveedores (`SupplierDashboard`).
+* **Punto B · Activación de Señas con Pasarela de Pago & Conciliación Bancaria:**
+  Integración con checkout de Mercado Pago para señas del 30% o 50% con tarjeta o redes de cobranza, sumada a la validación de transferencias bancarias en 1 clic.
+* **Punto C · Control de Revisiones de Planos con Sello Digital de Aprobación:**
+  Trazabilidad de planos con versiones controladas (`Rev 0`, `Rev A`, `Rev B`) y sellado de agua digital *"APROBADO PARA FABRICAR"* que bloquea modificaciones una vez despachado al taller.
+
+#### Eje 3: Innovación Tecnológica (AI & BIM Liviano)
+* **Punto A · OXI AI Vision (Estimación desde Croquis o Renders):**
+  Ingesta de imágenes de Pinterest, renders 3D o croquis a mano alzada para que la IA reconozca tipologías estructurales, extraiga medidas y precargue el costeo en OXI Quote.
+* **Punto B · Exportador Vectorial de Corte CNC (DXF / SVG):**
+  Exportación directa de piezas paramétricas y chapas caladas en formato DXF/SVG para pantógrafos CNC y cortadoras láser.
+
 #### Tarea B: Automatización Integral del Proyecto de la Constructora (*AI Project Ingestion & Onboarding*)
 * **Objetivo:** Cero carga manual: transformar la carpeta desordenada de la constructora en la Suite OxI Pro 100% poblada.
 * **Mecánica:**

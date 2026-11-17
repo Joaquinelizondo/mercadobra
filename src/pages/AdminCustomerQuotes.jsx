@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getAllCustomerQuotes, getAdminCustomers, createAdminCustomer, createCustomerQuote } from '../lib/api'
 import { formatPrice } from '../utils/format'
+import ShareQuoteWhatsAppModal from '../components/ShareQuoteWhatsAppModal'
 import './AdminCustomerQuotes.css'
 
 const STATUS = {
@@ -27,6 +28,7 @@ export default function AdminCustomerQuotes() {
 
   // Modal & Creation state
   const [showModal, setShowModal] = useState(false)
+  const [sharingQuote, setSharingQuote] = useState(null)
   const [clientMode, setClientMode] = useState('existing') // 'existing' | 'new'
   const [customers, setCustomers] = useState([])
   const [customersLoading, setCustomersLoading] = useState(false)
@@ -342,12 +344,35 @@ export default function AdminCustomerQuotes() {
                 {q.totalAmount > 0 && <strong>{formatPrice(q.totalAmount, q.currency)}</strong>}
                 <span className={`is-${q.status}`}>{STATUS[q.status] || q.status}</span>
               </div>
-              <Link
-                className="admin-quote-open"
-                to={`/admin/clientes/${q.customerId || 0}/cotizaciones/${q.id}`}
-              >
-                Abrir y responder →
-              </Link>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setSharingQuote(q)}
+                  title="Compartir cotización por WhatsApp"
+                  style={{
+                    background: '#25d366',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '9px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  💬 WhatsApp
+                </button>
+                <Link
+                  className="admin-quote-open"
+                  to={`/admin/clientes/${q.customerId || 0}/cotizaciones/${q.id}`}
+                >
+                  Abrir y responder →
+                </Link>
+              </div>
             </article>
           ))}
         </div>
@@ -649,6 +674,18 @@ export default function AdminCustomerQuotes() {
             </form>
           </div>
         </div>
+      )}
+
+      {sharingQuote && (
+        <ShareQuoteWhatsAppModal
+          quote={sharingQuote}
+          customer={{
+            name: sharingQuote.customerName,
+            email: sharingQuote.customerEmail,
+            company: sharingQuote.customerName,
+          }}
+          onClose={() => setSharingQuote(null)}
+        />
       )}
     </section>
   )

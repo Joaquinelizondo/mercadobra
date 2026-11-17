@@ -1290,6 +1290,151 @@ app.post('/auth/logout', authMiddleware, asyncHandler(async (req, res) => {
   return res.status(204).send()
 }))
 
+/* ========================================================
+   PUBLIC / MAGIC LINK QUOTE ACCESS (NO LOGIN REQUIRED)
+   ======================================================== */
+app.get('/public/quotes/:token', asyncHandler(async (req, res) => {
+  const token = validateStringLength(requireField(req.params.token, 'Token'), 'Token', 2, 255)
+  const repo = await getRepository()
+  const result = await repo.getCustomerQuoteByToken(token)
+  if (!result || !result.quote) throw new NotFoundError('Cotización no encontrada')
+
+  const messages = await repo.getQuoteMessages(result.quote.id)
+  return res.json({
+    quote: {
+      ...result.quote,
+      internalNotes: undefined
+    },
+    customer: result.customer,
+    messages
+  })
+}))
+
+app.post('/public/quotes/:token/messages', asyncHandler(async (req, res) => {
+  const token = validateStringLength(requireField(req.params.token, 'Token'), 'Token', 2, 255)
+  const repo = await getRepository()
+  const result = await repo.getCustomerQuoteByToken(token)
+  if (!result || !result.quote) throw new NotFoundError('Cotización no encontrada')
+
+  const processedAttachments = await processAttachments(req.body?.attachments)
+  if (processedAttachments.length > 0) {
+    const existing = Array.isArray(result.quote.attachments) ? result.quote.attachments : []
+    await repo.updateCustomerQuote(result.quote.id, { attachments: [...existing, ...processedAttachments] }).catch(() => null)
+  }
+
+  const created = await repo.createQuoteMessage({
+    quoteId: result.quote.id,
+    authorUserId: result.customer?.id || null,
+    authorRole: 'customer',
+    message: validateStringLength(requireField(req.body?.message, 'Mensaje'), 'Mensaje', 1, 3000),
+    attachments: processedAttachments
+  })
+
+  await notifyAdminCustomerReply({ customerName: result.customer?.name || result.customer?.company || 'Comitente', quote: result.quote }).catch(() => null)
+  return res.status(201).json(created)
+}))
+
+app.post('/public/quotes/:token/attachments', asyncHandler(async (req, res) => {
+  const token = validateStringLength(requireField(req.params.token, 'Token'), 'Token', 2, 255)
+  const repo = await getRepository()
+  const result = await repo.getCustomerQuoteByToken(token)
+  if (!result || !result.quote) throw new NotFoundError('Cotización no encontrada')
+
+  const rawAttachments = req.body?.attachments || (req.body?.attachment ? [req.body.attachment] : [])
+  const processedAttachments = await processAttachments(rawAttachments)
+  if (!processedAttachments.length) throw new ValidationError('No se enviaron archivos válidos')
+
+  const existing = Array.isArray(result.quote.attachments) ? result.quote.attachments : []
+  const newAttachments = [...existing, ...processedAttachments]
+  const updatedQuote = await repo.updateCustomerQuote(result.quote.id, { attachments: newAttachments })
+
+  const categoryLabel = processedAttachments[0]?.category || 'archivo'
+  const fileNames = processedAttachments.map(f => f.name).join(', ')
+  const note = req.body?.note ? ` · Nota: ${req.body.note}` : ''
+  const messageText = `📎 [Documento adjunto por comitente - ${String(categoryLabel).toUpperCase()}]: ${fileNames}${note}`
+
+  const message = await repo.createQuoteMessage({
+    quoteId: result.quote.id,
+    authorUserId: result.customer?.id || null,
+    authorRole: 'customer',
+    message: messageText,
+    attachments: processedAttachments,
+  })
+
+  await notifyAdminCustomerReply({ customerName: result.customer?.name || result.customer?.company || 'Comitente', quote: updatedQuote }).catch(() => null)
+  return res.status(201).json({ quote: updatedQuote, attachments: processedAttachments, message })
+}))
+
+app.patch('/public/quotes/:token/status', asyncHandler(async (req, res) => {
+  const token = validateStringLength(requireField(req.params.token, 'Token'), 'Token', 2, 255)
+  const repo = await getRepository()
+  const result = await repo.getCustomerQuoteByToken(token)
+  if (!result || !result.quote) throw new NotFoundError('Cotización no encontrada')
+
+  const status = validateEnum(req.body?.status, ['accepted', 'rejected'], 'Estado')
+  const updated = await repo.updateCustomerQuoteStatus(result.quote.id, status)
+  const statusLabel = status === 'accepted' ? 'Presupuesto formal aprobado por el cliente' : 'Presupuesto no aceptado / Solicitud de ajuste'
+
+  await repo.createQuoteMessage({
+    quoteId: result.quote.id,
+    authorUserId: result.customer?.id || null,
+    authorRole: 'customer',
+    message: `✅ [Respuesta del Cliente]: ${statusLabel}.`,
+    attachments: []
+  }).catch(() => null)
+
+  await notifyAdminCustomerReply({ customerName: result.customer?.name || result.customer?.company || 'Comitente', quote: updated }).catch(() => null)
+  return res.json(updated)
+}))
+
+app.post('/public/quotes/:token/deposit/transfer', asyncHandler(async (req, res) => {
+  const token = validateStringLength(requireField(req.params.token, 'Token'), 'Token', 2, 255)
+  const repo = await getRepository()
+  const result = await repo.getCustomerQuoteByToken(token)
+  if (!result || !result.quote) throw new NotFoundError('Cotización no encontrada')
+  const quote = result.quote
+  if (quote.status !== 'accepted') throw new ValidationError('Primero debés aprobar la cotización')
+  if (quote.depositAmount <= 0) throw new ValidationError('Esta cotización no requiere seña')
+  if (quote.depositStatus === 'approved') throw new ConflictError('La seña ya fue confirmada')
+
+  const processedReceipts = await processAttachments([req.body?.receipt])
+  const receipt = processedReceipts[0]
+  const updated = await repo.updateCustomerQuoteDeposit(quote.id, {
+    depositStatus: 'reported',
+    depositMethod: 'transfer',
+    depositReceipt: receipt,
+    depositReportedAt: new Date().toISOString()
+  })
+
+  await repo.createQuoteMessage({
+    quoteId: quote.id,
+    authorUserId: result.customer?.id || null,
+    authorRole: 'customer',
+    message: '🏦 [Comprobante de Transferencia]: El cliente adjuntó el comprobante de transferencia para la seña del proyecto.',
+    attachments: receipt ? [receipt] : []
+  }).catch(() => null)
+
+  await notifyAdminTransferReported({ customerName: result.customer?.name || result.customer?.company || 'Comitente', quote: updated }).catch(() => null)
+  return res.json(updated)
+}))
+
+app.get('/public/quotes/:token/pdf', asyncHandler(async (req, res) => {
+  const token = validateStringLength(requireField(req.params.token, 'Token'), 'Token', 2, 255)
+  const repo = await getRepository()
+  const result = await repo.getCustomerQuoteByToken(token)
+  if (!result || !result.quote) throw new NotFoundError('Cotización no encontrada')
+
+  const customer = result.customer || await repo.getAdminCustomerById(result.quote.customerId).catch(() => null)
+  const pdf = await createQuotePdf({ quote: result.quote, customer })
+  const filename = `Cotizacion-${String(result.quote.referenceNumber || result.quote.id).replace(/[^a-z0-9-]/gi, '_')}.pdf`
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `attachment; filename="${filename}"`,
+    'Content-Length': String(pdf.length)
+  })
+  return res.send(pdf)
+}))
+
 app.get('/providers', async (_req, res) => {
   const repo = await getRepository()
   res.json(await repo.getProviders())
