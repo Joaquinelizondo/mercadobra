@@ -330,7 +330,9 @@
   }
 
   .topbar-menu,
-  .oxida-segment-nav {
+  .oxida-segment-nav,
+  .topbar .supplier-session,
+  .topbar .topbar-access-links {
     display: none !important;
   }
 
@@ -343,33 +345,6 @@
     flex-wrap: nowrap !important;
     gap: 8px !important;
     flex-shrink: 0 !important;
-  }
-
-  .supplier-session {
-    width: auto !important;
-    display: inline-flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    padding: 3px 8px 3px 3px !important;
-    background: rgba(255, 255, 255, 0.06) !important;
-    border: 1px solid rgba(234, 88, 12, 0.35) !important;
-    border-radius: 999px !important;
-    gap: 5px !important;
-    flex-shrink: 1 !important;
-  }
-
-  .supplier-session .supplier-session-name {
-    max-width: 90px !important;
-    font-size: 0.72rem !important;
-    color: #ea580c !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  .supplier-session .supplier-session-secondary-link,
-  .supplier-session .supplier-logout {
-    display: none !important;
   }
 
   .topbar-mobile-menu-btn {

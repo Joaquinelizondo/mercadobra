@@ -1,12 +1,14 @@
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { companyInitials } from '../utils/format'
+import { createWhatsAppLink } from '../utils/whatsapp'
 import logoImg from '../assets/oxida/logo-header.png'
 import './MobileMenuDrawer.css'
 
 export default function MobileMenuDrawer({ isOpen, onClose }) {
-  const { customerUser, adminUser, logoutCustomer, logoutAdmin } = useAuth()
+  const location = useLocation()
+  const { customerUser, adminUser, supplierUser, logoutCustomer, logoutAdmin, logout } = useAuth()
 
   // Lock body scroll when drawer is open
   useEffect(() => {
@@ -79,6 +81,25 @@ export default function MobileMenuDrawer({ isOpen, onClose }) {
                 Salir
               </button>
             </div>
+          ) : supplierUser ? (
+            <div className="mb-user-logged">
+              <span className="mb-user-avatar">
+                {companyInitials(supplierUser.company || 'Taller')}
+              </span>
+              <div className="mb-user-info">
+                <strong>{supplierUser.company}</strong>
+                <Link to="/proveedor" onClick={onClose}>
+                  Portal de Taller & Fabricación →
+                </Link>
+              </div>
+              <button
+                type="button"
+                className="mb-user-logout"
+                onClick={() => { logout(); onClose(); }}
+              >
+                Salir
+              </button>
+            </div>
           ) : (
             <div className="mb-user-guest">
               <div>
@@ -110,7 +131,16 @@ export default function MobileMenuDrawer({ isOpen, onClose }) {
             <span>Óxida Studio · Proyectos</span>
           </Link>
 
-          <Link to="/contacto#formulario-contacto" className="mb-drawer-link" onClick={onClose}>
+          <Link
+            to="/contacto#formulario-contacto"
+            className="mb-drawer-link"
+            onClick={() => {
+              onClose()
+              if (location.pathname === '/contacto') {
+                document.getElementById('formulario-contacto')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+            }}
+          >
             <span className="mb-dlink-icon">📐</span>
             <span>Cotizar Proyecto a Medida</span>
             <small className="mb-dlink-tag">Gratis</small>
@@ -142,9 +172,9 @@ export default function MobileMenuDrawer({ isOpen, onClose }) {
         {/* FOOTER ACTIONS */}
         <footer className="mb-drawer-footer">
           <a
-            href="https://wa.me/59899123456?text=Hola%20Óxida%20Studio,%20quisiera%20hacer%20una%20consulta%20técnica."
+            href={createWhatsAppLink({ intent: 'soporte', source: 'mobile-drawer' })}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="mb-drawer-wa-btn"
           >
             <span className="mb-wa-icon">💬</span>

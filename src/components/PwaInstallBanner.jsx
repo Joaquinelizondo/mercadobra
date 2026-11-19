@@ -72,11 +72,11 @@ export default function PwaInstallBanner() {
           <span>OXI</span>
         </div>
         <div className="pwa-banner-text">
-          <strong>Mercadobra & OxI Pro</strong>
+          <strong>Óxida Studio</strong>
           <p>
             {isIosPrompt 
               ? 'Instalá la app: tocá Compartir ⎋ y "Añadir a pantalla de inicio" ⊞' 
-              : 'Instalá la app en tu celular para acceder a tus obras sin conexión.'}
+              : 'Instalá la app para acceder a proyectos, cotizaciones y obras sin conexión.'}
           </p>
         </div>
       </div>

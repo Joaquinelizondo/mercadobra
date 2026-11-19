@@ -1,5 +1,5 @@
-// Service Worker para Mercadobra & OxI Pro Suite PWA
-const CACHE_NAME = 'mercadobra-pwa-v1'
+// Service Worker para Óxida Studio | Mercadobra PWA
+const CACHE_NAME = 'oxida-pwa-v2'
 
 const STATIC_ASSETS = [
   '/',

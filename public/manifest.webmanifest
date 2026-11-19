@@ -1,12 +1,12 @@
 {
-  "name": "Mercadobra & OxI Pro",
-  "short_name": "Mercadobra",
-  "description": "Plataforma de Control de Obra, Cronogramas Gantt, Curva S y Soluciones Metálicas",
+  "name": "Óxida Studio | Mercadobra",
+  "short_name": "Óxida Studio",
+  "description": "Arquitectura metálica, mobiliario de diseño y plataforma de gestión de obra",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ea580c",
+  "background_color": "#090a0f",
+  "theme_color": "#090a0f",
   "orientation": "any",
   "icons": [
     {

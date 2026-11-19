@@ -4,7 +4,7 @@ import './MobileBottomNav.css'
 
 export default function MobileBottomNav({ onOpenDrawer }) {
   const location = useLocation()
-  const { customerUser, adminUser } = useAuth()
+  const { customerUser, adminUser, supplierUser } = useAuth()
 
   const currentPath = location.pathname
 
@@ -12,12 +12,15 @@ export default function MobileBottomNav({ onOpenDrawer }) {
   const isProjects = currentPath === '/oxida'
   const isPortal = currentPath.startsWith('/cliente')
   const isAdmin = currentPath.startsWith('/admin')
+  const isSupplier = currentPath.startsWith('/proveedor')
 
   // Target for portal icon
   const portalTarget = adminUser
     ? '/admin/cotizaciones-clientes'
     : customerUser
     ? '/cliente'
+    : supplierUser
+    ? '/proveedor'
     : '/cliente/login'
 
   return (
@@ -56,6 +59,11 @@ export default function MobileBottomNav({ onOpenDrawer }) {
       {/* 3. COTIZAR (ELEVATED HERO BUTTON) */}
       <Link
         to="/contacto#formulario-contacto"
+        onClick={() => {
+          if (location.pathname === '/contacto') {
+            document.getElementById('formulario-contacto')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
+        }}
         className="mb-nav-item mb-nav-item--cotizar"
         title="Cotizar proyecto a medida"
       >
@@ -71,7 +79,7 @@ export default function MobileBottomNav({ onOpenDrawer }) {
       {/* 4. MI PORTAL / OBRAS */}
       <Link
         to={portalTarget}
-        className={`mb-nav-item ${isPortal || isAdmin ? 'is-active' : ''}`}
+        className={`mb-nav-item ${isPortal || isAdmin || isSupplier ? 'is-active' : ''}`}
       >
         <span className="mb-nav-icon">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -80,7 +88,7 @@ export default function MobileBottomNav({ onOpenDrawer }) {
           </svg>
         </span>
         <span className="mb-nav-label">
-          {adminUser ? 'Admin' : customerUser ? 'Mi Obra' : 'Ingresar'}
+          {adminUser ? 'Admin' : customerUser ? 'Mi Obra' : supplierUser ? 'Taller' : 'Ingresar'}
         </span>
       </Link>
 
