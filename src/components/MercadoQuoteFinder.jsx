@@ -123,7 +123,9 @@ export default function MercadoQuoteFinder() {
   return (
     <section className="mqf" id="cotizar">
       <div className="mqf-heading">
-        <h2>Lo que imaginás, construido a medida.</h2>
+        <h2>
+          Lo que imaginás, <span className="mqf-orange">construido a medida.</span>
+        </h2>
       </div>
 
       <form className="mqf-search" onSubmit={prepareQuote}>
