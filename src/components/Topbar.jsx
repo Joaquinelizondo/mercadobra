@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { companyInitials } from '../utils/format'
 import { FEATURES } from '../config/features'
-import logoImg from '../assets/mercadobra.png'
+import logoImg from '../assets/oxida/logo-header.png'
 
 export default function Topbar({ onOpenDrawer }) {
   const location = useLocation()
@@ -18,8 +18,8 @@ export default function Topbar({ onOpenDrawer }) {
   return (
     <header className={`topbar${isOxida ? ' topbar--oxida' : ''}`}>
       <div className="brand-wrap">
-        <Link to="/" className="store-nav-brand" aria-label="Mercadobra, inicio" onClick={showQuoteFinder}>
-          <img src={logoImg} className="brand-logo" alt="Mercadobra" />
+        <Link to="/" className="store-nav-brand" aria-label="Óxida Studio, inicio" onClick={showQuoteFinder}>
+          <img src={logoImg} className="brand-logo" alt="Óxida Studio" />
         </Link>
       </div>
 

@@ -67,8 +67,19 @@
   flex: 1 1 auto;
 }
 
-.store-nav-brand { display: block; width: min(230px, 34vw); text-decoration: none; }
-.store-nav-brand .brand-logo { width: 100%; }
+.store-nav-brand {
+  display: flex;
+  align-items: center;
+  width: auto;
+  text-decoration: none;
+}
+.store-nav-brand .brand-logo {
+  height: 38px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+  display: block;
+}
 .admin-login-oxida { display: block; width: 180px; margin: 0 auto 24px; text-decoration: none; }
 .admin-login-oxida .oxida-wordmark { color: #292823; }
 .admin-login-oxida .oxida-wordmark-name { font-size: 2.1rem; }
@@ -311,9 +322,11 @@
   }
 
   .store-nav-brand .brand-logo {
-    height: 26px !important;
+    height: 28px !important;
     width: auto !important;
+    max-width: 110px !important;
     object-fit: contain !important;
+    display: block !important;
   }
 
   .topbar-menu,

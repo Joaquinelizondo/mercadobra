@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { companyInitials } from '../utils/format'
-import logoImg from '../assets/mercadobra.png'
+import logoImg from '../assets/oxida/logo-header.png'
 import './MobileMenuDrawer.css'
 
 export default function MobileMenuDrawer({ isOpen, onClose }) {
@@ -28,8 +28,8 @@ export default function MobileMenuDrawer({ isOpen, onClose }) {
         {/* HEADER */}
         <header className="mb-drawer-header">
           <Link to="/" onClick={onClose} className="mb-drawer-brand">
-            <img src={logoImg} alt="Mercadobra" className="mb-drawer-logo" />
-            <span className="mb-drawer-brand-sub">Óxida Studio</span>
+            <img src={logoImg} alt="Óxida Studio" className="mb-drawer-logo" />
+            <span className="mb-drawer-brand-sub">by Mercadobra</span>
           </Link>
           <button
             type="button"
