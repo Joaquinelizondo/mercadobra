@@ -12,7 +12,7 @@ export function hashPassword(password) {
 export function verifyPassword(password, storedPassword) {
   const stored = String(storedPassword || '')
   if (!stored.startsWith(`${PASSWORD_PREFIX}$`)) {
-    return { valid: timingSafeStringEqual(String(password), stored), needsUpgrade: true }
+    return { valid: false, needsUpgrade: false }
   }
 
   const [, salt, expectedHex] = stored.split('$')
@@ -24,12 +24,6 @@ export function verifyPassword(password, storedPassword) {
     valid: actual.length === expected.length && timingSafeEqual(actual, expected),
     needsUpgrade: false,
   }
-}
-
-function timingSafeStringEqual(left, right) {
-  const leftBuffer = Buffer.from(left)
-  const rightBuffer = Buffer.from(right)
-  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer)
 }
 
 export function createSessionCredentials() {

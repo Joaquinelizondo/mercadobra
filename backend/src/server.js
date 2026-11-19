@@ -308,9 +308,6 @@ async function authenticateUser(repo, email, password) {
 
   const verification = verifyPassword(password, user.password)
   if (!verification.valid) return null
-  if (verification.needsUpgrade) {
-    await repo.updateUserPassword(user.id, hashPassword(password))
-  }
   return user
 }
 

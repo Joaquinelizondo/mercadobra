@@ -67,7 +67,7 @@
     {
       "id": 1,
       "email": "proveedor@mercadobra.com",
-      "password": "123456",
+      "password": "scrypt$0b46df9739952a5ccac78c62db3d3519$4a80aeac608e22d89d7374f1fadbe497209ffd099a2c979863d38570318a317087ebcceb2d8d09cfacaedd9b8ee4bd7ab8f98cb7e8986d9e1be4abcd0e7221e0",
       "role": "provider",
       "providerId": 1,
       "company": "Corralón La Obra"
@@ -75,7 +75,7 @@
     {
       "id": 2,
       "email": "admin@mercadobra.com",
-      "password": "admin123",
+      "password": "scrypt$a45998b0ef7fdae091d5fda8db93272a$364fa8a63f457f72ff8bd574128707ff844c5b6472173ee01c87a95f1ebb47e93e7094b6cf6b91c16980d5e3a8cec4c6a28d68248d16d1a68361d46227cb36f1",
       "role": "admin",
       "providerId": null,
       "company": "Mercadobra Admin"
