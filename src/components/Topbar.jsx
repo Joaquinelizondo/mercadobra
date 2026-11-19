@@ -64,21 +64,20 @@ export default function Topbar({ onOpenDrawer }) {
         )}
 
         {!isOxida && (adminUser ? (
-          <div className="supplier-session admin-session" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="supplier-session-avatar" style={{ background: '#ea580c', color: '#fff', fontWeight: 'bold' }}>
+          <div className="supplier-session admin-session">
+            <span className="supplier-session-avatar">
               AD
             </span>
             <Link
               to="/admin/cotizaciones-clientes"
               className="supplier-session-name"
               title="Gestión de Obras & Cotizaciones"
-              style={{ fontWeight: 600, color: '#ea580c', textDecoration: 'none' }}
             >
               ⚙️ Obras & Cotizaciones
             </Link>
             <Link
               to="/admin/productos"
-              style={{ fontSize: '0.8rem', color: '#525252', textDecoration: 'none', marginLeft: '2px' }}
+              className="supplier-session-secondary-link"
             >
               Tienda
             </Link>

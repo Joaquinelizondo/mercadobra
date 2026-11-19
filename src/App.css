@@ -276,40 +276,99 @@
 
 @media (max-width: 768px) {
   .topbar {
-    width: 100%;
-    margin: 0;
-    top: 0;
-    border-radius: 0 0 16px 16px;
-    border-top: none;
-    border-left: none;
-    border-right: none;
-    border-bottom: 1px solid rgba(234, 88, 12, 0.35);
-    background: rgba(10, 11, 14, 0.96);
-    padding: 8px 14px;
-    gap: 10px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+    width: 100% !important;
+    margin: 0 !important;
+    top: 0 !important;
+    border-radius: 0 0 16px 16px !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(234, 88, 12, 0.35) !important;
+    background: rgba(10, 11, 14, 0.96) !important;
+    padding: 8px 14px !important;
+    height: 56px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    gap: 10px !important;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6) !important;
   }
 
-  .topbar-menu {
-    display: none !important;
+  .brand-wrap {
+    flex: 0 1 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    min-width: 0 !important;
   }
 
+  .store-nav-brand {
+    width: min(150px, 40vw) !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .store-nav-brand .brand-logo {
+    height: 26px !important;
+    width: auto !important;
+    object-fit: contain !important;
+  }
+
+  .topbar-menu,
   .oxida-segment-nav {
     display: none !important;
   }
 
+  .topbar-actions {
+    width: auto !important;
+    margin-left: auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .supplier-session {
+    width: auto !important;
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    padding: 3px 8px 3px 3px !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(234, 88, 12, 0.35) !important;
+    border-radius: 999px !important;
+    gap: 5px !important;
+    flex-shrink: 1 !important;
+  }
+
+  .supplier-session .supplier-session-name {
+    max-width: 90px !important;
+    font-size: 0.72rem !important;
+    color: #ea580c !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .supplier-session .supplier-session-secondary-link,
+  .supplier-session .supplier-logout {
+    display: none !important;
+  }
+
   .topbar-mobile-menu-btn {
-    display: flex;
+    display: flex !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(234, 88, 12, 0.35);
   }
 
   .topbar-hamburger-line {
     background: #ea580c;
-  }
-
-  .store-nav-brand {
-    width: min(170px, 45vw);
   }
 
   body {
@@ -1594,21 +1653,22 @@
 .supplier-session {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.98);
-  border: 1.5px solid rgba(15, 23, 42, 0.16);
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(234, 88, 12, 0.35);
   border-radius: 999px;
-  padding: 2px 8px 2px 2px;
-  backdrop-filter: blur(6px);
+  padding: 3px 10px 3px 3px;
+  backdrop-filter: blur(8px);
+  color: #f1f5f9;
 }
 
 .supplier-session-avatar {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: #fff;
-  color: var(--accent-strong);
-  font-size: 0.58rem;
+  background: #ea580c;
+  color: #ffffff;
+  font-size: 0.65rem;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -1617,29 +1677,42 @@
 }
 
 .supplier-session-name {
-  font-size: 0.74rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: var(--text-h);
+  color: #ea580c;
+  text-decoration: none;
   white-space: nowrap;
-  max-width: 130px;
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.supplier-session-secondary-link {
+  font-size: 0.74rem;
+  color: #cbd5e1;
+  text-decoration: none;
+  margin-left: 2px;
+  transition: color 0.15s ease;
+}
+
+.supplier-session-secondary-link:hover {
+  color: #ea580c;
 }
 
 .supplier-logout {
   background: transparent;
   border: none;
-  color: #6b7280;
-  font-size: 0.7rem;
+  color: #94a3b8;
+  font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 0;
+  padding: 0 4px;
   margin-left: 4px;
   transition: color 0.15s;
 }
 
 .supplier-logout:hover {
-  color: #111827;
+  color: #ef4444;
 }
 
 /* ── LOCKED COMPANY FIELD ──────────────────────────── */
@@ -4386,7 +4459,6 @@
     width: min(250px, 66vw);
   }
 
-  .topbar,
   .hero-section,
   .benefits-panel,
   .estimator-grid,
@@ -4394,25 +4466,6 @@
   .steps-grid {
     grid-template-columns: 1fr;
     display: grid;
-  }
-
-  .topbar {
-    width: calc(100% - 24px);
-    margin: 8px auto 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 8px 14px;
-  }
-
-  .topbar-menu {
-    width: 100%;
-    flex-wrap: wrap;
-    gap: 10px 16px;
-  }
-
-  .topbar-actions {
-    width: 100%;
   }
 
   .footer-grid {
@@ -4487,91 +4540,13 @@
     padding: 0;
   }
 
-  .topbar {
-    width: calc(100% - 16px);
-    margin: 6px auto 0;
-    padding: 8px 10px;
-    gap: 10px;
-  }
-
-  .hero-card,
-  .category-card,
-  .step-card,
-  .highlight-box,
-  .cta-section,
-  .section-alt,
-  .info-strip,
-  .metrics li,
-  .benefits-list li {
-    border-radius: 20px;
-    padding: 18px;
-  }
-
   .primary-link,
   .ghost-link {
     width: 100%;
   }
 
-  .topbar-actions,
   .hero-actions {
     width: 100%;
-  }
-
-  .topbar-menu {
-    gap: 8px;
-    width: 100%;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .topbar-menu::-webkit-scrollbar {
-    display: none;
-  }
-
-  .topbar-menu a {
-    white-space: nowrap;
-    flex: 0 0 auto;
-  }
-
-  .oxida-segment-nav {
-    justify-content: flex-start;
-    padding-left: 13px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .oxida-segment-nav::-webkit-scrollbar {
-    display: none;
-  }
-
-  .oxida-segment-nav .oxida-segment-nav-label,
-  .oxida-segment-nav a {
-    flex: 0 0 auto;
-    white-space: nowrap;
-  }
-
-  .oxida-segment-nav a {
-    padding: 9px 14px;
-  }
-
-  .topbar-actions {
-    gap: 8px;
-  }
-
-  .topbar-user-login-btn,
-  .topbar-login-btn {
-    flex: 1 1 calc(50% - 8px);
-    justify-content: center;
-    min-height: 40px;
-  }
-
-  .supplier-session {
-    width: 100%;
-    justify-content: space-between;
-    padding: 4px 10px;
   }
 
   .footer {
