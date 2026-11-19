@@ -18,7 +18,7 @@ El estado funcional detallado y las prioridades se mantienen también en [docs/E
 **Pausado:** integración con Taller (se retoma cuando se decida unir ambos proyectos). Ecommerce de productos también en pausa.
 
 ### P1 — Seguridad (urgente)
-- [ ] **S1.** Exigir sesión (o cuota) en `POST /chat`, `POST /oxipro/ai-onboarding`, `POST /oxipro/report/pdf` y `POST /oxipro/monthly-certificate/pdf`. Hoy están abiertos y consumen OpenAI / CPU.
+- [x] **S1.** *(19/11/2026)* `POST /oxipro/ai-onboarding`, `/oxipro/report/pdf` y `/oxipro/monthly-certificate/pdf` ahora exigen sesión (`authMiddleware`) y tienen límite por usuario (20 IA / 60 PDF cada 15 min). `POST /chat` sigue público (es el widget del sitio) pero con límite de 30 consultas / 15 min por IP. Se corrigió además el informe ejecutivo, que no enviaba el token. *Pendiente de ajuste fino en S3: límites globales por ruta.*
 - [ ] **S2.** Verificar la firma del webhook `POST /payments/mercadopago/webhook`.
 - [ ] **S3.** Bajar el límite de body de 12 MB a un valor chico por defecto y subirlo solo en las rutas con imágenes. Rate limit más estricto en rutas que llaman a IA o generan PDF.
 - [ ] **S4.** Revisar tokens públicos de cotización (`/public/quotes/:token`): longitud, aleatoriedad y vencimiento.

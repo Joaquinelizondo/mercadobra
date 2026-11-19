@@ -21,6 +21,7 @@ import {
   globalErrorHandler,
   validateJsonContentType,
   requestLogger,
+  createExpensiveLimiter,
 } from './security.js'
 import {
   requireField,
@@ -334,6 +335,11 @@ function requireRoleOrAdmin(role) {
 const providerOnly = requireRoleOrAdmin('provider')
 const adminOnly = requireRoleOrAdmin('admin')
 const customerOnly = requireRoleOrAdmin('customer')
+
+// Endpoints costosos (IA / PDF): límites estrictos
+const aiChatLimiter = createExpensiveLimiter({ max: 30, message: 'Demasiadas consultas al asistente. Intenta en unos minutos.' })
+const aiPlanLimiter = createExpensiveLimiter({ max: 20, message: 'Límite de generaciones con IA alcanzado. Intenta más tarde.' })
+const pdfLimiter = createExpensiveLimiter({ max: 60, message: 'Límite de generación de PDF alcanzado. Intenta más tarde.' })
 
 function validateAttachments(value) {
   const items = Array.isArray(value) ? value.slice(0, 15) : []
@@ -2251,7 +2257,7 @@ app.post('/admin/costing/pdf', authMiddleware, adminOnly, asyncHandler(async (re
 // OXIPRO SUITE EXECUTIVE REPORT PDF
 // ============================================================================
 
-app.post('/oxipro/report/pdf', asyncHandler(async (req, res) => {
+app.post('/oxipro/report/pdf', authMiddleware, pdfLimiter, asyncHandler(async (req, res) => {
   const { project, schedule, rubros, rainLogs, metrics, user } = req.body || {}
   const pdfBuffer = await createOxiProReportPdf({
     project: project || {},
@@ -2271,7 +2277,7 @@ app.post('/oxipro/report/pdf', asyncHandler(async (req, res) => {
   return res.send(pdfBuffer)
 }))
 
-app.post('/oxipro/monthly-certificate/pdf', asyncHandler(async (req, res) => {
+app.post('/oxipro/monthly-certificate/pdf', authMiddleware, pdfLimiter, asyncHandler(async (req, res) => {
   const { project, certificate, monthItem, evm, schedule, user } = req.body || {}
   const pdfBuffer = await createMonthlyCertificatePdf({
     project: project || {},
@@ -2291,7 +2297,7 @@ app.post('/oxipro/monthly-certificate/pdf', asyncHandler(async (req, res) => {
   return res.send(pdfBuffer)
 }))
 
-app.post('/oxipro/ai-onboarding', asyncHandler(async (req, res) => {
+app.post('/oxipro/ai-onboarding', authMiddleware, aiPlanLimiter, asyncHandler(async (req, res) => {
   const { prompt, text, projectName, startDate } = req.body || {}
   const plan = await generateOxiProPlanFromSpec({
     prompt: prompt || '',
@@ -2510,7 +2516,7 @@ app.patch('/supplier/fabrication/orders/:id', authMiddleware, providerOnly, asyn
   return res.json(updated)
 }))
 
-app.post('/chat', asyncHandler(async (req, res) => {
+app.post('/chat', aiChatLimiter, asyncHandler(async (req, res) => {
   const { message = '', history = [] } = req.body || {}
 
   const normalizedMessage = validateStringLength(message, 'Mensaje', 1, 1200)

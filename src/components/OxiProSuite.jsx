@@ -3955,7 +3955,7 @@ ${validation.message}
           totalBalanceCost,
           totalRainDays
         }
-      })
+      }, getAuthToken())
     } catch (err) {
       console.warn('PDF service fallback:', err)
       window.print()

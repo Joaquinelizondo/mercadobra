@@ -1,5 +1,5 @@
 import helmet from 'helmet'
-import rateLimit from 'express-rate-limit'
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit'
 import { AppError } from './errors.js'
 
 /**
@@ -48,6 +48,27 @@ export function setupSecurityMiddleware(app) {
     },
   })
   app.use(apiLimiter)
+}
+
+/**
+ * Limitador para endpoints costosos (IA, generación de PDF).
+ * Si hay usuario autenticado limita por usuario; si no, por IP.
+ *
+ * @param {Object} options
+ * @param {number} options.max - Máximo de requests por ventana
+ * @param {number} [options.windowMs] - Ventana en ms (default 15 min)
+ * @param {string} [options.message] - Mensaje al exceder el límite
+ */
+export function createExpensiveLimiter({ max, windowMs = 15 * 60 * 1000, message }) {
+  return rateLimit({
+    windowMs,
+    max,
+    message: message || 'Demasiadas solicitudes a este servicio. Intenta más tarde.',
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req, res) => (req.authUser?.id ? `user:${req.authUser.id}` : ipKeyGenerator(req.ip)),
+    skip: (req) => req.method === 'OPTIONS',
+  })
 }
 
 /**
