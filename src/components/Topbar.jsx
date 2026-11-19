@@ -9,7 +9,6 @@ import logoImg from '../assets/oxida/logo-header.png'
 export default function Topbar({ onOpenDrawer }) {
   const location = useLocation()
   const isOxida = location.pathname === '/oxida'
-  const showOxidaUnits = isOxida || location.pathname === '/'
   const { supplierUser, logout, customerUser, logoutCustomer, adminUser, logoutAdmin } = useAuth()
   const { cartCount, setCartOpen } = useCart()
   const { wishlist } = useWishlist()
@@ -128,19 +127,6 @@ export default function Topbar({ onOpenDrawer }) {
           <span className="topbar-hamburger-line"></span>
         </button>
       </div>
-
-      {showOxidaUnits && (
-        <nav className="oxida-segment-nav" aria-label="Unidades de Óxida Studio">
-          <span className="oxida-segment-nav-label">Nuestras unidades</span>
-          <a href={`${isOxida ? '' : '/oxida'}#oxida-projects`}><small>01</small>Óxida <strong>Projects</strong></a>
-          <a href={`${isOxida ? '' : '/oxida'}#oxida-pro`}><small>02</small>Óxida <strong>Pro</strong></a>
-          <a href={`${isOxida ? '' : '/oxida'}#oxida-custom-works`}><small>03</small>Óxida <strong>Custom Works</strong></a>
-          {FEATURES.SHOW_ECOMMERCE_PRODUCTS && (
-            <a href={`${isOxida ? '' : '/oxida'}#oxida-collection`}><small>04</small>Óxida <strong>Collection</strong></a>
-          )}
-          <a href={`${isOxida ? '' : '/oxida'}#oxida-care`}><small>{FEATURES.SHOW_ECOMMERCE_PRODUCTS ? '05' : '04'}</small>Óxida <strong>Care</strong></a>
-        </nav>
-      )}
     </header>
   )
 }
