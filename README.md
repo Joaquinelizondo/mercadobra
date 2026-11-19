@@ -19,7 +19,7 @@ El estado funcional detallado y las prioridades se mantienen también en [docs/E
 
 ### P1 — Seguridad (urgente)
 - [x] **S1.** *(19/11/2026)* `POST /oxipro/ai-onboarding`, `/oxipro/report/pdf` y `/oxipro/monthly-certificate/pdf` ahora exigen sesión (`authMiddleware`) y tienen límite por usuario (20 IA / 60 PDF cada 15 min). `POST /chat` sigue público (es el widget del sitio) pero con límite de 30 consultas / 15 min por IP. Se corrigió además el informe ejecutivo, que no enviaba el token. *Pendiente de ajuste fino en S3: límites globales por ruta.*
-- [ ] **S2.** Verificar la firma del webhook `POST /payments/mercadopago/webhook`.
+- [x] **S2.** *(19/11/2026)* El webhook ya re-consultaba el pago a la API de Mercado Pago (no confía en el body). Se agregó validación de `x-signature` (HMAC-SHA256, anti-replay de 10 min) activa al definir `MERCADOPAGO_WEBHOOK_SECRET`, y verificación de monto de la seña. **Acción manual pendiente: cargar `MERCADOPAGO_WEBHOOK_SECRET` en Render.** Sin esa variable el webhook sigue funcionando sin verificar firma (y deja un warning en producción).
 - [ ] **S3.** Bajar el límite de body de 12 MB a un valor chico por defecto y subirlo solo en las rutas con imágenes. Rate limit más estricto en rutas que llaman a IA o generan PDF.
 - [ ] **S4.** Revisar tokens públicos de cotización (`/public/quotes/:token`): longitud, aleatoriedad y vencimiento.
 - [ ] **S5.** Eliminar el camino de contraseñas en texto plano heredadas (forzar migración a `scrypt`).
@@ -1636,6 +1636,7 @@ ADMIN_COMPANY=Mercadobra
 Variables opcionales:
 
 - `MERCADOPAGO_ACCESS_TOKEN`
+- `MERCADOPAGO_WEBHOOK_SECRET` (clave secreta del webhook, en Mercado Pago > Tus integraciones > Webhooks; activa la validación de `x-signature`)
 - `CLOUDINARY_CLOUD_NAME`
 - `CLOUDINARY_API_KEY`
 - `CLOUDINARY_API_SECRET`

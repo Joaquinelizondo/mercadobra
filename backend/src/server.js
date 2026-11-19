@@ -12,7 +12,9 @@ import {
   getMercadoPagoPayment,
   isMercadoPagoConfigured,
   isMercadoPagoSandbox,
+  isMercadoPagoWebhookSecretConfigured,
   mapMercadoPagoStatus,
+  verifyMercadoPagoSignature,
 } from './paymentService.js'
 import { config, validateEnvVars } from './config.js'
 import {
@@ -1816,13 +1818,25 @@ app.post('/payments/mercadopago/webhook', async (req, res) => {
     return res.status(200).json({ ok: true, ignored: true })
   }
 
+  // Firma del webhook (x-signature). Se exige cuando MERCADOPAGO_WEBHOOK_SECRET está configurado.
+  // Aun sin secreto, el estado del pago se re-consulta a la API de Mercado Pago (no se confía en el body).
+  if (isMercadoPagoWebhookSecretConfigured()) {
+    const signedId = req.query['data.id'] || req.body?.data?.id
+    if (!verifyMercadoPagoSignature({ headers: req.headers, dataId: signedId })) {
+      console.warn('[mercadopago-webhook] firma inválida o ausente')
+      return res.status(401).json({ message: 'Firma inválida' })
+    }
+  } else if (config.nodeEnv === 'production') {
+    console.warn('[mercadopago-webhook] MERCADOPAGO_WEBHOOK_SECRET no configurado: webhook sin verificación de firma')
+  }
+
   try {
     const payment = await getMercadoPagoPayment(paymentId)
     const externalReference = String(payment.external_reference || payment.metadata?.order_id || '').trim()
     const quoteId=Number(payment.metadata?.quote_id||(/^quote-deposit:(\d+)$/.exec(externalReference)?.[1]))
     const paymentStatus = mapMercadoPagoStatus(payment.status)
     const repo = await getRepository()
-    if(quoteId){const quote=await repo.getCustomerQuoteById(quoteId);if(!quote)return res.status(200).json({ok:true,ignored:true});const approved=['approved','authorized'].includes(paymentStatus);const depositUpdates={depositStatus:approved?'approved':paymentStatus==='pending'?'pending':paymentStatus==='rejected'?'rejected':'cancelled',depositMethod:'mercadopago',depositExternalId:String(payment.id||''),depositPaidAt:approved?new Date().toISOString():null};const updated=approved?await activateQuoteProject(repo,quote,depositUpdates):await repo.updateCustomerQuoteDeposit(quoteId,{...depositUpdates,status:quote.status});if(approved&&quote.depositStatus!=='approved'){const customer=await repo.findUserById(updated.customerId);if(customer?.email)void notifyQuoteDepositApproved({email:customer.email,customerName:customer.company,quote:updated}).catch(error=>console.error('[deposit-approved-notification:error]',error.message))}return res.status(200).json({ok:true,kind:'quote_deposit'})}
+    if(quoteId){const quote=await repo.getCustomerQuoteById(quoteId);if(!quote)return res.status(200).json({ok:true,ignored:true});const approved=['approved','authorized'].includes(paymentStatus);if(approved){const sameCurrency=String(payment.currency_id||'').toUpperCase()===String(quote.currency||'').toUpperCase();if(!sameCurrency){console.warn('[mercadopago-webhook] moneda distinta a la de la seña',{quoteId,paidCurrency:payment.currency_id,expectedCurrency:quote.currency})}else if(Math.abs(Number(payment.transaction_amount||0)-Number(quote.depositAmount||0))>0.01){console.warn('[mercadopago-webhook] monto no coincide con la seña',{quoteId,paid:payment.transaction_amount,expected:quote.depositAmount});return res.status(200).json({ok:true,ignored:true,reason:'amount_mismatch'})}};const depositUpdates={depositStatus:approved?'approved':paymentStatus==='pending'?'pending':paymentStatus==='rejected'?'rejected':'cancelled',depositMethod:'mercadopago',depositExternalId:String(payment.id||''),depositPaidAt:approved?new Date().toISOString():null};const updated=approved?await activateQuoteProject(repo,quote,depositUpdates):await repo.updateCustomerQuoteDeposit(quoteId,{...depositUpdates,status:quote.status});if(approved&&quote.depositStatus!=='approved'){const customer=await repo.findUserById(updated.customerId);if(customer?.email)void notifyQuoteDepositApproved({email:customer.email,customerName:customer.company,quote:updated}).catch(error=>console.error('[deposit-approved-notification:error]',error.message))}return res.status(200).json({ok:true,kind:'quote_deposit'})}
     const orderId = Number(externalReference)
 
     if (!orderId) {
