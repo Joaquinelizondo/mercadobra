@@ -51,6 +51,43 @@ export function setupSecurityMiddleware(app) {
 }
 
 /**
+ * Rutas que reciben archivos o imágenes en base64 (o payloads grandes de OxI Pro).
+ * El resto de la API usa el límite chico por defecto.
+ */
+export const DEFAULT_JSON_LIMIT = '1mb'
+export const LARGE_JSON_LIMIT = '12mb' // Permite galerías de hasta cinco imágenes optimizadas
+
+const LARGE_BODY_ROUTES = [
+  /\/attachments$/,
+  /\/messages$/,
+  /\/deposit\/transfer$/,
+  /^\/customer\/quotes$/,
+  /^\/product-images$/,
+  /^\/products(?:\/\d+)?$/,
+  /^\/oxipro\//,
+  /^\/customer\/b2b-projects\/[^/]+\/oxipro\//,
+]
+
+/**
+ * Indica si la ruta necesita el límite de body grande. Ignora el prefijo /api.
+ * @param {string} path - req.path
+ */
+export function isLargeBodyRoute(path = '') {
+  const normalized = String(path).replace(/^\/api(?=\/|$)/, '')
+  return LARGE_BODY_ROUTES.some((pattern) => pattern.test(normalized))
+}
+
+/**
+ * Parser JSON con límite según la ruta (1 MB por defecto, 12 MB en rutas con archivos).
+ * @param {Function} jsonFactory - express.json
+ */
+export function createJsonBodyParser(jsonFactory) {
+  const small = jsonFactory({ limit: DEFAULT_JSON_LIMIT })
+  const large = jsonFactory({ limit: LARGE_JSON_LIMIT })
+  return (req, res, next) => (isLargeBodyRoute(req.path) ? large : small)(req, res, next)
+}
+
+/**
  * Limitador para endpoints costosos (IA, generación de PDF).
  * Si hay usuario autenticado limita por usuario; si no, por IP.
  *
@@ -58,8 +95,9 @@ export function setupSecurityMiddleware(app) {
  * @param {number} options.max - Máximo de requests por ventana
  * @param {number} [options.windowMs] - Ventana en ms (default 15 min)
  * @param {string} [options.message] - Mensaje al exceder el límite
+ * @param {string[]} [options.methods] - Si se indica, solo limita esos métodos HTTP
  */
-export function createExpensiveLimiter({ max, windowMs = 15 * 60 * 1000, message }) {
+export function createExpensiveLimiter({ max, windowMs = 15 * 60 * 1000, message, methods }) {
   return rateLimit({
     windowMs,
     max,
@@ -67,7 +105,7 @@ export function createExpensiveLimiter({ max, windowMs = 15 * 60 * 1000, message
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req, res) => (req.authUser?.id ? `user:${req.authUser.id}` : ipKeyGenerator(req.ip)),
-    skip: (req) => req.method === 'OPTIONS',
+    skip: (req) => req.method === 'OPTIONS' || (Array.isArray(methods) && !methods.includes(req.method)),
   })
 }
 
@@ -137,6 +175,14 @@ export function globalErrorHandler(err, req, res, _next) {
     return res.status(403).json({
       message: 'CORS: Solicitud no permitida',
       code: 'CORS_ERROR',
+    })
+  }
+
+  // Body demasiado grande (express.json())
+  if (err.type === 'entity.too.large' || err.status === 413) {
+    return res.status(413).json({
+      message: 'El contenido enviado es demasiado grande. Reducí el tamaño de los archivos e intentá de nuevo.',
+      code: 'PAYLOAD_TOO_LARGE',
     })
   }
 

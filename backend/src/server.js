@@ -24,6 +24,7 @@ import {
   validateJsonContentType,
   requestLogger,
   createExpensiveLimiter,
+  createJsonBodyParser,
 } from './security.js'
 import {
   requireField,
@@ -249,7 +250,7 @@ app.use(cors(createCorsMiddleware({ allowedOrigins, credentials: false })))
 setupSecurityMiddleware(app)
 
 // 3. Body parser
-app.use(express.json({ limit: '12mb' })) // Permite galerías de hasta cinco imágenes optimizadas
+app.use(createJsonBodyParser(express.json)) // 1 MB por defecto; 12 MB solo en rutas con archivos (ver security.js)
 
 // 4. Validar Content-Type en mutaciones
 app.use(validateJsonContentType)
@@ -341,6 +342,13 @@ const customerOnly = requireRoleOrAdmin('customer')
 // Endpoints costosos (IA / PDF): límites estrictos
 const aiChatLimiter = createExpensiveLimiter({ max: 30, message: 'Demasiadas consultas al asistente. Intenta en unos minutos.' })
 const aiPlanLimiter = createExpensiveLimiter({ max: 20, message: 'Límite de generaciones con IA alcanzado. Intenta más tarde.' })
+// Escrituras anónimas (formularios públicos): más estrictas que el límite global
+const publicWriteLimiter = createExpensiveLimiter({
+  max: 60,
+  methods: ['POST', 'PATCH', 'PUT', 'DELETE'],
+  message: 'Demasiados envíos desde esta conexión. Intenta nuevamente en unos minutos.',
+})
+app.use(['/leads', '/custom-requests', '/search-contacts', '/orders', '/public/quotes', '/customer-invitations'], publicWriteLimiter)
 const pdfLimiter = createExpensiveLimiter({ max: 60, message: 'Límite de generación de PDF alcanzado. Intenta más tarde.' })
 
 function validateAttachments(value) {
