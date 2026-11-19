@@ -60,6 +60,7 @@ import { createQuotePdf } from './quotePdfService.js'
 import { createOxiProReportPdf, createMonthlyCertificatePdf } from './oxiProReportPdfService.js'
 import { interpretModelerPrompt } from './modelerChatService.js'
 import { calculateTemplateWithCurrentVariables, calculateCircularTableWithCurrentVariables, getCurrentCostVariables } from './costingService.js'
+import { ensureB2bProjectAccess, filterOrdersForProvider } from './resourceAuthorization.js'
 
 // Validar env vars antes de iniciar la app
 validateEnvVars()
@@ -554,6 +555,9 @@ app.patch('/customer/quotes/:quoteId/b2b-project', authMiddleware, customerOnly,
   const repo = await getRepository()
   const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1)
   const b2bProjectId = req.body.b2bProjectId ? validateNumber(req.body.b2bProjectId, 'ID de Obra', 1) : null
+  if (b2bProjectId) {
+    await ensureB2bProjectAccess(repo, b2bProjectId, req.authUser)
+  }
   const quote = await repo.assignQuoteToB2bProject(quoteId, b2bProjectId, req.authUser.id)
   if (!quote) throw new NotFoundError('Cotización')
   return res.json(quote)
@@ -562,6 +566,7 @@ app.patch('/customer/quotes/:quoteId/b2b-project', authMiddleware, customerOnly,
 app.get('/customer/b2b-projects/:projectId/oxipro', authMiddleware, asyncHandler(async (req, res) => {
   const repo = await getRepository()
   const projectId = validateNumber(req.params.projectId, 'Proyecto ID', 1)
+  await ensureB2bProjectAccess(repo, projectId, req.authUser)
   const data = await repo.getOxiProProjectData(projectId)
   return res.json(data)
 }))
@@ -569,6 +574,7 @@ app.get('/customer/b2b-projects/:projectId/oxipro', authMiddleware, asyncHandler
 app.put('/customer/b2b-projects/:projectId/oxipro/tasks', authMiddleware, asyncHandler(async (req, res) => {
   const repo = await getRepository()
   const projectId = validateNumber(req.params.projectId, 'Proyecto ID', 1)
+  await ensureB2bProjectAccess(repo, projectId, req.authUser)
   const tasks = Array.isArray(req.body.tasks) ? req.body.tasks : []
   const saved = await repo.saveOxiProTasks(projectId, tasks)
   return res.json({ tasks: saved })
@@ -577,6 +583,7 @@ app.put('/customer/b2b-projects/:projectId/oxipro/tasks', authMiddleware, asyncH
 app.put('/customer/b2b-projects/:projectId/oxipro/rubros', authMiddleware, asyncHandler(async (req, res) => {
   const repo = await getRepository()
   const projectId = validateNumber(req.params.projectId, 'Proyecto ID', 1)
+  await ensureB2bProjectAccess(repo, projectId, req.authUser)
   const rubros = Array.isArray(req.body.rubros) ? req.body.rubros : []
   const saved = await repo.saveOxiProRubros(projectId, rubros)
   return res.json({ rubros: saved })
@@ -585,6 +592,7 @@ app.put('/customer/b2b-projects/:projectId/oxipro/rubros', authMiddleware, async
 app.post('/customer/b2b-projects/:projectId/oxipro/delays', authMiddleware, asyncHandler(async (req, res) => {
   const repo = await getRepository()
   const projectId = validateNumber(req.params.projectId, 'Proyecto ID', 1)
+  await ensureB2bProjectAccess(repo, projectId, req.authUser)
   const delay = req.body || {}
   const created = await repo.createOxiProDelay(projectId, delay)
   return res.status(201).json(created)
@@ -593,6 +601,7 @@ app.post('/customer/b2b-projects/:projectId/oxipro/delays', authMiddleware, asyn
 app.delete('/customer/b2b-projects/:projectId/oxipro/delays/:delayId', authMiddleware, asyncHandler(async (req, res) => {
   const repo = await getRepository()
   const projectId = validateNumber(req.params.projectId, 'Proyecto ID', 1)
+  await ensureB2bProjectAccess(repo, projectId, req.authUser)
   const delayId = validateNumber(req.params.delayId, 'Demora ID', 1)
   const deleted = await repo.deleteOxiProDelay(delayId, projectId)
   if (!deleted) throw new NotFoundError('Registro de demora')
@@ -602,6 +611,7 @@ app.delete('/customer/b2b-projects/:projectId/oxipro/delays/:delayId', authMiddl
 app.put('/customer/b2b-projects/:projectId/oxipro/state', authMiddleware, asyncHandler(async (req, res) => {
   const repo = await getRepository()
   const projectId = validateNumber(req.params.projectId, 'Proyecto ID', 1)
+  await ensureB2bProjectAccess(repo, projectId, req.authUser)
   const oxiproState = req.body?.oxiproState || req.body || {}
   const saved = await repo.saveOxiProState(projectId, oxiproState)
   return res.json({ oxiproState: saved })
@@ -2206,11 +2216,15 @@ app.get('/orders/:id/notifications', authMiddleware, providerOnly, async (req, r
   return res.json(logs)
 })
 
-app.get('/orders', authMiddleware, providerOnly, async (req, res) => {
+app.get('/orders', authMiddleware, providerOnly, asyncHandler(async (req, res) => {
   const repo = await getRepository()
   const orders = await repo.getOrders()
-  res.json(orders)
-})
+  if (req.authUser.role === 'admin') {
+    return res.json(orders)
+  }
+  const providerProducts = await repo.getProviderProducts(req.authUser.providerId)
+  return res.json(filterOrdersForProvider(orders, providerProducts, req.authUser))
+}))
 
 import { parseRequest, generateProposal, auditQuote } from './aiController.js';
 import { getAnalyticsMetrics } from './analyticsController.js';

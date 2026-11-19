@@ -435,6 +435,11 @@ async function getJsonRepo() {
       const db = readDb()
       return (db.b2bProjects || []).filter(p => Number(p.customerUserId) === Number(customerUserId))
     },
+    async getB2bProjectById(id) {
+      const db = readDb()
+      const p = (db.b2bProjects || []).find(item => Number(item.id) === Number(id))
+      return p ? { id: Number(p.id), customerUserId: Number(p.customerUserId), name: p.name, location: p.location, status: p.status, createdAt: p.createdAt } : null
+    },
     async assignQuoteToB2bProject(quoteId, projectId, customerUserId) {
       const db = readDb()
       const quote = (db.customerQuotes || []).find(q => Number(q.id) === Number(quoteId) && Number(q.customerUserId || q.customerId) === Number(customerUserId))
@@ -1495,6 +1500,13 @@ async function getPgRepo() {
         [customerUserId]
       )
       return rows.map(r => ({ id: Number(r.id), customerUserId: Number(r.customer_user_id), name: r.name, location: r.location, status: r.status, createdAt: r.created_at }))
+    },
+    async getB2bProjectById(id) {
+      const { rows } = await pool.query(
+        `SELECT * FROM b2b_projects WHERE id = $1 LIMIT 1`,
+        [id]
+      )
+      return rows[0] ? { id: Number(rows[0].id), customerUserId: Number(rows[0].customer_user_id), name: rows[0].name, location: rows[0].location, status: rows[0].status, createdAt: rows[0].created_at } : null
     },
     async assignQuoteToB2bProject(quoteId, projectId, customerUserId) {
       const { rows } = await pool.query(
