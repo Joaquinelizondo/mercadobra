@@ -218,14 +218,16 @@ export default function AdminQuoteWorkspace(){
         >
           💬 Compartir por WhatsApp
         </button>
-        <Link
-          to={`/cotizacion/${quote.accessToken || (quote.referenceNumber ? `mb_${btoa(quote.referenceNumber).replace(/=/g, '')}` : quote.id)}`}
-          target="_blank"
-          rel="noreferrer"
-          style={{ background: '#f5f0e8', color: '#171816', border: '1px solid #dcd4c8', textDecoration: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
-        >
-          🔗 Vista del Comitente ↗
-        </Link>
+        {quote.accessToken && (
+          <Link
+            to={`/cotizacion/${quote.accessToken}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{ background: '#f5f0e8', color: '#171816', border: '1px solid #dcd4c8', textDecoration: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+          >
+            🔗 Vista del Comitente ↗
+          </Link>
+        )}
       </div>
 
       {/* COSTEO VINCULADO BANNER */}

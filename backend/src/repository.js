@@ -117,7 +117,7 @@ function mapQuoteMessageRow(row) {
   }
 }
 
-function mapCustomerQuoteRow(row) {
+export function mapCustomerQuoteRow(row) {
   return {
     id: Number(row.id),
     customerId: Number(row.customer_user_id ?? row.customerId),
@@ -150,7 +150,7 @@ function mapCustomerQuoteRow(row) {
     documentItems: Array.isArray(row.document_items ?? row.documentItems) ? (row.document_items ?? row.documentItems) : [],
     documentTerms: row.document_terms ?? row.documentTerms ?? {},
     taxRate: Number(row.tax_rate ?? row.taxRate ?? 22),
-    accessToken: row.access_token ?? row.accessToken ?? (row.reference_number || row.referenceNumber ? `mb_${Buffer.from(String(row.reference_number || row.referenceNumber)).toString('hex')}` : null),
+    accessToken: row.access_token ?? row.accessToken ?? null,
     createdAt: row.created_at ?? row.createdAt ?? null,
     updatedAt: row.updated_at ?? row.updatedAt ?? null,
   }
@@ -400,8 +400,8 @@ async function getJsonRepo() {
       if (!token) return null
       const db = readDb()
       const quote = (db.customerQuotes || []).find((item) => {
-        const derived = (item.referenceNumber || item.reference_number) ? `mb_${Buffer.from(String(item.referenceNumber || item.reference_number)).toString('hex')}` : ''
-        return item.accessToken === token || item.access_token === token || derived === token || String(item.id) === token
+        const stored = item.accessToken || item.access_token
+        return Boolean(stored) && stored === token
       })
       if (!quote) return null
       const user = (db.users || []).find((item) => Number(item.id) === Number(quote.customerId || quote.customer_user_id))
@@ -1462,11 +1462,11 @@ async function getPgRepo() {
     async getCustomerQuoteByToken(token) {
       if (!token) return null
       const { rows } = await pool.query(
-        `SELECT customer_quotes.*, users.company AS customer_company, users.name AS customer_name, users.email AS customer_email, users.phone AS customer_phone
+        `SELECT customer_quotes.*, users.company AS customer_company, users.company AS customer_name, users.email AS customer_email, customer_profiles.phone AS customer_phone
          FROM customer_quotes
          LEFT JOIN users ON users.id = customer_quotes.customer_user_id
+         LEFT JOIN customer_profiles ON customer_profiles.user_id = users.id
          WHERE customer_quotes.access_token = $1
-            OR ('mb_' || encode(customer_quotes.reference_number::bytea, 'hex')) = $1
          LIMIT 1`,
         [token]
       )

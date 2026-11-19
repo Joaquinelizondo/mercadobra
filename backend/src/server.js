@@ -36,6 +36,7 @@ import {
   validateEnum,
   validateArray,
   validateStringLength,
+  parsePublicQuoteToken,
   validateOrderStatus,
   validatePaymentMethod,
   asyncHandler,
@@ -349,6 +350,12 @@ const publicWriteLimiter = createExpensiveLimiter({
   message: 'Demasiados envíos desde esta conexión. Intenta nuevamente en unos minutos.',
 })
 app.use(['/leads', '/custom-requests', '/search-contacts', '/orders', '/public/quotes', '/customer-invitations'], publicWriteLimiter)
+// Lectura de cotizaciones por magic link: frena el escaneo de tokens
+app.use('/public/quotes', createExpensiveLimiter({
+  max: 300,
+  methods: ['GET'],
+  message: 'Demasiadas consultas desde esta conexión. Intenta nuevamente en unos minutos.',
+}))
 const pdfLimiter = createExpensiveLimiter({ max: 60, message: 'Límite de generación de PDF alcanzado. Intenta más tarde.' })
 
 function validateAttachments(value) {
@@ -1310,7 +1317,7 @@ app.post('/auth/logout', authMiddleware, asyncHandler(async (req, res) => {
    PUBLIC / MAGIC LINK QUOTE ACCESS (NO LOGIN REQUIRED)
    ======================================================== */
 app.get('/public/quotes/:token', asyncHandler(async (req, res) => {
-  const token = validateStringLength(requireField(req.params.token, 'Token'), 'Token', 2, 255)
+  const token = parsePublicQuoteToken(req.params.token)
   const repo = await getRepository()
   const result = await repo.getCustomerQuoteByToken(token)
   if (!result || !result.quote) throw new NotFoundError('Cotización no encontrada')
@@ -1327,7 +1334,7 @@ app.get('/public/quotes/:token', asyncHandler(async (req, res) => {
 }))
 
 app.post('/public/quotes/:token/messages', asyncHandler(async (req, res) => {
-  const token = validateStringLength(requireField(req.params.token, 'Token'), 'Token', 2, 255)
+  const token = parsePublicQuoteToken(req.params.token)
   const repo = await getRepository()
   const result = await repo.getCustomerQuoteByToken(token)
   if (!result || !result.quote) throw new NotFoundError('Cotización no encontrada')
@@ -1351,7 +1358,7 @@ app.post('/public/quotes/:token/messages', asyncHandler(async (req, res) => {
 }))
 
 app.post('/public/quotes/:token/attachments', asyncHandler(async (req, res) => {
-  const token = validateStringLength(requireField(req.params.token, 'Token'), 'Token', 2, 255)
+  const token = parsePublicQuoteToken(req.params.token)
   const repo = await getRepository()
   const result = await repo.getCustomerQuoteByToken(token)
   if (!result || !result.quote) throw new NotFoundError('Cotización no encontrada')
@@ -1382,7 +1389,7 @@ app.post('/public/quotes/:token/attachments', asyncHandler(async (req, res) => {
 }))
 
 app.patch('/public/quotes/:token/status', asyncHandler(async (req, res) => {
-  const token = validateStringLength(requireField(req.params.token, 'Token'), 'Token', 2, 255)
+  const token = parsePublicQuoteToken(req.params.token)
   const repo = await getRepository()
   const result = await repo.getCustomerQuoteByToken(token)
   if (!result || !result.quote) throw new NotFoundError('Cotización no encontrada')
@@ -1404,7 +1411,7 @@ app.patch('/public/quotes/:token/status', asyncHandler(async (req, res) => {
 }))
 
 app.post('/public/quotes/:token/deposit/transfer', asyncHandler(async (req, res) => {
-  const token = validateStringLength(requireField(req.params.token, 'Token'), 'Token', 2, 255)
+  const token = parsePublicQuoteToken(req.params.token)
   const repo = await getRepository()
   const result = await repo.getCustomerQuoteByToken(token)
   if (!result || !result.quote) throw new NotFoundError('Cotización no encontrada')
@@ -1435,7 +1442,7 @@ app.post('/public/quotes/:token/deposit/transfer', asyncHandler(async (req, res)
 }))
 
 app.get('/public/quotes/:token/pdf', asyncHandler(async (req, res) => {
-  const token = validateStringLength(requireField(req.params.token, 'Token'), 'Token', 2, 255)
+  const token = parsePublicQuoteToken(req.params.token)
   const repo = await getRepository()
   const result = await repo.getCustomerQuoteByToken(token)
   if (!result || !result.quote) throw new NotFoundError('Cotización no encontrada')

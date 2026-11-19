@@ -25,8 +25,9 @@ export default function ShareQuoteWhatsAppModal({ quote, customer, onClose }) {
   const [copiedLink, setCopiedLink] = useState(false)
   const [copiedMessage, setCopiedMessage] = useState(false)
 
-  const token = quote?.accessToken || (quote?.referenceNumber ? `mb_${btoa(quote.referenceNumber).replace(/=/g, '')}` : quote?.id)
-  const publicUrl = `${window.location.origin}/cotizacion/${token}`
+  // El enlace público solo usa el token aleatorio del backend (nunca derivado de la referencia o el id)
+  const token = quote?.accessToken || ''
+  const publicUrl = token ? `${window.location.origin}/cotizacion/${token}` : ''
   const customerName = customer?.name || customer?.company || 'Comitente'
 
   const messageText = useMemo(() => {

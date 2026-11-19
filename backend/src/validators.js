@@ -2,7 +2,7 @@
  * Funciones de validación reutilizables.
  * Todas lanzan AppError si la validación falla.
  */
-import { ValidationError } from './errors.js'
+import { NotFoundError, ValidationError } from './errors.js'
 
 /**
  * Valida que un valor no esté vacío
@@ -191,4 +191,17 @@ export function asyncHandler(fn) {
   return (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next)
   }
+}
+
+/**
+ * Valida el formato del token público de una cotización (magic link).
+ * Los tokens generados por el backend son aleatorios (hex de 32 caracteres o más).
+ * Rechaza de entrada valores cortos o con caracteres inesperados.
+ */
+export function parsePublicQuoteToken(value) {
+  const token = String(value ?? '').trim()
+  if (!/^[A-Za-z0-9_-]{16,128}$/.test(token)) {
+    throw new NotFoundError('Cotización no encontrada')
+  }
+  return token
 }
