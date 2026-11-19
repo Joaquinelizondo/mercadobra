@@ -1,8 +1,8 @@
 .admin-customer-quotes {
   min-height: 100vh;
   padding: 34px clamp(18px, 4vw, 64px) 70px;
-  background: #f5f1eb;
-  color: #25211d;
+  background: #090a0f;
+  color: #f1f5f9;
   font-family: inherit;
 }
 
@@ -12,7 +12,7 @@
   align-items: flex-end;
   gap: 25px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #d8d0c5;
+  border-bottom: 1px solid rgba(234, 88, 12, 0.25);
 }
 
 .admin-customer-quotes > header span {
@@ -27,10 +27,11 @@
   margin: 5px 0;
   font-size: clamp(2.4rem, 5vw, 4.5rem);
   line-height: 1.1;
+  color: #ffffff;
 }
 
 .admin-customer-quotes > header p {
-  color: #716960;
+  color: #94a3b8;
   margin: 0;
 }
 
@@ -63,18 +64,19 @@
 
 .admin-customer-quotes nav a {
   padding: 8px 13px;
-  border: 1px solid #d8d0c5;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 999px;
   text-decoration: none;
   font-size: 0.75rem;
   font-weight: 800;
-  color: #25211d;
-  background: #fffdfa;
+  color: #f1f5f9;
+  background: #111318;
   transition: all 0.15s ease;
 }
 
 .admin-customer-quotes nav a:hover {
-  border-color: #25211d;
+  border-color: #ea580c;
+  color: #ea580c;
 }
 
 /* Success Banner */
@@ -83,8 +85,8 @@
   justify-content: space-between;
   align-items: center;
   gap: 15px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
   border-left: 5px solid #16a34a;
   padding: 14px 20px;
   border-radius: 10px;
@@ -93,19 +95,19 @@
 
 .admin-quote-success-banner strong {
   display: block;
-  color: #15803d;
+  color: #4ade80;
   font-size: 0.95rem;
 }
 
 .admin-quote-success-banner p {
   margin: 2px 0 0 0;
   font-size: 0.85rem;
-  color: #166534;
+  color: #cbd5e1;
 }
 
 .admin-quote-success-banner p span {
   font-weight: 700;
-  color: #0f172a;
+  color: #ffffff;
 }
 
 .admin-quote-banner-btn {
@@ -128,13 +130,13 @@
   background: transparent;
   border: none;
   font-size: 1.4rem;
-  color: #86efac;
+  color: #4ade80;
   cursor: pointer;
   line-height: 1;
 }
 
 .admin-quote-banner-close:hover {
-  color: #15803d;
+  color: #ffffff;
 }
 
 /* Metrics */
@@ -147,9 +149,9 @@
 
 .admin-quote-metrics div {
   padding: 18px;
-  border: 1px solid #ded6cb;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 15px;
-  background: #fffdfa;
+  background: #111318;
 }
 
 .admin-quote-metrics strong,
@@ -159,11 +161,11 @@
 
 .admin-quote-metrics strong {
   font-size: 1.8rem;
-  color: #171816;
+  color: #ffffff;
 }
 
 .admin-quote-metrics span {
-  color: #797169;
+  color: #94a3b8;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -181,9 +183,10 @@
 .admin-quote-toolbar input,
 .admin-quote-toolbar select {
   padding: 12px;
-  border: 1px solid #d8d0c5;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;
-  background: #fff;
+  background: #111318;
+  color: #ffffff;
   font: inherit;
   outline: none;
 }
@@ -205,15 +208,16 @@
   gap: 20px;
   align-items: center;
   padding: 18px;
-  border: 1px solid #ded6cb;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  background: #fffdfa;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  background: #111318;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .admin-quote-board article:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  border-color: rgba(234, 88, 12, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .admin-quote-id span,
@@ -228,14 +232,14 @@
 }
 
 .admin-quote-id small {
-  color: #8a8178;
+  color: #94a3b8;
   font-size: 0.68rem;
 }
 
 .admin-quote-board h2 {
   margin: 0;
   font-size: 1.05rem;
-  color: #171816;
+  color: #ffffff;
 }
 
 .admin-quote-board article > div:nth-child(2) > a {
@@ -252,7 +256,7 @@
 .admin-quote-board p {
   max-width: 650px;
   margin: 5px 0 0;
-  color: #7a7269;
+  color: #94a3b8;
   font-size: 0.78rem;
   white-space: nowrap;
   overflow: hidden;
@@ -266,43 +270,44 @@
 
 .admin-quote-commercial strong {
   font-size: 1.1rem;
-  color: #171816;
+  color: #ffffff;
 }
 
 .admin-quote-commercial span {
   width: max-content;
   padding: 4px 8px;
   border-radius: 999px;
-  background: #eee8df;
+  background: #181b22;
   font-size: 0.68rem;
   font-weight: 800;
+  color: #cbd5e1;
 }
 
 .admin-quote-commercial span.is-in_progress {
-  background: #fef3c7;
-  color: #b45309;
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
 }
 
 .admin-quote-commercial span.is-sent {
-  background: #e0f2fe;
-  color: #0369a1;
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
 }
 
 .admin-quote-commercial span.is-accepted {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
 }
 
 .admin-quote-commercial span.is-project_in_progress {
-  background: #ccfbf1;
-  color: #0f766e;
+  background: rgba(20, 184, 166, 0.15);
+  color: #2dd4bf;
 }
 
 .admin-quote-open {
   padding: 10px 14px;
   border-radius: 9px;
-  background: #25211d;
-  color: #fff;
+  background: #ea580c;
+  color: #ffffff;
   text-decoration: none;
   font-size: 0.75rem;
   font-weight: 800;
@@ -310,13 +315,13 @@
 }
 
 .admin-quote-open:hover {
-  background: #ea580c;
+  background: #c2410c;
 }
 
 .admin-quote-error {
   padding: 12px;
-  background: #fee2e2;
-  color: #991b1b;
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
   border-radius: 8px;
   margin-bottom: 12px;
   font-size: 0.85rem;
@@ -325,9 +330,10 @@
 .admin-quote-empty {
   padding: 55px;
   text-align: center;
-  background: #fffdfa;
-  border: 1px dashed #d8d0c5;
+  background: #111318;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
   border-radius: 16px;
+  color: #94a3b8;
 }
 
 /* ========================================================
@@ -336,8 +342,8 @@
 .admin-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -346,15 +352,17 @@
 }
 
 .admin-modal-content {
-  background: #ffffff;
+  background: #111318;
+  border: 1px solid rgba(234, 88, 12, 0.35);
   border-radius: 14px;
   max-width: 680px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
+  color: #f1f5f9;
 }
 
 .admin-modal-header {
@@ -362,8 +370,8 @@
   align-items: flex-start;
   justify-content: space-between;
   padding: 1.25rem 1.75rem;
-  background: #fbfaf8;
-  border-bottom: 1px solid #ebe5dc;
+  background: #181b22;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px 14px 0 0;
 }
 
@@ -380,20 +388,20 @@
   margin: 3px 0 0 0;
   font-size: 1.3rem;
   font-weight: 700;
-  color: #171816;
+  color: #ffffff;
 }
 
 .admin-modal-close {
   background: transparent;
   border: none;
   font-size: 1.6rem;
-  color: #8c8880;
+  color: #94a3b8;
   cursor: pointer;
   line-height: 1;
 }
 
 .admin-modal-close:hover {
-  color: #171816;
+  color: #ffffff;
 }
 
 .admin-modal-form {
@@ -409,16 +417,16 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #171816;
+  color: #ffffff;
   margin-bottom: 0.85rem;
   padding-bottom: 0.35rem;
-  border-bottom: 1px solid #ebe4d8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Client Tabs */
 .admin-client-tabs {
   display: flex;
-  background: #ede8df;
+  background: #0d0f14;
   padding: 4px;
   border-radius: 8px;
   gap: 4px;
@@ -431,7 +439,7 @@
   border: none;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #66635d;
+  color: #94a3b8;
   padding: 0.55rem 0.85rem;
   border-radius: 6px;
   cursor: pointer;
@@ -439,9 +447,9 @@
 }
 
 .admin-client-tab-btn.is-active {
-  background: #ffffff;
-  color: #171816;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  background: #ea580c;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .admin-form-group {
@@ -457,7 +465,7 @@
   gap: 0.35rem;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #2b2926;
+  color: #cbd5e1;
 }
 
 .admin-input,
@@ -466,10 +474,10 @@
   width: 100%;
   padding: 0.65rem 0.85rem;
   font-size: 0.85rem;
-  border: 1px solid #d5cec2;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 6px;
-  background: #faf8f5;
-  color: #1f1e1c;
+  background: #0d0f14;
+  color: #ffffff;
   box-sizing: border-box;
   outline: none;
 }
@@ -478,7 +486,7 @@
 .admin-select:focus,
 .admin-textarea:focus {
   border-color: #ea580c;
-  background: #ffffff;
+  background: #111318;
 }
 
 .admin-form-grid-2 {
@@ -498,8 +506,8 @@
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  background: #f8f6f2;
-  border: 1px solid #e5ded3;
+  background: #181b22;
+  border: 1px solid rgba(234, 88, 12, 0.25);
   padding: 0.75rem 1rem;
   border-radius: 8px;
   margin-top: 0.5rem;
@@ -510,7 +518,7 @@
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  background: #ede6da;
+  background: rgba(234, 88, 12, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -524,23 +532,23 @@
 
 .admin-client-meta strong {
   font-size: 0.92rem;
-  color: #171816;
+  color: #ffffff;
 }
 
 .admin-client-meta span {
   font-size: 0.78rem;
-  color: #55534f;
+  color: #cbd5e1;
 }
 
 .admin-client-meta small {
   font-size: 0.75rem;
-  color: #7b7871;
+  color: #94a3b8;
 }
 
 .admin-no-clients-alert {
   padding: 1rem;
-  background: #fdfaf5;
-  border: 1px dashed #ded4c5;
+  background: #181b22;
+  border: 1px dashed rgba(234, 88, 12, 0.35);
   border-radius: 8px;
   text-align: center;
   display: flex;
@@ -566,14 +574,14 @@
   justify-content: flex-end;
   gap: 0.75rem;
   padding-top: 1rem;
-  border-top: 1px solid #ebe4d8;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   margin-top: 0.5rem;
 }
 
 .admin-btn-cancel {
-  background: #ffffff;
-  border: 1px solid #d4cdc2;
-  color: #2b2926;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
   font-size: 0.85rem;
   font-weight: 600;
   padding: 0.6rem 1.15rem;
@@ -582,7 +590,8 @@
 }
 
 .admin-btn-cancel:hover {
-  border-color: #171816;
+  border-color: #ffffff;
+  color: #ffffff;
 }
 
 .admin-btn-submit {

@@ -241,8 +241,8 @@ export default function Landing() {
     <>
       {/* Sección solo visible para admin */}
       {adminUser && (
-        <section className="section admin-add-product" style={{maxWidth: 820, margin: '2.5rem auto 2rem auto', background: '#f1f5f9', borderRadius: 18, border: '1.5px solid #e5e7eb', boxShadow: '0 2px 8px 0 rgba(30,144,255,0.04)', padding: '1.5rem 2rem'}}>
-          <h3 style={{color: '#22223b', fontWeight: 800, fontSize: '1.2rem', marginBottom: 12}}>Agregar producto de proveedor</h3>
+        <section className="section admin-add-product" style={{maxWidth: 820, margin: '2.5rem auto 2rem auto', background: '#111318', borderRadius: 18, border: '1px solid rgba(234, 88, 12, 0.28)', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', padding: '1.5rem 2rem'}}>
+          <h3 style={{color: '#ffffff', fontWeight: 800, fontSize: '1.2rem', marginBottom: 12}}>Agregar producto de proveedor</h3>
           <form onSubmit={handleAddProductSubmit} style={{display: 'flex', flexWrap: 'wrap', gap: 16}}>
             <input name="name" value={addProductForm.name} onChange={handleAddProductInput} placeholder="Nombre" required style={{flex: '1 1 180px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />
             <input name="price" value={addProductForm.price} onChange={handleAddProductInput} placeholder="Precio" type="number" min="0" required style={{flex: '1 1 120px', padding: 8, borderRadius: 8, border: '1px solid #ccc'}} />

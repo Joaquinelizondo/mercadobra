@@ -59,15 +59,19 @@ body {
   box-sizing: border-box;
 }
 
-h3 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--heading);
+  color: var(--text-h);
 }
 
 h1,
 h2 {
-  font-family: var(--heading);
   font-weight: 800;
-  color: var(--text-h);
 }
 
 h1 {

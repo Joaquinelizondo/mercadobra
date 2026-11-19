@@ -8,7 +8,7 @@
   margin: 0 auto;
   padding: 1.5rem 1.25rem 4rem;
   font-family: inherit;
-  color: #171816;
+  color: #f1f5f9;
 }
 
 /* Loading & Error States */
@@ -28,12 +28,13 @@
 }
 
 .pq-error-card {
-  background: #ffffff;
-  border: 1px solid #e2dad0;
+  background: #111318;
+  border: 1px solid rgba(234, 88, 12, 0.35);
   border-radius: 12px;
   padding: 2.5rem 2rem;
   max-width: 500px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  color: #f1f5f9;
 }
 
 .pq-error-card span {
@@ -46,22 +47,28 @@
 .pq-error-card h2 {
   margin: 0.5rem 0;
   font-size: 1.35rem;
+  color: #ffffff;
 }
 
 .pq-error-card p {
-  color: #68645e;
+  color: #94a3b8;
   font-size: 0.9rem;
   margin-bottom: 1.5rem;
 }
 
 .pq-btn-primary {
   display: inline-block;
-  background: #171816;
+  background: #ea580c;
   color: #ffffff;
   text-decoration: none;
   font-weight: 600;
   padding: 0.65rem 1.25rem;
   border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.pq-btn-primary:hover {
+  background: #c2410c;
 }
 
 /* Top Bar */
@@ -71,8 +78,8 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.85rem 1.25rem;
-  background: #fdfcfb;
-  border: 1px solid #ebe5dc;
+  background: #111318;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
@@ -92,7 +99,7 @@
 }
 
 .pq-top-divider {
-  color: #d1c8bc;
+  color: rgba(255, 255, 255, 0.2);
 }
 
 .pq-expediente-badge {
@@ -112,7 +119,7 @@
 .pq-ref-tag {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #615e58;
+  color: #94a3b8;
 }
 
 .pq-status-pill {
@@ -136,15 +143,15 @@
 }
 
 .pq-alert-success {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #166534;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #4ade80;
 }
 
 .pq-alert-error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
 }
 
 .pq-alert-success button,
@@ -162,11 +169,11 @@
   display: grid;
   grid-template-columns: 1.4fr 1fr;
   gap: 2rem;
-  background: #ffffff;
-  border: 1px solid #e5ded5;
+  background: #111318;
+  border: 1px solid rgba(234, 88, 12, 0.25);
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   margin-bottom: 1.5rem;
 }
 
@@ -174,7 +181,7 @@
   font-size: 0.82rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: #8c8880;
+  color: #ea580c;
   letter-spacing: 0.05em;
 }
 
@@ -183,20 +190,20 @@
   font-size: 1.75rem;
   font-weight: 800;
   line-height: 1.2;
-  color: #171816;
+  color: #ffffff;
 }
 
 .pq-quote-desc {
   margin: 0;
   font-size: 0.92rem;
-  color: #55524c;
+  color: #94a3b8;
   line-height: 1.5;
   white-space: pre-wrap;
 }
 
 .pq-hero-commercial {
-  background: #fbfaf8;
-  border: 1px solid #eee7de;
+  background: #181b22;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   padding: 1.5rem;
   display: flex;
@@ -223,32 +230,33 @@
 .pq-price-val {
   font-size: 2.2rem;
   font-weight: 900;
-  color: #171816;
+  color: #ffffff;
   line-height: 1;
 }
 
 .pq-price-meta {
   font-size: 0.75rem;
-  color: #7b7871;
+  color: #94a3b8;
   margin-bottom: 0.85rem;
 }
 
 .pq-btn-pdf {
   width: 100%;
-  background: #171816;
+  background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   font-size: 0.82rem;
   font-weight: 700;
   padding: 0.75rem 1rem;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
   text-align: center;
 }
 
 .pq-btn-pdf:hover {
   background: #ea580c;
+  border-color: #ea580c;
 }
 
 /* Decision Box */
@@ -257,7 +265,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
-  background: #fffdfa;
+  background: #181b22;
   border: 2px solid #ea580c;
   border-radius: 12px;
   padding: 1.5rem 1.75rem;
@@ -268,13 +276,13 @@
 .pq-decision-text h3 {
   margin: 0 0 0.25rem 0;
   font-size: 1.2rem;
-  color: #171816;
+  color: #ffffff;
 }
 
 .pq-decision-text p {
   margin: 0;
   font-size: 0.88rem;
-  color: #66635c;
+  color: #94a3b8;
 }
 
 .pq-decision-actions {
@@ -302,9 +310,9 @@
 }
 
 .pq-btn-modify {
-  background: #ffffff;
-  border: 1px solid #dcd4c8;
-  color: #383531;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
   font-size: 0.88rem;
   font-weight: 600;
   padding: 0.75rem 1.25rem;
@@ -314,8 +322,8 @@
 }
 
 .pq-btn-modify:hover:not(:disabled) {
-  border-color: #171816;
-  color: #171816;
+  border-color: #ea580c;
+  color: #ea580c;
 }
 
 /* Deposit Card */
@@ -323,8 +331,8 @@
   display: grid;
   grid-template-columns: 1.3fr 1fr;
   gap: 1.5rem;
-  background: #fdfaf6;
-  border: 1px solid #fed7aa;
+  background: #181b22;
+  border: 1px solid rgba(234, 88, 12, 0.35);
   border-radius: 12px;
   padding: 1.5rem 1.75rem;
   margin-bottom: 1.5rem;
@@ -341,26 +349,26 @@
 .pq-deposit-info h3 {
   margin: 0.25rem 0 0.5rem 0;
   font-size: 1.25rem;
-  color: #171816;
+  color: #ffffff;
 }
 
 .pq-deposit-info p {
   margin: 0 0 0.85rem 0;
   font-size: 0.85rem;
-  color: #66635c;
+  color: #94a3b8;
   line-height: 1.4;
 }
 
 .pq-bank-details {
-  background: #ffffff;
-  border: 1px solid #f0eae1;
+  background: #111318;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   padding: 0.75rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
   font-size: 0.8rem;
-  color: #33312c;
+  color: #cbd5e1;
 }
 
 .pq-deposit-action {
@@ -382,15 +390,16 @@
   gap: 0.35rem;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #2b2926;
+  color: #cbd5e1;
 }
 
 .pq-file-label input {
   padding: 0.55rem;
   font-size: 0.8rem;
-  border: 1px dashed #dcd4c8;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
   border-radius: 6px;
-  background: #ffffff;
+  background: #111318;
+  color: #ffffff;
 }
 
 .pq-selected-file {
@@ -424,9 +433,10 @@
   text-align: center;
   gap: 0.35rem;
   padding: 1rem;
-  background: #ffffff;
+  background: #111318;
   border-radius: 8px;
-  border: 1px solid #eee7de;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .pq-check-icon {
@@ -439,7 +449,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 1.25rem;
-  background: #171816;
+  background: #111318;
+  border: 1px solid rgba(234, 88, 12, 0.25);
   color: #ffffff;
   border-radius: 12px;
   padding: 1.5rem 2rem;
@@ -451,12 +462,13 @@
   display: block;
   font-size: 1.05rem;
   margin-bottom: 0.25rem;
+  color: #ffffff;
 }
 
 .pq-footer-contact p {
   margin: 0;
   font-size: 0.85rem;
-  color: #aaa49c;
+  color: #94a3b8;
 }
 
 .pq-btn-wa {
