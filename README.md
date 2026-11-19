@@ -10,6 +10,50 @@ Plataforma uruguaya para descubrir, cotizar y comprar productos para obra, con e
 
 El estado funcional detallado y las prioridades se mantienen también en [docs/ESTADO_WEB.md](docs/ESTADO_WEB.md).
 
+## Pendientes (se resuelven de a uno)
+
+> Regla de trabajo: se toma **un solo pendiente por vez**, el primero sin tachar de la lista de prioridad. Al terminarlo se marca `[x]`, se anota fecha y commit, y recién entonces se pasa al siguiente.
+> Origen: auditoría del 19/11/2026 (nota global 6.9/10: seguridad 5.5, capacidad 6.5, UI 7.5, negocio 8.0).
+
+**Pausado:** integración con Taller (se retoma cuando se decida unir ambos proyectos). Ecommerce de productos también en pausa.
+
+### P1 — Seguridad (urgente)
+- [ ] **S1.** Exigir sesión (o cuota) en `POST /chat`, `POST /oxipro/ai-onboarding`, `POST /oxipro/report/pdf` y `POST /oxipro/monthly-certificate/pdf`. Hoy están abiertos y consumen OpenAI / CPU.
+- [ ] **S2.** Verificar la firma del webhook `POST /payments/mercadopago/webhook`.
+- [ ] **S3.** Bajar el límite de body de 12 MB a un valor chico por defecto y subirlo solo en las rutas con imágenes. Rate limit más estricto en rutas que llaman a IA o generan PDF.
+- [ ] **S4.** Revisar tokens públicos de cotización (`/public/quotes/:token`): longitud, aleatoriedad y vencimiento.
+- [ ] **S5.** Eliminar el camino de contraseñas en texto plano heredadas (forzar migración a `scrypt`).
+- [ ] **S6.** Revisar autorización por recurso (que un cliente/proveedor solo acceda a sus propios proyectos y pedidos).
+- [ ] **S7.** Log de auditoría (quién cambió costos, aprobó certificados o modificó presupuestos).
+- [ ] **S8.** Evaluar mover la sesión de `localStorage` a cookie `HttpOnly`.
+
+### P2 — Arquitectura y rendimiento
+- [ ] **A1.** Code splitting con `React.lazy` por ruta (bundle inicial hoy 1,56 MB; visor 3D 966 KB). Meta: menos de 300 KB iniciales.
+- [ ] **A2.** Dividir `OxiProSuite.jsx` (12.590 líneas) en módulos por pestaña.
+- [ ] **A3.** Dividir `server.js` (2.559 líneas, 108 rutas) en routers por dominio.
+- [ ] **A4.** Generación de PDFs fuera del hilo principal (cola o worker).
+- [ ] **A5.** Garantizar que en producción no se use el repositorio en memoria si falla PostgreSQL.
+
+### P3 — Calidad
+- [ ] **Q1.** Tests de endpoints y de autorización en backend.
+- [ ] **Q2.** CI (GitHub Actions): tests y build en cada push.
+- [ ] **Q3.** Limpiar CSS duplicado y `!important` en `App.css` (reglas móviles que pisan las de escritorio).
+
+### P4 — UI / UX
+- [ ] **U1.** Skeletons y estados vacíos consistentes en portales.
+- [ ] **U2.** Indicador de modo sin conexión (service worker ya activo).
+- [ ] **U3.** Auditoría de accesibilidad (contraste, foco, `aria`).
+- [ ] **U4.** Unificar íconos (reemplazar emojis por SVG).
+
+### P5 — Negocio
+- [ ] **N1.** Definir planes y cobro de suscripción de OxI Pro (trial, límites por plan).
+- [ ] **N2.** Facturación electrónica DGI.
+- [ ] **N3.** Analítica de producto y embudo de cotización.
+- [ ] **N4.** Definir prioridad entre las dos líneas (SaaS OxI Pro vs. fabricación Óxida Studio).
+
+### Resueltos
+- [x] 19/11/2026 — Header móvil limpio, logo Óxida Studio, PWA oscuro (manifest, status bar, service worker v2), footer centrado, unificación de contraste negro/naranja.
+
 ## Estado actual
 
 La plataforma se encuentra operativa con:
