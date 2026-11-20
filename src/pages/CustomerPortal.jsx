@@ -580,7 +580,9 @@ export default function CustomerPortal() {
       <aside className={`oxi-os-sidebar ${mobileMenuOpen ? 'is-mobile-open' : ''}`}>
         <div className="oxi-sidebar-mobile-bar">
           <div className="oxi-sidebar-brand-mobile">
-            <OxidaWordmark />
+            <Link to="/" title="Ir al sitio web público de Óxida Studio" style={{ textDecoration: 'none' }}>
+              <OxidaWordmark />
+            </Link>
           </div>
           <button 
             type="button" 
@@ -593,7 +595,9 @@ export default function CustomerPortal() {
         </div>
 
         <div className="oxi-os-brand desktop-only-brand">
-          <OxidaWordmark />
+          <Link to="/" title="Ir al sitio web público de Óxida Studio" style={{ textDecoration: 'none' }}>
+            <OxidaWordmark />
+          </Link>
         </div>
         
         <div className="oxi-os-user">
@@ -690,6 +694,16 @@ export default function CustomerPortal() {
         </div>
 
         <div className="oxi-os-footer-actions">
+          <Link
+            to="/"
+            className="oxi-os-btn dark"
+            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            onClick={() => setMobileMenuOpen(false)}
+            title="Volver al sitio web principal de Óxida Studio"
+          >
+            <span>🌐</span> Ver Sitio Web ↗
+          </Link>
+
           <button 
             type="button"
             className="oxi-os-btn dark" 
@@ -1721,10 +1735,6 @@ export default function CustomerPortal() {
                 <span className="oxi-bottom-icon">＋</span>
                 <span className="oxi-bottom-label">Nueva</span>
               </button>
-              <Link to="/cliente/modelador" className="oxi-bottom-item">
-                <span className="oxi-bottom-icon">📐</span>
-                <span className="oxi-bottom-label">3D Óxida</span>
-              </Link>
               <button
                 type="button"
                 className="oxi-bottom-item pro-highlight"

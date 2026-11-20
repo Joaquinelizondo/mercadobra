@@ -187,15 +187,6 @@ export default function AdminOrders() {
     <section className="admin-orders-page">
       <header className="admin-orders-header">
         <div><span>Operación comercial</span><h1>Pedidos & Solicitudes</h1><p>Ventas de tienda online y solicitudes de cotización B2B OxI.</p></div>
-        <nav>
-          <Link to="/admin/productos">Productos</Link>
-          <Link to="/admin/clientes">Clientes</Link>
-          <Link to="/admin/cotizaciones-clientes">Cotizaciones B2B</Link>
-          <Link to="/admin/modelador">Simulador 3D</Link>
-          <Link to="/admin/cotizaciones">Consultas</Link>
-          <Link to="/admin/personalizaciones">Personalizaciones</Link>
-          <Link to="/">Ver tienda ↗</Link>
-        </nav>
       </header>
 
       <div style={{ display: 'flex', gap: '12px', marginTop: '24px', flexWrap: 'wrap' }}>

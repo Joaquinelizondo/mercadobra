@@ -220,7 +220,9 @@ export default function SupplierDashboard() {
       <div className="oxi-os-dashboard">
         <aside className="oxi-os-sidebar">
           <div className="oxi-os-brand">
-            <OxidaWordmark />
+            <Link to="/" title="Ir a la web de Óxida Studio" style={{ textDecoration: 'none' }}>
+              <OxidaWordmark />
+            </Link>
             <span>NETWORK</span>
           </div>
 
@@ -240,14 +242,24 @@ export default function SupplierDashboard() {
             >
               ＋ Nuevo producto
             </button>
-            <Link to="/explorar" className="oxi-os-btn secondary" style={{display: 'block', textDecoration: 'none'}}>
+            <Link to="/" className="oxi-os-btn secondary" style={{display: 'block', textDecoration: 'none'}}>
               Ver catálogo público
             </Link>
           </div>
 
-          <button className="oxi-os-btn dark" onClick={logout}>
-            Cerrar sesión
-          </button>
+          <div style={{ display: 'grid', gap: '8px', marginTop: 'auto' }}>
+            <Link
+              to="/"
+              className="oxi-os-btn dark"
+              style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              title="Volver al sitio web principal de Óxida Studio"
+            >
+              <span>🌐</span> Ver Sitio Web ↗
+            </Link>
+            <button className="oxi-os-btn dark" onClick={logout}>
+              Cerrar sesión
+            </button>
+          </div>
         </aside>
 
         <main className="oxi-os-main">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getAdminAnalytics } from '../lib/api'
 import { formatPrice } from '../utils/format'
@@ -30,9 +30,6 @@ export default function AdminAnalytics() {
           <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#666' }}>Métricas Comerciales</span>
           <h1 style={{ margin: '0.5rem 0 0', fontSize: '2rem', color: '#1a1a1a' }}>Analítica & Rendimiento</h1>
         </div>
-        <nav style={{ display: 'flex', gap: '1rem' }}>
-          <Link to="/admin/cotizaciones-clientes" style={{ color: '#ea580c', textDecoration: 'none', fontWeight: '500' }}>← Volver a Cotizaciones</Link>
-        </nav>
       </header>
 
       {error && <p style={{ color: '#dc2626' }}>{error}</p>}

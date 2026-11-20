@@ -225,7 +225,7 @@ export default function AdminCustomerQuotes() {
           <h1>Cotizaciones</h1>
           <p>Solicitudes, propuestas y conversaciones de clientes registrados.</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div>
           <button
             type="button"
             className="admin-quote-new-btn"
@@ -233,12 +233,6 @@ export default function AdminCustomerQuotes() {
           >
             ＋ Nueva Cotización
           </button>
-          <nav>
-            <Link to="/admin/analitica">Analítica</Link>
-            <Link to="/admin/cotiza">Cotizador B2B</Link>
-            <Link to="/admin/clientes">Clientes</Link>
-            <Link to="/admin/productos">Productos</Link>
-          </nav>
         </div>
       </header>
 

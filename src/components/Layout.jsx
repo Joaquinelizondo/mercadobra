@@ -8,6 +8,7 @@ import WhatsAppButton from './WhatsAppButton'
 import PwaInstallBanner from './PwaInstallBanner'
 import MobileBottomNav from './MobileBottomNav'
 import MobileMenuDrawer from './MobileMenuDrawer'
+import AdminHeaderNav from './AdminHeaderNav'
 import { FEATURES } from '../config/features'
 
 const AI_CHAT_ENABLED = import.meta.env.VITE_AI_CHAT_ENABLED === 'true'
@@ -19,6 +20,11 @@ export default function Layout() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [location.pathname])
+
+  const isAdminPlatform =
+    location.pathname.startsWith('/admin') &&
+    location.pathname !== '/admin/login' &&
+    location.pathname !== '/admin/modelador'
 
   const isOxiPlatform =
     location.pathname.startsWith('/cliente') ||
@@ -33,6 +39,7 @@ export default function Layout() {
       style={isOxiPlatform ? { padding: 0, width: '100%', maxWidth: '100%', margin: 0, gap: 0, flex: 1, minHeight: '100vh' } : {}}
     >
       {!isOxiPlatform && <Topbar onOpenDrawer={() => setMobileDrawerOpen(true)} />}
+      {isAdminPlatform && <AdminHeaderNav />}
       <Outlet />
       {!isOxiPlatform && (
         <>

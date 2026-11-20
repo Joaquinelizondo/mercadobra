@@ -216,16 +216,6 @@ export default function AdminCustomers() {
           <h1>Clientes y Cuentas</h1>
           <p>Gestioná perfiles y asigná acceso a <strong>Plataforma OxI Clásico</strong> o <strong>Plataforma OxI Pro</strong>.</p>
         </div>
-        <nav>
-          <Link to="/admin/analitica">Analítica</Link>
-          <Link to="/admin/cotizaciones-clientes">Cotizaciones</Link>
-          <Link to="/admin/modelador">Simulador 3D</Link>
-          <Link to="/admin/productos">Productos</Link>
-          <Link to="/admin/pedidos">Pedidos</Link>
-          <Link to="/admin/cotizaciones">Consultas web</Link>
-          <Link to="/admin/personalizaciones">Personalizaciones</Link>
-          <Link to="/">Ver tienda ↗</Link>
-        </nav>
       </header>
 
       <div className="admin-customers-title-row">
