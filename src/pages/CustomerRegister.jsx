@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import logoImg from '../assets/mercadobra.png'
 
 export default function CustomerRegister() {
   const {
@@ -21,27 +20,24 @@ export default function CustomerRegister() {
     password: '',
     confirmPassword: '',
   })
-  const [error, setError] = useState('')
+  const [localError, setLocalError] = useState('')
+  const error = localError || customerAuthError
 
   useEffect(() => {
     if (customerUser) navigate(redirect, { replace: true })
   }, [customerUser, navigate, redirect])
 
-  useEffect(() => {
-    if (customerAuthError) setError(customerAuthError)
-  }, [customerAuthError])
-
   function handleChange(e) {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
-    if (error) setError('')
+    if (localError) setLocalError('')
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
 
     if (form.password !== form.confirmPassword) {
-      setError('Las contraseñas no coinciden')
+      setLocalError('Las contraseñas no coinciden')
       return
     }
 

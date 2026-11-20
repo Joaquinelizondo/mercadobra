@@ -20,7 +20,7 @@ function formatRequestedDate(value) {
 }
 
 export default function AdminQuoteWorkspace(){
-  const {id,quoteId}=useParams(); const {adminUser,adminToken}=useAuth(); const [customer,setCustomer]=useState(null); const [quote,setQuote]=useState(null); const [messages,setMessages]=useState([]); const [message,setMessage]=useState(''); const [error,setError]=useState(''); const [saving,setSaving]=useState(false)
+  const {id,quoteId}=useParams(); const {adminUser,adminToken}=useAuth(); const [customer,setCustomer]=useState(null); const [quote,setQuote]=useState(null); const [messages,setMessages]=useState([]); const [error,setError]=useState(''); const [saving,setSaving]=useState(false)
   const [isParsingAI, setIsParsingAI] = useState(false)
   const [aiSuggestion, setAiSuggestion] = useState(null)
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false)
@@ -100,7 +100,6 @@ export default function AdminQuoteWorkspace(){
   if(!adminUser||!adminToken)return <Navigate to={`/admin/login?redirect=/admin/clientes/${id}/cotizaciones/${quoteId}`} replace/>
   
   async function saveProposal(e){e.preventDefault();setSaving(true);try{setQuote(await updateAdminQuote(quote.id,{...quote,status:quote.status==='in_progress'?'sent':quote.status},adminToken))}catch(e){setError(e.message)}finally{setSaving(false)}}
-  async function send(e){e.preventDefault();if(!message.trim())return;try{const m=await sendAdminQuoteMessage(quote.id,{message},adminToken);setMessages(p=>[...p,m]);setMessage('')}catch(e){setError(e.message)}}
 
   async function handleSendMessage({ message: msgText, attachments, category, stage, status }) {
     if (!adminToken || !quote?.id) return

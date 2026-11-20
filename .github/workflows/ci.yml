@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    name: Lint, Test & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies (Frontend & Root)
+        run: npm ci
+
+      - name: Install dependencies (Backend)
+        run: cd backend && npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Frontend Tests
+        run: npm test -- --run
+
+      - name: Run Backend Tests
+        run: cd backend && npm test
+
+      - name: Build Frontend
+        run: npm run build

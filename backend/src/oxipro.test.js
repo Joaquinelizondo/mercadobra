@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { generateHeuristicConstructionPlan, generateOxiProPlanFromSpec } from './oxiProAiService.js'
+import { generateHeuristicConstructionPlan } from './oxiProAiService.js'
 import { getRepository } from './repository.js'
 import { createMonthlyCertificatePdf } from './oxiProReportPdfService.js'
 

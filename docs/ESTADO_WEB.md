@@ -14,7 +14,7 @@
 | :--- | :--- | :--- |
 | **Pruebas Automatizadas** | ✅ Excelente (125 tests) | 90 tests frontend y 35 tests backend pasando en verde (`npm test`). |
 | **Compilación de Producción** | ✅ Operativa | Build de Vite y empaquetado de backend funcionando sin errores. |
-| **Calidad de Código / Lint** | ⚠️ En saneamiento | 61 errores y 1 warning de ESLint detectados (pendiente Q1). |
+| **Calidad de Código / Lint** | ✅ Limpio (0 errores) | ESLint en verde total (0 errores, 0 warnings). CI activo en GitHub Actions. |
 | **Seguridad de API** | 🔒 Blindada | Contraseñas `scrypt`, rate limiters, validación HMAC en MP, prevención de IDOR activa (S1-S6 listos). Próximo: log de auditoría (S7). |
 | **Base de Datos** | ✅ Operativa | PostgreSQL en Render con migraciones idempotentes (001 a 042) y fallback local seguro en JSON. |
 | **Plataforma OxI Pro** | ✅ Operativa | Gantt interactivo, leyes sociales BPS (60%), Curva S (EVM), exportación a PDF y Copilot con IA. |

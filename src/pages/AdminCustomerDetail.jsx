@@ -106,7 +106,7 @@ export default function AdminCustomerDetail() {
                   setError('')
                   const res = await resendCustomerInvitation(customer || id, adminToken)
                   if (res?.inviteUrl) {
-                    try { await navigator.clipboard.writeText(res.inviteUrl) } catch {}
+                    try { await navigator.clipboard.writeText(res.inviteUrl) } catch { void 0 }
                     alert(`¡Invitación regenerada con éxito!\n\nEnlace copiado al portapapeles:\n${res.inviteUrl}`)
                   } else {
                     alert('Invitación enviada con éxito.')

@@ -45,10 +45,8 @@ export function generateHeuristicConstructionPlan(inputText = '', options = {}) 
   const isCommercial = !isPergolaOrRailing && !isIndustrial && /local|comercial|oficina|reforma|ampliaci[oó]n/.test(lower)
 
   let tasksDef = []
-  let projectTypeLabel = 'Residencial'
 
   if (isPergolaOrRailing) {
-    projectTypeLabel = 'Herrería y Estructura Metálica Óxida'
     tasksDef = [
       { name: 'Relevamiento en Sitio, Replanteo y Cálculo de Anclajes', duration: 4, people: 2, role: 'Oficial Especializado', rate: 3400, matCost: 45000, rubro: 'Ingeniería y Replanteo' },
       { name: 'Fabricación en Taller Óxida: Corte, Conformado y Soldadura MIG/MAG', duration: 12, people: 3, role: 'Oficial Especializado', rate: 3400, matCost: 280000, rubro: 'Fabricación en Taller' },

@@ -63,7 +63,7 @@ function findMatchingProducts(products, query) {
 }
 
 export default function MercadoQuoteFinder() {
-  const { productList, loadingProducts } = useProducts()
+  const { productList } = useProducts()
   const [query, setQuery] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [contact, setContact] = useState({ name: '', lastName: '', email: '', phone: '' })

@@ -6,8 +6,8 @@ import OxiProSuite from '../components/OxiProSuite'
 import { 
   createMyQuote, getCustomerProfile, getMyQuoteMessages, getMyQuotes, 
   reportQuoteDepositTransfer, respondToMyQuote, sendMyQuoteMessage, 
-  startQuoteDepositCheckout, updateCustomerProfile, getB2bProjects, 
-  createB2bProject, assignQuoteToB2bProject, parseRequirementsWithAI,
+  updateCustomerProfile, getB2bProjects, 
+  createB2bProject, parseRequirementsWithAI,
   uploadQuoteAttachments
 } from '../lib/api'
 import { formatPrice } from '../utils/format'
@@ -139,7 +139,6 @@ export default function CustomerPortal() {
 
   const [messages, setMessages] = useState([])
   const [request, setRequest] = useState(EMPTY_REQUEST)
-  const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -466,15 +465,6 @@ export default function CustomerPortal() {
       setIsCreatingProject(false)
       setNewProjectName(''); setNewProjectLocation('')
       if (isProUser) setPlatformMode('pro')
-    } catch(err) { setError(err.message) }
-    finally { setSaving(false) }
-  }
-
-  async function sendMessage(e) {
-    e.preventDefault(); if(!message.trim()) return; setSaving(true); setError('')
-    try {
-      const res = await sendMyQuoteMessage(selected.id, { message }, customerToken)
-      setMessages([...messages, res]); setMessage('')
     } catch(err) { setError(err.message) }
     finally { setSaving(false) }
   }

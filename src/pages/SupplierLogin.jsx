@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import logoImg from '../assets/mercadobra.png'
 
 export default function SupplierLogin() {
   const { supplierUser, login, authError, authLoading } = useAuth()

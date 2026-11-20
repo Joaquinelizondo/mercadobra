@@ -4,9 +4,7 @@ import {
   calculateWorkingDays,
   distributeCostByMonths,
   getUruguayHolidaysForYear,
-  isWorkingDay,
   addWorkingDays,
-  calculateTaskEndDateFromDuration,
   calculateDependentTaskDates,
   recalculateScheduleDependencies
 } from './constructionCalendar.js'

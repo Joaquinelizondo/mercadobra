@@ -64,7 +64,6 @@ export function getUruguayHolidaysForYear(year) {
   holidays.add(turVie.toISOString().slice(0, 10))
 
   // Día del Trabajador de la Construcción: 3er lunes de Octubre (Ley 19.292)
-  const oct1 = new Date(year, 9, 1) // 0-indexed, 9 = Octubre
   let mondaysFound = 0
   let constructionDay = null
   for (let d = 1; d <= 31; d++) {
@@ -373,7 +372,7 @@ export function recalculateScheduleDependencies(schedule = [], includeSaturdays 
     changed = false
     iterations++
 
-    for (const [id, task] of taskMap.entries()) {
+    for (const task of taskMap.values()) {
       const predId = task.dependsOnTaskId || task.predecessorId
       if (predId) {
         const pred = taskMap.get(String(predId))

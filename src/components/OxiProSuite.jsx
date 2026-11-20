@@ -30,7 +30,7 @@ import {
   calculateDependentTaskDates,
   recalculateScheduleDependencies
 } from '../utils/constructionCalendar'
-import { calculateTaskPlannedPercent, calculateProjectEVM, getTaskTotalBudget } from '../utils/constructionEVM'
+import { calculateTaskPlannedPercent, calculateProjectEVM } from '../utils/constructionEVM'
 import {
   DEFAULT_BUDGET_ITEMS,
   parseBudgetSpreadsheet,
@@ -90,7 +90,7 @@ function getAuthToken() {
     if (adm?.token) return adm.token
     const sup = JSON.parse(localStorage.getItem('mercadobra-supplier-session') || '{}')
     if (sup?.token) return sup.token
-  } catch {}
+  } catch { void 0 }
   return ''
 }
 
@@ -522,10 +522,6 @@ function getRubroTotalBudget(rubro, rate = DEFAULT_SOCIAL_LAWS_RATE) {
   return Number(rubro?.budgeted) || 0
 }
 
-function formatMoney(amount, countryCode = 'UY') {
-  return formatRegionalMoney(amount, countryCode)
-}
-
 function downloadFile(doc) {
   if (doc.fileData) {
     const link = document.createElement('a')
@@ -567,20 +563,6 @@ function parseDateLocal(dateStr) {
     return new Date(parts[0], parts[1] - 1, parts[2])
   }
   return new Date(dateStr)
-}
-
-function addDays(dateStr, days) {
-  if (!dateStr) return dateStr
-  const parts = String(dateStr).split('-').map(Number)
-  if (parts.length !== 3 || Number.isNaN(parts[0]) || Number.isNaN(parts[1]) || Number.isNaN(parts[2])) {
-    return dateStr
-  }
-  const d = new Date(parts[0], parts[1] - 1, parts[2])
-  d.setDate(d.getDate() + Number(days))
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
 }
 
 function getTaskSocialLaws(task, rate = DEFAULT_SOCIAL_LAWS_RATE, categories = []) {
@@ -628,10 +610,6 @@ function getTaskExecutedCost(task, rate = DEFAULT_SOCIAL_LAWS_RATE, categories =
     laborCategories: categories
   })
   return res.actualCost
-}
-
-function getTaskBalance(task, rate = DEFAULT_SOCIAL_LAWS_RATE, categories = [], context = {}) {
-  return Math.max(0, getTaskBudget(task, rate, categories) - getTaskExecutedCost(task, rate, categories, context))
 }
 
 function exportScheduleCsv(schedule, projectName) {
@@ -1098,10 +1076,6 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   })
 
   const [isExportingCertPdf, setIsExportingCertPdf] = useState(false)
-
-  const currentRegionalProfile = useMemo(() => {
-    return getRegionalProfile(selectedCountryCode)
-  }, [selectedCountryCode])
 
   const formatMoney = (amount) => formatRegionalMoney(amount, selectedCountryCode)
 
@@ -1596,7 +1570,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
 
   // Cierre Semanal de Producción en 1 minuto (Punto 9)
   const [showWeeklyCloseModal, setShowWeeklyCloseModal] = useState(false)
-  const [latestWeeklyClosure, setLatestWeeklyClosure] = useState(() => {
+  const [, setLatestWeeklyClosure] = useState(() => {
     try {
       const saved = localStorage.getItem(`${storageKey}_latest_weekly_closure`)
       return saved ? JSON.parse(saved) : null
@@ -2136,7 +2110,6 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
         if (oStart <= oEnd) {
           const oDays = Math.round((oEnd - oStart) / 86400000) + 1
           const ratio = Math.min(1, Math.max(0, oDays / tDays))
-          const plannedPct = getTaskPlannedPercent(t)
           const realPct = Math.min(100, Math.max(0, Number(t.progressPercent) || 0))
 
           monthBudgeted += tBudget * ratio
@@ -2727,7 +2700,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     setBudgetItems(updated)
     try {
       localStorage.setItem(`${storageKey}_budget_items`, JSON.stringify(updated))
-    } catch {}
+    } catch { void 0 }
     setNewBudgetItemForm({
       code: '',
       rubroName: '05. Albañilería y Mampostería',
@@ -2745,7 +2718,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       setBudgetItems(updated)
       try {
         localStorage.setItem(`${storageKey}_budget_items`, JSON.stringify(updated))
-      } catch {}
+      } catch { void 0 }
     }
   }
 
@@ -2763,7 +2736,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     setBudgetItems(newItems)
     try {
       localStorage.setItem(`${storageKey}_budget_items`, JSON.stringify(newItems))
-    } catch {}
+    } catch { void 0 }
     setImportPasteText('')
     setImportPreviewResult(null)
     setBudgetModalTab('items')
@@ -2794,7 +2767,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       localStorage.setItem(`${storageKey}_budget_items`, JSON.stringify(newItems))
       localStorage.setItem(`${storageKey}_rubros`, JSON.stringify(updatedRubros))
       localStorage.setItem(`${storageKey}_sched`, JSON.stringify(newSchedule))
-    } catch {}
+    } catch { void 0 }
 
     setImportPasteText('')
     setImportPreviewResult(null)
@@ -2943,7 +2916,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
     try {
       localStorage.setItem(`${storageKey}_sched`, JSON.stringify(finalSchedule))
       localStorage.setItem(`${storageKey}_rainLogs`, JSON.stringify(newRainLogs))
-    } catch {}
+    } catch { void 0 }
     setShowRainModal(false)
   }
 
@@ -2964,13 +2937,13 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       setSchedule(targetLog.previousSchedule)
       try {
         localStorage.setItem(`${storageKey}_sched`, JSON.stringify(targetLog.previousSchedule))
-      } catch {}
+      } catch { void 0 }
     }
     const updatedRainLogs = rainLogs.filter(l => l.id !== logId)
     setRainLogs(updatedRainLogs)
     try {
       localStorage.setItem(`${storageKey}_rainLogs`, JSON.stringify(updatedRainLogs))
-    } catch {}
+    } catch { void 0 }
   }
 
   // Handlers for Certifications with Photos (Paso 4)
@@ -3635,7 +3608,7 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       localStorage.setItem(`${storageKey}_rainLogs`, JSON.stringify([]))
       localStorage.setItem(`${storageKey}_weekly`, JSON.stringify([]))
       localStorage.setItem(`${storageKey}_monthly`, JSON.stringify([]))
-    } catch {}
+    } catch { void 0 }
     alert('✓ Las tareas del cronograma han sido vaciadas. La Curva S y valorizaciones quedan en cero.')
   }
 
@@ -3899,7 +3872,7 @@ ${validation.message}
   }
 
   // ── Handlers Punto 10: Certificación Mensual con EVM ──
-  function handleOpenMonthlyCert(selectedMonthItem = null) {
+  function _handleOpenMonthlyCert(selectedMonthItem = null) {
     const item = selectedMonthItem || (dynamicMonthlyComp.length > 0 ? dynamicMonthlyComp[0] : null)
     const month = item?.month || 'Nov. 2026'
     const certCost = item?.certCost || 2850000
@@ -6151,7 +6124,7 @@ ${validation.message}
                     setProjectSocialLawsRate(val)
                     try {
                       localStorage.setItem(`${storageKey}_social_rate`, String(val))
-                    } catch {}
+                    } catch { void 0 }
                   }}
                   style={{ width: '48px', padding: '2px 4px', fontSize: '0.82rem', fontWeight: 'bold', textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '4px' }}
                   title="Tasa de leyes sociales de la obra (por defecto 60% BPS)"
@@ -9311,7 +9284,7 @@ ${validation.message}
                     setProjectSocialLawsRate(val)
                     try {
                       localStorage.setItem(`${storageKey}_social_rate`, String(val))
-                    } catch {}
+                    } catch { void 0 }
                   }}
                   style={{ width: '58px', padding: '4px 6px', fontSize: '0.92rem', fontWeight: 'bold', textAlign: 'center', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                 />
@@ -12486,7 +12459,7 @@ ${validation.message}
           try {
             localStorage.setItem(`${storageKey}_sched`, JSON.stringify(finalSchedule))
             localStorage.setItem(`${storageKey}_rainLogs`, JSON.stringify(nextRainLogs))
-          } catch {}
+          } catch { void 0 }
 
           const newDocEntry = {
             id: Date.now(),

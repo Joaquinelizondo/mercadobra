@@ -649,8 +649,7 @@ export function calculateRubroExpensesReport(
 export function calculateTaskActualCost(task, {
   laborReports = [],
   materialInvoices = [],
-  socialLawsRate = 60,
-  laborCategories = []
+  socialLawsRate = 60
 } = {}) {
   const taskIdStr = String(task?.id || '')
   const taskNameNorm = String(task?.name || '').trim().toLowerCase()

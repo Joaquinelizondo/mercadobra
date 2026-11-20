@@ -107,7 +107,7 @@ export default function AdminCustomers() {
         const refreshed = await getAdminCustomers({}, adminToken)
         setCustomers(refreshed.rows || [])
         if (res?.inviteUrl) {
-          try { await navigator.clipboard.writeText(res.inviteUrl) } catch {}
+          try { await navigator.clipboard.writeText(res.inviteUrl) } catch { void 0 }
           setSuccess(`¡Invitación creada! Enlace copiado al portapapeles: ${res.inviteUrl}`)
         } else {
           setSuccess(`Invitación enviada por email y WhatsApp con nivel ${form.tier === 'pro' ? 'OxI Pro' : 'OxI Clásico'}.`)
@@ -180,7 +180,7 @@ export default function AdminCustomers() {
       setError('')
       const res = await resendCustomerInvitation(customer, adminToken)
       if (res?.inviteUrl) {
-        try { await navigator.clipboard.writeText(res.inviteUrl) } catch {}
+        try { await navigator.clipboard.writeText(res.inviteUrl) } catch { void 0 }
         setSuccess(`¡Invitación regenerada para ${customer.email}! Enlace copiado al portapapeles: ${res.inviteUrl}`)
       } else {
         setSuccess(`Invitación enviada con éxito a ${customer.email}.`)

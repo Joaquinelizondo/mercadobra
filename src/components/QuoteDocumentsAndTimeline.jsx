@@ -49,7 +49,6 @@ export default function QuoteDocumentsAndTimeline({
   messages = [],
   onSendMessage,
   onUploadDocument,
-  isAdmin = false,
 }) {
   const [activeTab, setActiveTab] = useState('documents') // 'documents' | 'timeline'
   const [selectedCategory, setSelectedCategory] = useState('all')

@@ -135,7 +135,7 @@ function parseDatesFromText(text) {
 }
 
 function parseMoneyAmount(text) {
-  const match = text.match(/(?:\$|pesos\s*|monto\s*)?\s*(\d[\d\.]*)/i)
+  const match = text.match(/(?:\$|pesos\s*|monto\s*)?\s*(\d[\d.]*)/i)
   if (!match) return 0
   const raw = match[1].replace(/\./g, '')
   let num = Number(raw) || 0
@@ -349,7 +349,7 @@ function handleBudgetPipelineAction(text, context) {
 /**
  * Handle Rain Shift Action
  */
-function handleRainShiftAction(lower, text, context) {
+function handleRainShiftAction(lower, text) {
   const daysMatch = lower.match(/(\d+)\s*d[ií]as?/)
   const days = daysMatch ? Math.max(1, Number(daysMatch[1])) : 2
 
@@ -456,7 +456,7 @@ function handleUpdateProgressAction(lower, text, context) {
  * Handle Create Task Action
  */
 function handleCreateTaskAction(lower, text, context) {
-  const { schedule = [], rubros = [] } = context
+  const { schedule = [] } = context
 
   // 1. Task Name extraction
   let taskName = ''
@@ -504,7 +504,7 @@ function handleCreateTaskAction(lower, text, context) {
 
   // 4. Materials Cost
   let matCost = 0
-  const matMatch = text.match(/(?:materiales?|material)\s*(?:de\s*)?(?:\$\s*)?(\d[\d\.]*)|(\d[\d\.]*)\s*(?:de\s*)?(?:materiales?|material)/i)
+  const matMatch = text.match(/(?:materiales?|material)\s*(?:de\s*)?(?:\$\s*)?(\d[\d.]*)|(\d[\d.]*)\s*(?:de\s*)?(?:materiales?|material)/i)
   if (matMatch) {
     const rawMat = (matMatch[1] || matMatch[2]).replace(/\./g, '')
     matCost = Number(rawMat) || 0
@@ -567,8 +567,6 @@ function handleCreateTaskAction(lower, text, context) {
  * Handle Create Rubro Action
  */
 function handleCreateRubroAction(lower, text, context) {
-  const { rubros = [] } = context
-
   let rubroName = 'Nueva Partida Presupuestaria'
   const nameMatch = text.match(/(?:rubro|partida)\s+(?:de\s+)?(["']?)(.+?)\1(?=\s+(?:con|por|\$)(?:\s+|$)|$)/i)
   if (nameMatch && nameMatch[2].trim().length > 3) {

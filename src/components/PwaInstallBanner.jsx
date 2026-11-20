@@ -1,10 +1,29 @@
 import { useState, useEffect } from 'react'
 import './PwaInstallBanner.css'
 
+function shouldShowIosBanner() {
+  if (typeof window === 'undefined') return false
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+  if (isStandalone) return false
+  if (
+    window.location.pathname.startsWith('/cliente') || 
+    window.location.pathname.startsWith('/proveedor') || 
+    window.location.pathname.startsWith('/admin')
+  ) {
+    return false
+  }
+  const dismissedAt = localStorage.getItem('mb_pwa_dismissed_at')
+  if (dismissedAt && Date.now() - Number(dismissedAt) < 48 * 3600 * 1000) return false
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
+  const isSafari = isIos && /WebKit/i.test(navigator.userAgent) && !/CriOS|FxiOS|OPiOS/i.test(navigator.userAgent)
+  const isMobileScreen = window.innerWidth <= 768
+  return isSafari && isMobileScreen
+}
+
 export default function PwaInstallBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
-  const [showBanner, setShowBanner] = useState(false)
-  const [isIosPrompt, setIsIosPrompt] = useState(false)
+  const [showBanner, setShowBanner] = useState(shouldShowIosBanner)
+  const [isIosPrompt] = useState(shouldShowIosBanner)
 
   useEffect(() => {
     // Si ya está corriendo como app instalada (standalone), no mostrar nada
@@ -31,16 +50,6 @@ export default function PwaInstallBanner() {
       setShowBanner(true)
     }
     window.addEventListener('beforeinstallprompt', handleBeforeInstall)
-
-    // Detección de iOS Safari en pantalla chica (móvil)
-    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
-    const isSafari = isIos && /WebKit/i.test(navigator.userAgent) && !/CriOS|FxiOS|OPiOS/i.test(navigator.userAgent)
-    const isMobileScreen = window.innerWidth <= 768
-
-    if (isSafari && isMobileScreen) {
-      setIsIosPrompt(true)
-      setShowBanner(true)
-    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall)

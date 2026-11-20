@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { interpretCopilotPrompt } from '../utils/oxiProCopilotEngine.js'
 import './OxiProCopilot.css'
 
@@ -56,7 +56,7 @@ export default function OxiProCopilot({
       try {
         recognitionRef.current.start()
         setIsListening(true)
-      } catch (e) {
+      } catch {
         setIsListening(false)
       }
     }
@@ -89,7 +89,7 @@ Puedo ayudarte a cargar tareas en el Gantt, certificar avances reales, registrar
     }
   }, [messages, isOpen])
 
-  function handleSend(promptText) {
+  const handleSend = useCallback((promptText) => {
     const textToSend = (promptText || input).trim()
     if (!textToSend || isThinking) return
 
@@ -130,7 +130,7 @@ Puedo ayudarte a cargar tareas en el Gantt, certificar avances reales, registrar
       setMessages(prev => [...prev, assistantMsg])
       setIsThinking(false)
     }, 400)
-  }
+  }, [input, isThinking, schedule, rubros, budgetItems, projectSocialLawsRate, rainLogs, project])
 
   function handleApplyAction(msgId, action) {
     if (!action) return

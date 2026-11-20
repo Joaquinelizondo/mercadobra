@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getAllCustomerQuotes, getAdminCustomers, createAdminCustomer, createCustomerQuote } from '../lib/api'
 import { formatPrice } from '../utils/format'
@@ -18,7 +18,6 @@ const STATUS = {
 
 export default function AdminCustomerQuotes() {
   const { adminUser, adminToken } = useAuth()
-  const navigate = useNavigate()
 
   const [rows, setRows] = useState([])
   const [search, setSearch] = useState('')

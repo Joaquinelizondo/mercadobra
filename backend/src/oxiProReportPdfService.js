@@ -514,7 +514,7 @@ export function createOxiProReportPdf({ project = {}, schedule = [], rubros = []
 /**
  * Genera el Certificado Mensual de Obra formal en PDF membretado (Punto 10 & 2).
  */
-export function createMonthlyCertificatePdf({ project = {}, certificate = {}, monthItem = {}, evm = {}, schedule = [], user = {} }) {
+export function createMonthlyCertificatePdf({ project = {}, certificate = {}, monthItem = {}, evm = {}, _schedule = [], _user = {} }) {
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({

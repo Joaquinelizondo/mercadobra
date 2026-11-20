@@ -94,7 +94,7 @@ export default function OxidaBrochureSlider({ id = 'experiencia' }) {
   const [isPaused, setIsPaused] = useState(false)
   const [progress, setProgress] = useState(0)
   const requestRef = useRef(null)
-  const startTimeRef = useRef(performance.now())
+  const startTimeRef = useRef(null)
   const pausedTimeRef = useRef(0)
   const touchStartXRef = useRef(null)
   const touchStartYRef = useRef(null)
@@ -129,7 +129,6 @@ export default function OxidaBrochureSlider({ id = 'experiencia' }) {
   // Auto-play timer loop with rAF
   useEffect(() => {
     startTimeRef.current = performance.now()
-    setProgress(0)
 
     const animate = (now) => {
       if (!isPaused) {

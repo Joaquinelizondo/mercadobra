@@ -104,7 +104,7 @@ export function createExpensiveLimiter({ max, windowMs = 15 * 60 * 1000, message
     message: message || 'Demasiadas solicitudes a este servicio. Intenta más tarde.',
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req, res) => (req.authUser?.id ? `user:${req.authUser.id}` : ipKeyGenerator(req.ip)),
+    keyGenerator: (req) => (req.authUser?.id ? `user:${req.authUser.id}` : ipKeyGenerator(req.ip)),
     skip: (req) => req.method === 'OPTIONS' || (Array.isArray(methods) && !methods.includes(req.method)),
   })
 }

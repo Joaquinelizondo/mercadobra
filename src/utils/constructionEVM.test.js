@@ -2,8 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   calculateTaskPlannedPercent,
-  calculateProjectEVM,
-  getTaskTotalBudget
+  calculateProjectEVM
 } from './constructionEVM.js'
 
 test('calculateTaskPlannedPercent calcula el avance esperado según calendario y días hábiles', () => {

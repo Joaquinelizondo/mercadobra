@@ -42,12 +42,8 @@
 
 ### P3 — Calidad Base y CI/CD
 
-- [ ] **Q1.** **Saneamiento de ESLint (61 errores):** Corregir variables no utilizadas, bloques vacíos, dependencias de hooks incompletas y funciones con efectos secundarios durante el render para dejar el comando `npm run lint` en 0 errores.
-- [ ] **Q2.** **Integración Continua (CI con GitHub Actions):** Configurar pipeline que ejecute automáticamente en cada push/PR:
-  1. `npm run lint`
-  2. `npm test -- --run` (frontend)
-  3. `cd backend && npm test` (backend)
-  4. `npm run build`
+- [x] **Q1.** *(20/11/2026)* **Saneamiento de ESLint:** 61 errores y 1 warning corregidos (variables no usadas, bloques vacíos, hooks con funciones impuras y `setState` en effects eliminados) logrando 0 errores en `npm run lint`.
+- [x] **Q2.** *(20/11/2026)* **Integración Continua (CI con GitHub Actions):** Pipeline `.github/workflows/ci.yml` configurado para ejecutar automáticamente lint, 125 tests y build en cada push y PR.
 - [ ] **Q3.** **Limpieza de CSS en `App.css`:** Depurar reglas duplicadas, eliminar uso excesivo de `!important` y corregir sobreescritura accidental de estilos móviles sobre escritorio.
 
 ---

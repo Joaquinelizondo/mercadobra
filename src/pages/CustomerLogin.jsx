@@ -15,20 +15,17 @@ export default function CustomerLogin() {
   const redirect = searchParams.get('redirect') || '/cliente'
 
   const [form, setForm] = useState({ email: '', password: '' })
-  const [error, setError] = useState('')
+  const [localError, setLocalError] = useState('')
+  const error = localError || customerAuthError
 
   useEffect(() => {
     if (customerUser) navigate(redirect, { replace: true })
   }, [customerUser, navigate, redirect])
 
-  useEffect(() => {
-    if (customerAuthError) setError(customerAuthError)
-  }, [customerAuthError])
-
   function handleChange(e) {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
-    if (error) setError('')
+    if (localError) setLocalError('')
   }
 
   async function handleSubmit(e) {
@@ -102,14 +99,14 @@ export default function CustomerLogin() {
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '0.5rem' }}>
               <button
                 type="button"
-                onClick={() => { setForm({ email: 'pro@mercadobra.com', password: 'pro123' }); setError(''); }}
+                onClick={() => { setForm({ email: 'pro@mercadobra.com', password: 'pro123' }); setLocalError(''); }}
                 style={{ padding: '0.35rem 0.75rem', background: '#ea580c', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }}
               >
                 Probar OxI Pro
               </button>
               <button
                 type="button"
-                onClick={() => { setForm({ email: 'cliente@mercadobra.com', password: 'cliente123' }); setError(''); }}
+                onClick={() => { setForm({ email: 'cliente@mercadobra.com', password: 'cliente123' }); setLocalError(''); }}
                 style={{ padding: '0.35rem 0.75rem', background: '#0f172a', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }}
               >
                 Probar OxI Clásico

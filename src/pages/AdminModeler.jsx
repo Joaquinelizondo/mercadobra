@@ -49,9 +49,8 @@ function loadLocalModel() {
 }
 
 export default function AdminModeler() {
-  const { adminUser, adminToken, customerUser, customerToken, logoutAdmin } = useAuth()
+  const { adminUser, adminToken, customerToken, logoutAdmin } = useAuth()
   const token = adminToken || customerToken
-  const userRole = adminUser ? 'admin' : 'customer'
   const canvasRef = useRef(null)
   const dragRef = useRef(null)
   const suppressClickRef = useRef(false)
@@ -123,7 +122,7 @@ export default function AdminModeler() {
         .catch(err => { console.error(err); setQuoteResult(null); })
         .finally(() => setQuoteLoading(false))
     })
-  }, [selection?.id, selectedItem?.start?.x, selectedItem?.start?.y, selectedItem?.end?.x, selectedItem?.end?.y, selectedItem?.height, token])
+  }, [selection, selectedItem, token])
 
   useEffect(() => {
     if (!token || adminUser?.role !== 'admin') return

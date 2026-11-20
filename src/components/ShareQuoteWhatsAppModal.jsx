@@ -55,7 +55,7 @@ Quedamos a las órdenes ante cualquier consulta o ajuste técnico.
       await navigator.clipboard.writeText(publicUrl)
       setCopiedLink(true)
       setTimeout(() => setCopiedLink(false), 2500)
-    } catch {}
+    } catch { void 0 }
   }
 
   async function handleCopyMessage() {
@@ -63,7 +63,7 @@ Quedamos a las órdenes ante cualquier consulta o ajuste técnico.
       await navigator.clipboard.writeText(messageText)
       setCopiedMessage(true)
       setTimeout(() => setCopiedMessage(false), 2500)
-    } catch {}
+    } catch { void 0 }
   }
 
   return (

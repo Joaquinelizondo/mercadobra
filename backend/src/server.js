@@ -991,7 +991,7 @@ app.post('/admin/customers/:id/resend-invitation', authMiddleware, adminOnly, as
 
   const credentials = createSessionCredentials()
   const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
-  const invitation = await repo.createCustomerInvitation({
+  await repo.createCustomerInvitation({
     userId: customer.id,
     email: customer.email,
     tokenHash: credentials.tokenHash,
