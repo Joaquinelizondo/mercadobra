@@ -1,147 +1,31 @@
-# Estado y plan de mejoras de Mercadobra
+# Estado General de Mercadobra / Óxida
 
-Documento vivo para registrar el estado de la web, ordenar los pendientes y actualizar el avance en cada implementación.
+> **Aviso de Documentación:** La lista priorizada y activa de pendientes se mantiene en **[docs/ROADMAP.md](ROADMAP.md)** como única fuente de verdad. Este documento se conserva como índice de estado general del sistema.
 
-**Última revisión:** 17 de octubre de 2026
+**Producción:** <https://mercadobra.com>  
+**Backend:** <https://mercadobra.onrender.com>  
+**Última actualización:** 20 de noviembre de 2026
 
-**Producción:** <https://mercadobra.com>
+---
 
-**Regla:** cada cambio funcional debe actualizar este documento en el mismo commit.
+## Estado Técnico Resumido
 
-## Convención de estados
+| Área | Estado | Observación |
+| :--- | :--- | :--- |
+| **Pruebas Automatizadas** | ✅ Excelente (125 tests) | 90 tests frontend y 35 tests backend pasando en verde (`npm test`). |
+| **Compilación de Producción** | ✅ Operativa | Build de Vite y empaquetado de backend funcionando sin errores. |
+| **Calidad de Código / Lint** | ⚠️ En saneamiento | 61 errores y 1 warning de ESLint detectados (pendiente Q1). |
+| **Seguridad de API** | 🔒 Blindada | Contraseñas `scrypt`, rate limiters, validación HMAC en MP, prevención de IDOR activa (S1-S6 listos). Próximo: log de auditoría (S7). |
+| **Base de Datos** | ✅ Operativa | PostgreSQL en Render con migraciones idempotentes (001 a 042) y fallback local seguro en JSON. |
+| **Plataforma OxI Pro** | ✅ Operativa | Gantt interactivo, leyes sociales BPS (60%), Curva S (EVM), exportación a PDF y Copilot con IA. |
+| **PWA / Móvil** | ✅ Operativa | Manifiesto oscuro, iconos maskables y service worker con caché offline. |
 
-- **Pendiente:** todavía no se inició.
-- **En curso:** existe trabajo activo, pero no está listo para producción.
-- **Bloqueado:** requiere una decisión, credencial o intervención externa.
-- **Terminado:** implementado, verificado y disponible en producción.
+---
 
-## Estado general
+## Índice de Documentación del Proyecto
 
-| Área | Estado | Evaluación |
-| --- | --- | --- |
-| Diseño e identidad | Bueno | La propuesta Mercadobra + Oxida tiene una identidad clara. |
-| Catálogo | Funcional, incompleto | Productos, stock y estados están conectados; las opciones a medida se cotizan sin variantes públicas. |
-| Cotizador | Funcional | Busca productos y captura datos del cliente. |
-| Carrito | Funcional | Cantidades limitadas por stock y checkout completo. |
-| Mercado Pago | Activo | Está configurado en modo real. |
-| Administración | Funcional | Permite crear, editar, publicar y borrar productos. |
-| Pedidos | Funcional | Guarda órdenes, descuenta stock y permite seguimiento. |
-| Seguridad | Mejorada | Contraseñas cifradas y sesiones revocables; queda como mejora futura migrar la sesión del navegador a cookies HttpOnly. |
-| SEO | Muy básico | Falta metadata, títulos por página, sitemap y contenido indexable. |
-| Pruebas | Insuficiente | Compila y pasa lint, pero no hay pruebas automatizadas. |
-| Producción | Operativa | Frontend y backend responden, pero falta terminar la integración bajo un único dominio. |
-
-## Prioridades
-
-### P0 — Riesgos antes de aceptar compras reales
-
-| Punto | Estado | Criterio para darlo por terminado |
-| --- | --- | --- |
-| Evitar cobros de productos con precio simbólico | Pendiente | Ningún producto con precio de prueba puede iniciar un pago real; se cargan precios definitivos o se muestra “Consultar precio”. |
-| Reemplazar autenticación temporal | Terminado | Contraseñas cifradas, sesiones aleatorias con vencimiento y cierre de sesión revocable, verificadas en producción. |
-| Crear entorno de pruebas de compra | Pendiente | Backend, base de datos y Mercado Pago sandbox separados de producción. |
-| Probar compra completa | Pendiente | Pago aprobado, pendiente, rechazado y abandonado verificados; stock y notificaciones consistentes. |
-
-### P1 — Experiencia de compra
-
-| Punto | Estado | Criterio para darlo por terminado |
-| --- | --- | --- |
-| Fotografías reales por producto | En curso | Integración Cloudinary implementada para nuevas cargas, variantes responsive y migración de Base64; falta configurar credenciales en producción, ejecutar la migración y completar las galerías. |
-| Ficha de producto completa | Terminado | Galería, medidas, stock, plazo, entrega, proveedor y acción de compra/cotización implementados. |
-| Stock por variante/SKU | Postergado | Por ahora los productos de hierro no tendrán variantes públicas; medida, color y terminación se definen en la cotización. |
-| Persistencia del carrito | Terminado | El carrito sobrevive recargas, se recupera de forma segura y revalida stock, precio y publicación al abrirse y antes del checkout. |
-| Resumen final y entrega | Pendiente | El comprador ve productos, envío, plazo, moneda y total antes de pagar. |
-| Snapshot de precios en órdenes | Terminado | Cada orden conserva los datos comerciales históricos; la migración quedó desplegada en producción. |
-
-### P2 — Operación administrativa
-
-| Punto | Estado | Criterio para darlo por terminado |
-| --- | --- | --- |
-| Gestión administrativa de pedidos | Terminado | Consola, filtros, estados y alta manual multicanal desplegados y verificados en producción. |
-| Alertas de stock | Pendiente | Productos sin stock o con stock bajo son visibles y notificables. |
-| Archivo seguro de productos | Pendiente | Productos con historial se archivan y no se eliminan físicamente. |
-| Exportación e historial | Pendiente | Pedidos/consultas exportables y cambios administrativos auditables. |
-| Gestión de proveedores y categorías | Pendiente | Altas, edición, estados y relaciones administrables. |
-
-### P3 — Lanzamiento y crecimiento
-
-| Punto | Estado | Criterio para darlo por terminado |
-| --- | --- | --- |
-| Backend bajo el dominio principal | Pendiente | `https://mercadobra.com/api/health` y todos los endpoints funcionan mediante proxy. |
-| SEO técnico | Pendiente | Idioma, metadata por ruta, canonical, Open Graph, sitemap, robots y datos estructurados. |
-| Analytics y embudo | Pendiente | Se miden búsqueda, contacto, carrito, checkout, pago y abandono sin registrar datos sensibles. |
-| Textos legales | Pendiente | Privacidad, términos, entrega, cambios y condiciones de productos personalizados publicados. |
-| Monitoreo y respaldos | Pendiente | Alertas de errores, healthchecks, backups verificados y procedimiento de recuperación. |
-| Pruebas automatizadas | Pendiente | Casos críticos de autenticación, stock, carrito, órdenes, pagos y cotizador cubiertos. |
-
-### P4 — Innovación Disruptiva ConstructionTech
-
-| Punto | Estado | Criterio para darlo por terminado |
-| --- | --- | --- |
-| Cotizador Inteligente de Piezas OXI (IA) | Terminado | Extracción técnica multimodal y heurística con IA (medidas, cantidades, perfiles, terminación y plantilla sugerida) integrada a OXI Quote con 1 clic (`/admin/cotizaciones/:id` -> `/admin/cotiza`), nuevas plantillas paramétricas de Barandas (OXI Railing R01) y Pérgolas (OXI Pergola P01), actualización bidireccional a la cotización comercial del cliente (`POST /admin/costing/apply-to-quote`), cálculo de kilos/horas/pintura/flete, auditoría de rentabilidad y validación preliminar interactiva en el portal del cliente. |
-| Auto-Onboarding de Proyectos de Obra (IA) | Terminado | Motor híbrido de ingestión asistida con OpenAI (`gpt-4o-mini`) y motor heurístico offline de ingeniería civil en backend (`/oxipro/ai-onboarding`) y cliente (`src/utils/constructionAiEngine.js`), con perfiles de Pérgolas y Herrería Óxida, Galpones, Reformas y Edificios, auto-generación de Gantt, rubros con leyes sociales BPS (65%) y resiliencia Zero-Downtime ante caídas o despliegues. |
-| Configurador 3D Público para Clientes | Pendiente | Modelado 3D interactivo para pérgolas, barandas y escaleras con recálculo de precio en tiempo real y pedido directo de fabricación. |
-| Optimizador de Corte (Nesting 1D) para Talleres | Pendiente | Algoritmo de corte de barras de 6m (< 5% desperdicio) con emisión de planillas técnicas y QR para OXI Network. |
-| Certificaciones de Obra con Fotos e Inspección | Terminado | Registro de avance físico certificado por tarea con nombre de inspector, fecha de relevamiento, notas técnicas de ensayos de calidad y galería de fotos de evidencia con visor Lightbox en alta resolución. |
-
-## Decisiones pendientes
-
-1. Definir cuáles productos tendrán precio y compra directa.
-2. Definir cuáles productos serán exclusivamente “Consultar precio”.
-3. Confirmar precios y moneda definitivos del catálogo.
-4. Elegir almacenamiento de imágenes: Cloudinary, S3, Supabase Storage u otro.
-5. Definir costo y reglas de entrega por zona.
-6. Definir datos fiscales, vendedor responsable y condiciones comerciales.
-
-## Registro de avances
-
-| Fecha | Cambio | Estado/resultados | Commit |
-| --- | --- | --- | --- |
-| 2026-08-01 | Creación del documento de estado y plan de mejoras. | Se documentó la línea base y se ordenaron pendientes P0–P3. | Documentación inicial |
-| 2026-08-01 | Seguridad de autenticación. | Contraseñas con scrypt, migración automática de credenciales antiguas, sesiones aleatorias de siete días y revocación al cerrar sesión. Despliegue confirmado; los tokens antiguos son rechazados. | 60990bc |
-| 2026-08-01 | Ficha profesional de producto. | Se agregó galería, disponibilidad, información comercial, compra/cotización, especificaciones y productos relacionados. | 7fbf9fc |
-| 2026-08-01 | Simplificación de productos de hierro. | Se retiraron las variantes de la ficha pública; medidas, colores y terminaciones quedan dentro del cotizador a medida. | 13ebc24 |
-| 2026-08-01 | Persistencia segura del carrito. | El carrito se guarda localmente, se recupera tras recargar y se sincroniza con precio, stock y estado actuales. | 294f449 |
-| 2026-08-02 | Snapshot comercial de pedidos. | Cada compra conserva los datos comerciales del momento y los reutiliza en seguimiento y notificaciones. Despliegue confirmado en producción. | 285549a |
-| 2026-08-02 | Gestión administrativa de pedidos. | Consola central para pedidos web y alta manual desde WhatsApp, teléfono, Instagram o venta presencial, conectada con stock y seguimiento. Despliegue confirmado en producción. | `14c83c0` |
-| 2026-08-05 | Identidad en navegación. | El enlace de la marca en el encabezado muestra el nombre completo “Óxida Studio”. | Este cambio |
-| 2026-08-05 | Datos públicos de contacto. | Se unificaron email, teléfono, WhatsApp y país con los datos comerciales de Mercadobra en Uruguay. | Este cambio |
-| 2026-08-05 | Red social de Óxida Studio. | Los accesos de Instagram apuntan al perfil oficial `@oxidastudio`. | Este cambio |
-| 2026-08-16 | Primera etapa de rendimiento de imágenes. | El listado dejó de transportar imágenes Base64, se agregaron URLs cacheables, carga diferida y optimización WebP para nuevas fotos. La migración física a CDN continúa pendiente. | Este cambio |
-| 2026-08-16 | Integración Cloudinary. | Se implementaron cargas autenticadas desde backend, URLs persistentes, variantes responsive y un comando reanudable para migrar las imágenes históricas. La activación espera credenciales de producción. | Este cambio |
-| 2026-08-22 | Alertas y seguimiento automático de cotizaciones privadas. | Se notifican altas y nuevas solicitudes; el cliente recibe un recordatorio a los 7 días desde el envío de la propuesta y administración recibe una alerta a los 14 días. Los envíos quedan registrados para evitar duplicados. | Este cambio |
-| 2026-08-22 | Cobro de señas de proyectos. | Mercadobra configura porcentaje o monto fijo; el cliente paga con Mercado Pago o informa una transferencia. La confirmación activa el proyecto y crea hitos iniciales cuando no fueron definidos. | Este cambio |
-| 2026-08-23 | Generador de cotizaciones comerciales. | El administrador carga ítems, IVA y condiciones esenciales, y descarga una propuesta PDF breve de dos páginas con identidad Óxida Studio. Guardar un borrador no lo marca como enviado ni notifica al cliente. | Este cambio |
-| 2026-09-02 | Primer piloto de OXI Cotiza. | Se conectó el catálogo versionado al motor y se creó `/admin/cotiza` para calcular mesas circulares con desglose técnico, reglas comerciales, dólar e IVA. Queda pendiente validar los supuestos contra un presupuesto manual. | Este cambio |
-| 2026-09-21 | Constructor visual de plantillas paramétricas. | Implementación de `/admin/plantillas` y evaluador matemático dinámico para definir inputs, reglas y fórmulas de costeo sin hardcoding. | `49a0876` |
-| 2026-09-24 | Panel de Analítica y Auditoría IA. | Incorporación de `/admin/analytics` con métricas de GMV y embudo de cotizaciones, y auditor financiero con IA en `/admin/cotiza`. | `7c6ca4b` |
-| 2026-10-13 | Plataforma OxI (Clásico & Pro Suite). | Lanzamiento del portal B2B para constructoras: OxI Clásico (planos, fotos, kanban) y OxI Pro (versionado de planos, Gantt, Curva S % Avance vs P0, y alertas de sobrecosto). | `4241888` |
-| 2026-10-14 | Gestión de Clientes B2B e Invitaciones. | Control de tiers (Classic/Pro), invitaciones seguras por token, copiado de enlace, importación/exportación CSV y cascada de eliminación. | `bd0c036` |
-| 2026-10-15 | Polish UI & Solicitud directa OxI Pro. | Alineación pixel-perfect de la barra lateral OxI OS y separación 100% limpia entre solicitud de habilitación Pro (1 clic en modal con notas) y cotización de herrería. | `53188a9` |
-| 2026-10-15 | OXI Network (Fabricación Distribuida). | Adjudicación de cotizaciones a talleres asociados desde `/admin/cotizaciones/:id`, panel operativo de taller en `/proveedor` con control de avance (0–100%) y notas técnicas, presupuestos en PDF de 2 páginas y conversión a cotización oficial. | `940bc5f` |
-| 2026-10-15 | Los 4 Pilares de Suite OxI Pro. | Conmutador y recarga de proyectos reactivo, Schedule Gantt con cálculo de días y exportación CSV, balance de costos con partidas personalizadas y exportación CSV, gestor documental con drag-and-drop real, descargas directas y versionado de iteraciones. | `9e21a17` |
-| 2026-10-16 | Cotizador Inteligente Automatizado de Piezas OXI (IA). | Conexión integral de IA con OXI Quote: extracción normalizada con 1 clic a cotizador (`/admin/cotizaciones/:id` -> `/admin/cotiza`), nuevas plantillas paramétricas de Barandas y Pérgolas, volcado automático bidireccional a la cotización comercial (`POST /admin/costing/apply-to-quote`), cálculo de kilos/horas/pintura/flete, auditoría de rentabilidad y validación interactiva para clientes. | `89c565d` |
-| 2026-10-17 | Ingeniería & Control de Obra OxI Pro (4 Pasos). | Implementación completa de Leyes Sociales (BPS ~65%) por rubro, seguimiento de Avance Real vs. Planificado con devengamiento económico, desplazamiento automático de tareas por lluvia en cascada con actas técnicas y reversión, y Diagrama de Gantt interactivo con doble vista y timeline dinámico. | `088b579` |
-| 2026-10-17 | Evolución ConstructionTech OxI Pro (Fase 2 Completa). | Curva S dinámica conectada con EVM (P0 vs Real, SPI, SV), informe directivo de 4 páginas en PDF (`/oxipro/report/pdf`), persistencia multi-usuario en PostgreSQL (`b2b_project_tasks`, `rubros`, `delays`) con sincronización en la nube, certificaciones físicas de avance con fotos y registro de inspección técnica, y auto-onboarding de obras con IA (`/oxipro/ai-onboarding`) para generar cronogramas y rubros en 1 clic. | `6088b5f` |
-| 2026-10-17 | Motor Heurístico Cliente & Resiliencia Offline OxI Pro. | Motor cliente en navegador para auto-onboarding IA sin latencia ni dependencia de backend, fallback automático ante errores 404/500 de despliegue y manejo silencioso de sincronización en modo local/demo. | `38a7737` |
-| 2026-10-17 | Eliminación de Error de Sincronización & Blindaje 404. | Transición silenciosa a modo local ante caídas o demoras de backend y blindaje de auto-onboarding IA con ejecución de contingencia garantizada. | `a692a3b` |
-| 2026-10-18 | OxI Copilot: Asistente Conversacional de Obra con IA. | Chat interactivo contextual (`OxiProCopilot.jsx` y `oxiProCopilotEngine.js`) con botón flotante, gestión por prompts de tareas Gantt, certificaciones de avance físico, demoras por lluvia en cascada, rubros con BPS (60%), consultas de estado y tarjetas con confirmación humana (*Human-in-the-Loop*). | `ba8ce28` |
-| 2026-10-24 | Relevamiento OxI Pro & Motores de Control de Obra. | Incorporación integral en README y documentación técnica de los 11 puntos de relevamiento de campo: cálculo estricto de días hábiles descontando feriados SUNCA (`constructionCalendar.js`), meses calendarios reales y prorrateo automático, leyes sociales BPS al 60% por defecto configurable, cuadrillas mixtas y costos indirectos separados (`constructionLaborCategories.js`), y métricas de Valor Ganado / Earned Value (`constructionEVM.js`: EV, PV, AC, CV, SV, CPI, SPI). 46 tests frontend y 14 backend validados. | `ba8ce28` |
-| 2026-10-24 | Punto 3: Leyes Sociales (LLSS) al 60% Configurable. | Implementación de tasa de leyes sociales al 60% por defecto (desacoplando el 65% anterior), configurable a nivel de obra/empresa (`projectSocialLawsRate`), con porcentaje específico por categoría de personal (opcional) y sobreescritura manual directa en cada tarea (`customSocialLaws` con badge `✓ Auto` / `✍️ Manual` y 1-clic reset). Disponible en modal de laudos, barra de herramientas de presupuestos y formulario de tareas. 48 tests frontend y 14 backend validados, build de Vite exitoso en 536ms. | Este cambio |
-| 2026-10-24 | Punto 4: Estimación de Materiales & Importación de Presupuesto. | Motor `constructionBudgetEngine.js` con soporte de importación Excel/CSV tolerante a formatos de moneda internacionales (`cleanNumericValue`), vinculación precisa de tareas a partidas por porcentaje o cantidad física (metrado en $m^2, m^3, ml, kg$), desglose descriptivo en tarea (*"Esta tarea toma de: Rubro X, partida Y, 60%"*), auditoría en tiempo real de sobreasignación (> 100%) y presupuesto sin asignar, y fallback de estimación manual. 54 tests frontend y 14 backend validados. | Este cambio |
-| 2026-10-24 | Punto 5: Trazabilidad de lo Gastado & Imputación en Obra. | Motor `constructionExpenseEngine.js` con soporte de partes diarios de mano de obra (conversión de cuadrillas a jornales y costo directo + leyes sociales al 60%), carga de facturas de materiales con imputación fraccional por monto o %, bandeja de facturas pendientes sin imputar, certificados de subcontratos y reporte por rubro Presupuestado vs. Real con diagnóstico automático de causa de desvío (exceso de jornales, sobrecosto en materiales o exceso en subcontratistas). 60 tests frontend y 14 backend validados. | Este cambio |
-| 2026-10-25 | Puntos 6 al 10: Scope MVP Completo para Estudios & Constructoras. | Cuadrillas mixtas multi-categoría en tareas (`crewLines`) con plantillas de cuadrilla prearmadas y cálculo diario acumulado; módulo independiente de Costos Indirectos y Gastos Generales (15-25% del presupuesto) con fórmula de consolidación `Directo + Indirecto = Total`; formulario de tareas depurado con % avance programado derivado automáticamente de calendario y días hábiles y campo de avance real renombrado con tooltips (ⓘ); botón y modal de Cierre Semanal en 1 minuto para Jefes de Obra con registro de hito en Curva S; auditoría de Valor Ganado (EVM: EV, PV, AC, CV, SV, CPI, SPI) en certificaciones mensuales distinguiendo atrasos de cronograma de falsos ahorros; y botón "Generar Certificado del Mes" con emisión de documento técnico formal. 62 tests frontend y 14 backend validados (76 tests totales passing), build de Vite exitoso en 471ms. | Este cambio |
-| 2026-10-25 | Puntos 11, Certificados en PDF y Perfiles Regionales Multi-País. | Implementación completa de la Fase 3 del MVP: (1) Punto 11: Gestión Contractual Avanzada de Subcontratos con techos presupuestales (`calculateSubcontractContractStatus`), alertas de techo (80% y 100%), registro de ampliaciones/adicionales en líneas separadas con actualización del techo revisado, y liquidación con Fondo de Reparo / Retención del 5% de garantía; (2) Exportador formal de Certificados Mensuales en PDF A4 membretado con firmas técnicas (Dirección de Obra, Empresa Constructora, Comitente) y auditoría EVM completa; (3) Perfiles Regionales Multi-País (`constructionRegionalProfiles.js`) con selector interactivo en cabecera para Uruguay (SUNCA / BPS 60%), Argentina (UOCRA / 65%), Chile (CChC / 35%) e Internacional (USD / 50%), adaptando monedas y normativas sin hardcoding. 72 tests frontend y 15 backend validados (87 tests passing en total), build de Vite exitoso en 462ms. | Este cambio |
-| 2026-10-25 | Fase 4: Excelencia Visual & Optimización UX/UI para Estudios. | Pulido integral de interfaz: (UX-1) Cabecera en 2 niveles (Nivel 1 contexto con perfil regional, nube y volver a clásico; Nivel 2 mando con títulos y acciones jerarquizadas); (UX-2) Tipografía numérica tabular (`tabular-nums`) en importes, alineación estricta y hover suave en tablas; (UX-3) Segmented control moderno en sub-pestañas de Rubros con badges numéricos; (UX-4) Modales con `backdrop-filter: blur(5px)` tipo macOS/iOS y atajo de cierre con tecla Escape; (UX-5) Semáforos semánticos unificados (verde `#059669`, ámbar `#d97706`, rojo `#dc2626`, azul `#0284c7`); (UX-6) Estados vacíos ilustrados con llamados directos a la acción (`＋ Crear primer contrato`, etc.). 72 tests frontend y 15 backend validados, build de Vite exitoso en 505ms. | Este cambio |
-
-
-## Forma de trabajo
-
-Para cada punto pendiente:
-
-1. Cambiar su estado a **En curso** al comenzar.
-2. Implementar el cambio y verificarlo en proporción al riesgo.
-3. Cambiarlo a **Terminado** únicamente cuando cumpla el criterio indicado.
-4. Agregar una fila al registro de avances con fecha, resultado y commit.
-5. Si requiere una credencial o decisión externa, marcarlo como **Bloqueado** y documentar exactamente qué falta.
-6. **Diseño Multi-País y Escalabilidad Internacional:** Cada módulo y cálculo debe concebirse como un producto internacionalizable (sin hardcoding de leyes, festivos, monedas ni alícuotas de un solo país; todo configurable por empresa/obra).
+- **[docs/ROADMAP.md](ROADMAP.md):** Lista maestra de pendientes (Seguridad, Arquitectura, Calidad, UI/UX, Negocio).
+- **[docs/PRODUCTO.md](PRODUCTO.md):** Visión funcional, portales, roles y módulos de OxI Pro Suite.
+- **[docs/ARQUITECTURA.md](ARQUITECTURA.md):** Diagrama de arquitectura, stack técnico, modelos de datos y seguridad.
+- **[docs/OPERACION.md](OPERACION.md):** Despliegue en Vercel/Render, variables de entorno, migraciones y desarrollo local.
+- **[docs/CHANGELOG.md](CHANGELOG.md):** Historial condensado de cambios y versiones completadas.
