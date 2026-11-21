@@ -1227,151 +1227,79 @@
 .footer {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 26px;
-  padding: 32px 28px;
-  padding-bottom: 78px;
+  padding: 44px 36px 78px;
   background: #141518;
   color: #f1ede3;
   width: min(1280px, calc(100% - 32px));
   margin: 20px auto 32px;
-  text-align: center;
-}
-
-.footer-brand-system {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  align-items: center;
-  justify-items: center;
-  text-align: center;
-  padding-bottom: 30px;
-  margin-bottom: 30px;
-  border-bottom: 1px solid rgba(255, 255, 255, .16);
-}
-
-.footer-master-brand,
-.footer-subbrands {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  margin: 0 auto;
-}
-
-.footer-brand-label {
-  color: rgba(255, 255, 255, .67);
-  font-size: .62rem;
-  font-weight: 700;
-  letter-spacing: .17em;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-.footer-subbrands {
-  width: 100%;
-  padding-top: 8px;
-  border-top: 0;
-}
-
-.footer .footer-logo--master {
-  width: min(380px, 75vw);
-  margin: 14px auto 0;
-  display: block;
-}
-
-.footer-subbrand-card {
-  width: min(250px, 68vw);
-  min-height: 60px;
-  margin: 10px auto 0;
-  padding: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  transition: transform .2s ease, border-color .2s ease, background .2s ease;
-}
-
-.footer-subbrand-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, .52);
-  background: rgba(255, 255, 255, .05);
-}
-
-.footer-subbrand-logo {
-  width: 210px;
-  padding: 0;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.footer-subbrand-logo .oxida-wordmark-name { font-size: 2.45rem; }
-.footer-subbrand-logo .oxida-wordmark-studio { font-size: .8rem; }
-
-.footer .footer-subbrand-copy {
-  color: rgba(255, 255, 255, .72);
-  font-size: .72rem;
-  line-height: 1.4;
-  text-align: center;
-  margin: 0 auto;
-}
-
-.footer-subbrand-card > b {
-  color: #df8154;
-  font-size: 1.05rem;
+  text-align: left;
 }
 
 .footer-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 32px;
+  grid-template-columns: 1.8fr 1fr 1fr 1.2fr;
+  gap: 36px;
   width: 100%;
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
-  text-align: center;
-  justify-items: center;
+  text-align: left;
+  align-items: start;
+  justify-items: start;
 }
 
-.footer-grid section {
+.footer-grid section,
+.footer-about,
+.footer-col {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  text-align: left;
   width: 100%;
 }
 
-.footer-about p {
+.footer-logo--oxida {
+  width: 180px;
+  max-width: 100%;
+  height: auto;
+  margin: 0 0 4px 0;
+  display: block;
+}
+
+.footer-brand-byline {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #ea580c;
+  margin-bottom: 12px;
+  display: inline-block;
+}
+
+.footer-about-copy {
+  color: var(--text-on-dark-soft);
+  font-size: 0.82rem;
+  line-height: 1.55;
   max-width: 32ch;
-  margin: 0 auto;
-  text-align: center;
-  line-height: 1.5;
+  margin: 0;
+  text-align: left;
 }
 
 .footer h3 {
-  margin: 0 0 12px;
+  margin: 0 0 16px;
   color: var(--text-on-dark);
-  text-align: center;
+  text-align: left;
   width: 100%;
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
-.footer-logo {
-  width: min(220px, 100%);
-  height: auto;
-  margin: 0 auto 10px;
-  display: block;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .footer-brand-link {
   display: inline-flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  margin: 0 auto;
+  margin: 0 0 6px 0;
 }
 
 .footer-brand-link:hover {
@@ -1382,7 +1310,6 @@
 .footer li,
 .footer a {
   color: var(--text-on-dark-soft);
-  text-align: center;
 }
 
 .footer ul {
@@ -1391,22 +1318,39 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 9px;
-  text-align: center;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
   width: 100%;
 }
 
 .footer li {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  text-align: center;
+  text-align: left;
   width: 100%;
 }
 
 .footer a {
   text-decoration: none;
+  color: var(--text-on-dark-soft);
+  font-size: 0.85rem;
+  transition: color 0.15s ease;
+}
+
+.footer a:hover {
+  color: #ea580c;
+}
+
+.footer .social-links-list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
 }
 
 .social-link {
@@ -4624,6 +4568,40 @@
     gap: 24px;
     justify-items: center;
     text-align: center;
+  }
+
+  .footer-grid section,
+  .footer-about,
+  .footer-col {
+    align-items: center;
+    text-align: center;
+  }
+
+  .footer-logo--oxida {
+    margin: 0 auto 4px;
+  }
+
+  .footer-about-copy {
+    text-align: center;
+    margin: 0 auto;
+  }
+
+  .footer h3 {
+    text-align: center;
+  }
+
+  .footer ul {
+    align-items: center;
+    text-align: center;
+  }
+
+  .footer li {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .footer .social-links-list {
+    justify-content: center;
   }
 
   .payment-methods-logos {
