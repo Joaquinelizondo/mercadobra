@@ -80,7 +80,7 @@ export default function SpinningHouseLoader({
   status = 'loading', // 'loading' | 'success' | 'error'
   title = 'Enviando cotización...',
   message = 'Procesando planos, memorias descriptivas y archivos de obra...',
-  steps = ['Planos y archivos', 'Memoria técnica', 'Envío a taller OXI'],
+  steps = ['Planos y archivos', 'Memoria técnica', 'Revisión técnica'],
   currentStep = 1,
   onClose,
   autoCloseMs = 0,

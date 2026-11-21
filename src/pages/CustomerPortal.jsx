@@ -204,7 +204,7 @@ export default function CustomerPortal() {
     status: 'loading',
     title: 'Enviando cotización...',
     message: 'Cargando planos, memorias descriptivas y registrando solicitud...',
-    steps: ['Planos y archivos', 'Memoria técnica', 'Envío a taller OXI'],
+    steps: ['Planos y archivos', 'Memoria técnica', 'Revisión técnica'],
     currentStep: 1
   })
   const [notification, setNotification] = useState(null)
@@ -528,8 +528,8 @@ export default function CustomerPortal() {
       isOpen: true,
       status: 'loading',
       title: 'Enviando cotización...',
-      message: 'Cargando planos, memorias y registrando tu solicitud en el taller OXI...',
-      steps: ['Planos y archivos', 'Memoria técnica', 'Envío a taller OXI'],
+      message: 'Cargando planos, memorias y registrando tu solicitud en Óxida Studio...',
+      steps: ['Planos y archivos', 'Memoria técnica', 'Revisión técnica'],
       currentStep: 2
     })
 
@@ -545,7 +545,7 @@ export default function CustomerPortal() {
         status: 'success',
         title: '¡Cotización enviada!',
         message: 'Tu cotización ha sido cargada con éxito. Nuestro equipo técnico la está revisando para enviarte la propuesta formal.',
-        steps: ['Planos y archivos', 'Memoria técnica', 'Envío a taller OXI'],
+        steps: ['Planos y archivos', 'Memoria técnica', 'Revisión técnica'],
         currentStep: 3
       })
       showNotification('✓ Cotización enviada con éxito', 'success', res.referenceNumber ? `Referencia: ${res.referenceNumber}` : 'Disponible en tu panel de cotizaciones')
