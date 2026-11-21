@@ -125,8 +125,7 @@ export default function AdminQuoteWorkspace() {
           setMessages((prev) => [...prev, uploadResult.message])
         }
       }
-      const willBeSent = quote.status === 'in_progress' && Number(quote.totalAmount) > 0
-      const nextStatus = willBeSent ? 'sent' : (quote.status || 'sent')
+      const nextStatus = ['in_progress', 'reviewing'].includes(quote.status) ? 'sent' : (quote.status || 'sent')
       const updated = await updateAdminQuote(
         quote.id,
         {

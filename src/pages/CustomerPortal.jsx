@@ -1214,11 +1214,15 @@ export default function CustomerPortal() {
 
                     <div style={{ textAlign: 'right' }}>
                       <span style={{ display: 'block', fontSize: '0.72rem', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                        {selected.totalAmount > 0 ? 'Monto Cotizado' : 'Estado de Presupuesto'}
+                        {selected.totalAmount > 0 ? 'Monto Cotizado' : selected.status === 'sent' ? 'Cotización emitida' : 'Estado de Presupuesto'}
                       </span>
                       {selected.totalAmount > 0 ? (
                         <strong style={{ fontSize: '1.85rem', color: '#ea580c', fontWeight: 900, display: 'block', lineHeight: 1.1 }}>
                           {formatPrice(selected.totalAmount, selected.currency)}
+                        </strong>
+                      ) : selected.status === 'sent' ? (
+                        <strong style={{ fontSize: '1.15rem', color: '#86efac', display: 'block' }}>
+                          Propuesta disponible
                         </strong>
                       ) : (
                         <strong style={{ fontSize: '1.15rem', color: '#fbbf24', display: 'block' }}>
@@ -1226,7 +1230,11 @@ export default function CustomerPortal() {
                         </strong>
                       )}
                       <span style={{ fontSize: '0.72rem', color: '#71717a' }}>
-                        {selected.totalAmount > 0 ? 'Impuestos incluidos según memoria' : 'Cálculo de materiales en proceso'}
+                        {selected.totalAmount > 0
+                          ? 'Impuestos incluidos según memoria'
+                          : selected.status === 'sent'
+                            ? 'Revisá los documentos y condiciones adjuntas'
+                            : 'Cálculo de materiales en proceso'}
                       </span>
                     </div>
                   </div>
