@@ -286,7 +286,7 @@ export default function CustomerPortal() {
   const completedQuotes = filteredQuotes.filter(q => ['completed', 'cancelled', 'rejected'].includes(q.status))
 
   // ── MÓDULO EXCLUSIVO OXI CLÁSICO: PRESUPUESTOS, HISTORIAL & DOCUMENTACIÓN ──
-  const [classicTab, setClassicTab] = useState('budgets') // 'budgets' | 'kanban'
+  const [classicTab, setClassicTab] = useState('kanban') // 'budgets' | 'kanban'
   const [classicBudgets, setClassicBudgets] = useState(() => {
     try {
       const saved = localStorage.getItem('oxi_classic_budgets')
@@ -540,6 +540,8 @@ export default function CustomerPortal() {
       const res = await createMyQuote(payload, customerToken)
       setQuotes([res, ...quotes])
       setRequest(EMPTY_REQUEST)
+      setIsCreatingQuote(false)
+      setClassicTab('kanban')
 
       // Transición exitosa con casita naranja
       setQuoteSubmission({
@@ -1042,7 +1044,7 @@ export default function CustomerPortal() {
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <span>📑</span> Presupuestos & Historial Documental
+                  <span>📑</span> Presupuestos emitidos ({classicBudgets.length})
                 </button>
                 <button
                   type="button"
@@ -1063,7 +1065,7 @@ export default function CustomerPortal() {
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <span>📊</span> Tablero Kanban ({filteredQuotes.length})
+                  <span>📊</span> Mis solicitudes ({filteredQuotes.length})
                 </button>
                 <button
                   type="button"
@@ -2179,9 +2181,21 @@ export default function CustomerPortal() {
                   No hay presupuestos emitidos
                 </h3>
                 <p style={{ color: '#64748b', fontSize: '0.92rem', maxWidth: '520px', margin: '0 auto 22px', lineHeight: '1.6' }}>
-                  Solicitá una cotización y cargá los planos, memorias o fotos necesarios para recibir una propuesta técnica formal.
+                  {requestedQuotes.length > 0
+                    ? `Tenés ${requestedQuotes.length} solicitud${requestedQuotes.length === 1 ? '' : 'es'} en revisión. Cuando el equipo envíe la propuesta formal, aparecerá en esta sección.`
+                    : 'Solicitá una cotización y cargá los planos, memorias o fotos necesarios para recibir una propuesta técnica formal.'}
                 </p>
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  {requestedQuotes.length > 0 && (
+                    <button
+                      type="button"
+                      className="oxi-os-btn secondary"
+                      onClick={() => setClassicTab('kanban')}
+                      style={{ padding: '12px 22px', fontSize: '0.92rem', fontWeight: 700 }}
+                    >
+                      Ver mis solicitudes ({requestedQuotes.length})
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="oxi-os-btn primary"
@@ -2243,7 +2257,7 @@ export default function CustomerPortal() {
                 onClick={() => { setClassicTab('budgets'); setSelected(null); setIsCreatingQuote(false); setIsCreatingProject(false); setIsEditingProfile(false); }}
               >
                 <span className="oxi-bottom-icon">📑</span>
-                <span className="oxi-bottom-label">Presupuesto</span>
+                <span className="oxi-bottom-label">Emitidos</span>
               </button>
               <button
                 type="button"
@@ -2251,7 +2265,7 @@ export default function CustomerPortal() {
                 onClick={() => { setClassicTab('kanban'); setSelected(null); setIsCreatingQuote(false); setIsCreatingProject(false); setIsEditingProfile(false); }}
               >
                 <span className="oxi-bottom-icon">📊</span>
-                <span className="oxi-bottom-label">Tablero</span>
+                <span className="oxi-bottom-label">Solicitudes</span>
               </button>
               <button
                 type="button"
