@@ -159,6 +159,13 @@ function shortDate(value) {
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('es-UY')
 }
 
+function formatDateTime(value) {
+  if (!value) return ''
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.toLocaleDateString('es-UY')} a las ${d.toLocaleTimeString('es-UY', { hour: '2-digit', minute: '2-digit' })} hs`
+}
+
 export default function CustomerPortal() {
   const { customerUser, customerToken, logoutCustomer, adminUser } = useAuth()
   const [profile, setProfile] = useState(null)
@@ -994,35 +1001,274 @@ export default function CustomerPortal() {
             ) : selected ? (
               <div className="quote-workspace">
                 <button className="quote-back" onClick={()=>setSelected(null)}>← Volver al tablero</button>
-                <div className="quote-workspace-head">
-                  <div>
-                    <span>{selected.referenceNumber} · {STATUS[selected.status]}</span>
-                    <h2>{selected.title}</h2>
-                    <p>{selected.description}</p>
-                  </div>
-                  {selected.totalAmount>0 && <strong>{formatPrice(selected.totalAmount, selected.currency)}</strong>}
-                </div>
+                {/* 1. TARJETA DESTACADA: COTIZACIÓN & RESPUESTA DE ÓXIDA STUDIO */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #18181b 0%, #09090b 100%)',
+                  color: 'white',
+                  borderRadius: '12px',
+                  padding: '24px',
+                  marginBottom: '20px',
+                  border: '1px solid #27272a',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.18)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#ea580c', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                          Plataforma OxI Clásico · Cotización
+                        </span>
+                        <span style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          background: selected.status === 'sent' ? '#ea580c' : selected.status === 'accepted' ? '#16a34a' : '#3f3f46',
+                          color: 'white'
+                        }}>
+                          {STATUS[selected.status] || selected.status}
+                        </span>
+                      </div>
+                      <h2 style={{ margin: 0, fontSize: '1.45rem', color: '#f4f4f5', fontWeight: 800 }}>{selected.title}</h2>
+                      <small style={{ color: '#a1a1aa', fontSize: '0.8rem' }}>Ref: {selected.referenceNumber}</small>
+                    </div>
 
-                {selected.proposalDescription && (
-                  <div className="quote-proposal-copy">
-                    <strong>Propuesta de Mercadobra / Óxida</strong>
-                    <p>{selected.proposalDescription}</p>
-                  </div>
-                )}
-
-                {/* Attachments categorizados */}
-                {selected.attachments?.length > 0 && (
-                  <div className="quote-files">
-                    <strong>Archivos adjuntos:</strong>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
-                      {selected.attachments.map((f, i) => (
-                        <a key={i} href={f.url || f.data} target="_blank" rel="noreferrer" download={!f.url ? f.name : undefined} className="attachment-badge">
-                          {f.category === 'plano' ? '📐' : f.category === 'memoria' ? '📄' : f.category === 'foto' ? '📷' : '📎'} {f.name}
-                        </a>
-                      ))}
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ display: 'block', fontSize: '0.72rem', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                        {selected.totalAmount > 0 ? 'Monto Cotizado' : 'Estado de Presupuesto'}
+                      </span>
+                      {selected.totalAmount > 0 ? (
+                        <strong style={{ fontSize: '1.85rem', color: '#ea580c', fontWeight: 900, display: 'block', lineHeight: 1.1 }}>
+                          {formatPrice(selected.totalAmount, selected.currency)}
+                        </strong>
+                      ) : (
+                        <strong style={{ fontSize: '1.15rem', color: '#fbbf24', display: 'block' }}>
+                          En análisis técnico
+                        </strong>
+                      )}
+                      <span style={{ fontSize: '0.72rem', color: '#71717a' }}>
+                        {selected.totalAmount > 0 ? 'Impuestos incluidos según memoria' : 'Cálculo de materiales en proceso'}
+                      </span>
                     </div>
                   </div>
-                )}
+
+                  {/* Fechas de solicitud y cotización */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '16px',
+                    flexWrap: 'wrap',
+                    background: '#18181b',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #27272a',
+                    fontSize: '0.8rem',
+                    marginBottom: '16px'
+                  }}>
+                    <div>
+                      <span style={{ color: '#71717a', display: 'block', fontSize: '0.72rem' }}>FECHA DE SOLICITUD</span>
+                      <strong style={{ color: '#e4e4e7' }}>
+                        {formatDateTime(selected.createdAt) || 'Reciente'}
+                      </strong>
+                    </div>
+                    {selected.sentAt && (
+                      <div>
+                        <span style={{ color: '#71717a', display: 'block', fontSize: '0.72rem' }}>COTIZACIÓN EMITIDA</span>
+                        <strong style={{ color: '#86efac' }}>
+                          {formatDateTime(selected.sentAt)}
+                        </strong>
+                      </div>
+                    )}
+                    {selected.updatedAt && !selected.sentAt && (
+                      <div>
+                        <span style={{ color: '#71717a', display: 'block', fontSize: '0.72rem' }}>ÚLTIMA ACTUALIZACIÓN</span>
+                        <strong style={{ color: '#e4e4e7' }}>
+                          {formatDateTime(selected.updatedAt)}
+                        </strong>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Breves comentarios / Propuesta de Óxida */}
+                  {selected.proposalDescription ? (
+                    <div style={{
+                      background: '#121215',
+                      borderLeft: '4px solid #ea580c',
+                      padding: '14px 16px',
+                      borderRadius: '0 8px 8px 0',
+                      marginBottom: '16px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '0.85rem' }}>💬</span>
+                        <strong style={{ fontSize: '0.82rem', color: '#ea580c', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Comentarios y Condiciones Técnicas de Óxida Studio:
+                        </strong>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.92rem', color: '#e4e4e7', lineHeight: '1.5', whiteSpace: 'pre-line' }}>
+                        {selected.proposalDescription}
+                      </p>
+                    </div>
+                  ) : (
+                    <div style={{
+                      background: '#121215',
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      color: '#a1a1aa',
+                      fontSize: '0.85rem',
+                      marginBottom: '16px'
+                    }}>
+                      ⏳ Recibimos tus planos y requerimientos. El equipo de ingeniería está armando el desglose técnico y cotización formal.
+                    </div>
+                  )}
+
+                  {/* Archivos de cotización (PDF / Planilla formal) si existen */}
+                  {Array.isArray(selected.attachments) && selected.attachments.some(a => a.category === 'cotizacion' || Boolean(a.name?.match(/\.(pdf|xlsx|xls|doc|docx)$/i))) && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <span style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '6px', fontWeight: 600 }}>
+                        DOCUMENTOS DE LA COTIZACIÓN:
+                      </span>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {selected.attachments
+                          .filter(a => a.category === 'cotizacion' || Boolean(a.name?.match(/\.(pdf|xlsx|xls|doc|docx)$/i)))
+                          .map((doc, idx) => (
+                            <a
+                              key={idx}
+                              href={doc.url || doc.data}
+                              target="_blank"
+                              rel="noreferrer"
+                              download={!doc.url || doc.url.startsWith('data:') ? doc.name : undefined}
+                              style={{
+                                background: '#27272a',
+                                color: 'white',
+                                textDecoration: 'none',
+                                padding: '8px 14px',
+                                borderRadius: '6px',
+                                fontSize: '0.82rem',
+                                fontWeight: 600,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                border: '1px solid #3f3f46'
+                              }}
+                            >
+                              <span>📄</span> {doc.name} <span>⬇</span>
+                            </a>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Acciones para el cliente si la cotización fue enviada */}
+                  {selected.status === 'sent' && (
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid #27272a' }}>
+                      <button
+                        type="button"
+                        onClick={() => respond('accepted')}
+                        disabled={saving}
+                        style={{
+                          background: '#16a34a',
+                          color: 'white',
+                          border: 'none',
+                          padding: '10px 18px',
+                          borderRadius: '6px',
+                          fontWeight: 700,
+                          fontSize: '0.9rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ✓ Aceptar Presupuesto
+                      </button>
+
+                      <a
+                        href={`https://wa.me/59899123456?text=${encodeURIComponent(`Hola Óxida Studio, tengo una consulta sobre la cotización ${selected.referenceNumber} (${selected.title}) por ${formatPrice(selected.totalAmount, selected.currency)}.`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          background: '#25d366',
+                          color: 'white',
+                          textDecoration: 'none',
+                          padding: '10px 16px',
+                          borderRadius: '6px',
+                          fontWeight: 700,
+                          fontSize: '0.9rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        💬 Consultar por WhatsApp
+                      </a>
+                    </div>
+                  )}
+
+                  {selected.status === 'accepted' && (
+                    <div style={{ background: '#052e16', border: '1px solid #166534', color: '#86efac', padding: '10px 14px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                      ✓ Presupuesto aceptado. Estamos en contacto para iniciar la fabricación y montaje.
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. SOLICITUD ORIGINAL DEL CLIENTE Y ARCHIVOS DE OBRA */}
+                <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Tu Solicitud Original
+                  </span>
+                  <p style={{ color: '#334155', fontSize: '0.95rem', margin: '6px 0 14px', lineHeight: 1.5 }}>
+                    {selected.description}
+                  </p>
+
+                  {Array.isArray(selected.attachments) && selected.attachments.length > 0 && (
+                    <div>
+                      <strong style={{ fontSize: '0.82rem', color: '#0f172a', display: 'block', marginBottom: '8px' }}>
+                        Material cargado en la solicitud ({selected.attachments.length}):
+                      </strong>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                        {selected.attachments.map((f, i) => {
+                          const isVid = f.category === 'video' || f.type?.startsWith('video/') || Boolean(f.name?.match(/\.(mp4|mov|webm|m4v|avi)$/i))
+                          const isImg = !isVid && (f.category === 'foto' || f.type?.startsWith('image/') || Boolean(f.name?.match(/\.(png|jpe?g|webp|gif)$/i)))
+                          const src = f.url || f.data
+
+                          return (
+                            <div key={i} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '1rem' }}>{isVid ? '🎥' : isImg ? '📷' : f.category === 'plano' ? '📐' : '📄'}</span>
+                                <span style={{ fontSize: '0.78rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, color: '#1e293b' }} title={f.name}>
+                                  {f.name}
+                                </span>
+                              </div>
+
+                              {isVid && src && (
+                                <video
+                                  src={src}
+                                  controls
+                                  preload="metadata"
+                                  playsInline
+                                  style={{ width: '100%', maxHeight: '140px', borderRadius: '4px', background: '#0a0a0a', display: 'block' }}
+                                />
+                              )}
+
+                              {isImg && src && (
+                                <img
+                                  src={src}
+                                  alt={f.name}
+                                  style={{ width: '100%', height: '110px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e2e8f0' }}
+                                />
+                              )}
+
+                              <a
+                                href={src}
+                                target="_blank"
+                                rel="noreferrer"
+                                download={!f.url || f.url.startsWith('data:') ? f.name : undefined}
+                                style={{ fontSize: '0.74rem', color: '#ea580c', textDecoration: 'none', fontWeight: 700, marginTop: 'auto', textAlign: 'right' }}
+                              >
+                                {isVid ? 'Ver Video ⬇' : 'Descargar ⬇'}
+                              </a>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Tracker de 5 etapas */}
                 <section className="project-tracker">
@@ -1745,6 +1991,7 @@ export default function CustomerPortal() {
                     <button key={q.id} className="kanban-card" onClick={() => setSelected(q)}>
                       <span>{q.referenceNumber}</span>
                       <strong>{q.title}</strong>
+                      {q.totalAmount > 0 && <span style={{ color: '#ea580c', fontWeight: 800, fontSize: '0.85rem', display: 'block', margin: '2px 0' }}>{formatPrice(q.totalAmount, q.currency)}</span>}
                       <small>{STATUS[q.status]}</small>
                     </button>
                   ))}
@@ -1755,6 +2002,7 @@ export default function CustomerPortal() {
                     <button key={q.id} className="kanban-card" onClick={() => setSelected(q)}>
                       <span>{q.referenceNumber}</span>
                       <strong>{q.title}</strong>
+                      {q.totalAmount > 0 && <span style={{ color: '#ea580c', fontWeight: 800, fontSize: '0.85rem', display: 'block', margin: '2px 0' }}>{formatPrice(q.totalAmount, q.currency)}</span>}
                       <small>{STATUS[q.status]}</small>
                     </button>
                   ))}
@@ -1765,6 +2013,7 @@ export default function CustomerPortal() {
                     <button key={q.id} className="kanban-card" onClick={() => setSelected(q)}>
                       <span>{q.referenceNumber}</span>
                       <strong>{q.title}</strong>
+                      {q.totalAmount > 0 && <span style={{ color: '#ea580c', fontWeight: 800, fontSize: '0.85rem', display: 'block', margin: '2px 0' }}>{formatPrice(q.totalAmount, q.currency)}</span>}
                       <small>{STATUS[q.status]}</small>
                     </button>
                   ))}

@@ -1,16 +1,30 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { downloadQuotePdf, getAdminCustomer, getAdminQuoteMessages, getCustomerQuotes, getAdminQuote, reviewQuoteDeposit, sendAdminQuoteMessage, updateAdminQuote, parseRequirementsWithAI, generateProposalWithAI, getFabricationSuppliers, getAdminFabricationOrders, createFabricationOrder, uploadQuoteAttachments } from '../lib/api'
+import {
+  getAdminCustomer,
+  getAdminQuoteMessages,
+  getCustomerQuotes,
+  getAdminQuote,
+  sendAdminQuoteMessage,
+  updateAdminQuote,
+  parseRequirementsWithAI,
+  generateProposalWithAI,
+  uploadQuoteAttachments,
+} from '../lib/api'
 import { formatPrice } from '../utils/format'
-import { Badge } from '../components/Badge'
 import QuoteDocumentsAndTimeline from '../components/QuoteDocumentsAndTimeline'
 import ShareQuoteWhatsAppModal from '../components/ShareQuoteWhatsAppModal'
 import './CustomerPortal.css'
 import './CustomerPortalMobile.css'
 import './AdminQuoteWorkspace.css'
 
-const MILESTONE_STATUS = { pending:'Pendiente', in_progress:'En proceso', completed:'Terminado' }
+function formatDateTime(value) {
+  if (!value) return ''
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.toLocaleDateString('es-UY')} a las ${d.toLocaleTimeString('es-UY', { hour: '2-digit', minute: '2-digit' })} hs`
+}
 
 function formatRequestedDate(value) {
   if (!value) return ''
@@ -19,20 +33,21 @@ function formatRequestedDate(value) {
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('es-UY')
 }
 
-export default function AdminQuoteWorkspace(){
-  const {id,quoteId}=useParams(); const {adminUser,adminToken}=useAuth(); const [customer,setCustomer]=useState(null); const [quote,setQuote]=useState(null); const [messages,setMessages]=useState([]); const [error,setError]=useState(''); const [saving,setSaving]=useState(false)
+export default function AdminQuoteWorkspace() {
+  const { id, quoteId } = useParams()
+  const { adminUser, adminToken } = useAuth()
+  const [customer, setCustomer] = useState(null)
+  const [quote, setQuote] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [savedNotice, setSavedNotice] = useState(false)
   const [isParsingAI, setIsParsingAI] = useState(false)
   const [aiSuggestion, setAiSuggestion] = useState(null)
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false)
-
-  const [suppliers, setSuppliers] = useState([])
-  const [fabOrders, setFabOrders] = useState([])
-  const [showAssignModal, setShowAssignModal] = useState(false)
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
-  const [assignForm, setAssignForm] = useState({ supplierId: '', targetPrice: '', currency: 'USD', deadline: '', title: '', description: '' })
-  const [assigning, setAssigning] = useState(false)
-  const [assignError, setAssignError] = useState('')
-  
+  const [quoteProposalFile, setQuoteProposalFile] = useState(null)
+
   useEffect(() => {
     if (!adminToken || !quoteId) return
     let isCancelled = false
@@ -73,33 +88,48 @@ export default function AdminQuoteWorkspace(){
       setQuote(resolvedQuote)
       if (resolvedCustomer) setCustomer(resolvedCustomer)
 
-      const [messagesRes, suppsRes, fabsRes] = await Promise.all([
-        getAdminQuoteMessages(quoteId, adminToken).catch(() => ({ rows: [] })),
-        getFabricationSuppliers(adminToken).catch(() => ({ rows: [] })),
-        getAdminFabricationOrders(adminToken, { quoteId }).catch(() => ({ rows: [] })),
-      ])
+      const messagesRes = await getAdminQuoteMessages(quoteId, adminToken).catch(() => ({ rows: [] }))
 
       if (isCancelled) return
       setMessages(messagesRes?.rows || [])
-      setSuppliers(suppsRes?.rows || [])
-      setFabOrders(fabsRes?.rows || [])
-
-      setAssignForm({
-        supplierId: suppsRes?.rows?.[0]?.id || '',
-        targetPrice: resolvedQuote.totalAmount ? Math.round(Number(resolvedQuote.totalAmount) * 0.6) : '',
-        currency: resolvedQuote.currency || 'USD',
-        deadline: resolvedQuote.estimatedEndAt ? String(resolvedQuote.estimatedEndAt).slice(0, 10) : '',
-        title: resolvedQuote.title || '',
-        description: resolvedQuote.proposalDescription || resolvedQuote.description || ''
-      })
     }
 
     fetchData()
     return () => { isCancelled = true }
-  }, [id, quoteId, adminToken])
-  if(!adminUser||!adminToken)return <Navigate to={`/admin/login?redirect=/admin/clientes/${id}/cotizaciones/${quoteId}`} replace/>
-  
-  async function saveProposal(e){e.preventDefault();setSaving(true);try{setQuote(await updateAdminQuote(quote.id,{...quote,status:quote.status==='in_progress'?'sent':quote.status},adminToken))}catch(e){setError(e.message)}finally{setSaving(false)}}
+  }, [adminToken, quoteId, id])
+
+  if (!adminUser || !adminToken) return <Navigate to={`/admin/login?redirect=/admin/clientes/${id}/cotizaciones/${quoteId}`} replace />
+
+  async function saveProposal(e) {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    try {
+      const currentAttachments = Array.isArray(quote.attachments) ? [...quote.attachments] : []
+      if (quoteProposalFile) {
+        currentAttachments.push(quoteProposalFile)
+      }
+      const willBeSent = quote.status === 'in_progress' && Number(quote.totalAmount) > 0
+      const nextStatus = willBeSent ? 'sent' : (quote.status || 'sent')
+      const updated = await updateAdminQuote(
+        quote.id,
+        {
+          ...quote,
+          attachments: currentAttachments,
+          status: nextStatus
+        },
+        adminToken
+      )
+      setQuote(updated)
+      setQuoteProposalFile(null)
+      setSavedNotice(true)
+      setTimeout(() => setSavedNotice(false), 5000)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   async function handleSendMessage({ message: msgText, attachments, category, stage, status }) {
     if (!adminToken || !quote?.id) return
@@ -128,15 +158,6 @@ export default function AdminQuoteWorkspace(){
       setMessages((prev) => [...prev, res.message])
     }
   }
-  function addMilestone(){setQuote({...quote,milestones:[...(quote.milestones||[]),{id:`milestone-${Date.now()}`,title:'',description:'',status:'pending',plannedStartAt:'',plannedEndAt:'',completedAt:null}]})}
-  function updateMilestone(index,updates){setQuote({...quote,milestones:(quote.milestones||[]).map((item,itemIndex)=>itemIndex===index?{...item,...updates}:item)})}
-  function removeMilestone(index){setQuote({...quote,milestones:(quote.milestones||[]).filter((_,itemIndex)=>itemIndex!==index)})}
-  async function reviewDeposit(status){setSaving(true);setError('');try{setQuote(await reviewQuoteDeposit(quote.id,status,adminToken))}catch(e){setError(e.message)}finally{setSaving(false)}}
-  function addDocumentItem(){setQuote({...quote,documentItems:[...(quote.documentItems||[]),{code:String((quote.documentItems||[]).length+1).padStart(2,'0'),description:'',subtotal:''}]})}
-  function updateDocumentItem(index,updates){const items=(quote.documentItems||[]).map((item,itemIndex)=>itemIndex===index?{...item,...updates}:item);const subtotal=items.reduce((sum,item)=>sum+Number(item.subtotal||0),0);setQuote({...quote,documentItems:items,totalAmount:Math.round(subtotal*(1+Number(quote.taxRate??22)/100)*100)/100})}
-  function removeDocumentItem(index){const items=(quote.documentItems||[]).filter((_,itemIndex)=>itemIndex!==index);const subtotal=items.reduce((sum,item)=>sum+Number(item.subtotal||0),0);setQuote({...quote,documentItems:items,totalAmount:Math.round(subtotal*(1+Number(quote.taxRate??22)/100)*100)/100})}
-  function updateTaxRate(value){const subtotal=(quote.documentItems||[]).reduce((sum,item)=>sum+Number(item.subtotal||0),0);setQuote({...quote,taxRate:value,totalAmount:Math.round(subtotal*(1+Number(value||0)/100)*100)/100})}
-  async function saveAndDownloadPdf(e){e.preventDefault();setSaving(true);setError('');try{const updated=await updateAdminQuote(quote.id,{...quote,notifyCustomer:false},adminToken);setQuote(updated);await downloadQuotePdf(updated.id,adminToken)}catch(err){setError(err.message)}finally{setSaving(false)}}
 
   async function parseWithAI() {
     setIsParsingAI(true)
@@ -154,13 +175,13 @@ export default function AdminQuoteWorkspace(){
 
   async function generateProposal() {
     if (!quote.totalAmount || quote.totalAmount <= 0) {
-      return setError('Debes ingresar el Monto total (monto a cobrar) antes de redactar la propuesta.')
+      return setError('Debés ingresar el monto a cotizar antes de redactar la propuesta.')
     }
     setIsGeneratingProposal(true)
     setError('')
     try {
       const res = await generateProposalWithAI(quote, adminToken)
-      setQuote({...quote, proposalDescription: res.text})
+      setQuote({ ...quote, proposalDescription: res.text })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -168,443 +189,395 @@ export default function AdminQuoteWorkspace(){
     }
   }
 
-  async function handleAssignSubmit(e) {
-    e.preventDefault()
-    if (!assignForm.supplierId) {
-      setAssignError('Debés seleccionar un taller fabricante.')
-      return
-    }
-    setAssigning(true)
-    setAssignError('')
-    try {
-      const created = await createFabricationOrder({
-        supplierId: Number(assignForm.supplierId),
-        quoteId: Number(quote.id),
-        projectName: customer?.name ? `${customer.name} · ${quote.referenceNumber}` : (quote.referenceNumber || 'Proyecto Óxida'),
-        title: assignForm.title || quote.title,
-        description: assignForm.description || quote.description,
-        targetPrice: Number(assignForm.targetPrice || 0),
-        currency: assignForm.currency || 'USD',
-        deadline: assignForm.deadline || null
-      }, adminToken)
-      setFabOrders((prev) => [created, ...prev])
-      setShowAssignModal(false)
-    } catch (err) {
-      setAssignError(err.message || 'No se pudo asignar al taller.')
-    } finally {
-      setAssigning(false)
-    }
-  }
-
-  if(!quote)return <section className="customer-portal"><p>{error||'Cargando cotización…'}</p></section>
+  if (!quote) return <section className="customer-portal"><p>{error || 'Cargando cotización…'}</p></section>
   const customerRouteId = customer?.id || (id && Number(id) > 0 ? id : '')
-  return <section className="customer-portal"><header><div>{customerRouteId ? <Link to={`/admin/clientes/${customerRouteId}`}>← Volver al cliente</Link> : <Link to="/admin/cotizaciones-clientes">← Volver a cotizaciones</Link>}<span>Respuesta comercial</span><h1>{quote.title}</h1><p>{customer?.name || 'Cliente corporativo'} · {quote.referenceNumber}</p></div>{quote.totalAmount>0&&<strong>{formatPrice(quote.totalAmount,quote.currency)}</strong>}</header>{error&&<p className="customer-portal-error">{error}</p>}
-    <div className="admin-quote-workspace"><div className="quote-workspace"><div className="quote-workspace-head"><div><span>Solicitud del cliente</span><p>{quote.description}</p>
 
-      {/* VISTA RÁPIDA DE ADJUNTOS ENVIADOS POR EL CLIENTE (VIDEOS, PLANOS, MEMORIAS, FOTOS) */}
-      {Array.isArray(quote.attachments) && quote.attachments.length > 0 && (
-        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', marginTop: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
-            <strong style={{ fontSize: '0.82rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              📎 Material y Archivos Enviados por el Cliente ({quote.attachments.length})
-            </strong>
-            <span style={{ fontSize: '0.74rem', color: '#64748b' }}>Archivos originales de la cotización</span>
-          </div>
+  return (
+    <section className="customer-portal">
+      <header>
+        <div>
+          {customerRouteId ? <Link to={`/admin/clientes/${customerRouteId}`}>← Volver al cliente</Link> : <Link to="/admin/cotizaciones-clientes">← Volver a cotizaciones</Link>}
+          <span>Respuesta comercial</span>
+          <h1>{quote.title}</h1>
+          <p>{customer?.name || 'Cliente corporativo'} · {quote.referenceNumber}</p>
+        </div>
+        {quote.totalAmount > 0 && <strong>{formatPrice(quote.totalAmount, quote.currency)}</strong>}
+      </header>
+      {error && <p className="customer-portal-error">{error}</p>}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
-            {quote.attachments.map((att, idx) => {
-              const isVid = att.type?.startsWith('video/') || att.category === 'video' || Boolean(att.name?.match(/\.(mp4|mov|webm|m4v|avi)$/i))
-              const isImg = !isVid && (att.type?.startsWith('image/') || att.category === 'foto' || Boolean(att.name?.match(/\.(png|jpe?g|webp|gif)$/i)))
-              const src = att.url || att.data
+      <div className="admin-quote-workspace">
+        <div className="quote-workspace">
+          <div className="quote-workspace-head">
+            <div>
+              <span>Solicitud del cliente</span>
+              <p>{quote.description}</p>
 
-              return (
-                <div key={idx} style={{ background: 'white', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '1.1rem' }}>{isVid ? '🎥' : isImg ? '📷' : '📐'}</span>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }} title={att.name}>
-                      {att.name}
-                    </span>
+              {/* VISTA RÁPIDA DE ADJUNTOS ENVIADOS POR EL CLIENTE (VIDEOS, PLANOS, MEMORIAS, FOTOS) */}
+              {Array.isArray(quote.attachments) && quote.attachments.length > 0 && (
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', marginTop: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📎 Material y Archivos Enviados por el Cliente ({quote.attachments.length})
+                    </strong>
+                    <span style={{ fontSize: '0.74rem', color: '#64748b' }}>Archivos originales de la cotización</span>
                   </div>
 
-                  {isVid && src && (
-                    <video
-                      src={src}
-                      controls
-                      preload="metadata"
-                      playsInline
-                      style={{ width: '100%', maxHeight: '160px', borderRadius: '4px', background: '#0f172a', display: 'block' }}
-                    />
-                  )}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+                    {quote.attachments.map((att, idx) => {
+                      const isVid = att.type?.startsWith('video/') || att.category === 'video' || Boolean(att.name?.match(/\.(mp4|mov|webm|m4v|avi)$/i))
+                      const isImg = !isVid && (att.type?.startsWith('image/') || att.category === 'foto' || Boolean(att.name?.match(/\.(png|jpe?g|webp|gif)$/i)))
+                      const src = att.url || att.data
 
-                  {isImg && src && (
-                    <img
-                      src={src}
-                      alt={att.name}
-                      style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e2e8f0' }}
-                    />
-                  )}
+                      return (
+                        <div key={idx} style={{ background: 'white', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '1.1rem' }}>{isVid ? '🎥' : isImg ? '📷' : '📐'}</span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }} title={att.name}>
+                              {att.name}
+                            </span>
+                          </div>
 
-                  <a
-                    href={src}
-                    target="_blank"
-                    rel="noreferrer"
-                    download={!att.url || att.url.startsWith('data:') ? att.name : undefined}
-                    style={{ fontSize: '0.76rem', color: '#ea580c', textDecoration: 'none', fontWeight: 700, marginTop: 'auto', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                  >
-                    {isVid ? 'Ver / Descargar Video ⬇' : 'Abrir / Descargar ⬇'}
-                  </a>
+                          {isVid && src && (
+                            <video
+                              src={src}
+                              controls
+                              preload="metadata"
+                              playsInline
+                              style={{ width: '100%', maxHeight: '160px', borderRadius: '4px', background: '#0f172a', display: 'block' }}
+                            />
+                          )}
+
+                          {isImg && src && (
+                            <img
+                              src={src}
+                              alt={att.name}
+                              style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e2e8f0' }}
+                            />
+                          )}
+
+                          <a
+                            href={src}
+                            target="_blank"
+                            rel="noreferrer"
+                            download={!att.url || att.url.startsWith('data:') ? att.name : undefined}
+                            style={{ fontSize: '0.76rem', color: '#ea580c', textDecoration: 'none', fontWeight: 700, marginTop: 'auto', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            {isVid ? 'Ver / Descargar Video ⬇' : 'Abrir / Descargar ⬇'}
+                          </a>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
+              )}
 
-      <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <button type="button" onClick={parseWithAI} disabled={isParsingAI} style={{ background: '#f8f5ef', color: '#ea580c', border: '1px solid #ea580c', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>
-          {isParsingAI ? '⏳ Analizando requerimientos...' : '✨ Extraer datos técnicos con IA'}
-        </button>
-        <Link
-          to={`/admin/cotiza?quoteId=${quote.id}&customerId=${customerRouteId}&title=${encodeURIComponent(quote.title)}`}
-          style={{ background: '#131313', color: 'white', textDecoration: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
-        >
-          ⚡ Abrir en OXI Quote
-        </Link>
-        <button
-          type="button"
-          onClick={() => setShowWhatsAppModal(true)}
-          style={{ background: '#25d366', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-        >
-          💬 Compartir por WhatsApp
-        </button>
-        {quote.accessToken && (
-          <Link
-            to={`/cotizacion/${quote.accessToken}`}
-            target="_blank"
-            rel="noreferrer"
-            style={{ background: '#f5f0e8', color: '#171816', border: '1px solid #dcd4c8', textDecoration: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
-          >
-            🔗 Vista del Comitente ↗
-          </Link>
-        )}
-      </div>
-
-      {/* COSTEO VINCULADO BANNER */}
-      {quote.documentItems?.length > 0 && (
-        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.85rem 1rem', borderRadius: '8px', marginTop: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <span style={{ color: '#166534', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>📐 Costeo Paramétrico OXI Quote Vinculado</span>
-            <strong style={{ color: '#15803d', fontSize: '1.05rem' }}>{formatPrice(quote.totalAmount, quote.currency)}</strong>
-          </div>
-          <p style={{ margin: '0 0 8px 0', fontSize: '0.82rem', color: '#14532d' }}>
-            Esta cotización cuenta con un desglose técnico generado desde OXI Quote ({quote.documentItems.length} partidas de materiales y mano de obra).
-          </p>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <Link
-              to={`/admin/cotiza?quoteId=${quote.id}&customerId=${id}&title=${encodeURIComponent(quote.title)}`}
-              style={{ fontSize: '0.78rem', background: 'white', border: '1px solid #86efac', color: '#166534', padding: '3px 8px', borderRadius: '4px', textDecoration: 'none', fontWeight: 600 }}
-            >
-              🔄 Recalcular / Modificar medidas en OXI Quote
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {aiSuggestion && (
-        <div style={{ background: '#f8f5ef', border: '1px solid #dcd4c9', padding: '1rem', borderRadius: '8px', marginTop: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h4 style={{ margin: 0, color: '#ea580c', fontSize: '1rem' }}>🤖 OXI AI extrajo:</h4>
-            <span style={{ fontSize: '0.75rem', color: '#666' }}>Variables paramétricas normalizadas</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {aiSuggestion.detected_items?.map((item, idx) => {
-              const targetTemplate = item.suggested_template || 'OXI_DIVIDER_D01'
-              const lengthParam = item.dimensions?.length_m || ''
-              const heightParam = item.dimensions?.height_m || ''
-              const qtyParam = item.quantity || 1
-              const titleParam = encodeURIComponent(item.product_type || quote.title)
-              const cotizaUrl = `/admin/cotiza?quoteId=${quote.id}&customerId=${id}&templateCode=${targetTemplate}&lengthM=${lengthParam}&widthM=${lengthParam}&heightM=${heightParam}&quantity=${qtyParam}&title=${titleParam}`
-
-              return (
-                <div key={idx} style={{ background: 'white', padding: '10px', borderRadius: '6px', border: '1px solid #e5e0d8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <div>
-                    <strong style={{ fontSize: '0.92rem', color: '#131313' }}>{item.quantity}x {item.product_type}</strong>
-                    <div style={{ fontSize: '0.82rem', color: '#555', marginTop: '2px' }}>
-                      {item.material} · {item.dimensions?.length_m ? `${item.dimensions.length_m}m largo × ${item.dimensions.height_m || '?'}m alto` : 'Medidas a definir'}
-                      {item.finish ? ` · ${item.finish}` : ''}
-                    </div>
-                  </div>
-                  <Link
-                    to={cotizaUrl}
-                    style={{
-                      background: '#ea580c',
-                      color: 'white',
-                      textDecoration: 'none',
-                      padding: '6px 12px',
-                      borderRadius: '4px',
-                      fontSize: '0.82rem',
-                      fontWeight: 700,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    ⚡ Cotizar en OXI Quote con 1 clic
-                  </Link>
-                </div>
-              )
-            })}
-          </div>
-          {aiSuggestion.missing_critical_info?.length > 0 && (
-            <div style={{ marginTop: '12px', color: '#b91c1c', fontSize: '0.85rem', background: '#fee2e2', padding: '8px', borderRadius: '4px' }}>
-              <strong>Faltan datos clave para costeo exacto:</strong> {aiSuggestion.missing_critical_info.join(', ')}
-            </div>
-          )}
-        </div>
-      )}
-      {formatRequestedDate(quote.desiredDate)&&<p style={{marginTop: '0.75rem'}}>Fecha deseada: {formatRequestedDate(quote.desiredDate)}</p>}</div></div>
-      <QuoteDocumentsAndTimeline
-        quote={quote}
-        messages={messages}
-        onSendMessage={handleSendMessage}
-        onUploadDocument={handleUploadDocument}
-        isAdmin={true}
-      />
-    </div>
-      <form className="admin-proposal-form" onSubmit={saveProposal}><span>Propuesta económica</span><h2>Preparar cotización</h2><label>Título<input value={quote.title} onChange={e=>setQuote({...quote,title:e.target.value})}/></label>
-      <label>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Descripción para el cliente</span>
-          <button type="button" onClick={generateProposal} disabled={isGeneratingProposal} style={{ background: 'transparent', color: '#ea580c', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>{isGeneratingProposal ? '⏳ Escribiendo...' : '✨ Redactar con IA'}</button>
-        </div>
-        <textarea rows="8" value={quote.proposalDescription||''} onChange={e=>setQuote({...quote,proposalDescription:e.target.value})}/>
-      </label>
-      <div><label>Monto a cobrar<input type="number" min="0" value={quote.totalAmount} onChange={e=>setQuote({...quote,totalAmount:e.target.value})}/></label><label>Moneda<select value={quote.currency} onChange={e=>setQuote({...quote,currency:e.target.value})}><option>UYU</option><option>USD</option></select></label></div><label>Estado general<select value={quote.status} onChange={e=>setQuote({...quote,status:e.target.value})}><option value="in_progress">Solicitud recibida</option><option value="sent">Cotización enviada</option><option value="accepted">Presupuesto aprobado</option><option value="project_in_progress">Obra en proceso</option><option value="completed">Trabajo terminado</option><option value="cancelled">Cancelada</option></select></label><label>Inicio estimado<input type="date" value={quote.estimatedStartAt||''} onChange={e=>setQuote({...quote,estimatedStartAt:e.target.value})}/></label><label>Fin estimado<input type="date" value={quote.estimatedEndAt||''} onChange={e=>setQuote({...quote,estimatedEndAt:e.target.value})}/></label><section className="admin-milestones"><header><div><span>Seguimiento de obra</span><h3>Hitos del proyecto</h3></div><button type="button" onClick={addMilestone}>＋ Agregar hito</button></header>{(quote.milestones||[]).length===0?<p>Todavía no hay hitos. Podés agregarlos cuando el presupuesto sea aprobado.</p>:(quote.milestones||[]).map((item,index)=><article key={item.id||index}><label>Etapa<input value={item.title} onChange={e=>updateMilestone(index,{title:e.target.value})} placeholder="Ej: Fabricación" required/></label><label>Nota visible<textarea rows="2" value={item.description||''} onChange={e=>updateMilestone(index,{description:e.target.value})}/></label><div><label>Estado<select value={item.status} onChange={e=>updateMilestone(index,{status:e.target.value,completedAt:e.target.value==='completed'?(item.completedAt||new Date().toISOString()):null})}>{Object.entries(MILESTONE_STATUS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label>Desde<input type="date" value={item.plannedStartAt||''} onChange={e=>updateMilestone(index,{plannedStartAt:e.target.value})}/></label><label>Hasta<input type="date" value={item.plannedEndAt||''} onChange={e=>updateMilestone(index,{plannedEndAt:e.target.value})}/></label></div><button type="button" onClick={()=>removeMilestone(index)}>Eliminar hito</button></article>)}</section><button disabled={saving}>{saving?'Guardando…':'Guardar y notificar al cliente'}</button></form></div>
-
-      {/* OXI NETWORK · ASIGNACIÓN Y AVANCE EN TALLER */}
-      <section className="admin-deposit-config" style={{ borderTop: '2px solid #ea580c' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <div>
-            <span>OXI Network · Fabricación Distribuida</span>
-            <h2>Asignación a Taller</h2>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowAssignModal(true)}
-            style={{
-              background: '#131313',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            🔨 {fabOrders.length > 0 ? 'Asignar Otra Pieza' : 'Asignar a Taller (OXI)'}
-          </button>
-        </div>
-
-        {fabOrders.length === 0 ? (
-          <div style={{ padding: '1.25rem', background: 'white', border: '1px dashed #dcd4c9', borderRadius: '6px', textAlign: 'center' }}>
-            <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
-              Esta cotización aún no ha sido asignada a ningún taller en la red de proveedores OXI Network.
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowAssignModal(true)}
-              style={{ marginTop: '10px', background: 'transparent', color: '#ea580c', border: '1px solid #ea580c', padding: '6px 14px', borderRadius: '4px', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}
-            >
-              ＋ Despachar orden de trabajo
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
-            {fabOrders.map((order) => {
-              const statusVariant = {
-                pending: 'warning',
-                accepted: 'info',
-                in_progress: 'preparing',
-                ready: 'success',
-                delivered: 'default',
-                rejected: 'danger'
-              }[order.status] || 'default'
-
-              const statusText = {
-                pending: 'Pendiente de aceptación',
-                accepted: 'Aceptado por taller',
-                in_progress: 'En fabricación',
-                ready: 'Listo para retiro / entrega',
-                delivered: 'Entregado y completado',
-                rejected: 'Rechazado'
-              }[order.status] || order.status
-
-              return (
-                <div key={order.id} style={{ background: 'white', border: '1px solid #e7ded2', borderRadius: '6px', padding: '1rem', width: '100%' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div>
-                      <span style={{ fontSize: '0.8rem', color: '#ea580c', fontWeight: 700 }}>ORDEN #{order.id} · {order.supplierCompany}</span>
-                      <h4 style={{ margin: '2px 0 0', fontSize: '1.05rem', color: '#171816' }}>{order.title}</h4>
-                    </div>
-                    <Badge variant={statusVariant}>{statusText}</Badge>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', background: '#f9f8f6', padding: '8px 12px', borderRadius: '4px', fontSize: '0.82rem', margin: '8px 0' }}>
-                    <div>
-                      <span style={{ color: '#888', display: 'block', fontSize: '0.72rem' }}>COSTO TALLER</span>
-                      <strong>{formatPrice(order.targetPrice, order.currency)}</strong>
-                    </div>
-                    <div>
-                      <span style={{ color: '#888', display: 'block', fontSize: '0.72rem' }}>FECHA LÍMITE</span>
-                      <span>{order.deadline ? new Date(order.deadline + 'T00:00:00').toLocaleDateString('es-UY') : 'A coordinar'}</span>
-                    </div>
-                    <div>
-                      <span style={{ color: '#888', display: 'block', fontSize: '0.72rem' }}>AVANCE EN TALLER</span>
-                      <strong style={{ color: '#ea580c' }}>{order.progressPercent}%</strong>
-                    </div>
-                  </div>
-
-                  {/* Visual Progress Bar */}
-                  <div style={{ width: '100%', height: '6px', background: '#e5e0d8', borderRadius: '3px', overflow: 'hidden', margin: '6px 0 10px' }}>
-                    <div style={{ width: `${Math.min(100, Math.max(0, order.progressPercent))}%`, height: '100%', background: '#ea580c', transition: 'width 0.3s ease' }} />
-                  </div>
-
-                  {order.workshopNotes && (
-                    <div style={{ background: '#fcfbf9', borderLeft: '3px solid #131313', padding: '6px 10px', fontSize: '0.82rem', color: '#444' }}>
-                      <strong>Nota del taller:</strong> {order.workshopNotes}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* MODAL DE ASIGNACIÓN A TALLER */}
-      {showAssignModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-          <div style={{ background: 'white', borderRadius: '10px', maxWidth: '520px', width: '100%', padding: '1.75rem', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '0.75rem' }}>
-              <div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#ea580c', textTransform: 'uppercase' }}>OXI NETWORK</span>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#131313' }}>Asignar Trabajo a Taller</h3>
-              </div>
-              <button type="button" onClick={() => setShowAssignModal(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#999' }}>×</button>
-            </div>
-
-            {assignError && <p style={{ color: '#dc2626', fontSize: '0.85rem', marginBottom: '10px' }}>{assignError}</p>}
-
-            <form onSubmit={handleAssignSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem' }}>
-                <span style={{ fontWeight: 600 }}>Taller Fabricante</span>
-                <select
-                  value={assignForm.supplierId}
-                  onChange={(e) => setAssignForm({ ...assignForm, supplierId: e.target.value })}
-                  required
-                  style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid #ccc' }}
+              <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button type="button" onClick={parseWithAI} disabled={isParsingAI} style={{ background: '#f8f5ef', color: '#ea580c', border: '1px solid #ea580c', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>
+                  {isParsingAI ? '⏳ Analizando requerimientos...' : '✨ Extraer datos técnicos con IA'}
+                </button>
+                <Link
+                  to={`/admin/cotiza?quoteId=${quote.id}&customerId=${customerRouteId}&title=${encodeURIComponent(quote.title)}`}
+                  style={{ background: '#131313', color: 'white', textDecoration: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
                 >
-                  <option value="">Seleccioná un taller...</option>
-                  {suppliers.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.company || s.email}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem' }}>
-                <span style={{ fontWeight: 600 }}>Título de la pieza o trabajo</span>
-                <input
-                  type="text"
-                  value={assignForm.title}
-                  onChange={(e) => setAssignForm({ ...assignForm, title: e.target.value })}
-                  required
-                  style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid #ccc' }}
-                />
-              </label>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem' }}>
-                  <span style={{ fontWeight: 600 }}>Presupuesto / Costo</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={assignForm.targetPrice}
-                    onChange={(e) => setAssignForm({ ...assignForm, targetPrice: e.target.value })}
-                    required
-                    style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid #ccc' }}
-                  />
-                </label>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem' }}>
-                  <span style={{ fontWeight: 600 }}>Moneda</span>
-                  <select
-                    value={assignForm.currency}
-                    onChange={(e) => setAssignForm({ ...assignForm, currency: e.target.value })}
-                    style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid #ccc' }}
-                  >
-                    <option value="USD">USD</option>
-                    <option value="UYU">UYU</option>
-                  </select>
-                </label>
-              </div>
-
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem' }}>
-                <span style={{ fontWeight: 600 }}>Fecha límite de entrega</span>
-                <input
-                  type="date"
-                  value={assignForm.deadline}
-                  onChange={(e) => setAssignForm({ ...assignForm, deadline: e.target.value })}
-                  style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid #ccc' }}
-                />
-              </label>
-
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem' }}>
-                <span style={{ fontWeight: 600 }}>Instrucciones y especificaciones técnicas</span>
-                <textarea
-                  rows="4"
-                  value={assignForm.description}
-                  onChange={(e) => setAssignForm({ ...assignForm, description: e.target.value })}
-                  placeholder="Detalles sobre perfiles, cortes, soldaduras y pintura..."
-                  style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid #ccc', resize: 'vertical' }}
-                />
-              </label>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                  ⚡ Abrir en OXI Quote
+                </Link>
                 <button
                   type="button"
-                  onClick={() => setShowAssignModal(false)}
-                  style={{ padding: '8px 14px', background: '#f5f5f5', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}
+                  onClick={() => setShowWhatsAppModal(true)}
+                  style={{ background: '#25d366', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                 >
-                  Cancelar
+                  💬 Compartir por WhatsApp
                 </button>
-                <button
-                  type="submit"
-                  disabled={assigning}
-                  style={{ padding: '8px 16px', background: '#ea580c', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 600, cursor: 'pointer' }}
-                >
-                  {assigning ? 'Despachando...' : 'Despachar a Taller'}
-                </button>
+                {quote.accessToken && (
+                  <Link
+                    to={`/cotizacion/${quote.accessToken}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ background: '#f5f0e8', color: '#171816', border: '1px solid #dcd4c8', textDecoration: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+                  >
+                    🔗 Vista del Comitente ↗
+                  </Link>
+                )}
               </div>
-            </form>
+
+              {/* COSTEO VINCULADO BANNER */}
+              {quote.documentItems?.length > 0 && (
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.85rem 1rem', borderRadius: '8px', marginTop: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ color: '#166534', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>📐 Costeo Paramétrico OXI Quote Vinculado</span>
+                    <strong style={{ color: '#15803d', fontSize: '1.05rem' }}>{formatPrice(quote.totalAmount, quote.currency)}</strong>
+                  </div>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '0.82rem', color: '#14532d' }}>
+                    Esta cotización cuenta con un desglose técnico generado desde OXI Quote ({quote.documentItems.length} partidas de materiales y mano de obra).
+                  </p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <Link
+                      to={`/admin/cotiza?quoteId=${quote.id}&customerId=${id}&title=${encodeURIComponent(quote.title)}`}
+                      style={{ fontSize: '0.78rem', background: 'white', border: '1px solid #86efac', color: '#166534', padding: '3px 8px', borderRadius: '4px', textDecoration: 'none', fontWeight: 600 }}
+                    >
+                      🔄 Recalcular / Modificar medidas en OXI Quote
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {aiSuggestion && (
+                <div style={{ background: '#f8f5ef', border: '1px solid #dcd4c9', padding: '1rem', borderRadius: '8px', marginTop: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <h4 style={{ margin: 0, color: '#ea580c', fontSize: '1rem' }}>🤖 OXI AI extrajo:</h4>
+                    <span style={{ fontSize: '0.75rem', color: '#666' }}>Variables paramétricas normalizadas</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {aiSuggestion.detected_items?.map((item, idx) => {
+                      const targetTemplate = item.suggested_template || 'OXI_DIVIDER_D01'
+                      const lengthParam = item.dimensions?.length_m || ''
+                      const heightParam = item.dimensions?.height_m || ''
+                      const qtyParam = item.quantity || 1
+                      const titleParam = encodeURIComponent(item.product_type || quote.title)
+                      const cotizaUrl = `/admin/cotiza?quoteId=${quote.id}&customerId=${id}&templateCode=${targetTemplate}&lengthM=${lengthParam}&widthM=${lengthParam}&heightM=${heightParam}&quantity=${qtyParam}&title=${titleParam}`
+
+                      return (
+                        <div key={idx} style={{ background: 'white', padding: '10px', borderRadius: '6px', border: '1px solid #e5e0d8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <div>
+                            <strong style={{ fontSize: '0.92rem', color: '#131313' }}>{item.quantity}x {item.product_type}</strong>
+                            <div style={{ fontSize: '0.82rem', color: '#555', marginTop: '2px' }}>
+                              {item.material} · {item.dimensions?.length_m ? `${item.dimensions.length_m}m largo × ${item.dimensions.height_m || '?'}m alto` : 'Medidas a definir'}
+                              {item.finish ? ` · ${item.finish}` : ''}
+                            </div>
+                          </div>
+                          <Link
+                            to={cotizaUrl}
+                            style={{
+                              background: '#ea580c',
+                              color: 'white',
+                              textDecoration: 'none',
+                              padding: '6px 12px',
+                              borderRadius: '4px',
+                              fontSize: '0.82rem',
+                              fontWeight: 700,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            ⚡ Cotizar en OXI Quote con 1 clic
+                          </Link>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  {aiSuggestion.missing_critical_info?.length > 0 && (
+                    <div style={{ marginTop: '12px', color: '#b91c1c', fontSize: '0.85rem', background: '#fee2e2', padding: '8px', borderRadius: '4px' }}>
+                      <strong>Faltan datos clave para costeo exacto:</strong> {aiSuggestion.missing_critical_info.join(', ')}
+                    </div>
+                  )}
+                </div>
+              )}
+              {formatRequestedDate(quote.desiredDate) && <p style={{ marginTop: '0.75rem' }}>Fecha deseada: {formatRequestedDate(quote.desiredDate)}</p>}
+            </div>
           </div>
+          <QuoteDocumentsAndTimeline
+            quote={quote}
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            onUploadDocument={handleUploadDocument}
+            isAdmin={true}
+          />
         </div>
+
+        {/* FORMULARIO DE CARGA DE COTIZACIÓN Y COMENTARIOS */}
+        <form className="admin-proposal-form" onSubmit={saveProposal}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+            <span>GESTIÓN COMERCIAL · COTIZACIÓN</span>
+            {quote.sentAt ? (
+              <span style={{ fontSize: '0.74rem', color: '#86efac', background: '#052e16', padding: '2px 8px', borderRadius: '4px', border: '1px solid #166534', fontWeight: 600 }}>
+                ✓ Cotizada {formatDateTime(quote.sentAt)}
+              </span>
+            ) : (
+              <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                Recibida: {formatDateTime(quote.createdAt)}
+              </span>
+            )}
+          </div>
+
+          <h2 style={{ fontSize: '1.25rem', margin: '4px 0 10px', color: '#fff' }}>
+            Cargar Cotización & Comentarios
+          </h2>
+
+          {/* Monto y Moneda */}
+          <div>
+            <label>
+              Monto a cotizar *
+              <input
+                type="number"
+                min="0"
+                value={quote.totalAmount || ''}
+                onChange={(e) => setQuote({ ...quote, totalAmount: e.target.value })}
+                placeholder="Ej: 1850"
+                required
+              />
+            </label>
+            <label>
+              Moneda
+              <select
+                value={quote.currency || 'USD'}
+                onChange={(e) => setQuote({ ...quote, currency: e.target.value })}
+              >
+                <option value="USD">USD ($)</option>
+                <option value="UYU">UYU ($U)</option>
+              </select>
+            </label>
+          </div>
+
+          {/* Estado de la cotización */}
+          <label>
+            Estado de la cotización
+            <select
+              value={quote.status || 'in_progress'}
+              onChange={(e) => setQuote({ ...quote, status: e.target.value })}
+            >
+              <option value="in_progress">Solicitud recibida (En análisis)</option>
+              <option value="sent">Cotización enviada (Para aprobación del cliente)</option>
+              <option value="accepted">Presupuesto aprobado por el cliente</option>
+              <option value="project_in_progress">Obra / Fabricación en proceso</option>
+              <option value="completed">Trabajo terminado</option>
+              <option value="cancelled">Cancelada / Rechazada</option>
+            </select>
+          </label>
+
+          {/* Título de la cotización */}
+          <label>
+            Título del proyecto / pieza
+            <input
+              value={quote.title || ''}
+              onChange={(e) => setQuote({ ...quote, title: e.target.value })}
+              required
+            />
+          </label>
+
+          {/* Breves comentarios / Observaciones técnicas */}
+          <label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Breves comentarios / observaciones para el cliente</span>
+              <button
+                type="button"
+                onClick={generateProposal}
+                disabled={isGeneratingProposal}
+                style={{ background: 'transparent', color: '#ea580c', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
+              >
+                {isGeneratingProposal ? '⏳ Escribiendo...' : '✨ Redactar con IA'}
+              </button>
+            </div>
+            <textarea
+              rows="6"
+              value={quote.proposalDescription || ''}
+              onChange={(e) => setQuote({ ...quote, proposalDescription: e.target.value })}
+              placeholder="Escribí los detalles de la propuesta, materiales (perfiles de hierro, pintura en polvo, madera), plazos de entrega y aclaraciones de montaje para el comitente..."
+            />
+          </label>
+
+          {/* Fechas estimadas */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
+            <label>
+              Inicio estimado
+              <input
+                type="date"
+                value={quote.estimatedStartAt || ''}
+                onChange={(e) => setQuote({ ...quote, estimatedStartAt: e.target.value })}
+              />
+            </label>
+            <label>
+              Fin estimado
+              <input
+                type="date"
+                value={quote.estimatedEndAt || ''}
+                onChange={(e) => setQuote({ ...quote, estimatedEndAt: e.target.value })}
+              />
+            </label>
+          </div>
+
+          {/* Adjuntar archivo formal de cotización si existe */}
+          <div style={{ background: '#0a0c10', border: '1px dashed rgba(255,255,255,0.2)', borderRadius: '8px', padding: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <span style={{ fontSize: '0.78rem', color: '#cbd5e1', fontWeight: 700 }}>
+                📄 Adjuntar Presupuesto Formal (PDF / Excel / Imagen)
+              </span>
+              {quoteProposalFile && (
+                <button
+                  type="button"
+                  onClick={() => setQuoteProposalFile(null)}
+                  style={{ background: 'none', border: 'none', color: '#f87171', fontSize: '0.75rem', cursor: 'pointer' }}
+                >
+                  ✕ Quitar
+                </button>
+              )}
+            </div>
+            {quoteProposalFile ? (
+              <div style={{ fontSize: '0.8rem', color: '#86efac', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>✓</span> <strong>{quoteProposalFile.name}</strong> ({(quoteProposalFile.size / 1024 / 1024).toFixed(2)} MB)
+              </div>
+            ) : (
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#ea580c', cursor: 'pointer', fontWeight: 600 }}>
+                📎 Cargar archivo de cotización
+                <input
+                  type="file"
+                  accept=".pdf,.xlsx,.xls,.doc,.docx,image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const reader = new FileReader()
+                    reader.onload = () => {
+                      setQuoteProposalFile({
+                        name: file.name,
+                        type: file.type || 'application/pdf',
+                        category: 'cotizacion',
+                        data: reader.result,
+                        size: file.size,
+                        uploadedAt: new Date().toISOString()
+                      })
+                    }
+                    reader.readAsDataURL(file)
+                  }}
+                />
+              </label>
+            )}
+          </div>
+
+          {/* Botón guardar y notificar */}
+          <button
+            type="submit"
+            disabled={saving}
+            style={{
+              padding: '14px',
+              border: 0,
+              borderRadius: '8px',
+              background: '#ea580c',
+              color: '#fff',
+              fontWeight: 900,
+              cursor: 'pointer',
+              fontSize: '0.95rem'
+            }}
+          >
+            {saving ? 'Guardando cotización…' : '💾 Guardar y Enviar Cotización al Cliente'}
+          </button>
+
+          {savedNotice && (
+            <div style={{ background: '#052e16', color: '#86efac', border: '1px solid #166534', padding: '10px 12px', borderRadius: '6px', fontSize: '0.82rem', textAlign: 'center' }}>
+              ✓ ¡Cotización guardada! El comitente ya puede verla y aceptarla desde su panel.
+            </div>
+          )}
+        </form>
+      </div>
+
+      {showWhatsAppModal && (
+        <ShareQuoteWhatsAppModal
+          quote={quote}
+          customer={customer}
+          onClose={() => setShowWhatsAppModal(false)}
+        />
       )}
-
-      <form className="admin-deposit-config" onSubmit={saveProposal}><span>Cobro de seña</span><h2>Reserva del proyecto</h2><div><label>Modalidad<select value={quote.depositMode||'none'} onChange={e=>setQuote({...quote,depositMode:e.target.value,depositValue:e.target.value==='none'?0:quote.depositValue})}><option value="none">Sin seña</option><option value="percentage">Porcentaje</option><option value="fixed">Monto fijo</option></select></label>{quote.depositMode!=='none'&&<label>{quote.depositMode==='percentage'?'Porcentaje (%)':'Monto fijo'}<input type="number" min="0" max={quote.depositMode==='percentage'?100:undefined} value={quote.depositValue||''} onChange={e=>setQuote({...quote,depositValue:e.target.value})}/></label>}</div>{quote.depositAmount>0&&<p>Seña calculada: <strong>{formatPrice(quote.depositAmount,quote.currency)}</strong> · Estado: {quote.depositStatus}</p>}{quote.depositStatus==='reported'&&<div className="admin-deposit-review"><a href={quote.depositReceipt?.url || quote.depositReceipt?.data} target="_blank" rel="noreferrer" download={!quote.depositReceipt?.url ? (quote.depositReceipt?.name||'comprobante') : undefined}>Ver comprobante</a><button type="button" onClick={()=>reviewDeposit('approved')} disabled={saving}>Confirmar transferencia</button><button type="button" onClick={()=>reviewDeposit('rejected')} disabled={saving}>Rechazar</button></div>}<button disabled={saving}>{saving?'Guardando…':'Guardar configuración de seña'}</button></form>
-    <form className="admin-document-builder" onSubmit={saveAndDownloadPdf}><span>Documento comercial</span><header><div><h2>Cotización PDF</h2><p>Documento corto con detalle económico y condiciones esenciales.</p></div><button type="button" onClick={addDocumentItem}>＋ Agregar ítem</button></header><div className="admin-document-items">{(quote.documentItems||[]).map((item,index)=><article key={`${item.code}-${index}`}><input value={item.code||''} onChange={e=>updateDocumentItem(index,{code:e.target.value})} placeholder="Código"/><input value={item.description||''} onChange={e=>updateDocumentItem(index,{description:e.target.value})} placeholder="Descripción del ítem" required/><input type="number" min="0" value={item.subtotal??''} onChange={e=>updateDocumentItem(index,{subtotal:e.target.value})} placeholder="Subtotal sin IVA" required/><button type="button" onClick={()=>removeDocumentItem(index)} aria-label="Eliminar ítem">×</button></article>)}</div><div className="admin-document-grid"><label>IVA (%)<input type="number" min="0" max="100" value={quote.taxRate??22} onChange={e=>updateTaxRate(e.target.value)}/></label><label>Validez (días)<input type="number" min="1" value={quote.documentTerms?.validityDays||30} onChange={e=>setQuote({...quote,documentTerms:{...(quote.documentTerms||{}),validityDays:e.target.value}})}/></label><label className="is-wide">Forma de pago<textarea rows="3" value={quote.documentTerms?.paymentTerms||''} onChange={e=>setQuote({...quote,documentTerms:{...(quote.documentTerms||{}),paymentTerms:e.target.value}})}/></label><label className="is-wide">Plazo de ejecución<textarea rows="2" value={quote.documentTerms?.executionTime||''} onChange={e=>setQuote({...quote,documentTerms:{...(quote.documentTerms||{}),executionTime:e.target.value}})}/></label><label className="is-wide">Garantía<textarea rows="3" value={quote.documentTerms?.warranty||''} onChange={e=>setQuote({...quote,documentTerms:{...(quote.documentTerms||{}),warranty:e.target.value}})}/></label><label className="is-wide">Exclusiones<textarea rows="4" value={quote.documentTerms?.exclusions||''} onChange={e=>setQuote({...quote,documentTerms:{...(quote.documentTerms||{}),exclusions:e.target.value}})}/></label><label className="is-wide">Notas adicionales<textarea rows="3" value={quote.documentTerms?.notes||''} onChange={e=>setQuote({...quote,documentTerms:{...(quote.documentTerms||{}),notes:e.target.value}})}/></label></div><button disabled={saving||!(quote.documentItems||[]).length}>{saving?'Generando…':'Guardar y descargar PDF'}</button></form>
-
-    {showWhatsAppModal && (
-      <ShareQuoteWhatsAppModal
-        quote={quote}
-        customer={customer}
-        onClose={() => setShowWhatsAppModal(false)}
-      />
-    )}
-  </section>
+    </section>
+  )
 }
