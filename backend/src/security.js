@@ -55,7 +55,7 @@ export function setupSecurityMiddleware(app) {
  * El resto de la API usa el límite chico por defecto.
  */
 export const DEFAULT_JSON_LIMIT = '1mb'
-export const LARGE_JSON_LIMIT = '12mb' // Permite galerías de hasta cinco imágenes optimizadas
+export const LARGE_JSON_LIMIT = '35mb' // Permite galerías, planos y videos cortos de obra
 
 const LARGE_BODY_ROUTES = [
   /\/attachments$/,

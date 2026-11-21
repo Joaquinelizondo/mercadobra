@@ -98,14 +98,58 @@ const EMPTY_REQUEST = {
   b2bProjectId: null 
 }
 
+function checkVideoDuration(file, maxSeconds = 25) {
+  if (!file.type?.startsWith('video/') && !file.name?.match(/\.(mp4|mov|webm|m4v|avi)$/i)) {
+    return Promise.resolve()
+  }
+  return new Promise((resolve, reject) => {
+    try {
+      const video = document.createElement('video')
+      video.preload = 'metadata'
+      const url = URL.createObjectURL(file)
+      video.onloadedmetadata = () => {
+        URL.revokeObjectURL(url)
+        if (video.duration && video.duration > maxSeconds) {
+          reject(new Error(`El video "${file.name}" dura ${Math.round(video.duration)} segundos. Por favor subí un video corto de aproximadamente 20 segundos máximo para agilizar la cotización.`))
+        } else {
+          resolve()
+        }
+      }
+      video.onerror = () => {
+        URL.revokeObjectURL(url)
+        resolve()
+      }
+      video.src = url
+    } catch {
+      resolve()
+    }
+  })
+}
+
 function readFiles(files, category = 'archivo') {
-  return Promise.all(Array.from(files || []).slice(0, 10).map((file) => new Promise((resolve, reject) => {
-    if (file.size > 10 * 1024 * 1024) return reject(new Error('Cada archivo debe pesar menos de 10 MB.'))
-    const reader = new FileReader()
-    reader.onload = () => resolve({ name: file.name, type: file.type, category, data: reader.result })
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })))
+  return Promise.all(
+    Array.from(files || []).slice(0, 10).map(async (file) => {
+      const isVideo = file.type?.startsWith('video/') || category === 'video' || Boolean(file.name?.match(/\.(mp4|mov|webm|m4v|avi)$/i))
+      const maxSize = isVideo ? 25 * 1024 * 1024 : 15 * 1024 * 1024
+      if (file.size > maxSize) {
+        throw new Error(`El archivo ${file.name} supera el límite de ${isVideo ? '25' : '15'} MB.`)
+      }
+      if (isVideo) {
+        await checkVideoDuration(file, 25)
+      }
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve({
+          name: file.name,
+          type: file.type || 'video/mp4',
+          category: isVideo ? 'video' : category,
+          data: reader.result,
+        })
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+    })
+  )
 }
 
 function shortDate(value) {
@@ -1070,7 +1114,7 @@ export default function CustomerPortal() {
                   </div>
                   <h2>Solicitar Cotización de Herrería & Piezas</h2>
                   <p>
-                    Cargá planos (CAD, PDF), memorias descriptivas o fotos de referencia para cotizar barandas, escaleras, pérgolas, aberturas o piezas especiales de tu obra.
+                    Cargá planos (CAD, PDF), memorias descriptivas, fotos o videos cortos de obra (hasta 20s) para cotizar barandas, escaleras, pérgolas, aberturas o piezas especiales de tu proyecto.
                   </p>
                 </div>
 
@@ -1158,7 +1202,7 @@ export default function CustomerPortal() {
 
                   {/* Carga diferenciada de archivos */}
                   <div className="upload-sections-box">
-                    <strong>📁 Carga de Documentación:</strong>
+                    <strong>📁 Carga de Documentación & Material de Obra:</strong>
                     
                     <div className="upload-grid-row">
                       <div className="upload-col">
@@ -1214,6 +1258,24 @@ export default function CustomerPortal() {
                           />
                         </label>
                       </div>
+
+                      <div className="upload-col">
+                        <label className="upload-btn-label" style={{ borderColor: '#ea580c', color: '#ea580c' }}>
+                          🎥 Cargar Video Corto (hasta 20s)
+                          <input 
+                            type="file" 
+                            accept="video/mp4,video/quicktime,video/webm,video/*" 
+                            multiple 
+                            style={{ display: 'none' }}
+                            onChange={async e => {
+                              try {
+                                const newFiles = await readFiles(e.target.files, 'video')
+                                setRequest(prev => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }))
+                              } catch(err) { setError(err.message) }
+                            }}
+                          />
+                        </label>
+                      </div>
                     </div>
 
                     {request.attachments.length > 0 && (
@@ -1222,11 +1284,12 @@ export default function CustomerPortal() {
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
                           {request.attachments.map((f, idx) => (
                             <span key={idx} className="file-chip">
-                              {f.category === 'plano' ? '📐' : f.category === 'memoria' ? '📄' : f.category === 'foto' ? '📷' : '📎'} {f.name}
+                              {f.category === 'video' || f.type?.startsWith('video/') ? '🎥' : f.category === 'plano' ? '📐' : f.category === 'memoria' ? '📄' : f.category === 'foto' ? '📷' : '📎'} {f.name}
                               <button 
                                 type="button" 
                                 onClick={() => setRequest(prev => ({ ...prev, attachments: prev.attachments.filter((_, i) => i !== idx) }))}
                                 style={{ background: 'none', border: 'none', color: '#991b1b', cursor: 'pointer', padding: 0 }}
+                                title="Eliminar archivo"
                               >
                                 ✕
                               </button>

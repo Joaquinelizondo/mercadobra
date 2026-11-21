@@ -36,6 +36,7 @@ import {
   validateEnum,
   validateArray,
   validateStringLength,
+  validateAttachments,
   parsePublicQuoteToken,
   validateOrderStatus,
   validatePaymentMethod,
@@ -355,27 +356,6 @@ app.use('/public/quotes', createExpensiveLimiter({
   message: 'Demasiadas consultas desde esta conexión. Intenta nuevamente en unos minutos.',
 }))
 const pdfLimiter = createExpensiveLimiter({ max: 60, message: 'Límite de generación de PDF alcanzado. Intenta más tarde.' })
-
-function validateAttachments(value) {
-  const items = Array.isArray(value) ? value.slice(0, 15) : []
-  const ALLOWED_EXTS = /\.(pdf|dwg|dxf|cad|rvt|ifc|doc|docx|xls|xlsx|txt|csv|png|jpe?g|webp|svg)$/i
-  const ALLOWED_MIME_PREFIXES = ['application/', 'image/', 'text/']
-  return items.map((item) => {
-    const name = validateStringLength(item?.name || 'archivo', 'Nombre del archivo', 1, 200)
-    const type = validateStringLength(item?.type || 'application/octet-stream', 'Tipo de archivo', 1, 120)
-    const category = item?.category || 'archivo'
-    const data = String(item?.data || item?.url || '')
-    if (data.startsWith('data:') && data.length > 20000000) {
-      throw new ValidationError('Cada archivo debe pesar menos de 15 MB')
-    }
-    const isAllowedExt = ALLOWED_EXTS.test(name)
-    const isAllowedMime = ALLOWED_MIME_PREFIXES.some(prefix => type.startsWith(prefix))
-    if (!isAllowedExt && !isAllowedMime) {
-      throw new ValidationError('Formato de archivo no soportado. Se admiten PDF, DWG, DXF, DOC/DOCX, XLS/XLSX e imágenes.')
-    }
-    return { name, type, category, data }
-  })
-}
 
 async function processAttachments(value) {
   const validAttachments = validateAttachments(value)

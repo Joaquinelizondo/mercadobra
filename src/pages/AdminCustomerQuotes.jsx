@@ -332,6 +332,28 @@ export default function AdminCustomerQuotes() {
                   {q.customerName || q.customerEmail || 'Cliente B2B'}
                 </Link>
                 <p>{q.description}</p>
+                {Array.isArray(q.attachments) && q.attachments.length > 0 && (
+                  <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.74rem', background: '#f1f5f9', color: '#334155', padding: '2px 7px', borderRadius: '4px', fontWeight: 600 }}>
+                      📁 {q.attachments.length} adjunto{q.attachments.length > 1 ? 's' : ''}
+                    </span>
+                    {q.attachments.some(a => a.category === 'video' || a.type?.startsWith('video/') || Boolean(a.name?.match(/\.(mp4|mov|webm|m4v|avi)$/i))) && (
+                      <span style={{ fontSize: '0.74rem', background: '#fff7ed', color: '#ea580c', border: '1px solid #ffedd5', padding: '2px 7px', borderRadius: '4px', fontWeight: 600 }}>
+                        🎥 Video de obra
+                      </span>
+                    )}
+                    {q.attachments.some(a => a.category === 'plano' || a.category === 'planos' || Boolean(a.name?.match(/\.(pdf|dwg|dxf|cad|rvt|ifc)$/i))) && (
+                      <span style={{ fontSize: '0.74rem', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #dbeafe', padding: '2px 7px', borderRadius: '4px', fontWeight: 600 }}>
+                        📐 Planos
+                      </span>
+                    )}
+                    {q.attachments.some(a => a.category === 'foto' || a.category === 'vistas' || a.type?.startsWith('image/') || Boolean(a.name?.match(/\.(png|jpe?g|webp)$/i))) && (
+                      <span style={{ fontSize: '0.74rem', background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ede9fe', padding: '2px 7px', borderRadius: '4px', fontWeight: 600 }}>
+                        📷 Fotos
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="admin-quote-commercial">
                 {q.totalAmount > 0 && <strong>{formatPrice(q.totalAmount, q.currency)}</strong>}

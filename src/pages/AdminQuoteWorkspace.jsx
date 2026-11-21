@@ -200,6 +200,66 @@ export default function AdminQuoteWorkspace(){
   const customerRouteId = customer?.id || (id && Number(id) > 0 ? id : '')
   return <section className="customer-portal"><header><div>{customerRouteId ? <Link to={`/admin/clientes/${customerRouteId}`}>← Volver al cliente</Link> : <Link to="/admin/cotizaciones-clientes">← Volver a cotizaciones</Link>}<span>Respuesta comercial</span><h1>{quote.title}</h1><p>{customer?.name || 'Cliente corporativo'} · {quote.referenceNumber}</p></div>{quote.totalAmount>0&&<strong>{formatPrice(quote.totalAmount,quote.currency)}</strong>}</header>{error&&<p className="customer-portal-error">{error}</p>}
     <div className="admin-quote-workspace"><div className="quote-workspace"><div className="quote-workspace-head"><div><span>Solicitud del cliente</span><p>{quote.description}</p>
+
+      {/* VISTA RÁPIDA DE ADJUNTOS ENVIADOS POR EL CLIENTE (VIDEOS, PLANOS, MEMORIAS, FOTOS) */}
+      {Array.isArray(quote.attachments) && quote.attachments.length > 0 && (
+        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', marginTop: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+            <strong style={{ fontSize: '0.82rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              📎 Material y Archivos Enviados por el Cliente ({quote.attachments.length})
+            </strong>
+            <span style={{ fontSize: '0.74rem', color: '#64748b' }}>Archivos originales de la cotización</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+            {quote.attachments.map((att, idx) => {
+              const isVid = att.type?.startsWith('video/') || att.category === 'video' || Boolean(att.name?.match(/\.(mp4|mov|webm|m4v|avi)$/i))
+              const isImg = !isVid && (att.type?.startsWith('image/') || att.category === 'foto' || Boolean(att.name?.match(/\.(png|jpe?g|webp|gif)$/i)))
+              const src = att.url || att.data
+
+              return (
+                <div key={idx} style={{ background: 'white', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '1.1rem' }}>{isVid ? '🎥' : isImg ? '📷' : '📐'}</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }} title={att.name}>
+                      {att.name}
+                    </span>
+                  </div>
+
+                  {isVid && src && (
+                    <video
+                      src={src}
+                      controls
+                      preload="metadata"
+                      playsInline
+                      style={{ width: '100%', maxHeight: '160px', borderRadius: '4px', background: '#0f172a', display: 'block' }}
+                    />
+                  )}
+
+                  {isImg && src && (
+                    <img
+                      src={src}
+                      alt={att.name}
+                      style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e2e8f0' }}
+                    />
+                  )}
+
+                  <a
+                    href={src}
+                    target="_blank"
+                    rel="noreferrer"
+                    download={!att.url || att.url.startsWith('data:') ? att.name : undefined}
+                    style={{ fontSize: '0.76rem', color: '#ea580c', textDecoration: 'none', fontWeight: 700, marginTop: 'auto', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    {isVid ? 'Ver / Descargar Video ⬇' : 'Abrir / Descargar ⬇'}
+                  </a>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <button type="button" onClick={parseWithAI} disabled={isParsingAI} style={{ background: '#f8f5ef', color: '#ea580c', border: '1px solid #ea580c', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>
           {isParsingAI ? '⏳ Analizando requerimientos...' : '✨ Extraer datos técnicos con IA'}

@@ -205,3 +205,27 @@ export function parsePublicQuoteToken(value) {
   }
   return token
 }
+
+/**
+ * Valida adjuntos técnicos de cotizaciones (planos, memorias, fotos, videos cortos de obra).
+ */
+export function validateAttachments(value) {
+  const items = Array.isArray(value) ? value.slice(0, 15) : []
+  const ALLOWED_EXTS = /\.(pdf|dwg|dxf|cad|rvt|ifc|doc|docx|xls|xlsx|txt|csv|png|jpe?g|webp|svg|mp4|mov|webm|m4v|avi)$/i
+  const ALLOWED_MIME_PREFIXES = ['application/', 'image/', 'text/', 'video/']
+  return items.map((item) => {
+    const name = validateStringLength(item?.name || 'archivo', 'Nombre del archivo', 1, 200)
+    const type = validateStringLength(item?.type || 'application/octet-stream', 'Tipo de archivo', 1, 120)
+    const category = item?.category || 'archivo'
+    const data = String(item?.data || item?.url || '')
+    if (data.startsWith('data:') && data.length > 35000000) {
+      throw new ValidationError('Cada archivo debe pesar menos de 25 MB')
+    }
+    const isAllowedExt = ALLOWED_EXTS.test(name)
+    const isAllowedMime = ALLOWED_MIME_PREFIXES.some(prefix => type.startsWith(prefix))
+    if (!isAllowedExt || !isAllowedMime) {
+      throw new ValidationError('Formato de archivo no soportado. Se admiten PDF, DWG, DXF, DOC/DOCX, XLS/XLSX, imágenes y videos cortos (MP4/MOV/WEBM).')
+    }
+    return { name, type, category, data }
+  })
+}

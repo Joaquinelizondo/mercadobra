@@ -260,6 +260,12 @@
   border: 1px solid #ddd6fe;
 }
 
+.qdt-badge--video {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #ffedd5;
+}
+
 .qdt-badge--especificaciones {
   background: #fffbeb;
   color: #b45309;
