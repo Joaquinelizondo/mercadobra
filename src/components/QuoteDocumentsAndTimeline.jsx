@@ -74,6 +74,7 @@ export default function QuoteDocumentsAndTimeline({
   const [commentFiles, setCommentFiles] = useState([])
   const [sendingComment, setSendingComment] = useState(false)
   const [commentError, setCommentError] = useState('')
+  const [feedbackNotice, setFeedbackNotice] = useState(null)
   const commentFileRef = useRef(null)
 
   // Consolidate documents from quote.attachments + messages[].attachments
@@ -242,6 +243,8 @@ export default function QuoteDocumentsAndTimeline({
       setUploadNote('')
       setShowUploadModal(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
+      setFeedbackNotice({ type: 'success', text: `✓ ${enrichedFiles.length} archivo(s) cargado(s) al proyecto con éxito.` })
+      setTimeout(() => setFeedbackNotice(null), 4000)
     } catch (err) {
       setUploadError(err.message || 'No se pudieron subir los archivos.')
     } finally {
@@ -265,6 +268,8 @@ export default function QuoteDocumentsAndTimeline({
       setCommentText('')
       setCommentFiles([])
       if (commentFileRef.current) commentFileRef.current.value = ''
+      setFeedbackNotice({ type: 'success', text: '✓ Mensaje y archivos registrados en la bitácora del proyecto.' })
+      setTimeout(() => setFeedbackNotice(null), 4000)
     } catch (err) {
       setCommentError(err.message || 'No se pudo enviar el comentario.')
     } finally {
@@ -307,6 +312,25 @@ export default function QuoteDocumentsAndTimeline({
           </button>
         </div>
       </header>
+
+      {/* AVISO DE ACCIÓN REALIZADA EN EL PROYECTO */}
+      {feedbackNotice && (
+        <div style={{
+          background: '#f0fdf4',
+          border: '1px solid #bbf7d0',
+          color: '#166534',
+          padding: '12px 18px',
+          borderRadius: '10px',
+          marginBottom: '18px',
+          fontSize: '0.9rem',
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          {feedbackNotice.text}
+        </div>
+      )}
 
       {/* 1. VISTA DE DOCUMENTOS Y PLANOS */}
       {activeTab === 'documents' && (
@@ -739,7 +763,13 @@ export default function QuoteDocumentsAndTimeline({
                   disabled={uploading || !selectedFiles.length}
                   className="qdt-submit-btn"
                 >
-                  {uploading ? 'Procesando y Guardando…' : 'Subir Archivo al Expediente'}
+                  {uploading ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="mini-house-spin">🏠</span> Subiendo archivos…
+                    </span>
+                  ) : (
+                    'Subir Archivo al Expediente'
+                  )}
                 </button>
               </div>
             </form>

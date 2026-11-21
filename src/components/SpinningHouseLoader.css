@@ -1,0 +1,292 @@
+/* ── ANIMATED SPANNING HOUSE LOADER & TRANSITION ── */
+
+.oxi-house-loader-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(9, 10, 15, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: oxiFadeIn 0.22s ease-out;
+}
+
+.oxi-house-loader-modal {
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 26px;
+  padding: 38px 32px 32px;
+  width: min(440px, 94vw);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  text-align: center;
+  animation: oxiScaleUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.oxi-house-3d-box {
+  perspective: 700px;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 1.5rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.oxi-house-icon-wrapper {
+  transform-style: preserve-3d;
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(234, 88, 12, 0.16) 0%, rgba(234, 88, 12, 0.03) 70%, transparent 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: #ea580c;
+}
+
+.oxi-house-icon-wrapper.is-spinning {
+  animation: oxiHouseSpin 1.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.oxi-house-icon-wrapper.is-success {
+  animation: oxiHousePop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  background: radial-gradient(circle, rgba(22, 163, 74, 0.18) 0%, rgba(234, 88, 12, 0.05) 70%, transparent 100%);
+}
+
+.oxi-house-ring-pulse {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 2px solid rgba(234, 88, 12, 0.45);
+  animation: oxiRingPulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+
+.oxi-house-badge-check {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.45);
+  animation: oxiBadgePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s both;
+}
+
+.oxi-house-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.oxi-house-desc {
+  font-size: 0.92rem;
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.oxi-house-steps {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.oxi-house-step-chip {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #f3f4f6;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.oxi-house-step-chip.is-active {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
+}
+
+.oxi-house-step-chip.is-done {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.oxi-house-action-btn {
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: 12px;
+  border: none;
+  background: #ea580c;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3);
+}
+
+.oxi-house-action-btn:hover {
+  background: #c2410c;
+  transform: translateY(-1px);
+}
+
+.oxi-house-action-btn:active {
+  transform: translateY(0);
+}
+
+/* ── STATUS TOAST & BANNER TRANSITIONS ── */
+.oxi-status-toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.oxi-status-toast {
+  pointer-events: auto;
+  background: #111827;
+  color: #f9fafb;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 12px 18px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  max-width: 380px;
+  animation: oxiToastSlide 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.oxi-status-toast--success {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: #0f2316;
+  color: #86efac;
+}
+
+.oxi-status-toast--loading {
+  border-color: rgba(234, 88, 12, 0.4);
+  background: #1c140d;
+  color: #fed7aa;
+}
+
+.oxi-status-toast--info {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: #0e1e2f;
+  color: #93c5fd;
+}
+
+.mini-house-spin {
+  display: inline-flex;
+  animation: oxiHouseSpin 1.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  color: #ea580c;
+  flex-shrink: 0;
+}
+
+/* ── KEYFRAME ANIMATIONS ── */
+@keyframes oxiHouseSpin {
+  0% {
+    transform: rotateY(0deg) translateY(0);
+  }
+  50% {
+    transform: rotateY(180deg) translateY(-5px);
+  }
+  100% {
+    transform: rotateY(360deg) translateY(0);
+  }
+}
+
+@keyframes oxiHousePop {
+  0% {
+    transform: scale(0.6) rotate(-8deg);
+    opacity: 0.8;
+  }
+  60% {
+    transform: scale(1.15) rotate(4deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes oxiRingPulse {
+  0% {
+    transform: scale(0.75);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+@keyframes oxiBadgePop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes oxiFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes oxiScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes oxiToastSlide {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

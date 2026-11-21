@@ -12,6 +12,7 @@ import {
 } from '../lib/api'
 import { formatPrice } from '../utils/format'
 import QuoteDocumentsAndTimeline from '../components/QuoteDocumentsAndTimeline'
+import SpinningHouseLoader, { StatusToast } from '../components/SpinningHouseLoader'
 import './CustomerPortal.css'
 import './CustomerPortalMobile.css'
 
@@ -197,6 +198,50 @@ export default function CustomerPortal() {
   const [isCustomerAiAnalyzing, setIsCustomerAiAnalyzing] = useState(false)
   const [customerAiResult, setCustomerAiResult] = useState(null)
 
+  // ── TRANSICIÓN CASITA NARANJA & NOTIFICACIONES DE CARGA ──
+  const [quoteSubmission, setQuoteSubmission] = useState({
+    isOpen: false,
+    status: 'loading',
+    title: 'Enviando cotización...',
+    message: 'Cargando planos, memorias descriptivas y registrando solicitud...',
+    steps: ['Planos y archivos', 'Memoria técnica', 'Envío a taller OXI'],
+    currentStep: 1
+  })
+  const [notification, setNotification] = useState(null)
+  const [isReadingFiles, setIsReadingFiles] = useState(false)
+
+  function showNotification(message, type = 'success', subtext = '', duration = 3500) {
+    setNotification({ message, type, subtext, duration })
+  }
+
+  function handleCloseQuoteModal() {
+    setQuoteSubmission(prev => ({ ...prev, isOpen: false }))
+    setIsCreatingQuote(false)
+  }
+
+  async function handleFileInput(files, category) {
+    if (!files || !files.length) return
+    setIsReadingFiles(true)
+    const catLabels = {
+      plano: 'planos (CAD / PDF)',
+      memoria: 'memoria descriptiva',
+      foto: 'fotos de obra',
+      video: 'video de obra'
+    }
+    const catLabel = catLabels[category] || 'archivos'
+    showNotification(`Cargando ${catLabel}...`, 'loading', 'Procesando archivos técnicos para la cotización', 0)
+    try {
+      const newFiles = await readFiles(files, category)
+      setRequest(prev => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }))
+      showNotification(`✓ ${newFiles.length} archivo(s) de ${catLabel} cargado(s)`, 'success', 'Archivos listos para enviar en la cotización')
+    } catch (err) {
+      setError(err.message)
+      showNotification(err.message || 'Error al procesar archivos', 'error')
+    } finally {
+      setIsReadingFiles(false)
+    }
+  }
+
   async function handleCustomerAiAnalyze() {
     if (!request.description?.trim()) return
     setIsCustomerAiAnalyzing(true)
@@ -289,6 +334,7 @@ export default function CustomerPortal() {
   async function handleBudgetFileUpload(e, category = 'computo') {
     const files = e.target.files
     if (!files || !files.length) return
+    showNotification('Cargando documento al presupuesto...', 'loading', 'Procesando archivo técnico', 0)
     try {
       const newDocs = await readFiles(files, category)
       const catDef = BUDGET_DOC_CATEGORIES.find(c => c.id === category) || { label: 'Documento Técnico' }
@@ -310,8 +356,10 @@ export default function CustomerPortal() {
         }
         return b
       }))
+      showNotification('✓ Documento cargado con éxito', 'success', `${formattedDocs.length} archivo(s) agregado(s)`)
     } catch (err) {
       setError(err.message || 'Error al cargar documento')
+      showNotification(err.message || 'Error al cargar documento', 'error')
     }
     e.target.value = ''
   }
@@ -356,6 +404,7 @@ export default function CustomerPortal() {
     }))
     setShowNewVersionModal(false)
     setNewVersionNotes('')
+    showNotification('✓ Nueva versión de presupuesto registrada', 'success', `Versión ${nextVer} guardada con éxito`)
   }
 
   function handleApproveBudget() {
@@ -380,7 +429,7 @@ export default function CustomerPortal() {
       }
       return b
     }))
-    alert('✓ Presupuesto comercial aprobado con éxito.')
+    showNotification('✓ Presupuesto comercial aprobado con éxito', 'success', 'Confirmado para ejecución en obra')
   }
 
   function handleRequestAdjustment(e) {
@@ -410,7 +459,7 @@ export default function CustomerPortal() {
     }))
     setShowAdjustModal(false)
     setAdjustNotes('')
-    alert('✓ Solicitud de ajuste enviada al equipo de cotizaciones de Óxida.')
+    showNotification('✓ Solicitud de ajuste enviada con éxito', 'success', 'Notificación registrada para el equipo de cotizaciones')
   }
 
   function handleAddLineItem(e) {
@@ -443,6 +492,7 @@ export default function CustomerPortal() {
     }))
     setShowAddItemModal(false)
     setNewItemForm({ code: '', name: '', unit: 'ml', qty: 1, unitPrice: 0 })
+    showNotification('✓ Partida cargada al presupuesto con éxito', 'success', newItem.name)
   }
 
   function handleDeleteLineItem(itemId) {
@@ -471,19 +521,48 @@ export default function CustomerPortal() {
   }, [selected, customerToken])
 
   async function submitRequest(e) {
-    e.preventDefault(); setSaving(true); setError('')
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    setQuoteSubmission({
+      isOpen: true,
+      status: 'loading',
+      title: 'Enviando cotización...',
+      message: 'Cargando planos, memorias y registrando tu solicitud en el taller OXI...',
+      steps: ['Planos y archivos', 'Memoria técnica', 'Envío a taller OXI'],
+      currentStep: 2
+    })
+
     try {
       const payload = { ...request, b2bProjectId: activeProjectId }
       const res = await createMyQuote(payload, customerToken)
-      setQuotes([res, ...quotes]); setRequest(EMPTY_REQUEST); setIsCreatingQuote(false)
-    } catch(err) { setError(err.message) }
-    finally { setSaving(false) }
+      setQuotes([res, ...quotes])
+      setRequest(EMPTY_REQUEST)
+
+      // Transición exitosa con casita naranja
+      setQuoteSubmission({
+        isOpen: true,
+        status: 'success',
+        title: '¡Cotización enviada!',
+        message: 'Tu cotización ha sido cargada con éxito. Nuestro equipo técnico la está revisando para enviarte la propuesta formal.',
+        steps: ['Planos y archivos', 'Memoria técnica', 'Envío a taller OXI'],
+        currentStep: 3
+      })
+      showNotification('✓ Cotización enviada con éxito', 'success', res.referenceNumber ? `Referencia: ${res.referenceNumber}` : 'Disponible en tu panel de cotizaciones')
+    } catch(err) {
+      setError(err.message)
+      setQuoteSubmission(prev => ({ ...prev, isOpen: false }))
+      showNotification(err.message || 'Error al enviar cotización', 'error')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function submitProUpgradeRequest(e) {
     if (e) e.preventDefault()
     setSavingProRequest(true)
     setError('')
+    showNotification('Enviando solicitud OxI Pro...', 'loading', 'Procesando requerimiento de constructora', 0)
     try {
       const notes = proNotes.trim()
         ? `Solicitud de habilitación OxI Pro: ${proNotes.trim()}`
@@ -500,50 +579,73 @@ export default function CustomerPortal() {
       setProNotes('')
       setShowUpgradeModal(false)
       setProRequestSuccess(true)
+      showNotification('✓ Solicitud de OxI Pro enviada con éxito', 'success', 'Nos pondremos en contacto a la brevedad')
     } catch(err) {
       setError(err.message)
+      showNotification(err.message || 'Error al enviar solicitud', 'error')
     } finally {
       setSavingProRequest(false)
     }
   }
 
   async function submitNewProject(e) {
-    e.preventDefault(); setSaving(true); setError('')
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    showNotification('Creando nuevo proyecto de obra...', 'loading', 'Configurando espacio técnico', 0)
     try {
       const res = await createB2bProject({ name: newProjectName, location: newProjectLocation }, customerToken)
       setB2bProjects([...b2bProjects, res])
       setActiveProjectId(res.id)
       setIsCreatingProject(false)
-      setNewProjectName(''); setNewProjectLocation('')
+      setNewProjectName('')
+      setNewProjectLocation('')
       if (isProUser) setPlatformMode('pro')
-    } catch(err) { setError(err.message) }
-    finally { setSaving(false) }
+      showNotification('✓ Proyecto creado con éxito', 'success', `Obra "${res.name}" registrada en el panel`)
+    } catch(err) {
+      setError(err.message)
+      showNotification(err.message || 'Error al crear proyecto', 'error')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function handleCustomerSendMessage({ message: msgText, attachments, category, stage, status }) {
     if (!customerToken || !selected?.id) return
-    const res = await sendMyQuoteMessage(selected.id, { message: msgText, attachments, category, stage, status }, customerToken)
-    setMessages((prev) => [...prev, res])
-    if (attachments && attachments.length > 0) {
-      const updatedAtts = [...(Array.isArray(selected.attachments) ? selected.attachments : []), ...attachments]
-      setSelected((prev) => ({ ...prev, attachments: updatedAtts }))
-      setQuotes((prev) => prev.map((q) => (q.id === selected.id ? { ...q, attachments: updatedAtts } : q)))
+    showNotification('Enviando mensaje al proyecto...', 'loading', '', 0)
+    try {
+      const res = await sendMyQuoteMessage(selected.id, { message: msgText, attachments, category, stage, status }, customerToken)
+      setMessages((prev) => [...prev, res])
+      if (attachments && attachments.length > 0) {
+        const updatedAtts = [...(Array.isArray(selected.attachments) ? selected.attachments : []), ...attachments]
+        setSelected((prev) => ({ ...prev, attachments: updatedAtts }))
+        setQuotes((prev) => prev.map((q) => (q.id === selected.id ? { ...q, attachments: updatedAtts } : q)))
+      }
+      showNotification('✓ Mensaje enviado con éxito', 'success')
+    } catch (err) {
+      showNotification(err.message || 'Error al enviar mensaje', 'error')
     }
   }
 
   async function handleCustomerUploadDocument({ attachments, category, stage, note }) {
     if (!customerToken || !selected?.id) return
-    const res = await uploadQuoteAttachments(selected.id, { attachments, category, stage, note }, customerToken, false)
-    if (res?.quote) {
-      setSelected(res.quote)
-      setQuotes((prev) => prev.map((q) => (q.id === selected.id ? res.quote : q)))
-    } else {
-      const updatedAtts = [...(Array.isArray(selected.attachments) ? selected.attachments : []), ...attachments]
-      setSelected((prev) => ({ ...prev, attachments: updatedAtts }))
-      setQuotes((prev) => prev.map((q) => (q.id === selected.id ? { ...q, attachments: updatedAtts } : q)))
-    }
-    if (res?.message) {
-      setMessages((prev) => [...prev, res.message])
+    showNotification('Subiendo documentos a la cotización...', 'loading', '', 0)
+    try {
+      const res = await uploadQuoteAttachments(selected.id, { attachments, category, stage, note }, customerToken, false)
+      if (res?.quote) {
+        setSelected(res.quote)
+        setQuotes((prev) => prev.map((q) => (q.id === selected.id ? res.quote : q)))
+      } else {
+        const updatedAtts = [...(Array.isArray(selected.attachments) ? selected.attachments : []), ...attachments]
+        setSelected((prev) => ({ ...prev, attachments: updatedAtts }))
+        setQuotes((prev) => prev.map((q) => (q.id === selected.id ? { ...q, attachments: updatedAtts } : q)))
+      }
+      if (res?.message) {
+        setMessages((prev) => [...prev, res.message])
+      }
+      showNotification('✓ Documentos cargados con éxito al proyecto', 'success', `${attachments.length} archivo(s) guardado(s)`)
+    } catch (err) {
+      showNotification(err.message || 'Error al subir documentos', 'error')
     }
   }
 
@@ -1448,7 +1550,14 @@ export default function CustomerPortal() {
 
                   {/* Carga diferenciada de archivos */}
                   <div className="upload-sections-box">
-                    <strong>📁 Carga de Documentación & Material de Obra:</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+                      <strong>📁 Carga de Documentación & Material de Obra:</strong>
+                      {isReadingFiles && (
+                        <span style={{ fontSize: '0.8rem', color: '#ea580c', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <span className="mini-house-spin">🏠</span> Cargando archivos...
+                        </span>
+                      )}
+                    </div>
                     
                     <div className="upload-grid-row">
                       <div className="upload-col">
@@ -1459,12 +1568,7 @@ export default function CustomerPortal() {
                             accept=".pdf,.dwg,.dxf,image/*" 
                             multiple 
                             style={{ display: 'none' }}
-                            onChange={async e => {
-                              try {
-                                const newFiles = await readFiles(e.target.files, 'plano')
-                                setRequest(prev => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }))
-                              } catch(err) { setError(err.message) }
-                            }}
+                            onChange={e => handleFileInput(e.target.files, 'plano')}
                           />
                         </label>
                       </div>
@@ -1477,12 +1581,7 @@ export default function CustomerPortal() {
                             accept=".pdf,.doc,.docx,.txt" 
                             multiple 
                             style={{ display: 'none' }}
-                            onChange={async e => {
-                              try {
-                                const newFiles = await readFiles(e.target.files, 'memoria')
-                                setRequest(prev => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }))
-                              } catch(err) { setError(err.message) }
-                            }}
+                            onChange={e => handleFileInput(e.target.files, 'memoria')}
                           />
                         </label>
                       </div>
@@ -1495,12 +1594,7 @@ export default function CustomerPortal() {
                             accept="image/*" 
                             multiple 
                             style={{ display: 'none' }}
-                            onChange={async e => {
-                              try {
-                                const newFiles = await readFiles(e.target.files, 'foto')
-                                setRequest(prev => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }))
-                              } catch(err) { setError(err.message) }
-                            }}
+                            onChange={e => handleFileInput(e.target.files, 'foto')}
                           />
                         </label>
                       </div>
@@ -1513,12 +1607,7 @@ export default function CustomerPortal() {
                             accept="video/mp4,video/quicktime,video/webm,video/*" 
                             multiple 
                             style={{ display: 'none' }}
-                            onChange={async e => {
-                              try {
-                                const newFiles = await readFiles(e.target.files, 'video')
-                                setRequest(prev => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }))
-                              } catch(err) { setError(err.message) }
-                            }}
+                            onChange={e => handleFileInput(e.target.files, 'video')}
                           />
                         </label>
                       </div>
@@ -2363,6 +2452,24 @@ export default function CustomerPortal() {
           </div>
         </div>
       )}
+
+      {/* TRANSICIÓN CASITA GIRATORIA NARANJA OXI */}
+      <SpinningHouseLoader
+        isOpen={quoteSubmission.isOpen}
+        status={quoteSubmission.status}
+        title={quoteSubmission.title}
+        message={quoteSubmission.message}
+        steps={quoteSubmission.steps}
+        currentStep={quoteSubmission.currentStep}
+        onClose={handleCloseQuoteModal}
+        actionLabel="Ver cotización en el panel"
+      />
+
+      {/* NOTIFICACIÓN TOAST DE CARGA EN EL PROYECTO */}
+      <StatusToast
+        notification={notification}
+        onClose={() => setNotification(null)}
+      />
     </div>
   )
 }
