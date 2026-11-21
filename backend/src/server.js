@@ -1218,6 +1218,8 @@ app.post('/admin/quotes/:quoteId/attachments', authMiddleware, adminOnly, asyncH
 app.patch('/admin/quotes/:quoteId', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
   const quoteId = validateNumber(req.params.quoteId, 'Cotización ID', 1); const repo = await getRepository()
   const body = req.body || {}
+  const previous = await repo.getCustomerQuoteById(quoteId)
+  if (!previous) throw new NotFoundError('Cotización')
   const quoteDocument=validateQuoteDocument(body)
   const depositMode=validateEnum(body.depositMode||'none',['none','percentage','fixed'],'Tipo de seña')
   const depositValue=depositMode==='none'?0:validateNumber(body.depositValue??0,'Valor de seña',0,999999999999)
@@ -1240,6 +1242,15 @@ app.patch('/admin/quotes/:quoteId', authMiddleware, adminOnly, asyncHandler(asyn
   if (!updated) throw new NotFoundError('Cotización')
   if(depositAmount>0&&updated.depositStatus==='not_required')updated=await repo.updateCustomerQuoteDeposit(quoteId,{depositStatus:'pending'})
   if(depositAmount===0&&updated.depositStatus!=='approved')updated=await repo.updateCustomerQuoteDeposit(quoteId,{depositStatus:'not_required',depositMethod:'',depositReceipt:null,depositReportedAt:null})
+  if (previous.status !== 'sent' && updated.status === 'sent') {
+    await repo.createQuoteMessage({
+      quoteId,
+      authorUserId: req.authUser.id,
+      authorRole: 'admin',
+      message: `📄 [Cotización enviada]: La propuesta comercial por ${updated.currency} ${updated.totalAmount.toLocaleString('es-UY')} ya está disponible para revisar y aprobar.`,
+      attachments: []
+    }).catch(error => console.error('[quote-sent-history:error]', error.message))
+  }
   const customer=await repo.findUserById(updated.customerId)
   if(body.notifyCustomer!==false&&customer?.email)await notifyCustomerQuoteActivity({email:customer.email,customerName:customer.company,quote:updated,kind:'quote'}).catch((error)=>console.error('[quote-notification:error]',error.message))
   return res.json(updated)

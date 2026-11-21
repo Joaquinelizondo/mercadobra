@@ -105,9 +105,25 @@ export default function AdminQuoteWorkspace() {
     setSaving(true)
     setError('')
     try {
-      const currentAttachments = Array.isArray(quote.attachments) ? [...quote.attachments] : []
+      let currentAttachments = Array.isArray(quote.attachments) ? [...quote.attachments] : []
       if (quoteProposalFile) {
-        currentAttachments.push(quoteProposalFile)
+        const uploadResult = await uploadQuoteAttachments(
+          quote.id,
+          {
+            attachments: [quoteProposalFile],
+            category: 'cotizacion',
+            stage: 'sent',
+            note: 'Presupuesto formal enviado al cliente'
+          },
+          adminToken,
+          true
+        )
+        currentAttachments = Array.isArray(uploadResult?.quote?.attachments)
+          ? uploadResult.quote.attachments
+          : [...currentAttachments, ...(uploadResult?.attachments || [])]
+        if (uploadResult?.message) {
+          setMessages((prev) => [...prev, uploadResult.message])
+        }
       }
       const willBeSent = quote.status === 'in_progress' && Number(quote.totalAmount) > 0
       const nextStatus = willBeSent ? 'sent' : (quote.status || 'sent')

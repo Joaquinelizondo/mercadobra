@@ -34,6 +34,58 @@ const BUDGET_DOC_CATEGORIES = [
 ]
 
 const DEFAULT_CLASSIC_BUDGETS = []
+
+function quoteToClassicBudget(quote) {
+  const issuedAt = quote.sentAt || quote.updatedAt || quote.createdAt || new Date().toISOString()
+  const validityDays = Number(quote.documentTerms?.validityDays) || 30
+  const validUntil = new Date(issuedAt)
+  if (!Number.isNaN(validUntil.getTime())) validUntil.setDate(validUntil.getDate() + validityDays)
+
+  const items = (quote.documentItems || []).map((item, index) => ({
+    id: `quote-${quote.id}-item-${index}`,
+    code: item.code || String(index + 1).padStart(2, '0'),
+    name: item.description || `Partida ${index + 1}`,
+    unit: 'gl',
+    qty: 1,
+    unitPrice: Number(item.subtotal) || 0,
+    total: Number(item.subtotal) || 0,
+  }))
+
+  const documents = (quote.attachments || []).map((attachment, index) => ({
+    id: `quote-${quote.id}-document-${index}`,
+    name: attachment.name || `Documento ${index + 1}`,
+    category: attachment.category || 'pliego',
+    categoryLabel: attachment.category === 'cotizacion' ? 'Presupuesto formal' : 'Documento técnico',
+    size: attachment.size ? `${Math.max(1, Math.round(Number(attachment.size) / 1024))} KB` : '',
+    date: attachment.uploadedAt || issuedAt,
+    url: attachment.url || attachment.data || '',
+  }))
+
+  return {
+    id: `quote-${quote.id}`,
+    quoteId: quote.id,
+    referenceNumber: quote.referenceNumber,
+    title: quote.title,
+    status: quote.status,
+    totalAmount: Number(quote.totalAmount) || 0,
+    currency: quote.currency || 'UYU',
+    responsible: 'Óxida Studio',
+    clientNotes: quote.proposalDescription || quote.description || 'Cotización comercial emitida.',
+    currentVersion: 'v1.0',
+    validUntil: Number.isNaN(validUntil.getTime()) ? null : validUntil.toISOString(),
+    versions: [{
+      version: 'v1.0',
+      date: issuedAt,
+      status: quote.status,
+      totalAmount: Number(quote.totalAmount) || 0,
+      author: 'Óxida Studio',
+      notes: quote.proposalDescription || 'Cotización formal emitida al cliente.',
+      delta: 'Emisión inicial',
+    }],
+    items,
+    documents,
+  }
+}
 const EMPTY_REQUEST = { 
   title: '', 
   description: '', 
@@ -226,9 +278,7 @@ export default function CustomerPortal() {
     return b2bProjects.find(p => p.id === activeProjectId) || b2bProjects[0] || null
   }, [b2bProjects, activeProjectId])
 
-  const filteredQuotes = activeProjectId 
-    ? quotes.filter(q => q.b2bProjectId === activeProjectId)
-    : quotes
+  const filteredQuotes = quotes
 
   // Kanban groupings
   const requestedQuotes = filteredQuotes.filter(q => ['in_progress', 'reviewing'].includes(q.status))
@@ -238,9 +288,8 @@ export default function CustomerPortal() {
   // ── MÓDULO EXCLUSIVO OXI CLÁSICO: PRESUPUESTOS, HISTORIAL & DOCUMENTACIÓN ──
   const [classicTab, setClassicTab] = useState('budgets') // 'budgets' | 'kanban'
   const [classicBudgets, setClassicBudgets] = useState(() => {
-    if (!activeProjectId) return []
     try {
-      const saved = localStorage.getItem(`oxi_classic_budgets_${activeProjectId}`)
+      const saved = localStorage.getItem('oxi_classic_budgets')
       return saved ? JSON.parse(saved) : []
     } catch {
       return []
@@ -259,36 +308,30 @@ export default function CustomerPortal() {
   }, [classicBudgets, activeBudgetId])
 
   useEffect(() => {
-    if (!activeProjectId) return
     try {
-      localStorage.setItem(`oxi_classic_budgets_${activeProjectId}`, JSON.stringify(classicBudgets))
+      localStorage.setItem('oxi_classic_budgets', JSON.stringify(classicBudgets))
     } catch (e) {
       console.warn('Error saving classic budgets', e)
     }
-  }, [classicBudgets, activeProjectId])
+  }, [classicBudgets])
 
   useEffect(() => {
-    if (!activeProjectId) {
-      setClassicBudgets([])
-      setActiveBudgetId(null)
-      return
-    }
+    const issuedQuotes = quotes
+      .filter(q => ['sent', 'accepted', 'project_in_progress', 'completed'].includes(q.status))
+      .map(quoteToClassicBudget)
+
     try {
-      const saved = localStorage.getItem(`oxi_classic_budgets_${activeProjectId}`)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        setClassicBudgets(parsed)
-        if (parsed.length > 0) setActiveBudgetId(parsed[0].id)
-        else setActiveBudgetId(null)
-      } else {
-        setClassicBudgets([])
-        setActiveBudgetId(null)
-      }
+      const saved = localStorage.getItem('oxi_classic_budgets')
+      const parsed = saved ? JSON.parse(saved) : []
+      const localOnlyBudgets = Array.isArray(parsed) ? parsed.filter(b => !b.quoteId) : []
+      const nextBudgets = [...issuedQuotes, ...localOnlyBudgets]
+      setClassicBudgets(nextBudgets)
+      setActiveBudgetId(current => nextBudgets.some(b => b.id === current) ? current : (nextBudgets[0]?.id || null))
     } catch {
-      setClassicBudgets([])
-      setActiveBudgetId(null)
+      setClassicBudgets(issuedQuotes)
+      setActiveBudgetId(issuedQuotes[0]?.id || null)
     }
-  }, [activeProjectId])
+  }, [quotes])
 
   async function handleBudgetFileUpload(e, category = 'computo') {
     const files = e.target.files
@@ -493,7 +536,7 @@ export default function CustomerPortal() {
     })
 
     try {
-      const payload = { ...request, b2bProjectId: activeProjectId }
+      const payload = { ...request, b2bProjectId: null }
       const res = await createMyQuote(payload, customerToken)
       setQuotes([res, ...quotes])
       setRequest(EMPTY_REQUEST)
@@ -660,7 +703,7 @@ export default function CustomerPortal() {
           ☰
         </button>
         <div className="oxi-mobile-header-center" onClick={() => setMobileMenuOpen(true)}>
-          <span className="oxi-mobile-header-label">{activeProject?.name || 'Mercadobra'}</span>
+          <span className="oxi-mobile-header-label">{platformMode === 'pro' ? (activeProject?.name || 'OxI Pro') : 'OxI Clásico'}</span>
           <span className="oxi-mobile-header-arrow">▾</span>
         </div>
         <button
@@ -755,7 +798,7 @@ export default function CustomerPortal() {
           </div>
         </div>
         
-        {b2bProjects.length > 0 && (
+        {platformMode === 'pro' && b2bProjects.length > 0 && (
           <div className="oxi-os-project-select">
             <label>Obra seleccionada</label>
             <select 
@@ -776,29 +819,32 @@ export default function CustomerPortal() {
         )}
 
         <div className="oxi-os-menu">
-          <button 
-            type="button"
-            className="oxi-os-btn secondary"
-            onClick={() => { setIsCreatingProject(true); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); setPlatformMode('classic'); setMobileMenuOpen(false); }}
-          >
-            <span className="oxi-btn-icon">＋</span> Nueva Obra
-          </button>
+          {platformMode === 'pro' && (
+            <button
+              type="button"
+              className="oxi-os-btn secondary"
+              onClick={() => { setIsCreatingProject(true); setSelected(null); setIsCreatingQuote(false); setIsEditingProfile(false); setPlatformMode('pro'); setMobileMenuOpen(false); }}
+            >
+              <span className="oxi-btn-icon">＋</span> Nueva Obra
+            </button>
+          )}
 
-          <button 
-            type="button"
-            className="oxi-os-btn primary"
-            onClick={() => { 
-              setIsCreatingQuote(true); 
-              setIsCreatingProject(false); 
-              setSelected(null); 
-              setIsEditingProfile(false); 
-              setPlatformMode('classic');
-              setRequest(EMPTY_REQUEST);
-              setMobileMenuOpen(false);
-            }}
-          >
-            <span className="oxi-btn-icon">＋</span> Nueva Cotización
-          </button>
+          {platformMode === 'classic' && (
+            <button
+              type="button"
+              className="oxi-os-btn primary"
+              onClick={() => {
+                setIsCreatingQuote(true);
+                setIsCreatingProject(false);
+                setSelected(null);
+                setIsEditingProfile(false);
+                setRequest(EMPTY_REQUEST);
+                setMobileMenuOpen(false);
+              }}
+            >
+              <span className="oxi-btn-icon">＋</span> Nueva Cotización
+            </button>
+          )}
 
           <Link to="/cliente/modelador" className="oxi-os-btn simulator" onClick={() => setMobileMenuOpen(false)}>
             <span className="oxi-btn-icon">📐</span> Simulador 3D Óxida
@@ -920,10 +966,10 @@ export default function CustomerPortal() {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                   <span>PLATAFORMA OXI CLÁSICO</span>
-                  <span className="classic-tag">OPERATIVA CONSTRUCTORAS & ESTUDIOS</span>
+                  <span className="classic-tag">SOLICITUD Y SEGUIMIENTO DE COTIZACIONES</span>
                 </div>
-                <h1>Gestión de Obras & Cotizaciones</h1>
-                <p>Carga de planos, memorias, fotos, archivos y seguimiento en tiempo real de cotizaciones.</p>
+                <h1>Cotizaciones</h1>
+                <p>Solicitá presupuestos, cargá planos y memorias, y seguí cada propuesta comercial.</p>
               </div>
 
               <div className="header-platform-toggle">
@@ -1723,9 +1769,6 @@ export default function CustomerPortal() {
                       }}>
                         {activeBudget.status === 'accepted' ? '✓ Presupuesto Aprobado' : activeBudget.status === 'reviewing' ? '⚠️ En Negociación / Revisión' : '📋 Cotización Vigente'}
                       </span>
-                      <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
-                        Obra: <strong>{activeProject?.name || 'Obra Principal'}</strong>
-                      </span>
                     </div>
                     <h2 style={{ margin: '0 0 6px', fontSize: '1.4rem', color: '#0f172a', fontWeight: 800 }}>
                       {activeBudget.title}
@@ -2133,12 +2176,10 @@ export default function CustomerPortal() {
               }}>
                 <div style={{ fontSize: '3rem', marginBottom: '12px' }}>📁</div>
                 <h3 style={{ margin: '0 0 8px', color: '#0f172a', fontSize: '1.3rem', fontWeight: 800 }}>
-                  {activeProject ? `Obra "${activeProject.name}" sin presupuestos emitidos` : 'No hay obras registradas'}
+                  No hay presupuestos emitidos
                 </h3>
                 <p style={{ color: '#64748b', fontSize: '0.92rem', maxWidth: '520px', margin: '0 auto 22px', lineHeight: '1.6' }}>
-                  {activeProject
-                    ? 'Esta obra aún no tiene cotizaciones ni cómputos cargados. Cargá planos o memorias para recibir una cotización técnica formal.'
-                    : 'Creá tu primera obra o solicitá una cotización para comenzar.'}
+                  Solicitá una cotización y cargá los planos, memorias o fotos necesarios para recibir una propuesta técnica formal.
                 </p>
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
                   <button
@@ -2146,22 +2187,12 @@ export default function CustomerPortal() {
                     className="oxi-os-btn primary"
                     onClick={() => {
                       setIsCreatingQuote(true)
-                      setRequest({ ...EMPTY_REQUEST, b2bProjectId: activeProject?.id || null })
+                      setRequest(EMPTY_REQUEST)
                     }}
                     style={{ padding: '12px 22px', fontSize: '0.92rem', fontWeight: 700 }}
                   >
                     ＋ Solicitar Cotización de Fabricación
                   </button>
-                  {!activeProject && (
-                    <button
-                      type="button"
-                      className="oxi-os-btn secondary"
-                      onClick={() => setIsCreatingProject(true)}
-                      style={{ padding: '12px 22px', fontSize: '0.92rem', fontWeight: 700 }}
-                    >
-                      ＋ Crear Nueva Obra
-                    </button>
-                  )}
                 </div>
               </div>
             )
