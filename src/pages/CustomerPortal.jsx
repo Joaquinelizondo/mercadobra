@@ -409,9 +409,19 @@ export default function CustomerPortal() {
     showNotification('✓ Nueva versión de presupuesto registrada', 'success', `Versión ${nextVer} guardada con éxito`)
   }
 
-  function handleApproveBudget() {
-    if (!activeBudget) return
-    if (!window.confirm(`¿Aprobar formalmente el presupuesto "${activeBudget.title}" por ${activeBudget.currency} $${activeBudget.totalAmount.toLocaleString()}?\n\nEsta acción confirma la cotización y la habilita para la ejecución en obra.`)) return
+  async function handleApproveBudget() {
+    if (!activeBudget?.quoteId || saving) return
+    const amountLabel = activeBudget.totalAmount > 0
+      ? ` por ${formatPrice(activeBudget.totalAmount, activeBudget.currency)}`
+      : ''
+    if (!window.confirm(`¿Aprobar formalmente el presupuesto "${activeBudget.title}"${amountLabel}?\n\nEsta acción confirma la cotización enviada por Óxida Studio.`)) return
+    setSaving(true)
+    setError('')
+    try {
+      const updatedQuote = await respondToMyQuote(activeBudget.quoteId, 'accepted', customerToken)
+      setQuotes(prev => prev.map(q => q.id === updatedQuote.id ? updatedQuote : q))
+      setSelected(prev => prev?.id === updatedQuote.id ? updatedQuote : prev)
+
     const newVerEntry = {
       version: `${activeBudget.currentVersion} (Aprobado)`,
       date: new Date().toISOString().split('T')[0],
@@ -421,17 +431,17 @@ export default function CustomerPortal() {
       notes: 'Presupuesto formalmente aceptado por el cliente. Aprobado para emisión de orden de fabricación y obra.',
       delta: 'Aprobado'
     }
-    setClassicBudgets(prev => prev.map(b => {
-      if (b.id === activeBudget.id) {
-        return {
-          ...b,
-          status: 'accepted',
-          versions: [newVerEntry, ...(b.versions || [])]
-        }
-      }
-      return b
-    }))
-    showNotification('✓ Presupuesto comercial aprobado con éxito', 'success', 'Confirmado para ejecución en obra')
+      setClassicBudgets(prev => prev.map(b => b.id === activeBudget.id
+        ? { ...b, status: 'accepted', versions: [newVerEntry, ...(b.versions || [])] }
+        : b
+      ))
+      showNotification('✓ Presupuesto comercial aprobado con éxito', 'success', 'La aprobación fue notificada a Óxida Studio')
+    } catch (err) {
+      setError(err.message || 'No se pudo aprobar el presupuesto.')
+      showNotification(err.message || 'No se pudo aprobar el presupuesto.', 'error')
+    } finally {
+      setSaving(false)
+    }
   }
 
   function handleRequestAdjustment(e) {

@@ -678,6 +678,7 @@ app.patch('/customer/quotes/:quoteId/status', authMiddleware, customerOnly, asyn
   const quote = (await repo.getCustomerQuotes(req.authUser.id)).find((item) => item.id === quoteId)
   if (!quote) throw new NotFoundError('Cotización')
   const status = validateEnum(req.body?.status, ['accepted', 'rejected'], 'Estado')
+  if (quote.status !== 'sent') throw new ValidationError('La cotización debe estar enviada antes de poder aprobarla o solicitar un ajuste')
   const updated = await repo.updateCustomerQuoteStatus(quoteId, status)
   const statusLabel = status === 'accepted' ? 'Presupuesto formal aprobado por el cliente' : 'Presupuesto no aceptado por el cliente'
 
