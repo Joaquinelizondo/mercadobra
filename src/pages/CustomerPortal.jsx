@@ -1075,9 +1075,23 @@ export default function CustomerPortal() {
                       <input style={{padding: '12px 16px', border: '1px solid #e5e5e5', borderRadius: '8px', background: '#fafafa', fontSize: '1rem', outline: 'none'}} value={profile?.department||''} onChange={e=>setProfile({...profile,department:e.target.value})} placeholder="Montevideo" />
                     </label>
                   </div>
-                  <button disabled={saving} style={{marginTop: '1rem', padding: '14px', background: '#ea580c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '700', cursor: 'pointer'}}>
-                    {saving ? 'Guardando...' : 'Guardar Perfil'}
-                  </button>
+                  <div className="quote-request-actions" style={{ borderTop: '1px solid #e2e8f0', marginTop: '1.25rem', paddingTop: '1.25rem' }}>
+                    <button
+                      type="submit"
+                      className="quote-request-submit"
+                      disabled={saving}
+                    >
+                      {saving ? 'Guardando...' : 'Guardar Perfil'}
+                    </button>
+                    <button
+                      type="button"
+                      className="quote-request-cancel"
+                      onClick={() => setIsEditingProfile(false)}
+                      style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#475569' }}
+                    >
+                      ✕ Cancelar
+                    </button>
+                  </div>
                 </div>
               </form>
             ) : isCreatingProject ? (
@@ -1090,9 +1104,29 @@ export default function CustomerPortal() {
                 <form onSubmit={submitNewProject}>
                   <label>Nombre de la Obra (Ej: Torre Libertador, Complejo Solís)<input value={newProjectName} onChange={e=>setNewProjectName(e.target.value)} required/></label>
                   <label>Ubicación / Dirección exacta<input value={newProjectLocation} onChange={e=>setNewProjectLocation(e.target.value)} placeholder="Ej: Av. Brasil 2450, Montevideo"/></label>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button type="button" className="btn-secondary" onClick={() => setIsCreatingProject(false)}>Cancelar</button>
-                    <button disabled={saving}>{saving?'Creando...':'Crear Obra'}</button>
+                  <div className="quote-request-actions">
+                    <button
+                      type="submit"
+                      className="quote-request-submit"
+                      disabled={saving}
+                    >
+                      {saving ? (
+                        <>
+                          <span className="mini-house-spin">🏠</span> Creando...
+                        </>
+                      ) : (
+                        <>
+                          <span>＋</span> Crear Obra
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="quote-request-cancel"
+                      onClick={() => setIsCreatingProject(false)}
+                    >
+                      ✕ Cancelar
+                    </button>
                   </div>
                 </form>
               </div>
@@ -1631,9 +1665,29 @@ export default function CustomerPortal() {
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
-                    <button type="button" className="btn-secondary" onClick={() => setIsCreatingQuote(false)}>Cancelar</button>
-                    <button disabled={saving}>{saving ? 'Enviando solicitud…' : 'Enviar Solicitud de Cotización'}</button>
+                  <div className="quote-request-actions">
+                    <button
+                      type="submit"
+                      className="quote-request-submit"
+                      disabled={saving}
+                    >
+                      {saving ? (
+                        <>
+                          <span className="mini-house-spin">🏠</span> Enviando solicitud…
+                        </>
+                      ) : (
+                        <>
+                          <span>🚀</span> Enviar Solicitud de Cotización
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="quote-request-cancel"
+                      onClick={() => setIsCreatingQuote(false)}
+                    >
+                      ✕ Cancelar
+                    </button>
                   </div>
                 </form>
               </div>
