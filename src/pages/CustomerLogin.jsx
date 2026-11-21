@@ -53,7 +53,7 @@ export default function CustomerLogin() {
                 <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.33 0-8 2.67-8 4v1h16v-1c0-1.33-2.67-4-8-4Z" fill="currentColor"/>
               </svg>
             </div>
-            <h1 style={{ fontSize: '1.8rem' }}>Iniciar sesión</h1>
+            <h1 style={{ fontSize: '1.8rem', color: '#111827' }}>Iniciar sesión</h1>
             <p>Ingresá con tu cuenta corporativa.</p>
           </div>
 

@@ -1032,6 +1032,7 @@
 
 .admin-access-form .form-input {
   background: rgba(255, 255, 255, 0.95);
+  color: #111827;
 }
 
 .benefits-list {
@@ -1138,8 +1139,12 @@
 
 .cta-section .lead-form .form-input {
   background: rgba(255, 255, 255, 0.94);
-  color: var(--text-h);
+  color: #111827;
   border-color: var(--border);
+}
+
+.cta-section .lead-form .form-input::placeholder {
+  color: #6b7280;
 }
 
 .lead-form-textarea {
@@ -3274,7 +3279,7 @@
 .modal-header h2 {
   margin: 0;
   font-size: 1.25rem;
-  color: var(--text-h);
+  color: #111827;
 }
 
 .publish-form {
@@ -3305,7 +3310,7 @@
 .form-label {
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--text-h);
+  color: #374151;
 }
 
 .form-input {
@@ -3313,7 +3318,7 @@
   border-radius: 12px;
   border: 1.5px solid #e5e7eb;
   font-size: 0.92rem;
-  color: var(--text-h);
+  color: #111827;
   background: #f9fafb;
   transition: border-color 0.15s, box-shadow 0.15s;
   width: 100%;
@@ -3321,11 +3326,16 @@
   font-family: inherit;
 }
 
+.form-input::placeholder {
+  color: #9ca3af;
+}
+
 .form-input:focus {
   outline: none;
   border-color: var(--accent-strong);
   box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
   background: #fff;
+  color: #111827;
 }
 
 .form-textarea {
@@ -4922,6 +4932,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  color: #1f2937;
 }
 
 .login-logo {
@@ -4950,10 +4961,16 @@
   justify-content: center;
 }
 
+.login-card h1,
+.login-card h2,
+.login-card h3 {
+  color: #111827 !important;
+}
+
 .login-card-header h1 {
   font-size: 1.4rem;
   margin: 0;
-  color: var(--text-h);
+  color: #111827 !important;
 }
 
 .login-card-header p {
@@ -4961,6 +4978,33 @@
   color: #6b7280;
   margin: 0;
   max-width: 34ch;
+}
+
+.login-card .form-label {
+  color: #374151 !important;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.login-card .form-input {
+  color: #111827 !important;
+  background: #f9fafb !important;
+  border: 1.5px solid #d1d5db !important;
+}
+
+.login-card .form-input:focus {
+  color: #111827 !important;
+  background: #ffffff !important;
+  border-color: #ea580c !important;
+  outline: none;
+}
+
+.login-card .form-input::placeholder {
+  color: #9ca3af !important;
+}
+
+.login-card .login-signup-hint {
+  color: #6b7280;
 }
 
 .login-demo-hint {
@@ -5709,7 +5753,7 @@ a:focus-visible {
 .form-label {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #374151;
   display: flex;
   gap: 4px;
 }
@@ -5724,12 +5768,20 @@ a:focus-visible {
   border-radius: 8px;
   font-size: 14px;
   font-family: inherit;
+  color: #111827;
+  background: #f9fafb;
   transition: all 0.2s ease;
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
 }
 
 .form-input:focus {
   border-color: var(--accent-strong);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
+  color: #111827;
+  background: #ffffff;
 }
 
 .form-input--error {
