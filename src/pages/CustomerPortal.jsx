@@ -1307,25 +1307,36 @@ export default function CustomerPortal() {
                   ) : (
                     <div style={{
                       background: '#121215',
-                      padding: '12px 14px',
+                      padding: '14px 18px',
                       borderRadius: '8px',
-                      color: '#a1a1aa',
-                      fontSize: '0.85rem',
-                      marginBottom: '16px'
+                      color: '#cbd5e1',
+                      fontSize: '0.88rem',
+                      marginBottom: '16px',
+                      border: '1px solid #27272a',
+                      lineHeight: '1.5'
                     }}>
-                      ⏳ Recibimos tus planos y requerimientos. El equipo de ingeniería está armando el desglose técnico y cotización formal.
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '1.1rem' }}>⏳</span>
+                        <strong style={{ color: '#fbbf24', fontSize: '0.92rem' }}>Solicitud en análisis técnico y costeo</strong>
+                      </div>
+                      <p style={{ margin: '0 0 6px 0', color: '#94a3b8' }}>
+                        Recibimos tus planos y requerimientos. El equipo de ingeniería está armando el desglose de materiales, horas de taller y cotización formal.
+                      </p>
+                      <p style={{ margin: 0, fontSize: '0.82rem', color: '#71717a' }}>
+                        ℹ️ En cuanto Óxida Studio envíe la cotización con el monto y propuesta formal (Paso 2), se habilitará aquí mismo el botón para <strong>aprobar el presupuesto</strong> e iniciar la ejecución.
+                      </p>
                     </div>
                   )}
 
                   {/* Archivos de cotización (PDF / Planilla formal) si existen */}
-                  {Array.isArray(selected.attachments) && selected.attachments.some(a => a.category === 'cotizacion' || Boolean(a.name?.match(/\.(pdf|xlsx|xls|doc|docx)$/i))) && (
+                  {Array.isArray(selected.attachments) && selected.attachments.some(a => a.category === 'cotizacion' || a.stage === 'sent') && (
                     <div style={{ marginBottom: '16px' }}>
-                      <span style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '6px', fontWeight: 600 }}>
-                        DOCUMENTOS DE LA COTIZACIÓN:
+                      <span style={{ fontSize: '0.78rem', color: '#86efac', display: 'block', marginBottom: '6px', fontWeight: 700 }}>
+                        DOCUMENTOS DE LA COTIZACIÓN FORMAL (ÓXIDA STUDIO):
                       </span>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {selected.attachments
-                          .filter(a => a.category === 'cotizacion' || Boolean(a.name?.match(/\.(pdf|xlsx|xls|doc|docx)$/i)))
+                          .filter(a => a.category === 'cotizacion' || a.stage === 'sent')
                           .map((doc, idx) => (
                             <a
                               key={idx}
@@ -1356,7 +1367,7 @@ export default function CustomerPortal() {
 
                   {/* Acciones para el cliente si la cotización fue enviada */}
                   {selected.status === 'sent' && (
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid #27272a' }}>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid #27272a' }}>
                       <button
                         type="button"
                         onClick={() => respond('accepted')}
@@ -1365,14 +1376,19 @@ export default function CustomerPortal() {
                           background: '#16a34a',
                           color: 'white',
                           border: 'none',
-                          padding: '10px 18px',
-                          borderRadius: '6px',
-                          fontWeight: 700,
-                          fontSize: '0.9rem',
-                          cursor: 'pointer'
+                          padding: '12px 22px',
+                          borderRadius: '8px',
+                          fontWeight: 800,
+                          fontSize: '0.95rem',
+                          cursor: saving ? 'not-allowed' : 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          boxShadow: '0 4px 14px rgba(22, 163, 74, 0.35)',
+                          transition: 'all 0.2s ease'
                         }}
                       >
-                        ✓ Aceptar Presupuesto
+                        ✓ Aprobar Presupuesto
                       </button>
 
                       <a
