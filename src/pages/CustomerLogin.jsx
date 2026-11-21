@@ -43,7 +43,7 @@ export default function CustomerLogin() {
         <p>Architecture Solutions as a Service. La plataforma operativa para tus obras.</p>
       </div>
       <div className="oxi-login-form-container">
-        <div className="login-card">
+        <div className="login-card" style={{ colorScheme: 'light', background: '#ffffff', color: '#0f172a' }}>
           <Link to="/">
             <img src={logoImg} className="login-logo" alt="Mercadobra" style={{ width: '140px', marginBottom: '1rem' }} />
           </Link>
@@ -53,15 +53,15 @@ export default function CustomerLogin() {
                 <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.33 0-8 2.67-8 4v1h16v-1c0-1.33-2.67-4-8-4Z" fill="currentColor"/>
               </svg>
             </div>
-            <h1 style={{ fontSize: '1.8rem', color: '#111827' }}>Iniciar sesión</h1>
-            <p>Ingresá con tu cuenta corporativa.</p>
+            <h1 style={{ fontSize: '1.8rem', color: '#0f172a', fontWeight: 800, margin: '0 0 6px' }}>Iniciar sesión</h1>
+            <p style={{ color: '#475569', fontSize: '0.92rem', margin: 0 }}>Ingresá con tu cuenta corporativa.</p>
           </div>
 
-          <form className="publish-form" onSubmit={handleSubmit} noValidate>
+          <form className="publish-form" onSubmit={handleSubmit} noValidate style={{ colorScheme: 'light' }}>
             {error && <p className="login-error" role="alert">{error}</p>}
 
           <div className="form-row">
-            <label className="form-label" htmlFor="customer-login-email">Correo electrónico</label>
+            <label className="form-label" htmlFor="customer-login-email" style={{ color: '#1e293b', fontWeight: 700, fontSize: '0.88rem', display: 'block', marginBottom: '4px' }}>Correo electrónico</label>
             <input
               id="customer-login-email"
               className="form-input"
@@ -72,11 +72,12 @@ export default function CustomerLogin() {
               placeholder="tuemail@gmail.com"
               autoComplete="email"
               required
+              style={{ color: '#0f172a', background: '#f8fafc', borderColor: '#cbd5e1' }}
             />
           </div>
 
           <div className="form-row">
-            <label className="form-label" htmlFor="customer-login-password">Contraseña</label>
+            <label className="form-label" htmlFor="customer-login-password" style={{ color: '#1e293b', fontWeight: 700, fontSize: '0.88rem', display: 'block', marginBottom: '4px' }}>Contraseña</label>
             <input
               id="customer-login-password"
               className="form-input"
@@ -87,6 +88,7 @@ export default function CustomerLogin() {
               placeholder="••••••••"
               autoComplete="current-password"
               required
+              style={{ color: '#0f172a', background: '#f8fafc', borderColor: '#cbd5e1' }}
             />
           </div>
 

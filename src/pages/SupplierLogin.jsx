@@ -40,22 +40,22 @@ export default function SupplierLogin() {
         <p>Tu portal de fabricación. Recibí cotizaciones y gestioná tus pedidos.</p>
       </div>
       <div className="oxi-login-form-container">
-        <div className="login-card">
+        <div className="login-card" style={{ colorScheme: 'light', background: '#ffffff', color: '#0f172a' }}>
           <div className="login-card-header">
             <div className="login-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
                 <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.33 0-8 2.67-8 4v1h16v-1c0-1.33-2.67-4-8-4Z" fill="currentColor"/>
               </svg>
             </div>
-            <h1 style={{ fontSize: '1.8rem', color: '#111827' }}>Red de Proveedores</h1>
-            <p>Ingresá con tu cuenta de fabricante.</p>
+            <h1 style={{ fontSize: '1.8rem', color: '#0f172a', fontWeight: 800, margin: '0 0 6px' }}>Red de Proveedores</h1>
+            <p style={{ color: '#475569', fontSize: '0.92rem', margin: 0 }}>Ingresá con tu cuenta de fabricante.</p>
           </div>
 
-          <form className="publish-form" onSubmit={handleSubmit} noValidate>
+          <form className="publish-form" onSubmit={handleSubmit} noValidate style={{ colorScheme: 'light' }}>
             {error && <p className="login-error" role="alert">{error}</p>}
 
           <div className="form-row">
-            <label className="form-label" htmlFor="login-email">Correo electrónico</label>
+            <label className="form-label" htmlFor="login-email" style={{ color: '#1e293b', fontWeight: 700, fontSize: '0.88rem', display: 'block', marginBottom: '4px' }}>Correo electrónico</label>
             <input
               id="login-email"
               className="form-input"
@@ -66,11 +66,12 @@ export default function SupplierLogin() {
               placeholder="empresa@mercadobra.com"
               autoComplete="email"
               required
+              style={{ color: '#0f172a', background: '#f8fafc', borderColor: '#cbd5e1' }}
             />
           </div>
 
           <div className="form-row">
-            <label className="form-label" htmlFor="login-password">Contraseña</label>
+            <label className="form-label" htmlFor="login-password" style={{ color: '#1e293b', fontWeight: 700, fontSize: '0.88rem', display: 'block', marginBottom: '4px' }}>Contraseña</label>
             <input
               id="login-password"
               className="form-input"
@@ -81,6 +82,7 @@ export default function SupplierLogin() {
               placeholder="••••••••"
               autoComplete="current-password"
               required
+              style={{ color: '#0f172a', background: '#f8fafc', borderColor: '#cbd5e1' }}
             />
           </div>
 

@@ -902,6 +902,7 @@ function CurvaSTooltip({ active, payload, totalBudget }) {
 
 export default function OxiProSuite({ project, projects = [], onSelectProject, onBackToClassic, onOpenMobileDrawer }) {
   const projectId = project?.id || 'demo'
+  const isDemo = projectId === 'demo'
   const storageKey = `oxi_pro_state_${projectId}`
 
   const [activeTab, setActiveTab] = useState('docs') // 'docs' | 'cronograma' | 'control' | 'rubros'
@@ -914,18 +915,18 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   const [documents, setDocuments] = useState(() => {
     try {
       const saved = localStorage.getItem(`${storageKey}_docs`)
-      return saved ? JSON.parse(saved) : DEFAULT_DOCUMENTS
+      return saved ? JSON.parse(saved) : (isDemo ? DEFAULT_DOCUMENTS : [])
     } catch {
-      return DEFAULT_DOCUMENTS
+      return isDemo ? DEFAULT_DOCUMENTS : []
     }
   })
 
   const [siteEvents, setSiteEvents] = useState(() => {
     try {
       const saved = localStorage.getItem(`${storageKey}_site_events`)
-      return saved ? JSON.parse(saved) : DEFAULT_SITE_EVENTS
+      return saved ? JSON.parse(saved) : (isDemo ? DEFAULT_SITE_EVENTS : [])
     } catch {
-      return DEFAULT_SITE_EVENTS
+      return isDemo ? DEFAULT_SITE_EVENTS : []
     }
   })
 
@@ -944,36 +945,36 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   const [schedule, setSchedule] = useState(() => {
     try {
       const saved = localStorage.getItem(`${storageKey}_sched`)
-      return saved ? JSON.parse(saved) : DEFAULT_SCHEDULE
+      return saved ? JSON.parse(saved) : (isDemo ? DEFAULT_SCHEDULE : [])
     } catch {
-      return DEFAULT_SCHEDULE
+      return isDemo ? DEFAULT_SCHEDULE : []
     }
   })
 
   const [monthlyComp, setMonthlyComp] = useState(() => {
     try {
       const saved = localStorage.getItem(`${storageKey}_monthly`)
-      return saved ? JSON.parse(saved) : DEFAULT_MONTHLY_COMPARISON
+      return saved ? JSON.parse(saved) : (isDemo ? DEFAULT_MONTHLY_COMPARISON : [])
     } catch {
-      return DEFAULT_MONTHLY_COMPARISON
+      return isDemo ? DEFAULT_MONTHLY_COMPARISON : []
     }
   })
 
   const [weeklyProgress, setWeeklyProgress] = useState(() => {
     try {
       const saved = localStorage.getItem(`${storageKey}_weekly`)
-      return saved ? JSON.parse(saved) : DEFAULT_WEEKLY_PROGRESS
+      return saved ? JSON.parse(saved) : (isDemo ? DEFAULT_WEEKLY_PROGRESS : [])
     } catch {
-      return DEFAULT_WEEKLY_PROGRESS
+      return isDemo ? DEFAULT_WEEKLY_PROGRESS : []
     }
   })
 
   const [rubros, setRubros] = useState(() => {
     try {
       const saved = localStorage.getItem(`${storageKey}_rubros`)
-      return saved ? JSON.parse(saved) : DEFAULT_RUBROS
+      return saved ? JSON.parse(saved) : (isDemo ? DEFAULT_RUBROS : [])
     } catch {
-      return DEFAULT_RUBROS
+      return isDemo ? DEFAULT_RUBROS : []
     }
   })
 
@@ -998,9 +999,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   const [budgetItems, setBudgetItems] = useState(() => {
     try {
       const saved = localStorage.getItem(`${storageKey}_budget_items`)
-      return saved ? JSON.parse(saved) : DEFAULT_BUDGET_ITEMS
+      return saved ? JSON.parse(saved) : (isDemo ? DEFAULT_BUDGET_ITEMS : [])
     } catch {
-      return DEFAULT_BUDGET_ITEMS
+      return isDemo ? DEFAULT_BUDGET_ITEMS : []
     }
   })
 
@@ -1010,27 +1011,27 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   const [laborReports, setLaborReports] = useState(() => {
     try {
       const saved = localStorage.getItem(`${storageKey}_labor_reports`)
-      return saved ? JSON.parse(saved) : DEFAULT_LABOR_REPORTS
+      return saved ? JSON.parse(saved) : (isDemo ? DEFAULT_LABOR_REPORTS : [])
     } catch {
-      return DEFAULT_LABOR_REPORTS
+      return isDemo ? DEFAULT_LABOR_REPORTS : []
     }
   })
 
   const [materialInvoices, setMaterialInvoices] = useState(() => {
     try {
       const saved = localStorage.getItem(`${storageKey}_material_invoices`)
-      return saved ? JSON.parse(saved) : DEFAULT_MATERIAL_INVOICES
+      return saved ? JSON.parse(saved) : (isDemo ? DEFAULT_MATERIAL_INVOICES : [])
     } catch {
-      return DEFAULT_MATERIAL_INVOICES
+      return isDemo ? DEFAULT_MATERIAL_INVOICES : []
     }
   })
 
   const [subcontractCertificates, setSubcontractCertificates] = useState(() => {
     try {
       const saved = localStorage.getItem(`${storageKey}_subcontracts`)
-      return saved ? JSON.parse(saved) : DEFAULT_SUBCONTRACT_CERTIFICATES
+      return saved ? JSON.parse(saved) : (isDemo ? DEFAULT_SUBCONTRACT_CERTIFICATES : [])
     } catch {
-      return DEFAULT_SUBCONTRACT_CERTIFICATES
+      return isDemo ? DEFAULT_SUBCONTRACT_CERTIFICATES : []
     }
   })
 
@@ -1038,9 +1039,9 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   const [subcontractContracts, setSubcontractContracts] = useState(() => {
     try {
       const saved = localStorage.getItem(`${storageKey}_subcontract_contracts`)
-      return saved ? JSON.parse(saved) : DEFAULT_SUBCONTRACT_CONTRACTS
+      return saved ? JSON.parse(saved) : (isDemo ? DEFAULT_SUBCONTRACT_CONTRACTS : [])
     } catch {
-      return DEFAULT_SUBCONTRACT_CONTRACTS
+      return isDemo ? DEFAULT_SUBCONTRACT_CONTRACTS : []
     }
   })
 
@@ -1182,23 +1183,24 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
   // Reload state if project changes from localStorage
   useEffect(() => {
     try {
+      const isDemoProj = projectId === 'demo'
       const savedDocs = localStorage.getItem(`${storageKey}_docs`)
-      setDocuments(savedDocs ? JSON.parse(savedDocs) : DEFAULT_DOCUMENTS)
+      setDocuments(savedDocs ? JSON.parse(savedDocs) : (isDemoProj ? DEFAULT_DOCUMENTS : []))
 
       const savedEvents = localStorage.getItem(`${storageKey}_site_events`)
-      setSiteEvents(savedEvents ? JSON.parse(savedEvents) : DEFAULT_SITE_EVENTS)
+      setSiteEvents(savedEvents ? JSON.parse(savedEvents) : (isDemoProj ? DEFAULT_SITE_EVENTS : []))
 
       const savedSched = localStorage.getItem(`${storageKey}_sched`)
-      setSchedule(savedSched ? JSON.parse(savedSched) : DEFAULT_SCHEDULE)
+      setSchedule(savedSched ? JSON.parse(savedSched) : (isDemoProj ? DEFAULT_SCHEDULE : []))
 
       const savedMonthly = localStorage.getItem(`${storageKey}_monthly`)
-      setMonthlyComp(savedMonthly ? JSON.parse(savedMonthly) : DEFAULT_MONTHLY_COMPARISON)
+      setMonthlyComp(savedMonthly ? JSON.parse(savedMonthly) : (isDemoProj ? DEFAULT_MONTHLY_COMPARISON : []))
 
       const savedWeekly = localStorage.getItem(`${storageKey}_weekly`)
-      setWeeklyProgress(savedWeekly ? JSON.parse(savedWeekly) : DEFAULT_WEEKLY_PROGRESS)
+      setWeeklyProgress(savedWeekly ? JSON.parse(savedWeekly) : (isDemoProj ? DEFAULT_WEEKLY_PROGRESS : []))
 
       const savedRubros = localStorage.getItem(`${storageKey}_rubros`)
-      setRubros(savedRubros ? JSON.parse(savedRubros) : DEFAULT_RUBROS)
+      setRubros(savedRubros ? JSON.parse(savedRubros) : (isDemoProj ? DEFAULT_RUBROS : []))
 
       const savedRainLogs = localStorage.getItem(`${storageKey}_rainLogs`)
       setRainLogs(savedRainLogs ? JSON.parse(savedRainLogs) : [])
@@ -1210,19 +1212,19 @@ export default function OxiProSuite({ project, projects = [], onSelectProject, o
       setProjectSocialLawsRate(savedSocial != null && !Number.isNaN(Number(savedSocial)) ? Number(savedSocial) : 60)
 
       const savedBudget = localStorage.getItem(`${storageKey}_budget_items`)
-      setBudgetItems(savedBudget ? JSON.parse(savedBudget) : DEFAULT_BUDGET_ITEMS)
+      setBudgetItems(savedBudget ? JSON.parse(savedBudget) : (isDemoProj ? DEFAULT_BUDGET_ITEMS : []))
 
       const savedLaborReports = localStorage.getItem(`${storageKey}_labor_reports`)
-      setLaborReports(savedLaborReports ? JSON.parse(savedLaborReports) : DEFAULT_LABOR_REPORTS)
+      setLaborReports(savedLaborReports ? JSON.parse(savedLaborReports) : (isDemoProj ? DEFAULT_LABOR_REPORTS : []))
 
       const savedInvoices = localStorage.getItem(`${storageKey}_material_invoices`)
-      setMaterialInvoices(savedInvoices ? JSON.parse(savedInvoices) : DEFAULT_MATERIAL_INVOICES)
+      setMaterialInvoices(savedInvoices ? JSON.parse(savedInvoices) : (isDemoProj ? DEFAULT_MATERIAL_INVOICES : []))
 
       const savedSubcontracts = localStorage.getItem(`${storageKey}_subcontracts`)
-      setSubcontractCertificates(savedSubcontracts ? JSON.parse(savedSubcontracts) : DEFAULT_SUBCONTRACT_CERTIFICATES)
+      setSubcontractCertificates(savedSubcontracts ? JSON.parse(savedSubcontracts) : (isDemoProj ? DEFAULT_SUBCONTRACT_CERTIFICATES : []))
 
       const savedContracts = localStorage.getItem(`${storageKey}_subcontract_contracts`)
-      setSubcontractContracts(savedContracts ? JSON.parse(savedContracts) : DEFAULT_SUBCONTRACT_CONTRACTS)
+      setSubcontractContracts(savedContracts ? JSON.parse(savedContracts) : (isDemoProj ? DEFAULT_SUBCONTRACT_CONTRACTS : []))
 
       const savedCountry = localStorage.getItem(`${storageKey}_country_code`)
       if (savedCountry) setSelectedCountryCode(savedCountry)

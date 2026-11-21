@@ -4980,27 +4980,57 @@
   max-width: 34ch;
 }
 
-.login-card .form-label {
-  color: #374151 !important;
-  font-size: 0.85rem;
-  font-weight: 700;
+.login-card,
+.oxi-login-form-container,
+.login-page {
+  color-scheme: light !important;
 }
 
-.login-card .form-input {
-  color: #111827 !important;
-  background: #f9fafb !important;
-  border: 1.5px solid #d1d5db !important;
+.login-card .form-label,
+.oxi-login-form-container .form-label {
+  color: #1e293b !important;
+  -webkit-text-fill-color: #1e293b !important;
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
 }
 
-.login-card .form-input:focus {
-  color: #111827 !important;
+.login-card .form-input,
+.oxi-login-form-container .form-input {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  background: #f8fafc !important;
+  border: 1.5px solid #cbd5e1 !important;
+  font-size: 0.95rem !important;
+}
+
+.login-card .form-input:focus,
+.oxi-login-form-container .form-input:focus {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
   background: #ffffff !important;
   border-color: #ea580c !important;
   outline: none;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15) !important;
 }
 
-.login-card .form-input::placeholder {
-  color: #9ca3af !important;
+.login-card .form-input::placeholder,
+.oxi-login-form-container .form-input::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.login-card .form-input:-webkit-autofill,
+.login-card .form-input:-webkit-autofill:hover,
+.login-card .form-input:-webkit-autofill:focus,
+.oxi-login-form-container .form-input:-webkit-autofill,
+.oxi-login-form-container .form-input:-webkit-autofill:hover,
+.oxi-login-form-container .form-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0f172a !important;
+  -webkit-box-shadow: 0 0 0 1000px #f8fafc inset !important;
+  box-shadow: 0 0 0 1000px #f8fafc inset !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .login-card .login-signup-hint {

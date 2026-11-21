@@ -59,22 +59,22 @@ export default function CustomerRegister() {
         <p>Architecture Solutions as a Service. La plataforma operativa para tus obras.</p>
       </div>
       <div className="oxi-login-form-container">
-        <div className="login-card">
+        <div className="login-card" style={{ colorScheme: 'light', background: '#ffffff', color: '#0f172a' }}>
           <div className="login-card-header">
             <div className="login-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
                 <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5.33 0-8 2.67-8 4v1h16v-1c0-1.33-2.67-4-8-4Zm6-6h4v2h-4V4h-2v4h-4v2h4v4h2v-4Z" fill="currentColor"/>
               </svg>
             </div>
-            <h1 style={{ fontSize: '1.8rem', color: '#111827' }}>Crear cuenta</h1>
-            <p>Registrate para empezar a cotizar y gestionar proyectos.</p>
+            <h1 style={{ fontSize: '1.8rem', color: '#0f172a', fontWeight: 800, margin: '0 0 6px' }}>Crear cuenta</h1>
+            <p style={{ color: '#475569', fontSize: '0.92rem', margin: 0 }}>Registrate para empezar a cotizar y gestionar proyectos.</p>
           </div>
 
-          <form className="publish-form" onSubmit={handleSubmit} noValidate>
+          <form className="publish-form" onSubmit={handleSubmit} noValidate style={{ colorScheme: 'light' }}>
             {error && <p className="login-error" role="alert">{error}</p>}
 
           <div className="form-row">
-            <label className="form-label" htmlFor="customer-register-name">Nombre y apellido</label>
+            <label className="form-label" htmlFor="customer-register-name" style={{ color: '#1e293b', fontWeight: 700, fontSize: '0.88rem', display: 'block', marginBottom: '4px' }}>Nombre y apellido</label>
             <input
               id="customer-register-name"
               className="form-input"
@@ -85,11 +85,12 @@ export default function CustomerRegister() {
               placeholder="Ej: Juan Perez"
               autoComplete="name"
               required
+              style={{ color: '#0f172a', background: '#f8fafc', borderColor: '#cbd5e1' }}
             />
           </div>
 
           <div className="form-row">
-            <label className="form-label" htmlFor="customer-register-email">Correo electrónico</label>
+            <label className="form-label" htmlFor="customer-register-email" style={{ color: '#1e293b', fontWeight: 700, fontSize: '0.88rem', display: 'block', marginBottom: '4px' }}>Correo electrónico</label>
             <input
               id="customer-register-email"
               className="form-input"
@@ -100,11 +101,12 @@ export default function CustomerRegister() {
               placeholder="tuemail@gmail.com"
               autoComplete="email"
               required
+              style={{ color: '#0f172a', background: '#f8fafc', borderColor: '#cbd5e1' }}
             />
           </div>
 
           <div className="form-row">
-            <label className="form-label" htmlFor="customer-register-password">Contraseña</label>
+            <label className="form-label" htmlFor="customer-register-password" style={{ color: '#1e293b', fontWeight: 700, fontSize: '0.88rem', display: 'block', marginBottom: '4px' }}>Contraseña</label>
             <input
               id="customer-register-password"
               className="form-input"
@@ -116,11 +118,12 @@ export default function CustomerRegister() {
               autoComplete="new-password"
               required
               minLength={6}
+              style={{ color: '#0f172a', background: '#f8fafc', borderColor: '#cbd5e1' }}
             />
           </div>
 
           <div className="form-row">
-            <label className="form-label" htmlFor="customer-register-confirm-password">Confirmar contraseña</label>
+            <label className="form-label" htmlFor="customer-register-confirm-password" style={{ color: '#1e293b', fontWeight: 700, fontSize: '0.88rem', display: 'block', marginBottom: '4px' }}>Confirmar contraseña</label>
             <input
               id="customer-register-confirm-password"
               className="form-input"
@@ -132,6 +135,7 @@ export default function CustomerRegister() {
               autoComplete="new-password"
               required
               minLength={6}
+              style={{ color: '#0f172a', background: '#f8fafc', borderColor: '#cbd5e1' }}
             />
           </div>
 
@@ -139,7 +143,7 @@ export default function CustomerRegister() {
             {customerAuthLoading ? 'Creando cuenta...' : 'Crear cuenta'}
           </button>
 
-          <p className="login-signup-hint">
+          <p className="login-signup-hint" style={{ color: '#475569', fontSize: '0.9rem', textAlign: 'center', marginTop: '1rem' }}>
             ¿Ya tenés cuenta? <Link to="/cliente/login">Ingresar</Link>
           </p>
         </form>

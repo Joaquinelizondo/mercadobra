@@ -33,62 +33,7 @@ const BUDGET_DOC_CATEGORIES = [
   { id: 'aprobacion', label: 'Presupuesto Firmado / Aprobación', icon: '✍️', color: '#ea580c', accept: '.pdf,image/*' }
 ]
 
-const DEFAULT_CLASSIC_BUDGETS = [
-  {
-    id: 'bud_1',
-    b2bProjectId: 1,
-    title: 'Herrerías de Fachada, Barandas & Pérgolas Metálicas',
-    referenceNumber: 'COT-2026-089',
-    currentVersion: 'v2.1',
-    status: 'accepted',
-    currency: 'USD',
-    totalAmount: 14850,
-    validUntil: '2026-12-15',
-    responsible: 'Ing. Lucas Ferrando (Óxida Herrerías)',
-    clientNotes: 'Aprobado con la modificación de pasamanos en lapacho y acabado en pintura microtexturada negra.',
-    versions: [
-      {
-        version: 'v2.1',
-        date: '2026-11-06',
-        status: 'accepted',
-        totalAmount: 14850,
-        author: 'Ing. Lucas Ferrando (Óxida)',
-        notes: 'Aprobación final de comitente. Se unificaron espesores de perfiles tubulares a 2mm y anclajes químicos Hilti.',
-        delta: '-4.8%'
-      },
-      {
-        version: 'v2.0',
-        date: '2026-11-02',
-        status: 'reviewing',
-        totalAmount: 15600,
-        author: 'Arq. Juan Pérez (Constructora)',
-        notes: 'Revisión por cambio de baranda de vidrio templado a baranda de perfiles verticales continuos.',
-        delta: '-7.7%'
-      },
-      {
-        version: 'v1.0',
-        date: '2026-10-24',
-        status: 'sent',
-        totalAmount: 16900,
-        author: 'Ing. Lucas Ferrando (Óxida)',
-        notes: 'Propuesta comercial y cómputo preliminar según plano de arquitectura Rev A.',
-        delta: 'Base'
-      }
-    ],
-    items: [
-      { id: 'it_1', code: '01.01', name: 'Barandas de balcones en acero al carbono con pasamanos madera', unit: 'ml', qty: 48, unitPrice: 160, total: 7680 },
-      { id: 'it_2', code: '01.02', name: 'Escalera marinera de servicio para azotea con jaula crinolina', unit: 'un', qty: 1, unitPrice: 1450, total: 1450 },
-      { id: 'it_3', code: '01.03', name: 'Pérgola metálica tubular 100x50x2mm con tratamiento electroestático', unit: 'm²', qty: 32, unitPrice: 120, total: 3840 },
-      { id: 'it_4', code: '01.04', name: 'Portón corredizo automatizado para acceso vehicular en chapa calada', unit: 'un', qty: 1, unitPrice: 1880, total: 1880 }
-    ],
-    documents: [
-      { id: 'doc_1', name: 'Plano_Herreria_Fachada_RevB.pdf', category: 'plano', categoryLabel: 'Plano de Cotización', size: '2.4 MB', date: '2026-11-05', url: '#' },
-      { id: 'doc_2', name: 'Computo_Metrico_Oficial_v2.xlsx', category: 'computo', categoryLabel: 'Cómputo Métrico', size: '480 KB', date: '2026-11-04', url: '#' },
-      { id: 'doc_3', name: 'Pliego_Especificaciones_Tecnicas.pdf', category: 'pliego', categoryLabel: 'Pliego Técnico', size: '1.2 MB', date: '2026-11-01', url: '#' },
-      { id: 'doc_4', name: 'Presupuesto_Comercial_Oxida_Firmado.pdf', category: 'aprobacion', categoryLabel: 'Presupuesto Formal Firmado', size: '890 KB', date: '2026-11-06', url: '#' }
-    ]
-  }
-]
+const DEFAULT_CLASSIC_BUDGETS = []
 const EMPTY_REQUEST = { 
   title: '', 
   description: '', 
@@ -264,7 +209,11 @@ export default function CustomerPortal() {
         if (p?.tier === 'pro') setPlatformMode('pro');
         setQuotes(q.rows || []);
         setB2bProjects(b2b.rows || []);
-        if (b2b.rows && b2b.rows.length > 0) setActiveProjectId(b2b.rows[0].id)
+        if (b2b.rows && b2b.rows.length > 0) {
+          setActiveProjectId(b2b.rows[0].id)
+        } else {
+          setActiveProjectId(null)
+        }
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false)) 
@@ -273,7 +222,8 @@ export default function CustomerPortal() {
   const isProUser = profile?.tier === 'pro'
 
   const activeProject = useMemo(() => {
-    return b2bProjects.find(p => p.id === activeProjectId) || b2bProjects[0] || { id: 1, name: 'Obra Principal (Sede)' }
+    if (!b2bProjects || b2bProjects.length === 0) return null
+    return b2bProjects.find(p => p.id === activeProjectId) || b2bProjects[0] || null
   }, [b2bProjects, activeProjectId])
 
   const filteredQuotes = activeProjectId 
@@ -288,14 +238,15 @@ export default function CustomerPortal() {
   // ── MÓDULO EXCLUSIVO OXI CLÁSICO: PRESUPUESTOS, HISTORIAL & DOCUMENTACIÓN ──
   const [classicTab, setClassicTab] = useState('budgets') // 'budgets' | 'kanban'
   const [classicBudgets, setClassicBudgets] = useState(() => {
+    if (!activeProjectId) return []
     try {
-      const saved = localStorage.getItem(`oxi_classic_budgets_${activeProjectId || 'global'}`)
-      return saved ? JSON.parse(saved) : DEFAULT_CLASSIC_BUDGETS
+      const saved = localStorage.getItem(`oxi_classic_budgets_${activeProjectId}`)
+      return saved ? JSON.parse(saved) : []
     } catch {
-      return DEFAULT_CLASSIC_BUDGETS
+      return []
     }
   })
-  const [activeBudgetId, setActiveBudgetId] = useState(() => DEFAULT_CLASSIC_BUDGETS[0]?.id || null)
+  const [activeBudgetId, setActiveBudgetId] = useState(null)
   const [showNewVersionModal, setShowNewVersionModal] = useState(false)
   const [newVersionNotes, setNewVersionNotes] = useState('')
   const [showAdjustModal, setShowAdjustModal] = useState(false)
@@ -308,26 +259,34 @@ export default function CustomerPortal() {
   }, [classicBudgets, activeBudgetId])
 
   useEffect(() => {
+    if (!activeProjectId) return
     try {
-      localStorage.setItem(`oxi_classic_budgets_${activeProjectId || 'global'}`, JSON.stringify(classicBudgets))
+      localStorage.setItem(`oxi_classic_budgets_${activeProjectId}`, JSON.stringify(classicBudgets))
     } catch (e) {
       console.warn('Error saving classic budgets', e)
     }
   }, [classicBudgets, activeProjectId])
 
   useEffect(() => {
+    if (!activeProjectId) {
+      setClassicBudgets([])
+      setActiveBudgetId(null)
+      return
+    }
     try {
-      const saved = localStorage.getItem(`oxi_classic_budgets_${activeProjectId || 'global'}`)
+      const saved = localStorage.getItem(`oxi_classic_budgets_${activeProjectId}`)
       if (saved) {
         const parsed = JSON.parse(saved)
         setClassicBudgets(parsed)
         if (parsed.length > 0) setActiveBudgetId(parsed[0].id)
+        else setActiveBudgetId(null)
       } else {
-        setClassicBudgets(DEFAULT_CLASSIC_BUDGETS)
-        setActiveBudgetId(DEFAULT_CLASSIC_BUDGETS[0]?.id || null)
+        setClassicBudgets([])
+        setActiveBudgetId(null)
       }
     } catch {
-      setClassicBudgets(DEFAULT_CLASSIC_BUDGETS)
+      setClassicBudgets([])
+      setActiveBudgetId(null)
     }
   }, [activeProjectId])
 
@@ -878,13 +837,50 @@ export default function CustomerPortal() {
       <main className="oxi-os-main">
         {/* If in PRO mode and not editing profile or project, render OxiProSuite */}
         {platformMode === 'pro' && !isEditingProfile && !isCreatingProject ? (
-          <OxiProSuite 
-            project={activeProject} 
-            projects={b2bProjects}
-            onSelectProject={(id) => { setActiveProjectId(id); setMobileMenuOpen(false); }}
-            onBackToClassic={() => { setPlatformMode('classic'); setMobileMenuOpen(false); }} 
-            onOpenMobileDrawer={() => setMobileMenuOpen(true)}
-          />
+          activeProject ? (
+            <OxiProSuite 
+              project={activeProject} 
+              projects={b2bProjects}
+              onSelectProject={(id) => { setActiveProjectId(id); setMobileMenuOpen(false); }}
+              onBackToClassic={() => { setPlatformMode('classic'); setMobileMenuOpen(false); }} 
+              onOpenMobileDrawer={() => setMobileMenuOpen(true)}
+            />
+          ) : (
+            <div style={{
+              background: '#111317',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '20px',
+              padding: '48px 32px',
+              textAlign: 'center',
+              color: '#f8fafc',
+              maxWidth: '600px',
+              margin: '3rem auto'
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏗️</div>
+              <h2 style={{ fontSize: '1.5rem', color: '#fff', marginBottom: '0.75rem', fontWeight: 800 }}>Suite OxI Pro · Control de Obras</h2>
+              <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '1.75rem' }}>
+                Para comenzar a gestionar cronogramas de obra, cómputos métricos, curvas EVM y bitácora técnica, creá tu primera obra.
+              </p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="oxi-os-btn primary"
+                  onClick={() => setIsCreatingProject(true)}
+                  style={{ padding: '12px 24px', fontSize: '0.95rem', fontWeight: 700 }}
+                >
+                  ＋ Crear primera obra
+                </button>
+                <button
+                  type="button"
+                  className="oxi-os-btn secondary"
+                  onClick={() => setPlatformMode('classic')}
+                  style={{ padding: '12px 24px', fontSize: '0.95rem' }}
+                >
+                  Volver a OxI Clásico
+                </button>
+              </div>
+            </div>
+          )
         ) : (
           /* PLATAFORMA OXI CLÁSICO */
           <>
@@ -1641,7 +1637,8 @@ export default function CustomerPortal() {
                   </div>
                 </form>
               </div>
-            ) : classicTab === 'budgets' && activeBudget ? (
+            ) : classicTab === 'budgets' ? (
+              activeBudget ? (
               /* MÓDULO EXCLUSIVO: CENTRO DE PRESUPUESTOS, HISTORIAL & DOCUMENTACIÓN */
               <div className="classic-budget-hub" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
                 {/* 1. HEADER DEL PRESUPUESTO & SELECTOR */}
@@ -2072,6 +2069,49 @@ export default function CustomerPortal() {
                 </div>
               </div>
             ) : (
+              <div style={{
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '48px 32px',
+                textAlign: 'center',
+                margin: '10px 0 24px'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '12px' }}>📁</div>
+                <h3 style={{ margin: '0 0 8px', color: '#0f172a', fontSize: '1.3rem', fontWeight: 800 }}>
+                  {activeProject ? `Obra "${activeProject.name}" sin presupuestos emitidos` : 'No hay obras registradas'}
+                </h3>
+                <p style={{ color: '#64748b', fontSize: '0.92rem', maxWidth: '520px', margin: '0 auto 22px', lineHeight: '1.6' }}>
+                  {activeProject
+                    ? 'Esta obra aún no tiene cotizaciones ni cómputos cargados. Cargá planos o memorias para recibir una cotización técnica formal.'
+                    : 'Creá tu primera obra o solicitá una cotización para comenzar.'}
+                </p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="oxi-os-btn primary"
+                    onClick={() => {
+                      setIsCreatingQuote(true)
+                      setRequest({ ...EMPTY_REQUEST, b2bProjectId: activeProject?.id || null })
+                    }}
+                    style={{ padding: '12px 22px', fontSize: '0.92rem', fontWeight: 700 }}
+                  >
+                    ＋ Solicitar Cotización de Fabricación
+                  </button>
+                  {!activeProject && (
+                    <button
+                      type="button"
+                      className="oxi-os-btn secondary"
+                      onClick={() => setIsCreatingProject(true)}
+                      style={{ padding: '12px 22px', fontSize: '0.92rem', fontWeight: 700 }}
+                    >
+                      ＋ Crear Nueva Obra
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          ) : (
               /* TABLERO KANBAN DE COTIZACIONES */
               <div className="kanban-board">
                 <div className="kanban-column">
