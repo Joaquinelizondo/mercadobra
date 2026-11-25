@@ -14,6 +14,7 @@ import { formatPrice } from '../utils/format'
 import { getAttachmentDownloadUrl } from '../utils/attachments'
 import QuoteDocumentsAndTimeline from '../components/QuoteDocumentsAndTimeline'
 import SpinningHouseLoader, { StatusToast } from '../components/SpinningHouseLoader'
+import { MAX_VIDEO_DURATION_SECONDS } from '../config/uploads'
 import './CustomerPortal.css'
 import './CustomerPortalMobile.css'
 
@@ -97,7 +98,7 @@ const EMPTY_REQUEST = {
   b2bProjectId: null 
 }
 
-function checkVideoDuration(file, maxSeconds = 25) {
+function checkVideoDuration(file, maxSeconds = MAX_VIDEO_DURATION_SECONDS) {
   if (!file.type?.startsWith('video/') && !file.name?.match(/\.(mp4|mov|webm|m4v|avi)$/i)) {
     return Promise.resolve()
   }
@@ -109,7 +110,7 @@ function checkVideoDuration(file, maxSeconds = 25) {
       video.onloadedmetadata = () => {
         URL.revokeObjectURL(url)
         if (video.duration && video.duration > maxSeconds) {
-          reject(new Error(`El video "${file.name}" dura ${Math.round(video.duration)} segundos. Por favor subí un video corto de aproximadamente 20 segundos máximo para agilizar la cotización.`))
+          reject(new Error(`El video "${file.name}" dura ${Math.round(video.duration)} segundos. Se admiten videos de hasta ${maxSeconds} segundos.`))
         } else {
           resolve()
         }
@@ -134,7 +135,7 @@ function readFiles(files, category = 'archivo') {
         throw new Error(`El archivo ${file.name} supera el límite de ${isVideo ? '25' : '15'} MB.`)
       }
       if (isVideo) {
-        await checkVideoDuration(file, 25)
+        await checkVideoDuration(file)
       }
       return new Promise((resolve, reject) => {
         const reader = new FileReader()
@@ -1575,7 +1576,7 @@ export default function CustomerPortal() {
                   </div>
                   <h2>Solicitar Cotización de Herrería & Piezas</h2>
                   <p>
-                    Cargá planos (CAD, PDF), memorias descriptivas, fotos o videos cortos de obra (hasta 20s) para cotizar barandas, escaleras, pérgolas, aberturas o piezas especiales de tu proyecto.
+                    Cargá planos (CAD, PDF), memorias descriptivas, fotos o videos cortos de obra (hasta {MAX_VIDEO_DURATION_SECONDS}s) para cotizar barandas, escaleras, pérgolas, aberturas o piezas especiales de tu proyecto.
                   </p>
                 </div>
 
@@ -1714,7 +1715,7 @@ export default function CustomerPortal() {
 
                       <div className="upload-col">
                         <label className="upload-btn-label" style={{ borderColor: '#ea580c', color: '#ea580c' }}>
-                          🎥 Cargar Video Corto (hasta 20s)
+                          🎥 Cargar Video Corto (hasta {MAX_VIDEO_DURATION_SECONDS}s)
                           <input 
                             type="file" 
                             accept="video/mp4,video/quicktime,video/webm,video/*" 

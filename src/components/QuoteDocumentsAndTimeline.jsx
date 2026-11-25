@@ -1,12 +1,13 @@
 import { useMemo, useState, useRef } from 'react'
 import { getAttachmentDownloadUrl } from '../utils/attachments'
+import { MAX_VIDEO_DURATION_SECONDS } from '../config/uploads'
 import './QuoteDocumentsAndTimeline.css'
 
 export const ATTACHMENT_CATEGORIES = {
   planos: { label: 'Planos Técnicos', icon: '📐', desc: 'Archivos CAD, DWG, DXF y PDF con despieces' },
   cotizacion: { label: 'Cotización & Costos', icon: '💰', desc: 'Presupuestos formales, planillas y cómputos' },
   vistas: { label: 'Vistas & Renders 3D', icon: '🖼️', desc: 'Perspectivas 3D, renders y fotos de referencia' },
-  video: { label: 'Videos de Obra', icon: '🎥', desc: 'Videos cortos del sitio, acceso o detalle (máx. 20s)' },
+  video: { label: 'Videos de Obra', icon: '🎥', desc: `Videos cortos del sitio, acceso o detalle (máx. ${MAX_VIDEO_DURATION_SECONDS}s)` },
   especificaciones: { label: 'Memorias & Pliegos', icon: '📑', desc: 'Especificaciones técnicas de materiales y garantías' },
   general: { label: 'Otros Documentos', icon: '📎', desc: 'Comprobantes, actas y notas adicionales' }
 }
@@ -165,8 +166,8 @@ export default function QuoteDocumentsAndTimeline({
             await new Promise((resolve, reject) => {
               video.onloadedmetadata = () => {
                 URL.revokeObjectURL(url)
-                if (video.duration && video.duration > 25) {
-                  reject(new Error(`El video "${file.name}" dura ${Math.round(video.duration)}s. Se admiten videos cortos de hasta 20 segundos máximo.`))
+                if (video.duration && video.duration > MAX_VIDEO_DURATION_SECONDS) {
+                  reject(new Error(`El video "${file.name}" dura ${Math.round(video.duration)}s. Se admiten videos de hasta ${MAX_VIDEO_DURATION_SECONDS} segundos.`))
                 } else {
                   resolve()
                 }
