@@ -69,6 +69,7 @@ export async function uploadAttachment(dataUrl, { name = 'archivo' } = {}) {
   form.set('file', String(dataUrl))
   form.set('folder', `${config.cloudinaryFolder}/attachments`)
   form.set('public_id', name.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 50))
+  form.set('access_mode', 'public')
 
   const credentials = Buffer.from(`${config.cloudinaryApiKey}:${config.cloudinaryApiSecret}`).toString('base64')
   const controller = new AbortController()

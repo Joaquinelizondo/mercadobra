@@ -13,6 +13,7 @@ import {
   uploadQuoteAttachments,
 } from '../lib/api'
 import { formatPrice } from '../utils/format'
+import { getAttachmentDownloadUrl } from '../utils/attachments'
 import QuoteDocumentsAndTimeline from '../components/QuoteDocumentsAndTimeline'
 import ShareQuoteWhatsAppModal from '../components/ShareQuoteWhatsAppModal'
 import './CustomerPortal.css'
@@ -271,7 +272,7 @@ export default function AdminQuoteWorkspace() {
                           )}
 
                           <a
-                            href={src}
+                            href={getAttachmentDownloadUrl(src)}
                             target="_blank"
                             rel="noreferrer"
                             download={!att.url || att.url.startsWith('data:') ? att.name : undefined}

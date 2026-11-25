@@ -11,6 +11,7 @@ import {
   uploadQuoteAttachments
 } from '../lib/api'
 import { formatPrice } from '../utils/format'
+import { getAttachmentDownloadUrl } from '../utils/attachments'
 import QuoteDocumentsAndTimeline from '../components/QuoteDocumentsAndTimeline'
 import SpinningHouseLoader, { StatusToast } from '../components/SpinningHouseLoader'
 import './CustomerPortal.css'
@@ -1340,7 +1341,7 @@ export default function CustomerPortal() {
                           .map((doc, idx) => (
                             <a
                               key={idx}
-                              href={doc.url || doc.data}
+                              href={getAttachmentDownloadUrl(doc.url || doc.data)}
                               target="_blank"
                               rel="noreferrer"
                               download={!doc.url || doc.url.startsWith('data:') ? doc.name : undefined}
@@ -1468,7 +1469,7 @@ export default function CustomerPortal() {
                               )}
 
                               <a
-                                href={src}
+                                href={getAttachmentDownloadUrl(src)}
                                 target="_blank"
                                 rel="noreferrer"
                                 download={!f.url || f.url.startsWith('data:') ? f.name : undefined}
@@ -2169,7 +2170,7 @@ export default function CustomerPortal() {
                           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                             {d.url && d.url !== '#' ? (
                               <a
-                                href={d.url}
+                                href={getAttachmentDownloadUrl(d.url)}
                                 download={d.name}
                                 target="_blank"
                                 rel="noreferrer"

@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef } from 'react'
+import { getAttachmentDownloadUrl } from '../utils/attachments'
 import './QuoteDocumentsAndTimeline.css'
 
 export const ATTACHMENT_CATEGORIES = {
@@ -463,7 +464,7 @@ export default function QuoteDocumentsAndTimeline({
 
                     <footer className="qdt-doc-actions">
                       <a
-                        href={doc.url || doc.data}
+                        href={getAttachmentDownloadUrl(doc.url || doc.data)}
                         target="_blank"
                         rel="noreferrer"
                         download={!doc.url || doc.url.startsWith('data:') ? doc.name : undefined}
@@ -540,7 +541,7 @@ export default function QuoteDocumentsAndTimeline({
                             return (
                               <div key={attIdx} style={{ display: 'inline-flex', flexDirection: 'column', gap: '4px' }}>
                                 <a
-                                  href={att.url || att.data}
+                                  href={getAttachmentDownloadUrl(att.url || att.data)}
                                   target="_blank"
                                   rel="noreferrer"
                                   download={!att.url || att.url.startsWith('data:') ? att.name : undefined}

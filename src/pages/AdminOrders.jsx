@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useProducts } from '../context/ProductContext'
 import { createAdminOrder, getOrders, getAllCustomerQuotes, updateOrderStatus } from '../lib/api'
 import { formatPrice } from '../utils/format'
+import { getAttachmentDownloadUrl } from '../utils/attachments'
 import './AdminOrders.css'
 
 const STATUS_OPTIONS = [
@@ -362,7 +363,7 @@ export default function AdminOrders() {
                             return (
                               <a
                                 key={i}
-                                href={fileUrl}
+                                href={getAttachmentDownloadUrl(fileUrl)}
                                 target="_blank"
                                 rel="noreferrer"
                                 download={typeof f === 'object' && !f?.url ? fileName : undefined}
